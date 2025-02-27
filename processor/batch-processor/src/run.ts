@@ -1,10 +1,10 @@
 import {createLogger} from '@subsquid/logger'
-import {last, runProgram, Throttler} from '@subsquid/util-internal'
+import {last, maybeLast, runProgram, Throttler} from '@subsquid/util-internal'
 import {createPrometheusServer} from '@subsquid/util-internal-prometheus-server'
 import * as prom from 'prom-client'
-import {BlockRef, Database} from './database'
+import {HashAndHeight, Database, HotDatabaseState} from './database'
 import {Metrics} from './metrics'
-import {DataSource, DataSourceForkError} from '@subsquid/util-internal-data-source'
+import {DataSource, DataSourceForkError, BlockRef} from '@subsquid/util-internal-data-source'
 import assert from 'assert'
 import {formatHead, getItemsCount} from './util'
 
@@ -73,117 +73,57 @@ class Processor<B extends BlockBase, S> {
     }
 
     async run(): Promise<void> {
-        let head = await this.db.getHead()
-        if (head != null) {
-            log.info(`last processed final block was ${head.number}`)
+        let finalizedHead: HashAndHeight
+        let head: HashAndHeight
+        if (this.db.supportsHotBlocks) {
+            let state = await this.db.connect()
+            finalizedHead = state
+            head = last([state, ...state.top])
+        } else {
+            finalizedHead = head = await this.db.connect()
         }
 
-        // await this.assertWeAreOnTheSameChain(state)
-        let prevBlockNumber = head?.number ?? -1
-        let prevBlockHash = head?.hash
+        if (head.height >= 0) {
+            log.info(`last processed block was ${head.height}`)
+            await this.assertWeAreOnTheSameChain(finalizedHead)
+        }
 
-        await this.initMetrics(prevBlockNumber)
+        await this.initMetrics(head.height)
 
         while (true) {
             try {
+                let prevBlockNumber = head.height
+                let prevBlockHash = head.height < 0 ? undefined : head.hash
+
                 let stream = this.src.getStream({
                     range: {from: prevBlockNumber + 1},
                     parentBlockHash: prevBlockHash,
                 })
 
-                let lastBlock: BlockRef | undefined
-                for await (let {blocks, finalizedHead} of stream) {
-                    let mappingStartTime = process.hrtime.bigint()
+                for await (let data of stream) {
+                    let finalizedHead: HashAndHeight =
+                        data.finalizedHead == null
+                            ? {height: -1, hash: '0x'}
+                            : {
+                                  height: data.finalizedHead.number,
+                                  hash: data.finalizedHead.hash,
+                              }
 
-                    await this.db.commit(async (tx) => {
-                        assert.deepEqual(
-                            tx.prevHead,
-                            head,
-                            'seems like more than one concurrent process tries to modify this database'
-                        )
-
-                        if (tx.prevHead && blocks.length > 0 && blocks[0].header.number <= tx.prevHead.number) {
-                            // we've got a fork
-                            await tx.rollback(prevBlockNumber)
-                        }
-
-                        let firstHotBlockPos = 0
-
-                        lastBlock = last(blocks).header
-                        let isOnTop = !!head && lastBlock.number >= head?.number
-
-                        if (finalizedHead != null) {
-                            if (blocks.length == 0) {
-                                await tx.finalize(finalizedHead)
-                                return
-                            }
-
-                            let finalizedEnd = blocks.findIndex((block) => block.header.number > finalizedHead!.number)
-                            if (finalizedEnd < 0) {
-                                finalizedEnd = blocks.length
-                            }
-                            assert(finalizedEnd > 0)
-
-                            firstHotBlockPos = finalizedEnd
-                            let finalizedBlocks = blocks.slice(0, finalizedEnd)
-
-                            let lastRef = finalizedEnd < blocks.length ? finalizedHead : last(finalizedBlocks).header
-                            await tx.processFinalizedBlocks(lastRef, async (store) => {
-                                return this.handler({
-                                    blocks: finalizedBlocks,
-                                    store,
-                                    isHead: isOnTop,
-                                })
-                            })
-                        }
-
-                        if (firstHotBlockPos < blocks.length) {
-                            let unfinalizedBlocks = blocks.slice(firstHotBlockPos)
-                            for (let block of unfinalizedBlocks) {
-                                await tx.processUnfinalizedBlocks(block.header, async (store) => {
-                                    return this.handler({
-                                        blocks: [block],
-                                        store,
-                                        isHead: isOnTop,
-                                    })
-                                })
-                            }
-                        }
-                    })
-
-                    // after successful execution of update transaction,
-                    // the head is always on `stream.lastBlockNumber`.
-                    // Save it, to check, that no-one else modifies the database
-                    head = lastBlock ? {number: lastBlock.number, hash: lastBlock.hash} : undefined
-
-                    let mappingEndTime = process.hrtime.bigint()
-
-                    if (head != null) {
-                        this.updateProgressMetrics(-1, head.number, mappingEndTime)
-                        this.metrics.registerBatch(
-                            blocks.length,
-                            getItemsCount(blocks),
-                            mappingStartTime,
-                            mappingEndTime
-                        )
-
-                        this.reportStatus()
-                    }
+                    head = await this.processBatch(head, finalizedHead, data.blocks)
                 }
 
                 break
             } catch (e) {
-                if (e instanceof DataSourceForkError) {
-                    let forkBase = await computeForkBase(this.db, e.lastBlocks)
-                    log.info(`navigating a fork${forkBase ? ` on a common base ${formatHead(forkBase)}` : ``}`)
+                if (e instanceof DataSourceForkError && this.db.supportsHotBlocks) {
+                    let state = await this.db.getState()
+                    let forkBase = await computeForkBase(state, e.lastBlocks)
                     if (forkBase == null) {
                         // rollback all blocks
-                        prevBlockNumber = -1
-                        prevBlockHash = undefined
+                        head = {height: -1, hash: '0x'}
                     } else {
-                        prevBlockNumber = forkBase.number
-                        prevBlockHash = forkBase.hash
+                        head = forkBase
                     }
+                    log.info(`navigating a fork on a common base ${formatHead(head)}`)
                 } else {
                     throw e
                 }
@@ -193,9 +133,8 @@ class Processor<B extends BlockBase, S> {
         this.reportFinalStatus()
     }
 
-    private async assertWeAreOnTheSameChain(state: BlockRef): Promise<void> {
-        return
-        // if (state.number < 0) return
+    private async assertWeAreOnTheSameChain(state: HashAndHeight): Promise<void> {
+        // if (state.height < 0) return
         // let hash = await this.src.getBlockHash(state.number)
         // if (state.hash === hash) return
         // throw new Error(
@@ -223,44 +162,69 @@ class Processor<B extends BlockBase, S> {
         this.metrics.updateProgress(processed, left, time)
     }
 
-    // private async processBatch(prevHead: HashAndHeight, finalizedHead: BlockRef | undefined, blocks: B[]): Promise<HashAndHeight> {
-    //     let chainHeight = await this.chainHeight.get()
+    private async processBatch(
+        prevHead: HashAndHeight,
+        finalizedHead: HashAndHeight,
+        blocks: B[]
+    ): Promise<HashAndHeight> {
+        let chainHeight = await this.chainHeight.get()
 
-    //     let nextHead = {
-    //         hash: last(blocks).header.hash,
-    //         height: last(blocks).header.number
-    //     }
+        let lastBlock = maybeLast(blocks)
+        if (lastBlock == null) return prevHead
 
-    //     let isOnTop = nextHead.height >= chainHeight
+        let nextHead = {
+            hash: lastBlock.header.hash,
+            height: lastBlock.header.number,
+        }
 
-    //     let mappingStartTime = process.hrtime.bigint()
+        let isOnTop = nextHead.height >= chainHeight
 
-    //     await this.db.transact({
-    //         prevHead,
-    //         nextHead,
-    //         isOnTop
-    //     }, store => {
-    //         return this.handler({
-    //             store,
-    //             blocks,
-    //             isHead: isOnTop
-    //         })
-    //     })
+        let mappingStartTime = process.hrtime.bigint()
 
-    //     let mappingEndTime = process.hrtime.bigint()
+        if (this.db.supportsHotBlocks) {
+            await this.db.transactHot2(
+                {
+                    finalizedHead,
+                    baseHead: prevHead,
+                    newBlocks: blocks.map((b) => ({
+                        hash: b.header.hash,
+                        height: b.header.number,
+                    })),
+                },
+                (store, start, end) => {
+                    return this.handler({
+                        store,
+                        blocks: blocks.slice(start, end),
+                        isHead: isOnTop,
+                    })
+                }
+            )
+        } else {
+            await this.db.transact(
+                {
+                    prevHead,
+                    nextHead,
+                    isOnTop,
+                },
+                (store) => {
+                    return this.handler({
+                        store,
+                        blocks,
+                        isHead: isOnTop,
+                    })
+                }
+            )
+        }
 
-    //     this.updateProgressMetrics(chainHeight, nextHead, mappingEndTime)
-    //     this.metrics.registerBatch(
-    //         blocks.length,
-    //         getItemsCount(blocks),
-    //         mappingStartTime,
-    //         mappingEndTime
-    //     )
+        let mappingEndTime = process.hrtime.bigint()
 
-    //     this.reportStatus()
+        this.updateProgressMetrics(chainHeight, nextHead.height, mappingEndTime)
+        this.metrics.registerBatch(blocks.length, getItemsCount(blocks), mappingStartTime, mappingEndTime)
 
-    //     return nextHead
-    // }
+        this.reportStatus()
+
+        return nextHead
+    }
 
     private reportStatus(): void {
         if (this.statusReportTimer == null) {
@@ -289,49 +253,37 @@ class Processor<B extends BlockBase, S> {
 }
 
 async function computeForkBase(
-    db: Database<unknown>,
+    state: HotDatabaseState,
     forked: BlockRef[],
     finalizedHead?: BlockRef
-): Promise<BlockRef | undefined> {
+): Promise<HashAndHeight | undefined> {
     assert(forked?.length)
     let tail = forked.slice()
 
-    while (true) {
-        let commited = await db.getUnfinalizedBlocks(last(tail).number)
-        if (commited.length == 0) return checkFinalizedHeadAsForkBase(db, forked, finalizedHead)
-
+    let commited = state.top
+    if (commited.length > 0) {
         for (let i = commited.length - 1; i >= 0; i--) {
             let h = commited[i]
 
-            while (tail.length > 0 && last(tail).number > h.number) {
+            while (tail.length > 0 && last(tail).number > h.height) {
                 tail.pop()
             }
 
             if (tail.length == 0) return h
 
             let t = last(tail)
-            if (t.number == h.number && t.hash == h.hash) return h
+            if (t.number == h.height && t.hash == h.hash) return h
         }
-    }
-}
+    } else {
+        if (forked[0].number > state.height) return state
 
-async function checkFinalizedHeadAsForkBase(
-    db: Database<unknown>,
-    forked: BlockRef[],
-    finalizedHead?: BlockRef
-): Promise<BlockRef | undefined> {
-    let head = await db.getFinalizedHead()
-    if (head == null) return undefined
-
-    assert(forked?.length)
-    if (forked[0].number > head.number) return head
-
-    let headOnChain = forked.find((b) => b.number == head!.number)
-    if (headOnChain == null || headOnChain.hash !== head.hash) {
-        if (finalizedHead && finalizedHead.number >= head.number) {
-            throw new Error(`finalized block ${head.number}#${head.hash} was not found on chain`)
+        let headOnChain = forked.find((b) => b.number == state.height)
+        if (headOnChain == null || headOnChain.hash !== state.hash) {
+            if (finalizedHead && finalizedHead.number >= state.height) {
+                throw new Error(`finalized block ${formatHead(state)} was not found on chain`)
+            }
         }
-    }
 
-    return head
+        return state
+    }
 }
