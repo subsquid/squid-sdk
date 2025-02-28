@@ -1,0 +1,30 @@
+{
+  "name": "@subsquid/util-internal-data-service",
+  "version": "0.0.0",
+  "description": "Hot block data service tools",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/logger": "^1.4.0",
+    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/util-internal-data-source": "^0.0.0",
+    "@subsquid/util-internal-http-server": "^2.0.0",
+    "@subsquid/util-internal-json": "^1.2.3",
+    "@subsquid/util-internal-validation": "^0.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.18.14",
+    "typescript": "5.5.4"
+  }
+}

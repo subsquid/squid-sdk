@@ -1,14 +1,26 @@
-ARG node=node:20-alpine
+ARG node=node:22-slim
 FROM ${node} AS node
 
 
 FROM node AS builder
-RUN apk add g++ make python3 py3-setuptools
+RUN apt-get update && apt-get -y --no-install-recommends install \
+    build-essential \
+    python3 \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /squid
 ADD . .
 RUN node common/scripts/install-run-rush.js install
 RUN rm common/config/rush/build-cache.json
 RUN node common/scripts/install-run-rush.js build
+
+
+FROM builder AS solana-data-service-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/solana-data-service
+
+
+FROM node AS solana-data-service
+COPY --from=solana-data-service-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/solana/solana-data-service/lib/main.js"]
 
 
 FROM builder AS solana-dump-builder

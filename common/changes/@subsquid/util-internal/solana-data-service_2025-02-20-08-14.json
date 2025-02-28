@@ -1,0 +1,20 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "`AsyncQueue`: allow multiple concurrent puts",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "`AsyncQueue`: add `.removeCloseListener()`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "`concurrentMap()`: accept `Iterable` as stream",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

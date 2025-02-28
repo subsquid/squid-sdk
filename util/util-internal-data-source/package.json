@@ -1,0 +1,22 @@
+{
+  "name": "@subsquid/util-internal-data-source",
+  "version": "0.0.0",
+  "description": "Definition of DataSource abstraction",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^18.18.14",
+    "typescript": "5.5.4"
+  }
+}
