@@ -7,13 +7,13 @@ import {
     RangeRequestList,
     FiniteRange
 } from '@subsquid/util-internal-range'
-import {Block, FieldSelection} from './data/model'
+import {Block, BlockHeader, FieldSelection} from './data/model'
 import {
     DataRequest,
     EventRequest,
     TransactionRequest
 } from './data/data-request'
-import {def, last} from '@subsquid/util-internal'
+import {addErrorContext, def, last} from '@subsquid/util-internal'
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import assert from 'assert'
@@ -21,6 +21,12 @@ import {getFields} from './fields'
 import {PartialBlock} from './data/data-partial'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
 import {StarknetGateway} from './archive/source'
+import {StarknetRpcClient} from './rpc/client'
+import {RpcDataSource} from './rpc/source'
+
+
+// TODO: Import BlockInfo from starknet-rpc model
+type BlockInfo = any
 
 
 export interface GatewaySettings {
@@ -34,6 +40,41 @@ export interface GatewaySettings {
     requestTimeout?: number
 }
 
+
+export interface RpcSettings {
+    /**
+     * RPC client
+     */
+    client: StarknetRpcClient
+    /**
+     * `getBlock` batch call size.
+     *
+     * Default is `5`.
+     */
+    strideSize?: number
+    /**
+     * Maximum number of concurrent `getBlock` batch calls.
+     *
+     * Default is `10`
+     */
+    strideConcurrency?: number
+    /**
+     * Minimum distance from finalized head below which concurrent
+     * fetch procedure is allowed.
+     *
+     * Default is `50` blocks.
+     *
+     * Concurrent fetch procedure can perform multiple `getBlock` batch calls simultaneously and is faster,
+     * but assumes consistent behaviour of RPC endpoint.
+     *
+     * The latter might not be the case due to load balancing,
+     * when one request is sent to node `A` with head slot `X` and
+     * another to node `B` with head slot `X - 10`.
+     */
+    concurrentFetchThreshold?: number
+}
+
+
 interface BlockRange {
     range?: Range
 }
@@ -44,6 +85,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
     private fields?: FieldSelection
     private blockRange?: Range
     private gateway?: GatewaySettings
+    private rpc?: RpcSettings
     private running = false
 
     private assertNotRunning(): void {
@@ -68,6 +110,18 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         } else {
             this.gateway = url
         }
+        return this
+    }
+
+    /**
+     * Set chain RPC endpoint
+     *
+     * @example
+     * // just pass a URL
+     * processor.setRpc('https://starknet-mainnet.public.blastapi.io')
+     */
+    setRpc(settings?: RpcSettings): this {
+        this.rpc = settings
         return this
     }
 
@@ -170,7 +224,8 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
     build(): DataSource<Block<F>> {
         return new StarknetDataSource(
             this.getRequests(),
-            this.gateway
+            this.gateway,
+            this.rpc
         ) as DataSource<Block<F>>
     }
 }
@@ -185,28 +240,71 @@ export interface DataSource<Block> {
 export type GetDataSourceBlock<T> = T extends DataSource<infer B> ? B : never
 
 class StarknetDataSource implements DataSource<PartialBlock> {
+    private rpc?: RpcDataSource
+    private isConsistent?: boolean
     private ranges: Range[]
 
     constructor(
         private requests: RangeRequestList<DataRequest>,
-        private gatewaySettings?: GatewaySettings
+        private gatewaySettings?: GatewaySettings,
+        rpcSettings?: RpcSettings
     ) {
-        assert(this.gatewaySettings, 'gateway should be provided')
+        assert(this.gatewaySettings || rpcSettings, 'either archive or RPC should be provided')
+        if (rpcSettings) {
+            this.rpc = new RpcDataSource(rpcSettings)
+        }
         this.ranges = this.requests.map(req => req.range)
     }
 
     getFinalizedHeight(): Promise<number> {
-        return this.createGateway().getFinalizedHeight()
+        if (this.rpc) {
+            return this.rpc.getFinalizedHeight()
+        } else {
+            return this.createGateway().getFinalizedHeight()
+        }
     }
 
     async getBlockHash(height: number): Promise<string | undefined> {
-        let gateway = this.createGateway()
-        let head = await gateway.getFinalizedHeight()
-        if (head >= height) {
-            return gateway.getBlockHash(height)
+        await this.assertConsistency()
+        if (this.gatewaySettings == null) {
+            assert(this.rpc)
+            return this.rpc.getBlockHash(height)
         } else {
-            return undefined
+            let gateway = this.createGateway()
+            let head = await gateway.getFinalizedHeight()
+            if (head >= height) return gateway.getBlockHash(height)
+            if (this.rpc) return this.rpc.getBlockHash(height)
         }
+    }
+
+    private async assertConsistency(): Promise<void> {
+        if (this.isConsistent || this.gatewaySettings == null || this.rpc == null) return
+        let blocks = await this.performConsistencyCheck().catch(err => {
+            throw addErrorContext(
+                new Error(`Failed to check consistency between Subsquid Gateway and RPC endpoints`),
+                {reason: err}
+            )
+        })
+        if (blocks == null) {
+            this.isConsistent = true
+        } else {
+            throw addErrorContext(
+                new Error(`Provided Subsquid Gateway and RPC endpoints don't agree on slot ${blocks.archiveBlock.slot}`),
+                blocks
+            )
+        }
+    }
+
+    private async performConsistencyCheck(): Promise<{
+        archiveBlock: BlockHeader
+        rpcBlock: BlockInfo | null
+    } | undefined> {
+        let archive = this.createGateway()
+        let height = await archive.getFinalizedHeight()
+        let archiveBlock = await archive.getBlockHeader(height)
+        let rpcBlock = await this.rpc!.getBlockHeader(archiveBlock.height)
+        if (rpcBlock?.blockhash === archiveBlock.hash && rpcBlock.blockHeight === archiveBlock.height) return
+        return {archiveBlock, rpcBlock: rpcBlock || null}
     }
 
     getBlocksCountInRange(range: FiniteRange): number {
@@ -214,28 +312,38 @@ class StarknetDataSource implements DataSource<PartialBlock> {
     }
 
     async *getBlockStream(fromBlockHeight?: number): AsyncIterable<PartialBlock[]> {
+        await this.assertConsistency()
+
         let requests = fromBlockHeight == null
             ? this.requests
             : applyRangeBound(this.requests, {from: fromBlockHeight})
 
         if (requests.length == 0) return
 
-        let agent = new HttpAgent({keepAlive: true})
-        try {
-            let archive = this.createGateway(agent)
-            let height = await archive.getFinalizedHeight()
-            let from = requests[0].range.from
+        if (this.gatewaySettings) {
+            let agent = new HttpAgent({keepAlive: true})
+            try {
+                let archive = this.createGateway(agent)
+                let height = await archive.getFinalizedHeight()
+                let from = requests[0].range.from
 
-            if (height > from) {
-                for await (let batch of archive.getBlockStream(requests)) {
-                    yield batch
-                    from = last(batch).header.height + 1
+                if (height > from || !this.rpc) {
+                    for await (let batch of archive.getBlockStream(requests, !!this.rpc)) {
+                        yield batch
+                        from = last(batch).header.height + 1
+                    }
                 }
+                requests = applyRangeBound(requests, {from})
+            } finally {
+                agent.close()
             }
-            requests = applyRangeBound(requests, {from})
-        } finally {
-            agent.close()
         }
+
+        if (requests.length == 0) return
+
+        assert(this.rpc)
+
+        yield* this.rpc.getBlockStream(requests)
     }
 
     private createGateway(agent?: HttpAgent): StarknetGateway {

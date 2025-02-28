@@ -102,6 +102,12 @@ const Receipt = object({
 })
 type Receipt = GetSrcType<typeof Receipt>
 
+const PackedTransaction = object({
+    transaction: Transaction,
+    receipt: Receipt
+})
+type PackedTransaction = GetSrcType<typeof PackedTransaction>
+
 const Event = object({
     block_number: INT,
     block_hash: Hash32,
@@ -120,7 +126,7 @@ const Block = object({
     new_root: Hash32,
     timestamp: INT,
     sequencer_address: FELT,
-    transactions: array(Transaction),
+    transactions: array(PackedTransaction),
     starknet_version: STRING,
     l1_gas_price: ResourcePrice,
     events: nullable(array(Event))
