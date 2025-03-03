@@ -313,7 +313,7 @@ const zenlinkProtocol = {
         pair_account: "AccountId",
         target_supply: "ZenlinkAssetBalance",
     },
-    BootstrapParamter: {
+    BootstrapParameter: {
         min_contribution: "(ZenlinkAssetBalance, ZenlinkAssetBalance)",
         target_supply: "(ZenlinkAssetBalance, ZenlinkAssetBalance)",
         accumulated_supply: "(ZenlinkAssetBalance, ZenlinkAssetBalance)",
@@ -323,7 +323,7 @@ const zenlinkProtocol = {
     PairStatus: {
         _enum: {
             Trading: "PairMetadata",
-            Bootstrap: "BootstrapParamter",
+            Bootstrap: "BootstrapParameter",
             Disable: null,
         },
     },
