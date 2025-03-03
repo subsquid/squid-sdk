@@ -473,7 +473,11 @@ export function isHttpConnectionError(err: unknown): boolean {
     return nodeFetch.isLoaded
         && err instanceof nodeFetch.FetchError
         && err.type == 'system'
-        && (err.message.startsWith('request to') || err.code == 'ERR_STREAM_PREMATURE_CLOSE')
+        && (
+            err.message.startsWith('request to') ||
+            err.code == 'ERR_STREAM_PREMATURE_CLOSE' ||
+            err.code == 'ECONNRESET'
+        )
 }
 
 

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-rpc",
+      "comment": "hide all data fetching tools under new `DataSource` interface",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/solana-rpc"
+}

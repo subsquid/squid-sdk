@@ -37,6 +37,6 @@
   "devDependencies": {
     "@subsquid/substrate-runtime": "^2.0.1",
     "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4"
   }
 }

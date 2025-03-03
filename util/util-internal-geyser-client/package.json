@@ -1,0 +1,28 @@
+{
+  "name": "@subsquid/util-internal-geyser-client",
+  "version": "0.0.0",
+  "description": "A patched version of @triton-one/yellowstone-grpc to interoperate with our provider",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "encoding",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.8.0",
+    "long": "^5.0.0",
+    "protobufjs": "^7.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^18.18.14",
+    "typescript": "5.5.4"
+  }
+}
