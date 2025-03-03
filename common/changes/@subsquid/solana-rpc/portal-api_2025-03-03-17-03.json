@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-rpc",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/solana-rpc"
+}
