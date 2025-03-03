@@ -3,7 +3,7 @@
     {
       "packageName": "@subsquid/solana-stream",
       "comment": "added support for SQD Portal API",
-      "type": "minor"
+      "type": "major"
     }
   ],
   "packageName": "@subsquid/solana-stream"

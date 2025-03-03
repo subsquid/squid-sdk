@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/batch-processor",
+      "comment": "use new data source",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/batch-processor"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "always remove abort signal listener on request end",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}
