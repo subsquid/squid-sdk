@@ -4,7 +4,7 @@ import {createPrometheusServer} from '@subsquid/util-internal-prometheus-server'
 import * as prom from 'prom-client'
 import {HashAndHeight, Database, HotDatabaseState} from './database'
 import {Metrics} from './metrics'
-import {DataSource, DataSourceForkError, BlockRef} from '@subsquid/util-internal-data-source'
+import {DataSource, isForkException, BlockRef} from '@subsquid/util-internal-data-source'
 import assert from 'assert'
 import {formatHead, getItemsCount} from './util'
 
@@ -97,7 +97,7 @@ class Processor<B extends BlockBase, S> {
 
                 let stream = this.src.getStream({
                     range: {from: prevBlockNumber + 1},
-                    parentBlockHash: prevBlockHash,
+                    parentHash: prevBlockHash,
                 })
 
                 for await (let data of stream) {
@@ -114,9 +114,9 @@ class Processor<B extends BlockBase, S> {
 
                 break
             } catch (e) {
-                if (e instanceof DataSourceForkError && this.db.supportsHotBlocks) {
+                if (isForkException(e) && this.db.supportsHotBlocks) {
                     let state = await this.db.getState()
-                    let forkBase = await computeForkBase(state, e.lastBlocks)
+                    let forkBase = await computeForkBase(state, e.prevBlocks)
                     if (forkBase == null) {
                         // rollback all blocks
                         head = {height: -1, hash: '0x'}

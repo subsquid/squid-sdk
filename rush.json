@@ -513,12 +513,12 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-//    {
-//      "packageName": "@subsquid/solana-objects",
-//      "projectFolder": "solana/solana-objects",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
+   {
+     "packageName": "@subsquid/solana-objects",
+     "projectFolder": "solana/solana-objects",
+     "shouldPublish": true,
+     "versionPolicyName": "npm"
+   },
     {
       "packageName": "@subsquid/solana-rpc",
       "projectFolder": "solana/solana-rpc",
@@ -531,12 +531,12 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-//    {
-//      "packageName": "@subsquid/solana-stream",
-//      "projectFolder": "solana/solana-stream",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
+   {
+     "packageName": "@subsquid/solana-stream",
+     "projectFolder": "solana/solana-stream",
+     "shouldPublish": true,
+     "versionPolicyName": "npm"
+   },
     {
       "packageName": "@subsquid/solana-typegen",
       "projectFolder": "solana/solana-typegen",
@@ -726,12 +726,6 @@
     {
       "packageName": "@subsquid/commands",
       "projectFolder": "util/commands",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/util-internal-data-source",
-      "projectFolder": "util/data-source",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

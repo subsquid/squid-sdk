@@ -1,4 +1,5 @@
 import assert from 'assert'
+import {Range} from '@subsquid/util-internal-range'
 
 
 export interface BlockRef {
@@ -7,9 +8,9 @@ export interface BlockRef {
 }
 
 
-export interface StreamRequest {
-    from: number
-    to?: number
+export interface DataSourceStreamOptions {
+    range?: Range
+    stopOnHead?: boolean
     parentHash?: string
 }
 
@@ -20,15 +21,18 @@ export interface BlockBatch<B> {
 }
 
 
-export type BlockStream<B> = AsyncIterable<BlockBatch<B>>
+export type DataSourceStream<B> = AsyncIterable<BlockBatch<B>>
 
 
 export interface DataSource<B> {
-    getFinalizedHead(): Promise<BlockRef>
+    getHead(): Promise<BlockRef | undefined>
 
-    getFinalizedStream(req: StreamRequest): BlockStream<B>
+    getFinalizedHead(): Promise<BlockRef | undefined>
 
-    getStream(req: StreamRequest): BlockStream<B>
+    // FIXME: maybe it's better to pass it ias an option to `getStream`
+    getFinalizedStream(req: DataSourceStreamOptions): DataSourceStream<B>
+
+    getStream(req: DataSourceStreamOptions): DataSourceStream<B>
 }
 
 
@@ -37,12 +41,12 @@ export class ForkException extends Error {
 
     constructor(
         expectedParentHash: string,
-        nextBlock: BlockRef,
-        public readonly prev: BlockRef[]
+        nextBlock: number,
+        public readonly prevBlocks: BlockRef[]
     ) {
-        assert(prev.length > 0)
-        let last = prev[prev.length - 1]
-        super(`expected ${nextBlock.number}#${nextBlock.hash} to have parent ${expectedParentHash}, but got ${last.number}#${last.hash}`)
+        assert(prevBlocks.length > 0)
+        let last = prevBlocks[prevBlocks.length - 1]
+        super(`expected ${nextBlock} to have parent ${last.number}#${expectedParentHash}, but got ${last.number}#${last.hash}`)
     }
 
     get name(): string {

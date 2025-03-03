@@ -1,5 +1,13 @@
 import {HttpClient, HttpError} from '@subsquid/http-client'
-import {addErrorContext, createFuture, Future, unexpectedCase, wait, withErrorContext} from '@subsquid/util-internal'
+import {
+    addErrorContext,
+    createFuture,
+    Future,
+    last,
+    unexpectedCase,
+    wait,
+    withErrorContext,
+} from '@subsquid/util-internal'
 import {Readable} from 'stream'
 
 export interface PortalClientOptions {
@@ -321,9 +329,18 @@ export class PortalClient {
                             throw unexpectedCase(res.status)
                     }
                 } catch (e: unknown) {
-                    if (e instanceof HttpError && e.response.status === 409 && e.response.body.lastBlocks) {
-                        let blocks = (e.response.body.lastBlocks || []) as BlockRef[]
-                        e = new ForkError(blocks)
+                    if (
+                        e instanceof HttpError &&
+                        e.response.status === 409 &&
+                        q.fromBlock &&
+                        q.parentBlockHash &&
+                        e.response.body.lastBlocks
+                    ) {
+                        let blocks = e.response.body.lastBlocks as BlockRef[]
+                        e = new ForkException(blocks, {
+                            fromBlock: q.fromBlock,
+                            parentBlockHash: q.parentBlockHash,
+                        })
                     }
 
                     throw addErrorContext(e as any, {
@@ -376,7 +393,7 @@ function createReadablePortalStream<Q extends PortalQuery = PortalQuery, R exten
 
                     if (res == null) {
                         if (stopOnHead) return false
-                        // await wait(headPollInterval, abortSignal)
+                        await wait(headPollInterval, abortSignal)
                     } else {
                         // no data left
                         if (res.stream == null) return true
@@ -627,17 +644,19 @@ class LineSplitStream implements ReadableWritablePair<string[], string> {
     }
 }
 
-export class ForkError extends Error {
+export class ForkException extends Error {
     readonly name = 'ForkError'
 
-    constructor(readonly lastBlocks: BlockRef[]) {
-        // TODO: better text
-        super('Fork detected')
+    constructor(readonly lastBlocks: BlockRef[], readonly query: {fromBlock: number; parentBlockHash: string}) {
+        let parent = last(lastBlocks)
+        super(
+            `expected ${query.fromBlock} to have parent ${parent.number}#${query.parentBlockHash}, but got ${parent.number}#${parent.hash}`
+        )
     }
 }
 
-export function isForkError(err: unknown): err is ForkError {
-    if (err instanceof ForkError) return true
+export function isForkException(err: unknown): err is ForkException {
+    if (err instanceof ForkException) return true
     if (err instanceof Error && err.name === 'ForkError') return true
     return false
 }

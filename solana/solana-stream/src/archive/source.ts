@@ -1,4 +1,3 @@
-import {BlockHeader} from '@subsquid/solana-normalization'
 import {assertNotNull, last} from '@subsquid/util-internal'
 import {applyRangeBound, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {array, cast} from '@subsquid/util-internal-validation'
@@ -6,8 +5,9 @@ import assert from 'assert'
 import {PartialBlock} from '../data/partial'
 import {DataRequest} from '../data/request'
 import {getDataSchema} from './schema'
-import {PortalClient, isForkError} from '@subsquid/portal-client'
-import {BlockRef, DataSource, DataSourceForkError, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
+import {PortalClient, isForkException as isPortalForkException} from '@subsquid/portal-client'
+import {BlockRef, DataSource, ForkException, DataSourceStreamOptions, DataSourceStream} from '@subsquid/util-internal-data-source'
+import {BlockHeader} from '../data/model'
 
 export class PortalDataSource implements DataSource<PartialBlock> {
     constructor(private client: PortalClient, private requests: RangeRequestList<DataRequest>) {}
@@ -62,6 +62,10 @@ export class PortalDataSource implements DataSource<PartialBlock> {
         return blocks[0].header as BlockHeader
     }
 
+    getFinalizedStream(req: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
+        throw new Error('Method not implemented.')
+    }
+
     async *getStream(opts?: DataSourceStreamOptions) {
         let requests = applyRangeBound(this.requests, opts?.range)
 
@@ -90,7 +94,7 @@ export class PortalDataSource implements DataSource<PartialBlock> {
 
         try {
             let parentBlockNumber = (opts?.range?.from ?? 0) - 1
-            let parentBlockHash = opts?.parentBlockHash
+            let parentBlockHash = opts?.parentHash
 
             for (let req of archiveRequests) {
                 // if ranges have gaps, we need to ensure continuaty
@@ -166,8 +170,8 @@ export class PortalDataSource implements DataSource<PartialBlock> {
                 }
             }
         } catch (e: unknown) {
-            if (isForkError(e)) {
-                throw new DataSourceForkError(e.lastBlocks)
+            if (isPortalForkException(e)) {
+                throw new ForkException(e.query.parentBlockHash, e.query.fromBlock, e.lastBlocks)
             }
 
             throw e

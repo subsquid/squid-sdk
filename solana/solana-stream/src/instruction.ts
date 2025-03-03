@@ -1,7 +1,6 @@
-import {Base58Bytes} from '@subsquid/solana-rpc-data'
 import {toHex} from '@subsquid/util-internal-hex'
 import bs58 from 'bs58'
-import {Bytes} from './data/model'
+import {Base58Bytes, Bytes} from './data/model'
 
 
 export const DATA_SYM = Symbol('DATA')

@@ -69,7 +69,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
     }
 
     protected async* getBlocks(range: Range): AsyncIterable<Block[]> {
-        for await (let batch of this.dataSource().getFinalizedStream(range)) {
+        for await (let batch of this.dataSource().getFinalizedStream({range})) {
             yield batch.blocks.map(block => {
                 return {
                     hash: block.block.blockhash,

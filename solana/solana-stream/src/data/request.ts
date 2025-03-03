@@ -1,6 +1,5 @@
-import {Base58Bytes} from '@subsquid/solana-rpc'
 import {LogMessage} from '@subsquid/solana-normalization'
-import {FieldSelection} from './model'
+import {Base58Bytes, FieldSelection} from './model'
 
 
 export interface DataRequest {

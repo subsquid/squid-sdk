@@ -5,7 +5,7 @@ export interface BlockHeader {
     number: number
     hash: Base58Bytes
     height: number
-    parentSlot: number
+    parentNumber: number
     parentHash: Base58Bytes
     timestamp: number
 }

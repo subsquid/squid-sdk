@@ -68,9 +68,11 @@ export class DataService {
 
         // Now setup streaming of missing blocks
         let stream = this.source.getFinalizedStream({
-            from,
-            to: from + missing - 1,
-            parentHash: parentHash
+            range: {
+                from,
+                to: from + missing - 1
+            },
+            parentHash,
         })
 
         let it = stream[Symbol.asyncIterator]()
@@ -83,7 +85,7 @@ export class DataService {
         } catch(err: any) {
             await it.return?.().catch(err => log.error(err))
             if (isForkException(err)) {
-                return new InvalidBaseBlock(err.prev)
+                return new InvalidBaseBlock(err.prevBlocks)
             } else {
                 throw err
             }
@@ -130,10 +132,13 @@ export class DataService {
 
     async init(): Promise<void> {
         let head = await this.source.getFinalizedHead()
+        let height = head?.number ?? 0
 
         for await (let batch of this.source.getFinalizedStream({
-            from: head.number,
-            to: head.number
+            range: {
+                from: height,
+                to: height,
+            }
         })) {
             assert(batch.blocks.length === 1)
             this.#chain = new Chain(batch.blocks[0], this.bufferSize)
@@ -155,7 +160,7 @@ export class DataService {
             } catch(err: any) {
                 if (isForkException(err)) {
                     stacked = 0
-                    base = this.chain.getForkBase(err.prev)
+                    base = this.chain.getForkBase(err.prevBlocks)
                 } else {
                     this.log.error(err, 'data ingestion terminated, will resume in 1 minute')
                     await wait(60 * 1000)
@@ -179,7 +184,9 @@ export class DataService {
         let finalizedHead: BlockRef | undefined
 
         for await (let batch of this.source.getStream({
-            from: base.number + 1,
+            range: {
+                from: base.number + 1,
+            },
             parentHash: base.hash
         })) {
             if (this.stopped) return

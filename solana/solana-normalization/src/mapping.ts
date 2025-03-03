@@ -15,7 +15,7 @@ export function mapRpcBlock(slot: number, src: rpc.GetBlock, journal: Journal): 
         hash: src.blockhash,
         height: assertNotNull(src.blockHeight, '.blockHeight is not available'),
         number: slot,
-        parentSlot: src.parentSlot,
+        parentNumber: src.parentSlot,
         parentHash: src.previousBlockhash,
         timestamp: src.blockTime ?? 0
     }

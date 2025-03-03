@@ -1,5 +1,5 @@
 import {last} from '@subsquid/util-internal'
-import {BlockRef, BlockStream, DataSource, ForkException, StreamRequest} from '@subsquid/util-internal-data-source'
+import {BlockRef, DataSourceStream, DataSource, ForkException, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
 import {Range} from '@subsquid/util-internal-range'
 import {Commitment, Rpc} from '../rpc'
 import {Block, DataRequest} from '../types'
@@ -47,10 +47,11 @@ export class SolanaRpcDataSource implements DataSource<Block> {
         }
     }
 
-    async *getFinalizedStream(req: StreamRequest): BlockStream<Block> {
+    async *getFinalizedStream(req: DataSourceStreamOptions): DataSourceStream<Block> {
+        let range = req.range ?? {from: 0}
         let stream = this.ensureContinuity(
-            this.ingest('finalized', req),
-            req.from,
+            this.ingest('finalized', range),
+            range.from,
             req.parentHash
         )
 
@@ -61,17 +62,18 @@ export class SolanaRpcDataSource implements DataSource<Block> {
             }
         }
     }
+    getStream(req: DataSourceStreamOptions): DataSourceStream<Block> {
 
-    getStream(req: StreamRequest): BlockStream<Block> {
+        let range = req.range ?? {from: 0}
         let stream = this.ensureContinuity(
-            this.ingest('confirmed', req),
-            req.from,
+            this.ingest('confirmed', range),
+            range.from,
             req.parentHash
         )
         return this.finalize(stream)
     }
 
-    finalize(stream: AsyncIterable<IngestBatch>): BlockStream<Block> {
+    finalize(stream: AsyncIterable<IngestBatch>): DataSourceStream<Block> {
         return finalize(this.rpc, stream)
     }
 
@@ -99,10 +101,7 @@ export class SolanaRpcDataSource implements DataSource<Block> {
                     }
                     throw new ForkException(
                         parentHash,
-                        {
-                            number: block.slot,
-                            hash: block.block.blockhash
-                        },
+                        block.slot,
                         [{
                             number: block.block.parentSlot,
                             hash: block.block.previousBlockhash

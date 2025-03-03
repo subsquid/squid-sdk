@@ -1,12 +1,8 @@
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
-import {BlockInfo} from '@subsquid/solana-rpc'
-import {Base58Bytes} from '@subsquid/solana-rpc-data'
-import {addErrorContext, def, last} from '@subsquid/util-internal'
+import {def, last} from '@subsquid/util-internal'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
 import {
     applyRangeBound,
-    FiniteRange,
-    getSize,
     mergeRangeRequests,
     Range,
     RangeRequest,
@@ -14,7 +10,7 @@ import {
 } from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {getFields} from './data/fields'
-import {Block, BlockHeader, FieldSelection} from './data/model'
+import {Block, FieldSelection} from './data/model'
 import {PartialBlock} from './data/partial'
 import {
     BalanceRequest,
@@ -25,11 +21,9 @@ import {
     TokenBalanceRequest,
     TransactionRequest,
 } from './data/request'
-import {SolanaRpcClient} from './rpc/client'
-import {RpcDataSource} from './rpc/source'
 import {PortalDataSource} from './archive/source'
 import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
-import {BlockRef, DataSource, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
+import {BlockRef, DataSource, DataSourceStream, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
 
 export interface GatewaySettings {
     /**
@@ -52,40 +46,6 @@ export interface PortalSettings extends Omit<PortalClientOptions, 'http'> {
     retryAttempts?: number
 }
 
-
-export interface RpcSettings {
-    /**
-     * RPC client
-     */
-    client: SolanaRpcClient
-    /**
-     * `getBlock` batch call size.
-     *
-     * Default is `5`.
-     */
-    strideSize?: number
-    /**
-     * Maximum number of concurrent `getBlock` batch calls.
-     *
-     * Default is `10`
-     */
-    strideConcurrency?: number
-    /**
-     * Minimum distance from finalized head below which concurrent
-     * fetch procedure is allowed.
-     *
-     * Default is `50` blocks.
-     *
-     * Concurrent fetch procedure can perform multiple `getBlock` batch calls simultaneously and is faster,
-     * but assumes consistent behaviour of RPC endpoint.
-     *
-     * The latter might not be the case due to load balancing,
-     * when one request is sent to node `A` with head slot `X` and
-     * another to node `B` with head slot `X - 10`.
-     */
-    concurrentFetchThreshold?: number
-}
-
 interface BlockRange {
     range?: Range
 }
@@ -94,8 +54,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
-    private archive?: (GatewaySettings & {type: 'gateway'}) | (PortalSettings & {type: 'portal'})
-    private rpc?: RpcSettings
+    private archive?: PortalSettings
 
     /**
      * Set SQD Network Portal endpoint.
@@ -107,20 +66,11 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
      * source.setGateway('https://portal.sqd.dev/datasets/solana-mainnet')
      */
     setPortal(url: string | PortalSettings): this {
-        assert(this.archive?.type !== 'gateway', '.setPortal() can not be used together with .setGateway()')
         if (typeof url == 'string') {
-            this.archive = {url, type: 'portal'}
+            this.archive = {url}
         } else {
-            this.archive = {...url, type: 'portal'}
+            this.archive = {...url}
         }
-        return this
-    }
-
-    /**
-     * Set up RPC data ingestion
-     */
-    setRpc(settings?: RpcSettings): this {
-        this.rpc = settings
         return this
     }
 
@@ -252,7 +202,6 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         return new SolanaDataSource(
             this.getRequests(),
             this.archive,
-            this.rpc
         ) as DataSource<Block<F>>
     }
 }
@@ -260,118 +209,46 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
 export type GetDataSourceBlock<T> = T extends DataSource<infer B> ? B : never
 
 class SolanaDataSource implements DataSource<PartialBlock> {
-    private rpc?: RpcDataSource
     private isConsistent?: boolean
     private ranges: Range[]
 
     constructor(
         private requests: RangeRequestList<DataRequest>,
         private archiveSettings?: PortalSettings,
-        rpcSettings?: RpcSettings
     ) {
-        assert(this.archiveSettings || rpcSettings, 'either archive or RPC should be provided')
-        if (rpcSettings) {
-            this.rpc = new RpcDataSource(rpcSettings, this.requests)
-        }
         this.ranges = this.requests.map((req) => req.range)
+    }
+    getFinalizedStream(req: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
+        throw new Error('Method not implemented.')
     }
 
     getHead(): Promise<BlockRef | undefined> {
-        if (this.rpc) {
-            return this.rpc.getHead()
-        } else {
-            return this.createArchive().getHead()
-        }
+        return this.createArchive().getHead()
     }
 
     getFinalizedHead(): Promise<BlockRef | undefined> {
-        if (this.rpc) {
-            return this.rpc.getFinalizedHead()
-        } else {
-            return this.createArchive().getFinalizedHead()
-        }
+        return this.createArchive().getFinalizedHead()
     }
 
-    async getBlockHash(height: number): Promise<Base58Bytes | undefined> {
-        await this.assertConsistency()
-        if (this.archiveSettings == null) {
-            assert(this.rpc)
-            return this.rpc.getBlockHash(height)
-        } else {
-            let archive = this.createArchive()
-            let hash = await archive.getBlockHash(height)
-            if (hash == null && this.rpc) {
-                hash = await this.rpc.getBlockHash(height)
-            }
-            return hash
-        }
-    }
-
-    private async assertConsistency(): Promise<void> {
-        if (this.isConsistent || this.archiveSettings == null || this.rpc == null) return
-        let blocks = await this.performConsistencyCheck().catch(err => {
-            throw addErrorContext(
-                new Error(`Failed to check consistency between Subsquid Gateway and RPC endpoints`),
-                {reason: err}
-            )
-        })
-        if (blocks == null) {
-            this.isConsistent = true
-        } else {
-            throw addErrorContext(
-                new Error(`Provided SQD Portal and RPC endpoints don't agree on slot ${blocks.archiveBlock.number}`),
-                blocks
-            )
-        }
-    }
-
-    private async performConsistencyCheck(): Promise<{
-        archiveBlock: BlockHeader
-        rpcBlock: BlockInfo | null
-    } | undefined> {
-        let archive = this.createArchive()
-        let height = await archive.getFinalizedHeight()
-        let archiveBlock = await archive.getBlockHeader(height)
-        let rpcBlock = await this.rpc!.getBlockInfo(archiveBlock.number)
-        if (rpcBlock?.blockhash === archiveBlock.hash && rpcBlock.blockHeight === archiveBlock.number) return
-        return {archiveBlock, rpcBlock: rpcBlock || null}
-    }
-
-    getBlocksCountInRange(range: FiniteRange): number {
-        return getSize(this.ranges, range)
-    }
-
-    async *getStream(opts?: DataSourceStreamOptions | number) {
-        await this.assertConsistency()
-
-        opts = typeof opts === 'number' ? {range: {from: opts}} : opts
-
+    async *getStream(opts?: DataSourceStreamOptions) {
         let from = opts?.range?.from ?? 0
-        let parentBlockHash = opts?.parentBlockHash
+        let parentHash = opts?.parentHash
         if (this.archiveSettings) {
             let agent = new HttpAgent({keepAlive: true})
             try {
                 let archive = this.createArchive(agent)
                 for await (let batch of archive.getStream({
                     range: {from, to: opts?.range?.to},
-                    stopOnHead: opts?.stopOnHead || !!this.rpc,
-                    parentBlockHash,
+                    stopOnHead: opts?.stopOnHead,
+                    parentHash,
                 })) {
                     yield batch
                     from = last(batch.blocks).header.number + 1
-                    parentBlockHash = last(batch.blocks).header.hash
+                    parentHash = last(batch.blocks).header.hash
                 }
             } finally {
                 agent.close()
             }
-        }
-
-        if (this.rpc) {
-            yield* this.rpc.getStream({
-                range: {from, to: opts?.range?.to},
-                stopOnHead: opts?.stopOnHead,
-                parentBlockHash,
-            })
         }
     }
 
