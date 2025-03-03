@@ -13,7 +13,7 @@ const dataSource = new DataSourceBuilder()
     // Provide Subsquid Network Gateway URL.
     .setPortal({
         url: 'https://portal.sqd.dev/datasets/solana-mainnet',
-        minBytes: 100 * 1024 * 1024,
+        minBytes: 1000 * 1024 * 1024,
         headPollInterval: 0
     })
     // Subsquid Network is always about 1000 blocks behind the head.

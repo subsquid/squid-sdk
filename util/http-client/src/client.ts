@@ -282,13 +282,7 @@ export class HttpClient {
             if (timer != null) {
                 clearTimeout(timer)
             }
-            if (req.signal && res?.stream && res.body.readable) {
-                (res.body as NodeJS.ReadableStream).on('end', () => {
-                    req.signal?.removeEventListener('abort', abort)
-                })
-            } else {
-                req.signal?.removeEventListener('abort', abort)
-            }
+            req.signal?.removeEventListener('abort', abort)
         }
     }
 
