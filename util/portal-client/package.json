@@ -24,8 +24,8 @@
     "@subsquid/util-timeout": "^2.3.2"
   },
   "peerDependencies": {
-    "@subsquid/http-client": "^1.5.0",
-    "@subsquid/logger": "^1.3.3"
+    "@subsquid/http-client": "^1.6.0",
+    "@subsquid/logger": "^1.4.0"
   },
   "peerDependenciesMeta": {
     "@subsquid/logger": {
@@ -33,9 +33,9 @@
     }
   },
   "devDependencies": {
-    "@subsquid/http-client": "^1.5.0",
-    "@subsquid/logger": "^1.3.3",
+    "@subsquid/http-client": "^1.6.0",
+    "@subsquid/logger": "^1.4.0",
     "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4"
   }
 }
