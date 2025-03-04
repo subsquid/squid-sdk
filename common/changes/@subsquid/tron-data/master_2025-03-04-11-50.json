@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-data",
+      "comment": "support negative tx.fee_limit",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/tron-data"
+}
