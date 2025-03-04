@@ -218,9 +218,6 @@ class SolanaDataSource implements DataSource<PartialBlock> {
     ) {
         this.ranges = this.requests.map((req) => req.range)
     }
-    getFinalizedStream(req: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
-        throw new Error('Method not implemented.')
-    }
 
     getHead(): Promise<BlockRef | undefined> {
         return this.createArchive().getHead()
@@ -230,18 +227,35 @@ class SolanaDataSource implements DataSource<PartialBlock> {
         return this.createArchive().getFinalizedHead()
     }
 
-    async *getStream(opts?: DataSourceStreamOptions) {
+    getFinalizedStream(opts: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
+        return this._getStream(opts, true)
+    }
+
+    getStream(opts?: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
+        return this._getStream(opts, false)
+    }
+
+    private async *_getStream(opts?: DataSourceStreamOptions, finalized?: boolean): DataSourceStream<PartialBlock> {
         let from = opts?.range?.from ?? 0
         let parentHash = opts?.parentHash
         if (this.archiveSettings) {
             let agent = new HttpAgent({keepAlive: true})
             try {
                 let archive = this.createArchive(agent)
-                for await (let batch of archive.getStream({
-                    range: {from, to: opts?.range?.to},
-                    stopOnHead: opts?.stopOnHead,
-                    parentHash,
-                })) {
+
+                let stream = finalized
+                    ? archive.getFinalizedStream({
+                          range: {from, to: opts?.range?.to},
+                          stopOnHead: opts?.stopOnHead,
+                          parentHash,
+                      })
+                    : archive.getStream({
+                          range: {from, to: opts?.range?.to},
+                          stopOnHead: opts?.stopOnHead,
+                          parentHash,
+                      })
+
+                for await (let batch of stream) {
                     yield batch
                     from = last(batch.blocks).header.number + 1
                     parentHash = last(batch.blocks).header.hash

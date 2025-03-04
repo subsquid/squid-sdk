@@ -69,7 +69,7 @@ class Processor<B extends BlockBase, S> {
         private db: Database<S>,
         private handler: (ctx: DataHandlerContext<B, S>) => Promise<void>
     ) {
-        this.chainHeight = new Throttler(() => this.src.getHead()?.then((r) => r?.number ?? -1), 30_000)
+        this.chainHeight = new Throttler(() => this.src.getFinalizedHead()?.then((r) => r?.number ?? -1), 30_000)
     }
 
     async run(): Promise<void> {
@@ -95,10 +95,9 @@ class Processor<B extends BlockBase, S> {
                 let prevBlockNumber = head.height
                 let prevBlockHash = head.height < 0 ? undefined : head.hash
 
-                let stream = this.src.getStream({
-                    range: {from: prevBlockNumber + 1},
-                    parentHash: prevBlockHash,
-                })
+                let stream = this.db.supportsHotBlocks
+                    ? this.src.getStream({range: {from: prevBlockNumber + 1}, parentHash: prevBlockHash})
+                    : this.src.getFinalizedStream({range: {from: prevBlockNumber + 1}, parentHash: prevBlockHash})
 
                 for await (let data of stream) {
                     let finalizedHead: HashAndHeight =

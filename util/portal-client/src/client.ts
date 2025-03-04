@@ -1,4 +1,4 @@
-import {HttpClient, HttpError} from '@subsquid/http-client'
+import {HttpClient, HttpError, HttpResponse} from '@subsquid/http-client'
 import {
     addErrorContext,
     createFuture,
@@ -224,42 +224,7 @@ export class PortalClient {
                 request,
                 stopOnHead,
             },
-            async (q, o) => {
-                // NOTE: we emulate the same behavior as will be implemented for hot blocks stream,
-                // but unfortunately we don't have any information about finalized block hash at the moment
-                let finalizedHead = {
-                    number: await this.getFinalizedHeight(o),
-                    hash: '',
-                }
-
-                let res = await this.client
-                    .request<Readable>('POST', this.getDatasetUrl('finalized-stream'), {
-                        ...o,
-                        json: q,
-                        stream: true,
-                    })
-                    .catch(
-                        withErrorContext({
-                            query: q,
-                        })
-                    )
-
-                switch (res.status) {
-                    case 200:
-                        let stream = Readable.toWeb(res.body) as ReadableStream<Uint8Array>
-
-                        return {
-                            finalizedHead,
-                            stream: stream
-                                .pipeThrough(new TextDecoderStream('utf8'))
-                                .pipeThrough(new LineSplitStream('\n')),
-                        }
-                    case 204:
-                        return undefined
-                    default:
-                        throw unexpectedCase(res.status)
-                }
-            }
+            async (q, o) => this.getStreamRequest('finalized-stream', q, o)
         )
     }
 
@@ -288,67 +253,59 @@ export class PortalClient {
                 request,
                 stopOnHead,
             },
-            async (q, o) => {
-                try {
-                    let res = await this.client
-                        .request<Readable | undefined>('POST', this.getDatasetUrl('stream'), {
-                            ...o,
-                            json: q,
-                            stream: true,
-                        })
-                        .catch(
-                            withErrorContext({
-                                query: q,
-                            })
-                        )
-
-                    switch (res.status) {
-                        case 200:
-                            let finalizedHeadHash = res.headers.get('X-Sqd-Finalized-Head-Hash')
-                            let finalizedHeadNumber = res.headers.get('X-Sqd-Finalized-Head-Number')
-
-                            let finalizedHead: BlockRef | undefined =
-                                finalizedHeadHash != null && finalizedHeadNumber != null
-                                    ? {
-                                          hash: finalizedHeadHash,
-                                          number: parseInt(finalizedHeadNumber),
-                                      }
-                                    : undefined
-
-                            let stream = res.body ? (Readable.toWeb(res.body) as ReadableStream<Uint8Array>) : undefined
-
-                            return {
-                                finalizedHead,
-                                stream: stream
-                                    ?.pipeThrough(new TextDecoderStream('utf8'))
-                                    ?.pipeThrough(new LineSplitStream('\n')),
-                            }
-                        case 204:
-                            return undefined
-                        default:
-                            throw unexpectedCase(res.status)
-                    }
-                } catch (e: unknown) {
-                    if (
-                        e instanceof HttpError &&
-                        e.response.status === 409 &&
-                        q.fromBlock &&
-                        q.parentBlockHash &&
-                        e.response.body.lastBlocks
-                    ) {
-                        let blocks = e.response.body.lastBlocks as BlockRef[]
-                        e = new ForkException(blocks, {
-                            fromBlock: q.fromBlock,
-                            parentBlockHash: q.parentBlockHash,
-                        })
-                    }
-
-                    throw addErrorContext(e as any, {
-                        query,
-                    })
-                }
-            }
+            async (q, o) => this.getStreamRequest('stream', q, o)
         )
+    }
+
+    private async getStreamRequest(path: string, query: PortalQuery, options?: PortalRequestOptions) {
+        try {
+            let res = await this.client
+                .request<Readable | undefined>('POST', this.getDatasetUrl(path), {
+                    ...options,
+                    json: query,
+                    stream: true,
+                })
+                .catch(
+                    withErrorContext({
+                        query: query,
+                    })
+                )
+
+            switch (res.status) {
+                case 200:
+                    let finalizedHead = getFinalizedHeadHeader(res.headers)
+                    let stream = res.body ? (Readable.toWeb(res.body) as ReadableStream<Uint8Array>) : undefined
+
+                    return {
+                        finalizedHead,
+                        stream: stream
+                            ?.pipeThrough(new TextDecoderStream('utf8'))
+                            ?.pipeThrough(new LineSplitStream('\n')),
+                    }
+                case 204:
+                    return undefined
+                default:
+                    throw unexpectedCase(res.status)
+            }
+        } catch (e: unknown) {
+            if (
+                e instanceof HttpError &&
+                e.response.status === 409 &&
+                query.fromBlock &&
+                query.parentBlockHash &&
+                e.response.body.lastBlocks
+            ) {
+                let blocks = e.response.body.lastBlocks as BlockRef[]
+                e = new ForkException(blocks, {
+                    fromBlock: query.fromBlock,
+                    parentBlockHash: query.parentBlockHash,
+                })
+            }
+
+            throw addErrorContext(e as any, {
+                query,
+            })
+        }
     }
 }
 
@@ -659,4 +616,16 @@ export function isForkException(err: unknown): err is ForkException {
     if (err instanceof ForkException) return true
     if (err instanceof Error && err.name === 'ForkError') return true
     return false
+}
+
+function getFinalizedHeadHeader(headers: HttpResponse['headers']) {
+    let finalizedHeadHash = headers.get('X-Sqd-Finalized-Head-Hash')
+    let finalizedHeadNumber = headers.get('X-Sqd-Finalized-Head-Number')
+
+    return finalizedHeadHash != null && finalizedHeadNumber != null
+        ? {
+              hash: finalizedHeadHash,
+              number: parseInt(finalizedHeadNumber),
+          }
+        : undefined
 }

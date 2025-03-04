@@ -62,11 +62,15 @@ export class PortalDataSource implements DataSource<PartialBlock> {
         return blocks[0].header as BlockHeader
     }
 
-    getFinalizedStream(req: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
-        throw new Error('Method not implemented.')
+    getFinalizedStream(opts?: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
+        return this._getStream(opts, true)
     }
 
-    async *getStream(opts?: DataSourceStreamOptions) {
+    getStream(opts?: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
+        return this._getStream(opts, false)
+    }
+
+    private async *_getStream(opts?: DataSourceStreamOptions, finalized?: boolean): DataSourceStream<PartialBlock> {
         let requests = applyRangeBound(this.requests, opts?.range)
 
         let archiveRequests = mapRangeRequestList(requests, (req) => {
@@ -110,7 +114,9 @@ export class PortalDataSource implements DataSource<PartialBlock> {
                         },
                     }
 
-                    for await (let data of this.client.getStream(q)) {
+                    let stream = finalized ? this.client.getFinalizedStream(q) : this.client.getStream(q)
+
+                    for await (let data of stream) {
                         let finalizedHead = data.finalizedHead
                         if (finalizedHead != null && finalizedHead.number >= parentBlockNumber) {
                             // the gap is already finalized, we can skip it
