@@ -1,4 +1,4 @@
-import {HttpClient, HttpError, HttpResponse} from '@subsquid/http-client'
+import {HttpClient, HttpClientOptions, HttpError, HttpResponse} from '@subsquid/http-client'
 import {
     addErrorContext,
     createFuture,
@@ -19,7 +19,7 @@ export interface PortalClientOptions {
     /**
      * Optional custom HTTP client to use.
      */
-    http?: HttpClient
+    http?: HttpClient | HttpClientOptions
 
     /**
      * Minimum number of bytes to return.
@@ -112,7 +112,7 @@ export class PortalClient {
 
     constructor(options: PortalClientOptions) {
         this.url = new URL(options.url)
-        this.client = options.http || new HttpClient()
+        this.client = options.http instanceof HttpClient ? options.http : new HttpClient(options.http)
         this.headPollInterval = options.headPollInterval ?? 0
         this.minBytes = options.minBytes ?? 10 * 1024 * 1024
         this.maxBytes = options.maxBytes ?? this.minBytes
