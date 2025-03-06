@@ -1,15 +1,11 @@
-import {createLogger} from '@subsquid/logger'
-import {archive, Journal, mapRpcBlock, removeVotes} from '@subsquid/solana-normalization'
-import {GetBlock} from '@subsquid/solana-rpc-data'
-import {addErrorContext, def} from '@subsquid/util-internal'
+import {addErrorContext} from '@subsquid/util-internal'
 import {Command, Ingest, IngestOptions, Range} from '@subsquid/util-internal-ingest-cli'
 import {toJSON} from '@subsquid/util-internal-json'
-import {assertValidity, B58, NAT, object} from '@subsquid/util-internal-validation'
+import {mapRawBlock, RawBlock} from './mapping'
 
 
 interface Options extends IngestOptions {
     votes: boolean
-    relaxed?: boolean
 }
 
 
@@ -30,66 +26,20 @@ export class SolanaIngest extends Ingest<Options> {
             }
         })
         program.option('--no-votes', 'Exclude vote transactions')
-        program.option('--relaxed', 'Do not crush on log parsing failure')
-    }
-
-    @def
-    private mapping(): (raw: unknown) => object {
-        let votes = this.options().votes
-        let relaxed = this.options().relaxed
-
-        let RawBlock = object({
-            hash: B58,
-            number: NAT,
-            parentNumber: NAT,
-            block: GetBlock
-        })
-
-        let loggingJournal = createLogger('sqd:solana-normalization')
-
-        let failingJournal: Journal = {
-            warn: function(props: any, msg: string): void {
-                throw addErrorContext(new Error(msg), props)
-            },
-            error: function(props: any, msg: string): void {
-                throw addErrorContext(new Error(msg), props)
-            }
-        }
-
-        return function mapRawBlock(raw: unknown): object {
-            assertValidity(RawBlock, raw)
-
-            let journal = relaxed ? loggingJournal.child({
-                blockSlot: raw.number,
-                blockHash: raw.hash
-            }) : failingJournal
-
-            let normalized = mapRpcBlock(raw.number, raw.block, journal)
-            if (!votes) {
-                removeVotes(normalized)
-            }
-            return archive.toArchiveBlock(normalized)
-        }
     }
 
     protected async *getBlocks(range: Range): AsyncIterable<object[]> {
-        let mapping = this.mapping()
-
-        let stream = this.archive().getRawBlocks({
-            ...range,
-            chunksLimit: this.isService() ? 10 : Number.MAX_SAFE_INTEGER
-        })
-
-        for await (let batch of stream) {
-            yield batch.map(raw => {
+        let votes = this.options().votes
+        for await (let blocks of this.archive().getRawBlocks<RawBlock>(range)) {
+            yield blocks.map(raw => {
                 try {
-                    let block = mapping(raw)
+                    let block = mapRawBlock(raw, !votes)
                     return toJSON(block)
                 } catch(err: any) {
-                    let block = raw as any ?? {}
                     throw addErrorContext(err, {
-                        blockNumber: block.number,
-                        blockHash: block.hash
+                        blockHash: raw.hash,
+                        blockHeight: raw.height,
+                        blockSlot: raw.slot
                     })
                 }
             })

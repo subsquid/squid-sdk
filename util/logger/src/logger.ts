@@ -140,7 +140,6 @@ function addAttributes(src: any, target: any) {
             case 'level':
             case 'ns':
             case 'msg':
-                target['_' + key] = val
                 break
             default:
                 target[key] = val
