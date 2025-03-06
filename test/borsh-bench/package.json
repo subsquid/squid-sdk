@@ -12,6 +12,6 @@
     "@subsquid/util-internal-json": "^1.2.3",
     "@subsquid/util-internal-read-lines": "^1.2.2",
     "bs58": "^5.0.0",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4"
   }
 }

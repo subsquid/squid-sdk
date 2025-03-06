@@ -1,7 +1,14 @@
-import {Block, ingestFinalizedBlocks, Rpc} from '@subsquid/solana-rpc'
+import {Block as RpcBlock, Rpc, SolanaRpcDataSource} from '@subsquid/solana-rpc'
 import {def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
-import assert from 'assert'
+
+
+interface Block {
+    hash: string
+    number: number
+    parentNumber: number
+    block: RpcBlock['block']
+}
 
 
 interface Options extends DumperOptions {
@@ -42,60 +49,35 @@ export class SolanaDumper extends Dumper<Block, Options> {
         return 8192
     }
 
-    protected getPrevBlockHash(block: Block): string {
+    protected getParentBlockHash(block: Block): string {
         return block.block.previousBlockhash
     }
 
     @def
-    private solanaRpc(): Rpc {
-        return new Rpc(this.rpc())
+    private dataSource(): SolanaRpcDataSource {
+        return new SolanaRpcDataSource({
+            rpc: new Rpc(this.rpc()),
+            req: {transactions: true, rewards: true},
+            strideSize: this.options().strideSize,
+            strideConcurrency: this.options().strideConcurrency
+        })
+    }
+
+    protected async getLastFinalizedBlockNumber(): Promise<number> {
+        let head = await this.dataSource().getFinalizedHead()
+        return head.number
     }
 
     protected async* getBlocks(range: Range): AsyncIterable<Block[]> {
-        let blockStream = ingestFinalizedBlocks({
-            rpc: this.solanaRpc(),
-            requests: [{
-                range,
-                request: {
-                    rewards: true,
-                    transactions: true
+        for await (let batch of this.dataSource().getFinalizedStream(range)) {
+            yield batch.blocks.map(block => {
+                return {
+                    hash: block.block.blockhash,
+                    number: block.slot,
+                    parentNumber: block.block.parentSlot,
+                    block: block.block
                 }
-            }],
-            headPollInterval: 10_000,
-            strideSize: this.options().strideSize,
-            strideConcurrency: this.options().strideConcurrency,
-            concurrentFetchThreshold: 100
-        })
-
-        let prev: Block | undefined
-
-        for await (let batch of blockStream) {
-            for (let block of batch) {
-                if (prev) {
-                    assert(block.block.parentSlot === prev.slot)
-                    assert(block.block.previousBlockhash === prev.block.blockhash)
-                    assert(block.height === prev.height + 1)
-                }
-                prev = block
-                checkLogMessages(block)
-            }
-            yield batch
-        }
-    }
-
-    protected getFinalizedHeight(): Promise<number> {
-        return this.solanaRpc().getFinalizedHeight()
-    }
-}
-
-
-function checkLogMessages(block: Block): void {
-    // Seems there were issues with logging during the ancient times
-    if (block.height < 130000000) return
-
-    for (let tx of block.block.transactions!) {
-        if (tx.meta.logMessages == null) {
-            throw new Error(`Log message recording was not enabled for transaction ${tx.transaction.signatures[0]} at slot ${block.slot}`)
+            })
         }
     }
 }

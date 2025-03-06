@@ -4,6 +4,7 @@
 /*/*/lib/
 
 # Large files not needed in docker containers
+/solana/solana-normalization/fixtures
 /test/data/chain
 /test/types/gen
 /test/borsh-bench/data
