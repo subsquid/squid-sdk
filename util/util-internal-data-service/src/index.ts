@@ -1,4 +1,4 @@
-import {BlockBatch, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-source'
+import {BlockBatch, DataSourceStream, DataSource, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
 import {ListeningServer} from '@subsquid/util-internal-http-server'
 import {DataService} from './data-service'
 import {createHttpApp} from './http-app'
@@ -10,9 +10,9 @@ export {
     BlockBatch,
     BlockHeader,
     BlockRef,
-    BlockStream,
     DataSource,
-    StreamRequest
+    DataSourceStream,
+    DataSourceStreamOptions
 }
 
 

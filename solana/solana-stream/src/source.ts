@@ -1,22 +1,16 @@
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
-import {BlockInfo} from '@subsquid/solana-rpc'
-import {Base58Bytes} from '@subsquid/solana-rpc-data'
-import {addErrorContext, def, last} from '@subsquid/util-internal'
-import {ArchiveClient} from '@subsquid/util-internal-archive-client'
+import {def, last} from '@subsquid/util-internal'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
 import {
     applyRangeBound,
-    FiniteRange,
-    getSize,
     mergeRangeRequests,
     Range,
     RangeRequest,
-    RangeRequestList
+    RangeRequestList,
 } from '@subsquid/util-internal-range'
 import assert from 'assert'
-import {SolanaArchive} from './archive/source'
 import {getFields} from './data/fields'
-import {Block, BlockHeader, FieldSelection} from './data/model'
+import {Block, FieldSelection} from './data/model'
 import {PartialBlock} from './data/partial'
 import {
     BalanceRequest,
@@ -25,11 +19,11 @@ import {
     LogRequest,
     RewardRequest,
     TokenBalanceRequest,
-    TransactionRequest
+    TransactionRequest,
 } from './data/request'
-import {SolanaRpcClient} from './rpc/client'
-import {RpcDataSource} from './rpc/source'
-
+import {PortalDataSource} from './archive/source'
+import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
+import {BlockRef, DataSource, DataSourceStream, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
 
 export interface GatewaySettings {
     /**
@@ -43,75 +37,40 @@ export interface GatewaySettings {
 }
 
 
-export interface RpcSettings {
+export interface PortalSettings extends Omit<PortalClientOptions, 'http'> {
     /**
-     * RPC client
+     * Request timeout in ms
      */
-    client: SolanaRpcClient
-    /**
-     * `getBlock` batch call size.
-     *
-     * Default is `5`.
-     */
-    strideSize?: number
-    /**
-     * Maximum number of concurrent `getBlock` batch calls.
-     *
-     * Default is `10`
-     */
-    strideConcurrency?: number
-    /**
-     * Minimum distance from finalized head below which concurrent
-     * fetch procedure is allowed.
-     *
-     * Default is `50` blocks.
-     *
-     * Concurrent fetch procedure can perform multiple `getBlock` batch calls simultaneously and is faster,
-     * but assumes consistent behaviour of RPC endpoint.
-     *
-     * The latter might not be the case due to load balancing,
-     * when one request is sent to node `A` with head slot `X` and
-     * another to node `B` with head slot `X - 10`.
-     */
-    concurrentFetchThreshold?: number
-}
+    requestTimeout?: number
 
+    retryAttempts?: number
+}
 
 interface BlockRange {
     range?: Range
 }
 
-
 export class DataSourceBuilder<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
-    private archive?: GatewaySettings
-    private rpc?: RpcSettings
+    private archive?: PortalSettings
 
     /**
-     * Set Subsquid Network Gateway endpoint (ex Archive).
+     * Set SQD Network Portal endpoint.
      *
-     * Subsquid Network allows to get data from finalized blocks up to
+     * SQD Network allows to get data from blocks up to
      * infinite times faster and more efficient than via regular RPC.
      *
      * @example
-     * source.setGateway('https://v2.archive.subsquid.io/network/solana-mainnet')
+     * source.setGateway('https://portal.sqd.dev/datasets/solana-mainnet')
      */
-    setGateway(url: string | GatewaySettings): this {
+    setPortal(url: string | PortalSettings): this {
         if (typeof url == 'string') {
             this.archive = {url}
         } else {
-            this.archive = url
+            this.archive = {...url}
         }
-        return this
-    }
-
-    /**
-     * Set up RPC data ingestion
-     */
-    setRpc(settings?: RpcSettings): this {
-        this.rpc = settings
         return this
     }
 
@@ -243,145 +202,93 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         return new SolanaDataSource(
             this.getRequests(),
             this.archive,
-            this.rpc
         ) as DataSource<Block<F>>
     }
 }
 
-
-export interface DataSource<Block> {
-    getFinalizedHeight(): Promise<number>
-    getBlockHash(height: number): Promise<Base58Bytes | undefined>
-    getBlocksCountInRange(range: FiniteRange): number
-    getBlockStream(fromBlockHeight?: number): AsyncIterable<Block[]>
-}
-
-
 export type GetDataSourceBlock<T> = T extends DataSource<infer B> ? B : never
 
-
 class SolanaDataSource implements DataSource<PartialBlock> {
-    private rpc?: RpcDataSource
     private isConsistent?: boolean
     private ranges: Range[]
 
     constructor(
         private requests: RangeRequestList<DataRequest>,
-        private archiveSettings?: GatewaySettings,
-        rpcSettings?: RpcSettings
+        private archiveSettings?: PortalSettings,
     ) {
-        assert(this.archiveSettings || rpcSettings, 'either archive or RPC should be provided')
-        if (rpcSettings) {
-            this.rpc = new RpcDataSource(rpcSettings)
-        }
-        this.ranges = this.requests.map(req => req.range)
+        this.ranges = this.requests.map((req) => req.range)
     }
 
-    getFinalizedHeight(): Promise<number> {
-        if (this.rpc) {
-            return this.rpc.getFinalizedHeight()
-        } else {
-            return this.createArchive().getFinalizedHeight()
-        }
+    getHead(): Promise<BlockRef | undefined> {
+        return this.createArchive().getHead()
     }
 
-    async getBlockHash(height: number): Promise<Base58Bytes | undefined> {
-        await this.assertConsistency()
-        if (this.archiveSettings == null) {
-            assert(this.rpc)
-            return this.rpc.getBlockHash(height)
-        } else {
-            let archive = this.createArchive()
-            let head = await archive.getFinalizedHeight()
-            if (head >= height) return archive.getBlockHash(height)
-            if (this.rpc) return this.rpc.getBlockHash(height)
-        }
+    getFinalizedHead(): Promise<BlockRef | undefined> {
+        return this.createArchive().getFinalizedHead()
     }
 
-    private async assertConsistency(): Promise<void> {
-        if (this.isConsistent || this.archiveSettings == null || this.rpc == null) return
-        let blocks = await this.performConsistencyCheck().catch(err => {
-            throw addErrorContext(
-                new Error(`Failed to check consistency between Subsquid Gateway and RPC endpoints`),
-                {reason: err}
-            )
-        })
-        if (blocks == null) {
-            this.isConsistent = true
-        } else {
-            throw addErrorContext(
-                new Error(`Provided Subsquid Gateway and RPC endpoints don't agree on slot ${blocks.archiveBlock.slot}`),
-                blocks
-            )
-        }
+    getFinalizedStream(opts: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
+        return this._getStream(opts, true)
     }
 
-    private async performConsistencyCheck(): Promise<{
-        archiveBlock: BlockHeader
-        rpcBlock: BlockInfo | null
-    } | undefined> {
-        let archive = this.createArchive()
-        let height = await archive.getFinalizedHeight()
-        let archiveBlock = await archive.getBlockHeader(height)
-        let rpcBlock = await this.rpc!.getBlockInfo(archiveBlock.slot)
-        if (rpcBlock?.blockhash === archiveBlock.hash && rpcBlock.blockHeight === archiveBlock.height) return
-        return {archiveBlock, rpcBlock: rpcBlock || null}
+    getStream(opts?: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
+        return this._getStream(opts, false)
     }
 
-    getBlocksCountInRange(range: FiniteRange): number {
-        return getSize(this.ranges, range)
-    }
-
-    async *getBlockStream(fromBlockHeight?: number): AsyncIterable<PartialBlock[]> {
-        await this.assertConsistency()
-
-        let requests = fromBlockHeight == null
-            ? this.requests
-            : applyRangeBound(this.requests, {from: fromBlockHeight})
-
-        if (requests.length == 0) return
-
+    private async *_getStream(opts?: DataSourceStreamOptions, finalized?: boolean): DataSourceStream<PartialBlock> {
+        let from = opts?.range?.from ?? 0
+        let parentHash = opts?.parentHash
         if (this.archiveSettings) {
             let agent = new HttpAgent({keepAlive: true})
             try {
                 let archive = this.createArchive(agent)
-                let height = await archive.getFinalizedHeight()
-                let from = requests[0].range.from
-                if (height > from || !this.rpc) {
-                    for await (let batch of archive.getBlockStream(requests, !!this.rpc)) {
-                        yield batch
-                        from = last(batch).header.height + 1
-                    }
-                    requests = applyRangeBound(requests, {from})
+
+                let stream = finalized
+                    ? archive.getFinalizedStream({
+                          range: {from, to: opts?.range?.to},
+                          stopOnHead: opts?.stopOnHead,
+                          parentHash,
+                      })
+                    : archive.getStream({
+                          range: {from, to: opts?.range?.to},
+                          stopOnHead: opts?.stopOnHead,
+                          parentHash,
+                      })
+
+                for await (let batch of stream) {
+                    yield batch
+                    from = last(batch.blocks).header.number + 1
+                    parentHash = last(batch.blocks).header.hash
                 }
             } finally {
                 agent.close()
             }
         }
-
-        if (requests.length == 0) return
-
-        assert(this.rpc)
-
-        yield* this.rpc.getBlockStream(requests)
     }
 
-    private createArchive(agent?: HttpAgent): SolanaArchive {
+    private createArchive(agent?: HttpAgent): PortalDataSource {
         assert(this.archiveSettings)
 
-        let http = new HttpClient({
-            headers: {
-                'x-squid-id': this.getSquidId()
-            },
-            agent
-        })
+        let headers = {
+            'x-squid-id': this.getSquidId(),
+        }
 
-        return new SolanaArchive(
-            new ArchiveClient({
-                http,
+        return new PortalDataSource(
+            new PortalClient({
+                http: new HttpClient({
+                    headers,
+                    agent,
+                    httpTimeout: this.archiveSettings.requestTimeout,
+                    retryAttempts: this.archiveSettings.retryAttempts ?? Infinity,
+                }),
                 url: this.archiveSettings.url,
-                queryTimeout: this.archiveSettings.requestTimeout,
-            })
+                minBytes: this.archiveSettings.minBytes,
+                maxIdleTime: this.archiveSettings.maxIdleTime,
+                maxBytes: this.archiveSettings.maxBytes,
+                maxWaitTime: this.archiveSettings.maxWaitTime,
+                headPollInterval: this.archiveSettings.headPollInterval,
+            }),
+            this.requests
         )
     }
 

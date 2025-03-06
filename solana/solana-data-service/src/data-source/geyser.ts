@@ -3,7 +3,7 @@ import {createLogger} from '@subsquid/logger'
 import {Block, SolanaRpcDataSource} from '@subsquid/solana-rpc'
 import {Base58Bytes, GetBlock, Reward, Transaction} from '@subsquid/solana-rpc-data'
 import {addErrorContext, assertNotNull, AsyncQueue, last, Throttler, wait} from '@subsquid/util-internal'
-import {BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
+import {BlockRef, DataSourceStream, DataSource, DataSourceStreamOptions} from '@subsquid/util-internal-data-service'
 import Client, {
     CommitmentLevel,
     Reward as GeyserReward,
@@ -32,25 +32,29 @@ export class GeyserDataSource implements DataSource<Block> {
         assert(this.blockBufferSize > 0)
     }
 
+    getHead(): Promise<BlockRef> {
+        return this.rpc.getHead()
+    }
+
     getFinalizedHead(): Promise<BlockRef> {
         return this.rpc.getFinalizedHead()
     }
 
-    getFinalizedStream(req: StreamRequest): BlockStream<Block> {
+    getFinalizedStream(req: DataSourceStreamOptions): DataSourceStream<Block> {
         return this.rpc.getFinalizedStream(req)
     }
 
-    getStream(req: StreamRequest): BlockStream<Block> {
+    getStream(req: DataSourceStreamOptions): DataSourceStream<Block> {
         return this.rpc.finalize(
             this.rpc.ensureContinuity(
                 this.ingest(req),
-                req.from,
+                req.range?.from ?? 0,
                 req.parentHash
             )
         )
     }
 
-    private async *ingest(req: StreamRequest): BlockStream<Block> {
+    private async *ingest(req: DataSourceStreamOptions): DataSourceStream<Block> {
         let headTracker = new Throttler(() => this.rpc.getHead(), 2000).enablePrefetch()
         try {
             LOOP: while (true) {
@@ -78,7 +82,7 @@ export class GeyserDataSource implements DataSource<Block> {
         }
     }
 
-    private async ingestSession(req: StreamRequest, queue: AsyncQueue<IngestBatch>): Promise<void> {
+    private async ingestSession(req: DataSourceStreamOptions, queue: AsyncQueue<IngestBatch>): Promise<void> {
         while (!queue.isClosed()) {
             try {
                 await this.runSubscription(req, queue)
@@ -90,7 +94,9 @@ export class GeyserDataSource implements DataSource<Block> {
         }
     }
 
-    private async runSubscription(req: StreamRequest, queue: AsyncQueue<IngestBatch>): Promise<void> {
+    private async runSubscription(req: DataSourceStreamOptions, queue: AsyncQueue<IngestBatch>): Promise<void> {
+        let {range = {from: 0}} = req
+
         let stream = await this.geyser.subscribe()
 
         if (queue.isClosed()) {
@@ -163,11 +169,11 @@ export class GeyserDataSource implements DataSource<Block> {
                 }
                 lastBlock = block.slot
 
-                if (req.from > block.slot) {
+                if (range.from > block.slot) {
                     return
                 }
 
-                if (req.to != null && req.to < block.slot) {
+                if (range.to != null && range.to < block.slot) {
                     resolve()
                     return
                 }

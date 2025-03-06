@@ -36,8 +36,8 @@ export interface FieldSelection {
 
 export const DEFAULT_FIELDS = {
     block: {
-        slot: true,
-        parentSlot: true,
+        number: true,
+        // parentSlot: true,
         timestamp: true
     },
     transaction: {

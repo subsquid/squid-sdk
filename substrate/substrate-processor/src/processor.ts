@@ -32,6 +32,8 @@ import {
     GearUserMessageSentRequest
 } from './interfaces/data-request'
 import {getFieldSelectionValidator} from './selection'
+import {SubstratePortal} from './ds-portal'
+import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
 
 
 export interface RpcEndpointSettings {
@@ -91,6 +93,16 @@ export interface GatewaySettings {
      * Request timeout in ms
      */
     requestTimeout?: number
+}
+
+
+export interface PortalSettings extends Omit<PortalClientOptions, 'http'> {
+    /**
+     * Request timeout in ms
+     */
+    requestTimeout?: number
+
+    retryAttempts?: number
 }
 
 
@@ -160,7 +172,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private fields?: FieldSelection
     private blockRange?: Range
     private finalityConfirmation?: number
-    private archive?: GatewaySettings
+    private archive?: GatewaySettings & {type: 'gateway'} | PortalSettings & {type: 'portal'}
     private rpcEndpoint?: RpcEndpointSettings
     private rpcIngestSettings?: RpcDataIngestionSettings
     private typesBundle?: OldTypesBundle | OldSpecsBundle
@@ -184,11 +196,23 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
      * processor.setGateway('https://v2.archive.subsquid.io/network/kusama')
      */
     setGateway(url: string | GatewaySettings): this {
+        assert(this.archive?.type !== 'gateway', '.setGateway() can not be used together with setPortal()')
         this.assertNotRunning()
         if (typeof url == 'string') {
-            this.archive = {url}
+            this.archive = {type: 'gateway', url}
         } else {
-            this.archive = url
+            this.archive = {type: 'gateway', ...url}
+        }
+        return this
+    }
+
+    setPortal(url: string | PortalSettings): this {
+        assert(this.archive?.type !== 'gateway', '.setPortal() can not be used together with setGateway()')
+        this.assertNotRunning()
+        if (typeof url == 'string') {
+            this.archive = {type: 'portal', url}
+        } else {
+            this.archive = {type: 'portal', ...url}
         }
         return this
     }
@@ -475,31 +499,52 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     }
 
     @def
-    private getArchiveDataSource(): SubstrateArchive {
+    private getArchiveDataSource(): SubstrateArchive | SubstratePortal {
         let options = assertNotNull(this.archive)
 
         let log = this.getLogger().child('archive')
 
-        let http = new HttpClient({
-            headers: {
-                'x-squid-id': this.getSquidId()
-            },
-            agent: new HttpAgent({
-                keepAlive: true
-            }),
-            log
+        let headers = {
+            'x-squid-id': this.getSquidId(),
+        }
+        let agent = new HttpAgent({
+            keepAlive: true,
         })
 
-        return new SubstrateArchive({
-            client: new ArchiveClient({
-                http,
-                url: options.url,
-                queryTimeout: options.requestTimeout,
-                log
-            }),
-            rpc: this.getChainRpcClient(),
-            typesBundle: this.typesBundle
-        })
+        return options.type === 'gateway'
+            ? new SubstrateArchive({
+                client: new ArchiveClient({
+                    http: new HttpClient({
+                        headers,
+                        agent,
+                        log,
+                    }),
+                    url: options.url,
+                    queryTimeout: options.requestTimeout,
+                    log
+                }),
+                rpc: this.getChainRpcClient(),
+                typesBundle: this.typesBundle
+            })
+            : new SubstratePortal({
+                client: new PortalClient({
+                    http: new HttpClient({
+                        headers,
+                        agent,
+                        log,
+                        httpTimeout: options.requestTimeout,
+                        retryAttempts: options.retryAttempts ?? Infinity,
+                    }),
+                    url: options.url,
+                    minBytes: options.minBytes,
+                    maxIdleTime: options.maxIdleTime,
+                    maxBytes: options.maxBytes,
+                    maxWaitTime: options.maxWaitTime,
+                    headPollInterval: options.headPollInterval,
+                }),
+                rpc: this.getChainRpcClient(),
+                typesBundle: this.typesBundle
+            })
     }
 
     @def
