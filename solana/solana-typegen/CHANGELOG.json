@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-typegen",
   "entries": [
     {
+      "version": "0.5.0",
+      "tag": "@subsquid/solana-typegen_v0.5.0",
+      "date": "Thu, 06 Mar 2025 10:46:22 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add support for Shank tuple types"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.4.0",
       "tag": "@subsquid/solana-typegen_v0.4.0",
       "date": "Wed, 15 Jan 2025 18:59:13 GMT",

@@ -2,6 +2,18 @@
   "name": "@subsquid/tron-data",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/tron-data_v0.0.3",
+      "date": "Thu, 06 Mar 2025 10:46:22 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "support negative tx.fee_limit"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/tron-data_v0.0.2",
       "date": "Tue, 03 Dec 2024 11:47:42 GMT",
