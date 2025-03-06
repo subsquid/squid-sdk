@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-typegen",
+      "comment": "add support for Shank tuple types",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-typegen"
+}
