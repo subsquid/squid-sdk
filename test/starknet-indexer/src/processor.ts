@@ -8,7 +8,7 @@ import { Transfer } from './model'
 let logger = createLogger('sqd:indexer')
 
 const dataSource = new DataSourceBuilder()
-    //.setGateway('https://v2.archive.subsquid.io/network/starknet-mainnet')
+    .setGateway('https://v2.archive.subsquid.io/network/starknet-mainnet')
     .setRpc(process.env.STARKNET_NODE == null ? undefined : {
         client: new StarknetRpcClient({url: process.env.STARKNET_NODE})
     })

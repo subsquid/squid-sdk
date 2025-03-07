@@ -8,6 +8,7 @@ import {
     FiniteRange
 } from '@subsquid/util-internal-range'
 import {Block, BlockHeader, FieldSelection} from './data/model'
+import { BlockHeader as BlockHeaderRpc } from '@subsquid/starknet-rpc'
 import {
     DataRequest,
     EventRequest,
@@ -23,10 +24,6 @@ import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
 import {StarknetGateway} from './archive/source'
 import {StarknetRpcClient} from './rpc/client'
 import {RpcDataSource} from './rpc/source'
-
-
-// TODO: Import BlockInfo from starknet-rpc model
-type BlockInfo = any
 
 
 export interface GatewaySettings {
@@ -297,7 +294,7 @@ class StarknetDataSource implements DataSource<PartialBlock> {
 
     private async performConsistencyCheck(): Promise<{
         archiveBlock: BlockHeader
-        rpcBlock: BlockInfo | null
+        rpcBlock: BlockHeaderRpc | null
     } | undefined> {
         let archive = this.createGateway()
         let height = await archive.getFinalizedHeight()

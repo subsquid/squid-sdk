@@ -40,8 +40,10 @@ export class RpcDataSource {
         requests: RangeRequestList<DataRequest>,
         stopOnHead?: boolean | undefined
     ): AsyncIterable<PartialBlock[]> {
-        let blockStream = this.rpc.ingestFinalizedBlocks({
-            requests: toRpcRequests(requests),
+        let blockStream = this.rpc.ingestFinalizedBlocks(toRpcRequests(requests), {
+            headPollInterval: this.options.concurrentFetchThreshold,
+            splitSize: this.options.strideSize,
+            concurrency: this.options.strideConcurrency,
             stopOnHead,
         })
 
@@ -64,6 +66,11 @@ export class RpcDataSource {
 
 function toRpcRequests(requests: RangeRequestList<DataRequest>) {
     return mapRangeRequestList(requests, req => {
-        return req
+        let transactions = req.transactions?.length
+        let events = req.events?.length
+        return {
+            transactions: !!transactions,
+            events: !!events
+        }
     })
 }

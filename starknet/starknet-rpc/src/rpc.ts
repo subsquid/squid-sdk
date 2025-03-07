@@ -8,11 +8,18 @@ import {
     nullable,
     Validator
 } from '@subsquid/util-internal-validation'
+import {RangeRequestList, SplitRequest} from '@subsquid/util-internal-range'
+import {Batch, coldIngest} from '@subsquid/util-internal-ingest-tools'
+import {DataRequest} from './base'
 
 export type BlockHeader = Simplify<Omit<Block, 'transactions' | 'events'>>
 
-// TODO: list to implement in rpc:
-// not a method of rpc - ingestFinalizedBlocks (around starknet_getBlockWithTxs)
+export interface IngestOptions {
+    stopOnHead?: boolean
+    headPollInterval: number
+    splitSize: number
+    concurrency: number
+};
 
 export class Rpc {
     constructor(
@@ -44,20 +51,9 @@ export class Rpc {
         })
     }
 
-    getBlockBatch(requests: RangeRequestList<DataRequest>): Promise<(Block | null | undefined)[]> {
-        // Create an array of all block heights to fetch from the ranges
-        let heights: number[] = []
-        
-        for (const req of requests) {
-            const from = req.range.from
-            const to = req.range.to ?? from // If 'to' is not specified, use 'from'
-            for (let height = from; height <= to; height++) {
-                heights.push(height)
-            }
-        }
-
+    getBlockBatch(heights: number[]): Promise<(Block | null | undefined)[]> {
         // Prepare the RPC calls
-        let calls: RpcCall[] = new Array(heights.length)
+        let calls: {method: string, params?: any[]}[] = new Array(heights.length)
         for (let i = 0; i < heights.length; i++) {
             calls[i] = {
                 method: 'starknet_getBlockWithReceipts',
@@ -88,7 +84,29 @@ export class Rpc {
 
         return pack.flat()
     }
+    
+    ingestFinalizedBlocks(requests: RangeRequestList<DataRequest>, options: IngestOptions): AsyncIterable<Batch<Block>> {
+        return coldIngest({
+            getFinalizedHeight: () => this.getFinalizedHeight(),
+            getSplit: (req) => this.getSplitBlocks(req),
+            requests: requests,
+            concurrency: options.concurrency,
+            splitSize: options.splitSize,
+            stopOnHead: options.stopOnHead,
+            headPollInterval: options.headPollInterval
+        });
+    }
 
+    private async getSplitBlocks(req: SplitRequest<DataRequest>): Promise<Block[]> {
+        const heights: number[] = [];
+        for (let height = req.range.from; height <= req.range.to; height++) {
+            heights.push(height);
+        }
+    
+        const blocks = await this.getBlockBatch(heights);
+    
+        return blocks.filter((block): block is Block => block != null);
+    }
 }
 
 export function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
