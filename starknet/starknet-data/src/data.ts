@@ -152,6 +152,7 @@ export {
     ExecutionResources,
     Transaction,
     Receipt,
+    PackedTransaction,
     Event,
     Block,
     EventPage
