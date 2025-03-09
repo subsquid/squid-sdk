@@ -2,6 +2,21 @@
   "name": "@subsquid/tron-ingest",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/tron-ingest_v0.0.3",
+      "date": "Thu, 06 Mar 2025 10:46:22 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/tron-data\" from `^0.0.2` to `0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/tron-normalization\" from `^0.0.2` to `0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/tron-ingest_v0.0.2",
       "date": "Tue, 03 Dec 2024 11:47:42 GMT",

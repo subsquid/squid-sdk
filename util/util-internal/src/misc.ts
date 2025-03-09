@@ -258,3 +258,10 @@ export function weakMemo<T extends object, R>(f: (obj: T) => R): (obj: T) => R {
         return val
     }
 }
+
+
+export function removeArrayItem<T>(arr: T[], item: T): void {
+    let index = arr.indexOf(item)
+    if (index < 0) return
+    arr.splice(index, 1)
+}

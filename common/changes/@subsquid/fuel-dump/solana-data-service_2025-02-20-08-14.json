@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-dump",
+      "comment": "base on a new `util-internal-dump-cli` package",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/fuel-dump"
+}

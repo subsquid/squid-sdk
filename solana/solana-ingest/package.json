@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/solana-ingest",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Data fetcher and normalizer for Solana",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -19,7 +19,8 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/solana-normalization": "^0.0.3",
+    "@subsquid/logger": "^1.4.0",
+    "@subsquid/solana-normalization": "^0.0.4",
     "@subsquid/solana-rpc-data": "^0.0.3",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-ingest-cli": "^0.1.1",
@@ -28,6 +29,6 @@
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4"
   }
 }

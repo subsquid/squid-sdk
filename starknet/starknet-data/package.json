@@ -16,11 +16,11 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/logger": "^1.3.3",
+    "@subsquid/logger": "^1.4.0",
     "@subsquid/util-internal-validation": "^0.7.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4"
   }
 }

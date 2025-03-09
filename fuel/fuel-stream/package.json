@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@subsquid/http-client": "^1.6.0",
-    "@subsquid/logger": "^1.3.3",
+    "@subsquid/logger": "^1.4.0",
     "@subsquid/fuel-normalization": "^1.2.2",
     "@subsquid/fuel-data": "^1.1.3",
     "@subsquid/util-internal": "^3.2.0",
@@ -29,6 +29,6 @@
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4"
   }
 }

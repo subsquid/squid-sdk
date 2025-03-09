@@ -149,6 +149,9 @@ export type IdlType =
     | IdlTypeCOption
     | IdlTypeVec
     | IdlTypeArray
+    | IdlTypeTuple
+    | IdlTypeHashMap
+    | IdlTypeHashSet
 
 export type IdlTypeDefined = {
     defined: string
@@ -169,6 +172,18 @@ export type IdlTypeVec = {
 
 export type IdlTypeArray = {
     array: [idlType: IdlType, size: number]
+}
+
+export type IdlTypeTuple = {
+    tuple: IdlType[]
+}
+
+export type IdlTypeHashMap = {
+    hashMap: [idlType: IdlType, idlType: IdlType]
+}
+
+export type IdlTypeHashSet = {
+    hashSet: IdlType
 }
 
 export type IdlEnumVariant = {
@@ -354,6 +369,22 @@ function fromType(type: IdlType): Type {
         return {
             kind: TypeKind.Array,
             type: fromType(type.vec),
+        }
+    } else if ('tuple' in type) {
+        return {
+            kind: TypeKind.Tuple,
+            tuple: type.tuple.map(t => fromType(t as IdlType)),
+        }
+    } else if ('hashMap' in type) {
+        return {
+            kind: TypeKind.HashMap,
+            key: fromType(type.hashMap[0]),
+            value: fromType(type.hashMap[1]),
+        }
+    } else if ('hashSet' in type) {
+        return {
+            kind: TypeKind.HashSet,
+            type: fromType(type.hashSet),
         }
     } else if ('defined' in type) {
         return {

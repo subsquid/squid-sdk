@@ -1,6 +1,20 @@
 # Change Log - @subsquid/solana-typegen
 
-This log was last generated on Mon, 23 Sep 2024 17:53:43 GMT and should not be manually modified.
+This log was last generated on Thu, 06 Mar 2025 10:46:22 GMT and should not be manually modified.
+
+## 0.5.0
+Thu, 06 Mar 2025 10:46:22 GMT
+
+### Minor changes
+
+- add support for Shank tuple types
+
+## 0.4.0
+Wed, 15 Jan 2025 18:59:13 GMT
+
+### Minor changes
+
+- add HashMap and HashSet types support
 
 ## 0.3.0
 Mon, 23 Sep 2024 17:53:43 GMT

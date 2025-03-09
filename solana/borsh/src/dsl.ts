@@ -1,6 +1,8 @@
 import {Codec, GetCodecType} from './codec'
 import {ArrayCodec, FixedArrayCodec} from './codecs/array'
 import {SumCodec, Variant} from './codecs/enum'
+import {HashMapCodec} from './codecs/hash-map'
+import {HashSetCodec} from './codecs/hash-set'
 import {OptionCodec} from './codecs/option'
 import {RefCodec} from './codecs/ref'
 import {GetStructType, StructCodec} from './codecs/struct'
@@ -29,6 +31,7 @@ export function struct<Props extends Record<string, Codec<any>>>(
     return new StructCodec(props as any)
 }
 
+
 export function tuple(tuple: []): TupleCodec<[]>
 export function tuple<T>(tuple: [T]): TupleCodec<GetTupleType<[T]>>
 export function tuple<T1, T2>(tuple: [T1, T2]): TupleCodec<GetTupleType<[T1, T2]>>
@@ -42,6 +45,17 @@ export function tuple<T1, T2, T3, T4, T5, T6, T7, T8, T9>(tuple: [T1, T2, T3, T4
 export function tuple<T extends any[]>(tuple: T): TupleCodec<T> {
     return new TupleCodec(tuple as any)
 }
+
+
+export function hashMap<KC extends Codec<any>, VC extends Codec<any>>(key: KC, value: VC): HashMapCodec<GetCodecType<KC>, GetCodecType<VC>> {
+    return new HashMapCodec(key, value)
+}
+
+
+export function hashSet<IC extends Codec<any>>(item: IC): HashSetCodec<GetCodecType<IC>> {
+    return new HashSetCodec(item)
+}
+
 
 export function option<IC extends Codec<any>>(item: IC): OptionCodec<GetCodecType<IC>> {
     return new OptionCodec(item)

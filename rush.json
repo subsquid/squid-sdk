@@ -16,7 +16,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.133.3",
+  "rushVersion": "5.149.0",
 
   /**
    * The next field selects which package manager should be installed and determines its version.
@@ -124,7 +124,7 @@
    * LTS schedule: https://nodejs.org/en/about/releases/
    * LTS versions: https://nodejs.org/en/download/releases/
    */
-  "nodeSupportedVersionRange": ">=18.13.1 <21.0.0",
+  "nodeSupportedVersionRange": ">=18.13.1 <23.0.0",
 
   /**
    * Odd-numbered major versions of Node.js are experimental.  Even-numbered releases
@@ -490,6 +490,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/solana-data-service",
+      "projectFolder": "solana/solana-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/solana-dump",
       "projectFolder": "solana/solana-dump",
       "shouldPublish": true,
@@ -507,12 +513,12 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-    {
-      "packageName": "@subsquid/solana-objects",
-      "projectFolder": "solana/solana-objects",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
+//    {
+//      "packageName": "@subsquid/solana-objects",
+//      "projectFolder": "solana/solana-objects",
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
+//    },
     {
       "packageName": "@subsquid/solana-rpc",
       "projectFolder": "solana/solana-rpc",
@@ -525,12 +531,12 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-    {
-      "packageName": "@subsquid/solana-stream",
-      "projectFolder": "solana/solana-stream",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
+//    {
+//      "packageName": "@subsquid/solana-stream",
+//      "projectFolder": "solana/solana-stream",
+//      "shouldPublish": true,
+//      "versionPolicyName": "npm"
+//    },
     {
       "packageName": "@subsquid/solana-typegen",
       "projectFolder": "solana/solana-typegen",
@@ -736,11 +742,6 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "raw-archive-validator",
-      "projectFolder": "util/raw-archive-validator",
-      "shouldPublish": false
-    },
-    {
       "packageName": "@subsquid/rpc-client",
       "projectFolder": "util/rpc-client",
       "shouldPublish": true,
@@ -795,6 +796,18 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-data-service",
+      "projectFolder": "util/util-internal-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-data-source",
+      "projectFolder": "util/util-internal-data-source",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-dump-cli",
       "projectFolder": "util/util-internal-dump-cli",
       "shouldPublish": true,
@@ -803,6 +816,12 @@
     {
       "packageName": "@subsquid/util-internal-fs",
       "projectFolder": "util/util-internal-fs",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-geyser-client",
+      "projectFolder": "util/util-internal-geyser-client",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -881,6 +900,12 @@
     {
       "packageName": "@subsquid/util-internal-validation",
       "projectFolder": "util/util-internal-validation",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-worker-thread",
+      "projectFolder": "util/util-internal-worker-thread",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

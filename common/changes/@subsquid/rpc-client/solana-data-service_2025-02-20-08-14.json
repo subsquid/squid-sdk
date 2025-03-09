@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "resend subscription request on connection loss",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}

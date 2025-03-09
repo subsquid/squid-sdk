@@ -23,6 +23,6 @@
     "@subsquid/typeorm-codegen": "^2.0.2",
     "@types/node": "^18.18.14",
     "ts-node": "^10.9.2",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4"
   }
 }

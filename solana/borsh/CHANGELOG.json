@@ -2,6 +2,18 @@
   "name": "@subsquid/borsh",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/borsh_v0.2.0",
+      "date": "Wed, 15 Jan 2025 18:59:13 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "implement HashMap and HashSet codecs"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/borsh_v0.1.0",
       "date": "Tue, 07 May 2024 07:40:43 GMT",
