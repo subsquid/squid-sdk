@@ -82,7 +82,7 @@ export class InstructionTreeTraversal {
         private log: LogMessage[]
     ) {
         this.lastAddress = [instructionIndex - 1]
-        this.instructions = [instruction, ...inner]
+        this.instructions = [{...instruction, stackHeight: 1}, ...inner]
         if (this.tx.erroredInstruction >= this.instructionIndex) {
             this.call(1)
             this.finishLogLess()
@@ -325,6 +325,7 @@ export class InstructionTreeTraversal {
             assert(address.length + 1 == stackHeight)
             address[stackHeight - 1] = 0
         }
+        assert(address[0] === this.instructionIndex)
 
         let mapped: Instruction = {
             transactionIndex: this.tx.transactionIndex,
