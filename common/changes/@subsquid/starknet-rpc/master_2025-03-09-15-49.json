@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/starknet-rpc",
+      "comment": "Initial starknet RPC interface implementation",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/starknet-rpc"
+}
