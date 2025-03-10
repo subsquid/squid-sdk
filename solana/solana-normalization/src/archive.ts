@@ -80,7 +80,7 @@ export function toArchiveBlock(block: norm.Block): Block {
     let dict = new AccountDict()
 
     let {
-        header: {slot, parentSlot, ...hdr}
+        header: {number: slot, parentNumber: parentSlot, ...hdr}
     } = block
 
     let header = {

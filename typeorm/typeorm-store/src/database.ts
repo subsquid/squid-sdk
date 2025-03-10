@@ -101,7 +101,7 @@ export class TypeormDatabase {
         return assertStateInvariants({...status[0], top})
     }
 
-    private async getState(em: EntityManager): Promise<DatabaseState> {
+    private async _getState(em: EntityManager): Promise<DatabaseState> {
         let schema = this.escapedSchema()
 
         let status: (HashAndHeight & {nonce: number})[] = await em.query(
@@ -117,9 +117,14 @@ export class TypeormDatabase {
         return assertStateInvariants({...status[0], top})
     }
 
+    getState(): Promise<DatabaseState> {
+        assert(this.con != null, 'not connected')
+        return this._getState(this.con?.manager)
+    }
+
     transact(info: FinalTxInfo, cb: (store: Store) => Promise<void>): Promise<void> {
         return this.submit(async em => {
-            let state = await this.getState(em)
+            let state = await this._getState(em)
             let {prevHead: prev, nextHead: next} = info
 
             assert(state.hash === info.prevHead.hash, RACE_MSG)
@@ -148,31 +153,38 @@ export class TypeormDatabase {
 
     transactHot2(info: HotTxInfo, cb: (store: Store, sliceBeg: number, sliceEnd: number) => Promise<void>): Promise<void> {
         return this.submit(async em => {
-            let state = await this.getState(em)
+            let state = await this._getState(em)
             let chain = [state, ...state.top]
 
             assertChainContinuity(info.baseHead, info.newBlocks)
-            assert(info.finalizedHead.height <= (maybeLast(info.newBlocks) ?? info.baseHead).height)
 
             assert(chain.find(b => b.hash === info.baseHead.hash), RACE_MSG)
             if (info.newBlocks.length == 0) {
                 assert(last(chain).hash === info.baseHead.hash, RACE_MSG)
             }
-            assert(chain[0].height <= info.finalizedHead.height, RACE_MSG)
 
-            let rollbackPos = info.baseHead.height + 1 - chain[0].height
-
-            for (let i = chain.length - 1; i >= rollbackPos; i--) {
-                await rollbackBlock(this.statusSchema, em, chain[i].height)
+            for (let i = state.top.length - 1; i >= 0; i--) {
+                if (state.top[i].height <= info.baseHead.height) break
+                await rollbackBlock(this.statusSchema, em, state.top[i].height)
             }
 
+            await this.deleteHotBlocks(em, info.finalizedHead.height)
+
             if (info.newBlocks.length) {
-                let finalizedEnd = info.finalizedHead.height - info.newBlocks[0].height + 1
+                let finalizedEnd = info.newBlocks.findIndex(
+                    block => block.height > info.finalizedHead.height
+                )
+                if (finalizedEnd < 0) {
+                    finalizedEnd = info.newBlocks.length
+                }
+
                 if (finalizedEnd > 0) {
                     await this.performUpdates(store => cb(store, 0, finalizedEnd), em)
+                    await this.updateStatus(em, state.nonce, info.newBlocks[finalizedEnd - 1])
                 } else {
-                    finalizedEnd = 0
+                    await this.updateStatus(em, state.nonce, info.finalizedHead)
                 }
+
                 for (let i = finalizedEnd; i < info.newBlocks.length; i++) {
                     let b = info.newBlocks[i]
                     await this.insertHotBlock(em, b)
@@ -183,14 +195,6 @@ export class TypeormDatabase {
                     )
                 }
             }
-
-            chain = chain.slice(0, rollbackPos).concat(info.newBlocks)
-
-            let finalizedHeadPos = info.finalizedHead.height - chain[0].height
-            assert(chain[finalizedHeadPos].hash === info.finalizedHead.hash)
-            await this.deleteHotBlocks(em, info.finalizedHead.height)
-
-            await this.updateStatus(em, state.nonce, info.finalizedHead)
         })
     }
 
@@ -291,7 +295,7 @@ function assertStateInvariants(state: DatabaseState): DatabaseState {
 function assertChainContinuity(base: HashAndHeight, chain: HashAndHeight[]) {
     let prev = base
     for (let b of chain) {
-        assert(b.height === prev.height + 1, 'blocks must form a continues chain')
+        assert(b.height > prev.height, 'blocks must form a continues chain')
         prev = b
     }
 }

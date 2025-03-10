@@ -1,5 +1,5 @@
 import {AsyncQueue, ensureError, last} from '@subsquid/util-internal'
-import {BlockBatch, BlockRef, BlockStream} from '@subsquid/util-internal-data-source'
+import {BlockBatch, BlockRef, DataSourceStream} from '@subsquid/util-internal-data-source'
 import {Rpc} from '../rpc'
 import {Block} from '../types'
 import {getBlockRef} from '../util'
@@ -110,7 +110,7 @@ class Finalizer {
 }
 
 
-export async function* finalize(rpc: Rpc, stream: AsyncIterable<IngestBatch>): BlockStream<Block> {
+export async function* finalize(rpc: Rpc, stream: AsyncIterable<IngestBatch>): DataSourceStream<Block> {
     let output = new AsyncQueue<BlockBatch<Block> | Error>(1)
 
     new Finalizer(rpc, output).run(stream)

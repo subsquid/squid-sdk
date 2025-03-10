@@ -1,4 +1,4 @@
-import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
+import {Block, BlockRef, DataSourceStream, DataSource, DataSourceStreamOptions} from '@subsquid/util-internal-data-service'
 import {Client, createWorker} from '@subsquid/util-internal-worker-thread'
 import {DataSourceOptions} from './setup'
 
@@ -18,20 +18,24 @@ export class WorkerClient implements DataSource<Block> {
         this.worker.close()
     }
 
+    getHead() {
+        return this.worker.call('getHead', [])
+    }
+
     getFinalizedHead(): Promise<BlockRef> {
         return this.worker.call('getFinalizedHead', [])
     }
 
-    getFinalizedStream(req: StreamRequest): BlockStream<Block> {
+    getFinalizedStream(req: DataSourceStreamOptions): DataSourceStream<Block> {
         return this.stream('getFinalizedStream', req)
     }
 
-    getStream(req: StreamRequest): BlockStream<Block> {
+    getStream(req: DataSourceStreamOptions): DataSourceStream<Block> {
         return this.stream('getStream', req)
     }
 
-    private async *stream(method: string, req: StreamRequest): BlockStream<Block> {
-        let stream: BlockStream<Block> = await this.worker.call(method, [req])
+    private async *stream(method: string, req: DataSourceStreamOptions): DataSourceStream<Block> {
+        let stream: DataSourceStream<Block> = await this.worker.call(method, [req])
         yield* stream
     }
 }

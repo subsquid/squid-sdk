@@ -65,3 +65,18 @@ export function getFieldSelectionValidator() {
         event: option(getEventSelectionValidator()),
     })
 }
+
+
+type Selector<Keys extends string> = {
+    [K in Keys]?: boolean
+}
+
+
+export function mergeFields<Keys extends string>(def: Selector<Keys>, requested?: Selector<Keys>, required?: Selector<Keys>): Selector<Keys> {
+    let fields: Selector<Keys> = {...def}
+    for (let key in requested) {
+        fields[key] = requested[key]
+    }
+    Object.assign(fields, required)
+    return fields
+}

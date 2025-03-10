@@ -14,9 +14,13 @@ export interface FinalTxInfo {
 
 export interface FinalDatabase<S> {
     supportsHotBlocks?: false
-    connect(): Promise<HashAndHeight>
+    connect(): Promise<FinalDatabaseState>
+    getState?(): Promise<FinalDatabaseState>
     transact(info: FinalTxInfo, cb: (store: S) => Promise<void>): Promise<void>
 }
+
+
+export interface FinalDatabaseState extends HashAndHeight {}
 
 
 export interface HotTxInfo {
@@ -29,13 +33,10 @@ export interface HotTxInfo {
 export interface HotDatabase<S> {
     supportsHotBlocks: true
     connect(): Promise<HotDatabaseState>
+    getState(): Promise<HotDatabaseState>
     transact(info: FinalTxInfo, cb: (store: S) => Promise<void>): Promise<void>
-    /**
-     * @deprecated
-     */
-    transactHot(info: HotTxInfo, cb: (store: S, block: HashAndHeight) => Promise<void>): Promise<void>
 
-    transactHot2?(
+    transactHot2(
         info: HotTxInfo,
         cb: (store: S, blockSliceStart: number, blockSliceEnd: number) => Promise<void>
     ): Promise<void>

@@ -1,7 +1,7 @@
 import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
 import {positiveInt, Url} from '@subsquid/util-internal-commander'
-import {Block, BlockStream, DataSource, runDataService, StreamRequest} from '@subsquid/util-internal-data-service'
+import {Block, DataSourceStream, DataSource, runDataService, DataSourceStreamOptions} from '@subsquid/util-internal-data-service'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
 import {Command} from 'commander'
 import {DataSourceOptions} from './data-source/setup'
@@ -46,10 +46,13 @@ runProgram(async () => {
     let mainWorker = new WorkerClient(dataSourceOptions)
 
     let dataSource: DataSource<Block> = {
+        getHead() {
+            return mainWorker.getHead()
+        },
         getFinalizedHead() {
             return mainWorker.getFinalizedHead()
         },
-        async *getFinalizedStream(req: StreamRequest): BlockStream<Block> {
+        async *getFinalizedStream(req: DataSourceStreamOptions): DataSourceStream<Block> {
             let worker = new WorkerClient(dataSourceOptions)
             try {
                 yield* worker.getFinalizedStream(req)
@@ -57,7 +60,7 @@ runProgram(async () => {
                 worker.close()
             }
         },
-        getStream(req: StreamRequest): BlockStream<Block> {
+        getStream(req: DataSourceStreamOptions): DataSourceStream<Block> {
             return mainWorker.getStream(req)
         }
     }

@@ -2,7 +2,7 @@ import {createLogger} from '@subsquid/logger'
 import {archive, mapRpcBlock, removeVotes} from '@subsquid/solana-normalization'
 import * as rpc from '@subsquid/solana-rpc'
 import {withErrorContext} from '@subsquid/util-internal'
-import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
+import {Block, BlockRef, DataSourceStream, DataSource, DataSourceStreamOptions} from '@subsquid/util-internal-data-service'
 import {toJSON} from '@subsquid/util-internal-json'
 import {promisify} from 'node:util'
 import * as zlib from 'node:zlib'
@@ -19,19 +19,23 @@ export class Mapping implements DataSource<Block> {
         private votes = false
     ) {}
 
-    getFinalizedHead(): Promise<BlockRef> {
+    getHead(): Promise<BlockRef | undefined> {
+        return this.inner.getHead()
+    }
+
+    getFinalizedHead(): Promise<BlockRef | undefined> {
         return this.inner.getFinalizedHead()
     }
 
-    getFinalizedStream(req: StreamRequest): BlockStream<Block> {
+    getFinalizedStream(req: DataSourceStreamOptions): DataSourceStream<Block> {
         return this.mapRpcStream(this.inner.getFinalizedStream(req))
     }
 
-    getStream(req: StreamRequest): BlockStream<Block> {
+    getStream(req: DataSourceStreamOptions): DataSourceStream<Block> {
         return this.mapRpcStream(this.inner.getStream(req))
     }
 
-    private async *mapRpcStream(stream: BlockStream<rpc.Block>): BlockStream<Block> {
+    private async *mapRpcStream(stream: DataSourceStream<rpc.Block>): DataSourceStream<Block> {
         for await (let batch of stream) {
             let {blocks, ...props} = batch
             yield {

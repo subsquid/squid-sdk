@@ -513,12 +513,12 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-//    {
-//      "packageName": "@subsquid/solana-objects",
-//      "projectFolder": "solana/solana-objects",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
+   {
+     "packageName": "@subsquid/solana-objects",
+     "projectFolder": "solana/solana-objects",
+     "shouldPublish": true,
+     "versionPolicyName": "npm"
+   },
     {
       "packageName": "@subsquid/solana-rpc",
       "projectFolder": "solana/solana-rpc",
@@ -531,12 +531,12 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-//    {
-//      "packageName": "@subsquid/solana-stream",
-//      "projectFolder": "solana/solana-stream",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
+   {
+     "packageName": "@subsquid/solana-stream",
+     "projectFolder": "solana/solana-stream",
+     "shouldPublish": true,
+     "versionPolicyName": "npm"
+   },
     {
       "packageName": "@subsquid/solana-typegen",
       "projectFolder": "solana/solana-typegen",
@@ -928,6 +928,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/portal-client",
+      "projectFolder": "util/portal-client",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "balances",
       "projectFolder": "test/balances",
       "shouldPublish": false
@@ -972,11 +978,11 @@
       "projectFolder": "test/solana-example",
       "shouldPublish": false
     },
-    {
-      "packageName": "fuel-indexer",
-      "projectFolder": "test/fuel-indexer",
-      "shouldPublish": false
-    },
+    // {
+    //   "packageName": "fuel-indexer",
+    //   "projectFolder": "test/fuel-indexer",
+    //   "shouldPublish": false
+    // },
 //    {
 //      "packageName": "karura-erc20",
 //      "projectFolder": "test/karura-erc20",
@@ -1020,11 +1026,11 @@
       "projectFolder": "starknet/starknet-stream",
       "shouldPublish": true,
       "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "starknet-indexer",
-      "projectFolder": "test/starknet-indexer",
-      "shouldPublish": false
     }
+    // {
+    //   "packageName": "starknet-indexer",
+    //   "projectFolder": "test/starknet-indexer",
+    //   "shouldPublish": false
+    // }
   ]
 }
