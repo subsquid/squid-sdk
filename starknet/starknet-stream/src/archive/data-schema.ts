@@ -13,7 +13,7 @@ import {
     constant
 } from '@subsquid/util-internal-validation'
 import {FieldSelection} from '../data/model'
-import {Selector} from '../data/util'
+import {project} from '../data/fields'
 
 
 let FELT = BYTES
@@ -29,6 +29,18 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             timestamp: NAT,
             sequencerAddress: option(FELT)
         })
+    })
+
+    let ResourceBounds = object({
+        l1GasMaxAmount: option(NAT),
+        l1GasMaxPricePerUnit: option(NAT),
+        l2GasMaxAmount: option(NAT),
+        l2GasMaxPricePerUnit: option(NAT)
+    })
+
+    let ActualFee = object({
+        amount: option(STRING),
+        unit: option(STRING)
     })
 
     let Transaction = object({
@@ -54,7 +66,16 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             classHash: option(FELT),
             compiledClassHash: option(FELT),
             contractAddressSalt: option(FELT),
-            constructorCalldata: option(array(FELT))
+            constructorCalldata: option(array(FELT)),
+            resourceBounds: option(ResourceBounds),
+            tip: option(FELT),
+            paymasterData: option(array(FELT)),
+            accountDeploymentData: option(array(FELT)),
+            nonceDataAvailabilityMode: option(STRING),
+            feeDataAvailabilityMode: option(STRING),
+            messageHash: option(FELT),
+            actualFee: option(ActualFee),
+            finalityStatus: option(STRING)
         })
     })
 
@@ -80,16 +101,3 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         events: option(array(Event)),
     })
 })
-
-
-function project<T>(fields: Selector<keyof T> | undefined, obj: T): Partial<T> {
-    if (fields == null) return {}
-    let result: Partial<T> = {}
-    let key: keyof T
-    for (key in obj) {
-        if (fields[key]) {
-            result[key] = obj[key]
-        }
-    }
-    return result
-}

@@ -182,6 +182,9 @@ dependencies:
   '@rush-temp/starknet-objects':
     specifier: file:./projects/starknet-objects.tgz
     version: file:projects/starknet-objects.tgz
+  '@rush-temp/starknet-rpc':
+    specifier: file:./projects/starknet-rpc.tgz
+    version: file:projects/starknet-rpc.tgz
   '@rush-temp/starknet-stream':
     specifier: file:./projects/starknet-stream.tgz
     version: file:projects/starknet-stream.tgz
@@ -340,7 +343,7 @@ dependencies:
     version: file:projects/workspace.tgz
   '@solana/addresses':
     specifier: ^2.0.0-preview.3
-    version: 2.0.0(typescript@5.5.4)
+    version: 2.0.0-rc.1(typescript@5.5.4)
   '@solanafm/explorer-kit-idls':
     specifier: ^1.1.3
     version: 1.1.3
@@ -472,7 +475,7 @@ dependencies:
     version: 5.1.0
   long:
     specifier: ^5.0.0
-    version: 5.3.0
+    version: 5.3.1
   mocha:
     specifier: ^10.7.0
     version: 10.7.3
@@ -506,9 +509,6 @@ dependencies:
   typeorm:
     specifier: ^0.3.17
     version: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
-  typescript:
-    specifier: 5.5.4
-    version: 5.5.4
   upath:
     specifier: ^2.0.1
     version: 2.0.1
@@ -1727,7 +1727,7 @@ packages:
     hasBin: true
     dependencies:
       lodash.camelcase: 4.3.0
-      long: 5.3.0
+      long: 5.3.1
       protobufjs: 7.4.0
       yargs: 17.7.2
     dev: false
@@ -2529,77 +2529,27 @@ packages:
       tslib: 2.6.2
     dev: false
 
-  /@solana/addresses@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-8n3c/mUlH1/z+pM8e7OJ6uDSXw26Be0dgYiokiqblO66DGQ0d+7pqFUFZ5pEGjJ9PU2lDTSfY8rHf4cemOqwzQ==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/assertions': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-core': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-strings': 2.0.0(typescript@5.2.2)
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-    dev: false
-
-  /@solana/addresses@2.0.0(typescript@5.5.4):
-    resolution: {integrity: sha512-8n3c/mUlH1/z+pM8e7OJ6uDSXw26Be0dgYiokiqblO66DGQ0d+7pqFUFZ5pEGjJ9PU2lDTSfY8rHf4cemOqwzQ==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/assertions': 2.0.0(typescript@5.5.4)
-      '@solana/codecs-core': 2.0.0(typescript@5.5.4)
-      '@solana/codecs-strings': 2.0.0(typescript@5.5.4)
-      '@solana/errors': 2.0.0(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-    dev: false
-
-  /@solana/addresses@2.0.0-rc.1(typescript@5.3.2):
+  /@solana/addresses@2.0.0-rc.1(typescript@5.5.4):
     resolution: {integrity: sha512-g31KrLZdECjAKceShlGoYxnWDmEVklpjPs8xOtnj/HWupEk+Mds4vtmTACTAeJkWZW/3x+z0aexMtO86MKA47g==}
     peerDependencies:
       typescript: '>=5'
     dependencies:
-      '@solana/assertions': 2.0.0-rc.1(typescript@5.3.2)
-      '@solana/codecs-core': 2.0.0-rc.1(typescript@5.3.2)
-      '@solana/codecs-strings': 2.0.0-rc.1(typescript@5.3.2)
-      '@solana/errors': 2.0.0-rc.1(typescript@5.3.2)
-      typescript: 5.3.2
+      '@solana/assertions': 2.0.0-rc.1(typescript@5.5.4)
+      '@solana/codecs-core': 2.0.0-rc.1(typescript@5.5.4)
+      '@solana/codecs-strings': 2.0.0-rc.1(typescript@5.5.4)
+      '@solana/errors': 2.0.0-rc.1(typescript@5.5.4)
+      typescript: 5.5.4
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
     dev: false
 
-  /@solana/assertions@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-NyPPqZRNGXs/GAjfgsw7YS6vCTXWt4ibXveS+ciy5sdmp/0v3pA6DlzYjleF9Sljrew0IiON15rjaXamhDxYfQ==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    dev: false
-
-  /@solana/assertions@2.0.0(typescript@5.5.4):
-    resolution: {integrity: sha512-NyPPqZRNGXs/GAjfgsw7YS6vCTXWt4ibXveS+ciy5sdmp/0v3pA6DlzYjleF9Sljrew0IiON15rjaXamhDxYfQ==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/errors': 2.0.0(typescript@5.5.4)
-      typescript: 5.5.4
-    dev: false
-
-  /@solana/assertions@2.0.0-rc.1(typescript@5.3.2):
+  /@solana/assertions@2.0.0-rc.1(typescript@5.5.4):
     resolution: {integrity: sha512-dvxYCUB7ftZa5lWcsyMYLsGm204H6yVN8Q3ngluMG0rhTtScMBRklVg7Vs39ISwJOkJWJPGToaZ7DjNJ83bm1Q==}
     peerDependencies:
       typescript: '>=5'
     dependencies:
-      '@solana/errors': 2.0.0-rc.1(typescript@5.3.2)
-      typescript: 5.3.2
+      '@solana/errors': 2.0.0-rc.1(typescript@5.5.4)
+      typescript: 5.5.4
     dev: false
 
   /@solana/buffer-layout@4.0.1:
@@ -2609,142 +2559,38 @@ packages:
       buffer: 6.0.3
     dev: false
 
-  /@solana/codecs-core@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-qCG+3hDU5Pm8V6joJjR4j4Zv9md1z0RaecniNDIkEglnxmOUODnmPLWbtOjnDylfItyuZeDihK8hkewdj8cUtw==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    dev: false
-
-  /@solana/codecs-core@2.0.0(typescript@5.5.4):
-    resolution: {integrity: sha512-qCG+3hDU5Pm8V6joJjR4j4Zv9md1z0RaecniNDIkEglnxmOUODnmPLWbtOjnDylfItyuZeDihK8hkewdj8cUtw==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/errors': 2.0.0(typescript@5.5.4)
-      typescript: 5.5.4
-    dev: false
-
-  /@solana/codecs-core@2.0.0-rc.1(typescript@5.3.2):
+  /@solana/codecs-core@2.0.0-rc.1(typescript@5.5.4):
     resolution: {integrity: sha512-bauxqMfSs8EHD0JKESaNmNuNvkvHSuN3bbWAF5RjOfDu2PugxHrvRebmYauvSumZ3cTfQ4HJJX6PG5rN852qyQ==}
     peerDependencies:
       typescript: '>=5'
     dependencies:
-      '@solana/errors': 2.0.0-rc.1(typescript@5.3.2)
-      typescript: 5.3.2
-    dev: false
-
-  /@solana/codecs-data-structures@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-N98Y4jsrC/XeOgqrfsGqcOFIaOoMsKdAxOmy5oqVaEN67YoGSLNC9ROnqamOAOrsZdicTWx9/YLKFmQi9DPh1A==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/codecs-core': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-numbers': 2.0.0(typescript@5.2.2)
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    dev: false
-
-  /@solana/codecs-numbers@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-r66i7VzJO1MZkQWZIAI6jjJOFVpnq0+FIabo2Z2ZDtrArFus/SbSEv543yCLeD2tdR/G/p+1+P5On10qF50Y1Q==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/codecs-core': 2.0.0(typescript@5.2.2)
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    dev: false
-
-  /@solana/codecs-numbers@2.0.0(typescript@5.5.4):
-    resolution: {integrity: sha512-r66i7VzJO1MZkQWZIAI6jjJOFVpnq0+FIabo2Z2ZDtrArFus/SbSEv543yCLeD2tdR/G/p+1+P5On10qF50Y1Q==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/codecs-core': 2.0.0(typescript@5.5.4)
-      '@solana/errors': 2.0.0(typescript@5.5.4)
+      '@solana/errors': 2.0.0-rc.1(typescript@5.5.4)
       typescript: 5.5.4
     dev: false
 
-  /@solana/codecs-numbers@2.0.0-rc.1(typescript@5.3.2):
+  /@solana/codecs-numbers@2.0.0-rc.1(typescript@5.5.4):
     resolution: {integrity: sha512-J5i5mOkvukXn8E3Z7sGIPxsThRCgSdgTWJDQeZvucQ9PT6Y3HiVXJ0pcWiOWAoQ3RX8e/f4I3IC+wE6pZiJzDQ==}
     peerDependencies:
       typescript: '>=5'
     dependencies:
-      '@solana/codecs-core': 2.0.0-rc.1(typescript@5.3.2)
-      '@solana/errors': 2.0.0-rc.1(typescript@5.3.2)
-      typescript: 5.3.2
-    dev: false
-
-  /@solana/codecs-strings@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-dNqeCypsvaHcjW86H0gYgAZGGkKVBeKVeh7WXlOZ9kno7PeQ2wNkpccyzDfuzaIsKv+HZUD3v/eo86GCvnKazQ==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      fastestsmallesttextencoderdecoder: ^1.0.22
-      typescript: '>=5'
-    dependencies:
-      '@solana/codecs-core': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-numbers': 2.0.0(typescript@5.2.2)
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    dev: false
-
-  /@solana/codecs-strings@2.0.0(typescript@5.5.4):
-    resolution: {integrity: sha512-dNqeCypsvaHcjW86H0gYgAZGGkKVBeKVeh7WXlOZ9kno7PeQ2wNkpccyzDfuzaIsKv+HZUD3v/eo86GCvnKazQ==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      fastestsmallesttextencoderdecoder: ^1.0.22
-      typescript: '>=5'
-    dependencies:
-      '@solana/codecs-core': 2.0.0(typescript@5.5.4)
-      '@solana/codecs-numbers': 2.0.0(typescript@5.5.4)
-      '@solana/errors': 2.0.0(typescript@5.5.4)
+      '@solana/codecs-core': 2.0.0-rc.1(typescript@5.5.4)
+      '@solana/errors': 2.0.0-rc.1(typescript@5.5.4)
       typescript: 5.5.4
     dev: false
 
-  /@solana/codecs-strings@2.0.0-rc.1(typescript@5.3.2):
+  /@solana/codecs-strings@2.0.0-rc.1(typescript@5.5.4):
     resolution: {integrity: sha512-9/wPhw8TbGRTt6mHC4Zz1RqOnuPTqq1Nb4EyuvpZ39GW6O2t2Q7Q0XxiB3+BdoEjwA2XgPw6e2iRfvYgqty44g==}
     peerDependencies:
       fastestsmallesttextencoderdecoder: ^1.0.22
       typescript: '>=5'
     dependencies:
-      '@solana/codecs-core': 2.0.0-rc.1(typescript@5.3.2)
-      '@solana/codecs-numbers': 2.0.0-rc.1(typescript@5.3.2)
-      '@solana/errors': 2.0.0-rc.1(typescript@5.3.2)
-      typescript: 5.3.2
-    dev: false
-
-  /@solana/errors@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-IHlaPFSy4lvYco1oHJ3X8DbchWwAwJaL/4wZKnF1ugwZ0g0re8wbABrqNOe/jyZ84VU9Z14PYM8W9oDAebdJbw==}
-    engines: {node: '>=20.18.0'}
-    hasBin: true
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      chalk: 5.3.0
-      commander: 12.1.0
-      typescript: 5.2.2
-    dev: false
-
-  /@solana/errors@2.0.0(typescript@5.5.4):
-    resolution: {integrity: sha512-IHlaPFSy4lvYco1oHJ3X8DbchWwAwJaL/4wZKnF1ugwZ0g0re8wbABrqNOe/jyZ84VU9Z14PYM8W9oDAebdJbw==}
-    engines: {node: '>=20.18.0'}
-    hasBin: true
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      chalk: 5.3.0
-      commander: 12.1.0
+      '@solana/codecs-core': 2.0.0-rc.1(typescript@5.5.4)
+      '@solana/codecs-numbers': 2.0.0-rc.1(typescript@5.5.4)
+      '@solana/errors': 2.0.0-rc.1(typescript@5.5.4)
       typescript: 5.5.4
     dev: false
 
-  /@solana/errors@2.0.0-rc.1(typescript@5.3.2):
+  /@solana/errors@2.0.0-rc.1(typescript@5.5.4):
     resolution: {integrity: sha512-ejNvQ2oJ7+bcFAYWj225lyRkHnixuAeb7RQCixm+5mH4n1IA4Qya/9Bmfy5RAAHQzxK43clu3kZmL5eF9VGtYQ==}
     hasBin: true
     peerDependencies:
@@ -2752,164 +2598,7 @@ packages:
     dependencies:
       chalk: 5.3.0
       commander: 12.1.0
-      typescript: 5.3.2
-    dev: false
-
-  /@solana/functional@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-Sj+sLiUTimnMEyGnSLGt0lbih2xPDUhxhonnrIkPwA+hjQ3ULGHAxeevHU06nqiVEgENQYUJ5rCtHs4xhUFAkQ==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      typescript: 5.2.2
-    dev: false
-
-  /@solana/instructions@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-MiTEiNF7Pzp+Y+x4yadl2VUcNHboaW5WP52psBuhHns3GpbbruRv5efMpM9OEQNe1OsN+Eg39vjEidX55+P+DQ==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    dev: false
-
-  /@solana/keys@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-SSLSX8BXRvfLKBqsmBghmlhMKpwHeWd5CHi5zXgTS1BRrtiU6lcrTVC9ie6B+WaNNq7oe3e6K5bdbhu3fFZ+0g==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/assertions': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-core': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-strings': 2.0.0(typescript@5.2.2)
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-    dev: false
-
-  /@solana/rpc-api@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-1FwitYxwADMF/6zKP2kNXg8ESxB6GhNBNW1c4f5dEmuXuBbeD/enLV3WMrpg8zJkIaaYarEFNbt7R7HyFzmURQ==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/addresses': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-core': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-strings': 2.0.0(typescript@5.2.2)
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      '@solana/keys': 2.0.0(typescript@5.2.2)
-      '@solana/rpc-parsed-types': 2.0.0(typescript@5.2.2)
-      '@solana/rpc-spec': 2.0.0(typescript@5.2.2)
-      '@solana/rpc-transformers': 2.0.0(typescript@5.2.2)
-      '@solana/rpc-types': 2.0.0(typescript@5.2.2)
-      '@solana/transaction-messages': 2.0.0(typescript@5.2.2)
-      '@solana/transactions': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-    dev: false
-
-  /@solana/rpc-parsed-types@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-VCeY/oKVEtBnp8EDOc5LSSiOeIOLFIgLndcxqU0ij/cZaQ01DOoHbhluvhZtU80Z3dUeicec8TiMgkFzed+WhQ==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      typescript: 5.2.2
-    dev: false
-
-  /@solana/rpc-spec-types@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-G2lmhFhgtxMQd/D6B04BHGE7bm5dMZdIPQNOqVGhzNAVjrmyapD3JN2hKAbmaYPe97wLfZERw0Ux1u4Y6q7TqA==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      typescript: 5.2.2
-    dev: false
-
-  /@solana/rpc-spec@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-1uIDzj7vocCUqfOifjv1zAuxQ53ugiup/42edVFoQLOnJresoEZLL6WjnsJq4oCTccEAvGhUBI1WWKeZTGNxFQ==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      '@solana/rpc-spec-types': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    dev: false
-
-  /@solana/rpc-transformers@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-H6tN0qcqzUangowsLLQtYXKJsf1Roe3/qJ1Cy0gv9ojY9uEvNbJqpeEj+7blv0MUZfEe+rECAwBhxxRKPMhYGw==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      '@solana/functional': 2.0.0(typescript@5.2.2)
-      '@solana/rpc-spec-types': 2.0.0(typescript@5.2.2)
-      '@solana/rpc-types': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-    dev: false
-
-  /@solana/rpc-types@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-o1ApB9PYR0A3XjVSOh//SOVWgjDcqMlR3UNmtqciuREIBmWqnvPirdOa5EJxD3iPhfA4gnNnhGzT+tMDeDW/Kw==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/addresses': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-core': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-numbers': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-strings': 2.0.0(typescript@5.2.2)
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-    dev: false
-
-  /@solana/transaction-messages@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-Uc6Fw1EJLBrmgS1lH2ZfLAAKFvprWPQQzOVwZS78Pv8Whsk7tweYTK6S0Upv0nHr50rGpnORJfmdBrXE6OfNGg==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/addresses': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-core': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-data-structures': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-numbers': 2.0.0(typescript@5.2.2)
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      '@solana/functional': 2.0.0(typescript@5.2.2)
-      '@solana/instructions': 2.0.0(typescript@5.2.2)
-      '@solana/rpc-types': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-    dev: false
-
-  /@solana/transactions@2.0.0(typescript@5.2.2):
-    resolution: {integrity: sha512-VfdTE+59WKvuBG//6iE9RPjAB+ZT2kLgY2CDHabaz6RkH6OjOkMez9fWPVa3Xtcus+YQWN1SnQoryjF/xSx04w==}
-    engines: {node: '>=20.18.0'}
-    peerDependencies:
-      typescript: '>=5'
-    dependencies:
-      '@solana/addresses': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-core': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-data-structures': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-numbers': 2.0.0(typescript@5.2.2)
-      '@solana/codecs-strings': 2.0.0(typescript@5.2.2)
-      '@solana/errors': 2.0.0(typescript@5.2.2)
-      '@solana/functional': 2.0.0(typescript@5.2.2)
-      '@solana/instructions': 2.0.0(typescript@5.2.2)
-      '@solana/keys': 2.0.0(typescript@5.2.2)
-      '@solana/rpc-types': 2.0.0(typescript@5.2.2)
-      '@solana/transaction-messages': 2.0.0(typescript@5.2.2)
-      typescript: 5.2.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
+      typescript: 5.5.4
     dev: false
 
   /@solana/web3.js@1.95.3:
@@ -2960,22 +2649,8 @@ packages:
     resolution: {integrity: sha512-Uy0+khmZqUrUGm5dmMqVlnvufZRSK0FbYzVgp0UMstm+F5+W2/jnEEQyc9vo1ZR/E5ZI/B1WjjoTqBqwJL6Krw==}
     dev: false
 
-  /@subsquid/borsh@0.1.0:
-    resolution: {integrity: sha512-TlAZHMGpmvcISittaLsRavtv5V45icRdsfvChvZsK6OWaxEjkBkoCGVWsldjBvc9m4KuSlJKL7nxxsxXQ+tQzw==}
-    dependencies:
-      bs58: 5.0.0
-    dev: false
-
   /@subsquid/graphiql-console@0.3.0:
     resolution: {integrity: sha512-C89mus6IXnNi0xMQrZqUFBZwLj8tbuq9lye8Gq/lHmmERAUpi6UsWEyLdJLx2mneZzF3JtY8eNiiZ16jmjtvfw==}
-    dev: false
-
-  /@subsquid/http-client@1.5.0:
-    resolution: {integrity: sha512-C7lb67mu/Xhno3x4EOzIPZ9fqixq797rT7DxvKVRXJBE7dYFEPyrOBiKO1W45YwX3lFfuHGKpMu2YBOeS/L7lQ==}
-    dependencies:
-      '@subsquid/logger': 1.4.0
-      '@subsquid/util-internal': 3.2.0
-      node-fetch: 3.3.2
     dev: false
 
   /@subsquid/http-client@1.6.0:
@@ -2994,18 +2669,6 @@ packages:
       supports-color: 8.1.1
     dev: false
 
-  /@subsquid/rpc-client@4.10.0:
-    resolution: {integrity: sha512-igSqxU9ctnUVdrmtMwKCR+MEzKjjkkAaMU2c8hlwCfiCezZLvct7D6/S29KLPMn8bjvB7sImMYYslb8ECnk4Cw==}
-    dependencies:
-      '@subsquid/http-client': 1.5.0
-      '@subsquid/logger': 1.4.0
-      '@subsquid/util-internal': 3.2.0
-      '@subsquid/util-internal-binary-heap': 1.0.0
-      '@subsquid/util-internal-counters': 1.3.2
-      '@subsquid/util-internal-json-fix-unsafe-integers': 0.0.0
-      websocket: 1.0.34
-    dev: false
-
   /@subsquid/rpc-client@4.11.0:
     resolution: {integrity: sha512-0vVCqNEsi7OW/9sAEAQL6ljxQ2qmowtfMBVOBefw/l4AAib9e/PR1aS7EuBaiKq56e/iKzMOJigqvnEiS3EwFQ==}
     dependencies:
@@ -3016,16 +2679,6 @@ packages:
       '@subsquid/util-internal-counters': 1.3.2
       '@subsquid/util-internal-json-fix-unsafe-integers': 0.0.0
       websocket: 1.0.34
-    dev: false
-
-  /@subsquid/solana-normalization@0.0.2:
-    resolution: {integrity: sha512-4UPUmMLC3LVuh8GaesC44JTr/nVFupVA0X7dPjHombsiuwSHMb/yCr+wWDyGb0HEciXXtF+4cFj8qSg0EtLWaA==}
-    dependencies:
-      '@subsquid/solana-rpc-data': 0.0.2(@subsquid/util-internal-validation@0.6.0)
-      '@subsquid/util-internal': 3.2.0
-      '@subsquid/util-internal-validation': 0.6.0(@subsquid/logger@1.4.0)
-    transitivePeerDependencies:
-      - '@subsquid/logger'
     dev: false
 
   /@subsquid/solana-normalization@0.0.4(@subsquid/logger@1.4.0):
@@ -3047,32 +2700,12 @@ packages:
       '@subsquid/util-internal': 3.2.0
     dev: false
 
-  /@subsquid/solana-rpc-data@0.0.2(@subsquid/util-internal-validation@0.6.0):
-    resolution: {integrity: sha512-mkU6jyJb53e4K2jqD9OjxRPLI39Pr7ZlJkVn9izbP9HVxwjEFuR2630sOixUfTcoqNtxNFbB99XygUGXp6YSfQ==}
-    peerDependencies:
-      '@subsquid/util-internal-validation': ^0.6.0
-    dependencies:
-      '@subsquid/util-internal-validation': 0.6.0(@subsquid/logger@1.4.0)
-    dev: false
-
   /@subsquid/solana-rpc-data@0.0.3(@subsquid/util-internal-validation@0.7.0):
     resolution: {integrity: sha512-46erJh2/gppi9IuVDlW1gXhzxLx05mlYcGlg/sHnTcPfAwg9E93S7w1ZRnaM2BMh/7F8npSMABpZcHyATFFwPw==}
     peerDependencies:
       '@subsquid/util-internal-validation': ^0.7.0
     dependencies:
       '@subsquid/util-internal-validation': 0.7.0(@subsquid/logger@1.4.0)
-    dev: false
-
-  /@subsquid/solana-rpc@0.0.2:
-    resolution: {integrity: sha512-jeEt7gWzL0wX7Hdf3AjyweEuGID1FP+162R9VcgOHOiWUFgWur8E4wQtfX0g/swzce5Hwkd+jxfB2mopePPvow==}
-    peerDependencies:
-      '@subsquid/rpc-client': ^4.9.0
-    dependencies:
-      '@subsquid/logger': 1.4.0
-      '@subsquid/solana-rpc-data': 0.0.2(@subsquid/util-internal-validation@0.6.0)
-      '@subsquid/util-internal': 3.2.0
-      '@subsquid/util-internal-range': 0.3.0
-      '@subsquid/util-internal-validation': 0.6.0(@subsquid/logger@1.4.0)
     dev: false
 
   /@subsquid/solana-rpc@0.0.4(@subsquid/rpc-client@4.11.0):
@@ -3107,31 +2740,6 @@ packages:
       bs58: 5.0.0
     dev: false
 
-  /@subsquid/solana-typegen@0.3.0(typescript@5.3.2):
-    resolution: {integrity: sha512-IVOLJAy5CmPb3CdAfouEeJ1uHpkKTjPEM2gkIvrKgb2C5PDYW0D0Q19ALC7LDXhtlk6hV21CUPgqM2uJ8iTADQ==}
-    hasBin: true
-    dependencies:
-      '@solana/addresses': 2.0.0-rc.1(typescript@5.3.2)
-      '@solanafm/explorer-kit-idls': 1.1.3
-      '@subsquid/borsh': 0.1.0
-      '@subsquid/http-client': 1.5.0
-      '@subsquid/logger': 1.4.0
-      '@subsquid/rpc-client': 4.10.0
-      '@subsquid/util-internal': 3.2.0
-      '@subsquid/util-internal-code-printer': 1.2.2
-      '@subsquid/util-internal-commander': 1.4.0(commander@11.1.0)
-      '@subsquid/util-internal-hex': 1.2.2
-      '@subsquid/util-naming': 1.3.0
-      commander: 11.1.0
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - encoding
-      - fastestsmallesttextencoderdecoder
-      - typescript
-      - utf-8-validate
-    dev: false
-
   /@subsquid/util-internal-archive-client@0.1.2(@subsquid/http-client@1.6.0)(@subsquid/logger@1.4.0):
     resolution: {integrity: sha512-XATZWOIHUqIuqzb9hxaFIsz/BItb5qLoYjk6uhFcR9ART2AExXLU5l26SvSrq3hUnqfznIkQMZVQ1SKqnGzx4g==}
     peerDependencies:
@@ -3160,18 +2768,6 @@ packages:
 
   /@subsquid/util-internal-binary-heap@1.0.0:
     resolution: {integrity: sha512-88auuc8yNFmCZugmJSTYzS7WM/nN2obKGQCgrl8Jty5rJUFbqazGSi8icqftKhv6MPtUMJ3PSTRLiTFXAUGnAA==}
-    dev: false
-
-  /@subsquid/util-internal-code-printer@1.2.2:
-    resolution: {integrity: sha512-uerf8T/FU4bxxhat09MgRrdmwifLwV+tO7QvlMvZ5ccwaVrJjHs+0/LY/h1e9YowH3+ZtwPqjYrd5tNOHWX8wA==}
-    dev: false
-
-  /@subsquid/util-internal-commander@1.4.0(commander@11.1.0):
-    resolution: {integrity: sha512-I+IztlLVow9z2S5lK/ON4aBRYXKtAKXl/rVPUn1Ue5vq+5JgEFbWEKJgnwXkd0qKnKeoYeaRFlcyQVfxirxzJw==}
-    peerDependencies:
-      commander: ^11.1.0
-    dependencies:
-      commander: 11.1.0
     dev: false
 
   /@subsquid/util-internal-counters@1.3.2:
@@ -3274,17 +2870,6 @@ packages:
     resolution: {integrity: sha512-LyVZIGUbC87r+3VFBRiNOEycxvpkOEEjt5enY02iGl6MneLwq3m17D44xAkwfFj/U+t7GA76eeHIoI2ZkiQKog==}
     dev: false
 
-  /@subsquid/util-internal-validation@0.6.0(@subsquid/logger@1.4.0):
-    resolution: {integrity: sha512-OjrtBS9oJQApNa/ar9IMB0l2+IIydxLKIlxpJsyHgI0buK+aWofDq1aPaPh3XtCKrHzLDkrM9KAqkt8fQirifQ==}
-    peerDependencies:
-      '@subsquid/logger': ^1.3.3
-    peerDependenciesMeta:
-      '@subsquid/logger':
-        optional: true
-    dependencies:
-      '@subsquid/logger': 1.4.0
-    dev: false
-
   /@subsquid/util-internal-validation@0.7.0(@subsquid/logger@1.4.0):
     resolution: {integrity: sha512-Y8o7am+btlHxJuPtS/0+qNe+QkyAOuxSSXhccRwj2mRUlYG81MnxWFgYs4ac+pWeayLfU/3SBvQJH5g7L82fTQ==}
     peerDependencies:
@@ -3304,13 +2889,6 @@ packages:
     resolution: {integrity: sha512-foNCjOmZaP8MKMa9sNe2GXTjFSDM9UqA0I0C0/ZvCxM1lCmG3mxZb70f8Wyi7TePXC/eV8eARbIqFyz0GjQmzA==}
     dev: false
 
-  /@subsquid/util-naming@1.3.0:
-    resolution: {integrity: sha512-PfYg1uFHwb7e6egbkzIbQTWf7DVlZIQr2gHy4VE35ZNiA15R9wkJLo/Mym6OkwLQyjJwhhq7pCFhkz6tm19m+A==}
-    dependencies:
-      camelcase: 6.3.0
-      inflected: 2.1.0
-    dev: false
-
   /@substrate/calc@0.2.8:
     resolution: {integrity: sha512-1c3mxf35FBeOswduhy0Wil9s4exHahXFo974qa0Ci2AORX8JTxmwhBb10+3Ls9iWoTFwvgOaFr9v1HeRL5tCig==}
     dev: false
@@ -3326,13 +2904,6 @@ packages:
     engines: {node: '>=6'}
     dependencies:
       defer-to-connect: 1.1.3
-    dev: false
-
-  /@triton-one/yellowstone-grpc@2.1.0:
-    resolution: {integrity: sha512-12opvhpXz+ukIb1/ZTLNCzturOlpJ83JolYVOL90jdW6Q8p1PtBfYWM6FKv04PvKkO+KotG5nPXgTwlTAEOuYw==}
-    engines: {node: '>=20.18.0'}
-    dependencies:
-      '@grpc/grpc-js': 1.12.6
     dev: false
 
   /@tsconfig/node10@1.0.11:
@@ -4185,11 +3756,6 @@ packages:
     engines: {node: '>=10'}
     dev: false
 
-  /case-anything@2.1.13:
-    resolution: {integrity: sha512-zlOQ80VrQ2Ue+ymH5OuM/DlDq64mEm+B9UTdHULv5osUMD6HalNTblf2b1u/m6QecjsnOkBpqVZ+XPwIVsy7Ng==}
-    engines: {node: '>=12.13'}
-    dev: false
-
   /chai@4.5.0:
     resolution: {integrity: sha512-RITGBfijLkBddZvnn8jdqoTypxvqbOLYQkGGxXzeFjVHvudaPw0HNFD9x928/eUwYWd2dPCugVqspGALTZZQKw==}
     engines: {node: '>=4'}
@@ -4579,12 +4145,6 @@ packages:
     engines: {node: '>= 0.8', npm: 1.2.8000 || >= 1.4.16}
     dev: false
 
-  /detect-libc@1.0.3:
-    resolution: {integrity: sha512-pGjwhsmsp4kL2RTz08wcOlGN83otlqHeD/Z5T8GXZB+/YcpQ/dgo+lbU8ZsGxV0HIvqqxo9l7mqYwyYMD9bKDg==}
-    engines: {node: '>=0.10'}
-    hasBin: true
-    dev: false
-
   /diff-sequences@29.6.3:
     resolution: {integrity: sha512-EjePK1srD3P08o2j4f0ExnylqRs5B9tJjcp9t1krH2qRi8CCdsYfwe9JgSLurFBWwq4uOlipzfk5fHNvwFKr8Q==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
@@ -4610,12 +4170,6 @@ packages:
   /dotenv@16.3.1:
     resolution: {integrity: sha512-IPzF4w4/Rd94bA9imS68tZBaYyBWSCE47V1RGuMrB94iyTOIEwRmVL2x/4An+6mETpLrKJ5hQkB8W4kFAadeIQ==}
     engines: {node: '>=12'}
-    dev: false
-
-  /dprint-node@1.0.8:
-    resolution: {integrity: sha512-iVKnUtYfGrYcW1ZAlfR/F59cUVL8QIhWoBJoSjkkdua/dkWIgjZfiLMeTjiB06X0ZLkQ0M2C1VbUj/CxkIf1zg==}
-    dependencies:
-      detect-libc: 1.0.3
     dev: false
 
   /dset@3.1.2:
@@ -5723,8 +5277,8 @@ packages:
     resolution: {integrity: sha512-XsP+KhQif4bjX1kbuSiySJFNAehNxgLb6hPRGJ9QsUr8ajHkuXGdrHmFUTUUXhDwVX2R5bY4JNZEwbUiMhV+MA==}
     dev: false
 
-  /long@5.3.0:
-    resolution: {integrity: sha512-5vvY5yF1zF/kXk+L94FRiTDa1Znom46UjPCH6/XbSvS8zBKMFBHTJk8KDMqJ+2J6QezQFi7k1k8v21ClJYHPaw==}
+  /long@5.3.1:
+    resolution: {integrity: sha512-ka87Jz3gcx/I7Hal94xaN2tZEOPoUOEVftkQqZx2EeQRN7LGdfLlI3FvZ+7WDplm+vK2Urx9ULrvSowtdCieng==}
     dev: false
 
   /loupe@2.3.7:
@@ -6355,7 +5909,7 @@ packages:
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
       '@types/node': 18.19.0
-      long: 5.3.0
+      long: 5.3.1
     dev: false
 
   /proxy-addr@2.0.7:
@@ -6923,29 +6477,6 @@ packages:
       yn: 3.1.1
     dev: false
 
-  /ts-poet@6.11.0:
-    resolution: {integrity: sha512-r5AGF8vvb+GjBsnqiTqbLhN1/U2FJt6BI+k0dfCrkKzWvUhNlwMmq9nDHuucHs45LomgHjZPvYj96dD3JawjJA==}
-    dependencies:
-      dprint-node: 1.0.8
-    dev: false
-
-  /ts-proto-descriptors@1.16.0:
-    resolution: {integrity: sha512-3yKuzMLpltdpcyQji1PJZRfoo4OJjNieKTYkQY8pF7xGKsYz/RHe3aEe4KiRxcinoBmnEhmuI+yJTxLb922ULA==}
-    dependencies:
-      long: 5.3.0
-      protobufjs: 7.4.0
-    dev: false
-
-  /ts-proto@1.181.2:
-    resolution: {integrity: sha512-knJ8dtjn2Pd0c5ZGZG8z9DMiD4PUY8iGI9T9tb8DvGdWRMkLpf0WcPO7G+7cmbZyxvNTAG6ci3fybEaFgMZIvg==}
-    hasBin: true
-    dependencies:
-      case-anything: 2.1.13
-      protobufjs: 7.4.0
-      ts-poet: 6.11.0
-      ts-proto-descriptors: 1.16.0
-    dev: false
-
   /tslib@1.14.1:
     resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
     dev: false
@@ -7087,18 +6618,6 @@ packages:
       yargs: 17.7.2
     transitivePeerDependencies:
       - supports-color
-    dev: false
-
-  /typescript@5.2.2:
-    resolution: {integrity: sha512-mI4WrpHsbCIcwT9cF4FZvr80QUeKvsUsUvKDoR+X/7XHQH98xYD8YHZg7ANtz2GtZt/CBq2QJ0thkGJMHfqc1w==}
-    engines: {node: '>=14.17'}
-    hasBin: true
-    dev: false
-
-  /typescript@5.3.2:
-    resolution: {integrity: sha512-6l+RyNy7oAHDfxC4FzSJcz9vnjTKxrLpDG5M2Vu4SHRVNg6xzqZp6LYSR9zjqQTu8DU/f5xwxUdADOkbrIX2gQ==}
-    engines: {node: '>=14.17'}
-    hasBin: true
     dev: false
 
   /typescript@5.5.4:
@@ -7537,11 +7056,6 @@ packages:
     resolution: {integrity: sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==}
     dev: false
 
-  /yargs-parser@20.2.4:
-    resolution: {integrity: sha512-WOkpgNhPTlE73h4VFAFsOnomJVaovO8VqLDzy5saChRBFQFBoMYirowyW+Q9HB4HFF4Z7VZTiG3iSzJJA29yRA==}
-    engines: {node: '>=10'}
-    dev: false
-
   /yargs-parser@20.2.9:
     resolution: {integrity: sha512-y11nGElTIV+CT3Zv9t7VKl+Q3hTQoT9a1Qzezhhl6Rp21gJ/IVTW7Z3y9EWXhuUBC2Shnf+DX0antecpAwSP8w==}
     engines: {node: '>=10'}
@@ -7572,7 +7086,7 @@ packages:
       require-directory: 2.1.1
       string-width: 4.2.3
       y18n: 5.0.8
-      yargs-parser: 20.2.4
+      yargs-parser: 20.2.9
     dev: false
 
   /yargs@17.7.2:
@@ -8226,10 +7740,6 @@ packages:
     name: '@rush-temp/solana-data-service'
     version: 0.0.0
     dependencies:
-      '@subsquid/borsh': 0.1.0
-      '@subsquid/solana-normalization': 0.0.2
-      '@subsquid/solana-rpc': 0.0.2
-      '@subsquid/solana-rpc-data': 0.0.2(@subsquid/util-internal-validation@0.6.0)
       '@types/node': 18.19.0
       bs58: 5.0.0
       commander: 11.1.0
@@ -8246,14 +7756,13 @@ packages:
     dev: false
 
   file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-yFGmhQNi7XSv0HpTROea6+bTrLxSP60HCAr1/FPoJbjIWgwve24OEhJE5FM5TfDoA59klnlfdp+Kfp3geEbk5Q==, tarball: file:projects/solana-example.tgz}
+    resolution: {integrity: sha512-EdUDReCMLATW7kBs9SSJVz5Wg/cwQbJ4KRWXrV2WfiNzqw17ty2Pp+9KU1udMfH22FUfLL/DBgOXyRVmi4DeIQ==, tarball: file:projects/solana-example.tgz}
     id: file:projects/solana-example.tgz
     name: '@rush-temp/solana-example'
     version: 0.0.0
     dependencies:
       '@subsquid/solana-objects': 0.0.2(@subsquid/solana-stream@0.1.4)
       '@subsquid/solana-stream': 0.1.4
-      '@subsquid/solana-typegen': 0.3.0(typescript@5.3.2)
       '@types/node': 18.19.0
       dotenv: 16.3.1
       pg: 8.11.3
@@ -8284,7 +7793,6 @@ packages:
     name: '@rush-temp/solana-ingest'
     version: 0.0.0
     dependencies:
-      '@subsquid/logger': 1.4.0
       '@types/node': 18.19.0
       typescript: 5.5.4
     dev: false
@@ -8294,9 +7802,7 @@ packages:
     name: '@rush-temp/solana-normalization'
     version: 0.0.0
     dependencies:
-      '@subsquid/logger': 1.4.0
       '@types/node': 18.19.0
-      expect: 29.7.0
       typescript: 5.5.4
     dev: false
 
@@ -8323,7 +7829,7 @@ packages:
     name: '@rush-temp/solana-typegen'
     version: 0.0.0
     dependencies:
-      '@solana/addresses': 2.0.0(typescript@5.5.4)
+      '@solana/addresses': 2.0.0-rc.1(typescript@5.5.4)
       '@solanafm/explorer-kit-idls': 1.1.3
       '@subsquid/solana-stream': 0.1.4
       '@types/node': 18.19.0
@@ -8416,8 +7922,17 @@ packages:
       typescript: 5.5.4
     dev: false
 
+  file:projects/starknet-rpc.tgz:
+    resolution: {integrity: sha512-ILNB0iC2QEIjlcdr8qbunxSnLNGh7OWX0N6RHhYQ57zrBsBRET+hE9/8Zht9cI1lO/T7IH9ZNVH864xSNZ0hNg==, tarball: file:projects/starknet-rpc.tgz}
+    name: '@rush-temp/starknet-rpc'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.5.4
+    dev: false
+
   file:projects/starknet-stream.tgz:
-    resolution: {integrity: sha512-YNtwdQNKAsDJokATc+2K7rX+WTkfPuxuD1E4Xt35wlPZxQoSB8wn4hB9O1OttDwWkFCkL5i5oR/4/zSzm874oQ==, tarball: file:projects/starknet-stream.tgz}
+    resolution: {integrity: sha512-ARH19ZyUFbVeSN4IRkDvutrDK9jHBOJjssJEU8Akr/MHNvTppubjVsCDzYEG2/scdu49XnE872U+KJuKRlgFJw==, tarball: file:projects/starknet-stream.tgz}
     name: '@rush-temp/starknet-stream'
     version: 0.0.0
     dependencies:
@@ -8531,7 +8046,7 @@ packages:
     dev: false
 
   file:projects/tron-dump.tgz:
-    resolution: {integrity: sha512-Y/2k8+htiaJLuYl52+sVEs01BS9SAk+fIXYEMXoRCaZ7Dlyx9XiC13789XeXfGF/t3UAp0G+WELEDQmJBnKRZg==, tarball: file:projects/tron-dump.tgz}
+    resolution: {integrity: sha512-CjqSun9SZCpDCs+2E75vIietLn6YPYmIFnM+MdtlYRD7K8rnXtckhxy3WYXbX3haNurK2JOsI6ZcIrZTmcW2OQ==, tarball: file:projects/tron-dump.tgz}
     name: '@rush-temp/tron-dump'
     version: 0.0.0
     dependencies:
@@ -8546,7 +8061,7 @@ packages:
     dev: false
 
   file:projects/tron-ingest.tgz:
-    resolution: {integrity: sha512-UAMJFRHjdl0UJLKR+ARPEPsfWtZJbE4H20WhO+hDPJaLoGdt0PiQK10XiNf/j8k9vErsXvXy93b7ApU1ofZI0g==, tarball: file:projects/tron-ingest.tgz}
+    resolution: {integrity: sha512-azrWVXyaE6ZXePhhxU8tEw8TIFtm75P9Cg5WQYefzyIFcy3lzs7os0gsHReyCF6inH//g0i2wpXJTw239je9Ig==, tarball: file:projects/tron-ingest.tgz}
     name: '@rush-temp/tron-ingest'
     version: 0.0.0
     dependencies:
@@ -8561,7 +8076,7 @@ packages:
     dev: false
 
   file:projects/tron-normalization.tgz:
-    resolution: {integrity: sha512-ZogV1RIO62FpSjTOR0FVuU1XOy/SS3mD5Md6c+Z78bSQrppKGb2qN2Pih8xhakSB4l1KCSxMVEq+qW2XQNK77Q==, tarball: file:projects/tron-normalization.tgz}
+    resolution: {integrity: sha512-AM4zsOPTd4fxtEuykTbzN7cGOHt8ht7Uoeew5sitRdwXp/vmH+suX6Qgzh0zYsTFQIzho0gbdyszPX25WRvFUg==, tarball: file:projects/tron-normalization.tgz}
     name: '@rush-temp/tron-normalization'
     version: 0.0.0
     dependencies:
@@ -8570,7 +8085,7 @@ packages:
     dev: false
 
   file:projects/tron-processor.tgz:
-    resolution: {integrity: sha512-d8bMpHTIKIrg6rjQj/3cpzlUS2+aqvlSP3GVP2AOpxIzq9f/y20/IHp2ipw3vkgdS2ioiBipE2YBC6fitmzYrg==, tarball: file:projects/tron-processor.tgz}
+    resolution: {integrity: sha512-hxAUSfHB838pE7rJDiGqpp7NL3/f64AdMbQ+XIbHT0PrN5P0lPiK/xClUZ+QM298jveUlg0vIz0ku9Sf98FZWg==, tarball: file:projects/tron-processor.tgz}
     name: '@rush-temp/tron-processor'
     version: 0.0.0
     dependencies:
@@ -8579,7 +8094,7 @@ packages:
     dev: false
 
   file:projects/tron-usdt.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-zssg8ExEPRvag+c6ywpqTQJQrC36GF/bi9Yams14h63y5a1UFwV+v1Bpjwpq+SLQz9pgSaoiyzN6nQL3T4GsTA==, tarball: file:projects/tron-usdt.tgz}
+    resolution: {integrity: sha512-MXuuo9FyVoiR0dC7tiXUG9DqA+9r2Pe4KJ9+YaUlpBu/NrtKtWId8V7j63auExtoEu+eYqY3AnKGJeFA4C74Qw==, tarball: file:projects/tron-usdt.tgz}
     id: file:projects/tron-usdt.tgz
     name: '@rush-temp/tron-usdt'
     version: 0.0.0
@@ -8835,15 +8350,9 @@ packages:
     version: 0.0.0
     dependencies:
       '@grpc/grpc-js': 1.12.6
-      '@solana/addresses': 2.0.0(typescript@5.2.2)
-      '@solana/keys': 2.0.0(typescript@5.2.2)
-      '@solana/rpc-api': 2.0.0(typescript@5.2.2)
-      '@solana/rpc-types': 2.0.0(typescript@5.2.2)
-      '@triton-one/yellowstone-grpc': 2.1.0
       '@types/node': 18.19.0
-      long: 5.3.0
+      long: 5.3.1
       protobufjs: 7.4.0
-      ts-proto: 1.181.2
       typescript: 5.5.4
     dev: false
 
@@ -8976,7 +8485,6 @@ packages:
     name: '@rush-temp/util-internal-worker-thread'
     version: 0.0.0
     dependencies:
-      '@subsquid/logger': 1.4.0
       '@types/node': 18.19.0
       typescript: 5.5.4
     dev: false
