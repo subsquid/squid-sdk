@@ -1,5 +1,4 @@
 import {addErrorContext} from '@subsquid/util-internal'
-import assert from 'assert'
 import type {RpcClient} from './client'
 import {RpcConnectionError, RpcError} from './errors'
 import {RpcErrorInfo, RpcNotification, RpcRequest} from './interfaces'
@@ -18,19 +17,17 @@ export interface Subscription<T> {
 
 
 export interface SubscriptionHandle {
-    readonly isOpen: boolean
+    readonly isActive: boolean
     readonly isClosed: boolean
     close(): void
-    reset(): void
 }
 
 
-type SubKey = string // "{notification}::{id}"
-type SubId = number | string
+type SubId = string
 
 
 export class Subscriptions {
-    private active = new Map<SubKey, Handle>()
+    private active = new Map<SubId, Handle>()
 
     constructor(private client: RpcClient) {
         this.client.addNotificationListener(msg => this.onNotification(msg))
@@ -50,8 +47,8 @@ export class Subscriptions {
             default:
                 return
         }
-        let key = `${msg.method}::${subscription}`
-        let handle = this.active.get(key)
+        let id = `${msg.method}::${subscription}`
+        let handle = this.active.get(id)
         if (handle == null) return
 
         let params = msg.params as {
@@ -85,22 +82,17 @@ class Handle implements SubscriptionHandle {
     constructor(
         public readonly sub: Subscription<any>,
         private client: RpcClient,
-        private active: Map<SubKey, Handle>
+        private active: Map<SubId, Handle>
     ) {
         this.subscribe()
     }
 
-    get isOpen(): boolean {
+    get isActive(): boolean {
         return !this.closed
     }
 
     get isClosed(): boolean {
         return this.closed
-    }
-
-    getSubKey(): string {
-        assert(this.id != null)
-        return `${this.sub.notification}::${this.id}`
     }
 
     close(): void {
@@ -111,7 +103,7 @@ class Handle implements SubscriptionHandle {
 
     onConnectionReset(reason: Error): void {
         if (this.closed) return
-        this.active.delete(this.getSubKey())
+        this.active.delete(this.id!)
         this.id = undefined
         if (reason instanceof RpcConnectionError && this.sub.resubscribeOnConnectionLoss) {
             this.subscribe()
@@ -127,32 +119,22 @@ class Handle implements SubscriptionHandle {
             validateResult: (result, req) => this.validateSubscriptionResult(result, req)
         }).then(id => {
             this.id = id
-            if (this.isOpen) {
-                this.active.set(this.getSubKey(), this)
+            if (this.isActive) {
+                this.active.set(this.id, this)
             } else {
                 this.unsubscribe()
             }
         }, err => {
             if (this.closed) return
-            if (err instanceof RpcConnectionError && this.sub.resubscribeOnConnectionLoss) {
-                this.subscribe()
-            } else {
-                this.closed = true
-                this.sub.onError(err)
-            }
+            this.closed = true
+            this.sub.onError(err)
         })
     }
 
-    private unsubscribe() {
+    private unsubscribe(): void {
         if (this.id == null) return
-        this.doUnsubscribe().then()
-    }
-
-    private doUnsubscribe(): Promise<void> {
-        this.active.delete(this.getSubKey())
-        let id = this.id
-        this.id = undefined
-        return this.client.call(this.sub.unsubscribe, [id], {retryAttempts: 0}).catch(err => {
+        this.active.delete(this.id)
+        this.client.call(this.sub.unsubscribe, [this.id], {retryAttempts: 0}).catch(err => {
             if (err instanceof RpcConnectionError) return
             this.client.reset(
                 addErrorContext(
@@ -160,14 +142,6 @@ class Handle implements SubscriptionHandle {
                     {rpcSubscriptionCancellationError: err}
                 )
             )
-        })
-    }
-
-    reset(): void {
-        if (this.id == null) return
-        this.doUnsubscribe().then(() => {
-            if (this.closed) return
-            this.subscribe()
         })
     }
 
@@ -187,11 +161,11 @@ class Handle implements SubscriptionHandle {
                     }
                 )
         }
-        let key = `${this.sub.notification}::${result}`
-        if (this.active.has(key)) {
+        let id = `${this.sub.notification}::${result}`
+        if (this.active.has(id)) {
             this.client.reset()
             throw new Error(`got duplicate subscription: ${result}`)
         }
-        return result
+        return id
     }
 }

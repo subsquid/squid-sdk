@@ -21,9 +21,7 @@
     "@subsquid/util-internal-validation": "^0.7.0"
   },
   "devDependencies": {
-    "@subsquid/util-internal-json": "^1.2.3",
-    "@subsquid/util-internal-json-fix-unsafe-integers": "^0.0.0",
     "@types/node": "^18.18.14",
-    "typescript": "5.5.4"
+    "typescript": "~5.5.4"
   }
 }

@@ -1,5 +1,5 @@
 import {DataChunkError} from './errors'
-import {formatBlockNumber} from './block'
+import {formatBlockNumber} from './util'
 
 
 export interface DataChunk {
