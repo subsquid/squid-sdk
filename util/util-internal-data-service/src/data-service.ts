@@ -5,7 +5,7 @@ import assert from 'assert'
 import {Chain} from './chain'
 import {Block, BlockHeader, BlockRef, DataResponse, InvalidBaseBlock} from './types'
 import {isChain} from './util'
-import EventEmitter from 'events'
+import _EventEmitter from 'events'
 
 
 interface BlockWaiter {
@@ -13,6 +13,19 @@ interface BlockWaiter {
     future: Future<void>
 }
 
+interface Events {
+    'update': (data: {
+        first: number
+        last: number
+        finalized: number
+        size: number
+    }) => void;
+  }
+
+interface EventEmitter {
+    on<E extends keyof Events>(event: E, listener: Events[E]): this
+    emit<E extends keyof Events>(event: E, ...args: Parameters<Events[E]>): boolean
+}
 
 export class DataService {
     private listeners: BlockWaiter[] = []
@@ -138,7 +151,7 @@ export class DataService {
         })) {
             assert(batch.blocks.length === 1)
             this.#chain = new Chain(batch.blocks[0], this.bufferSize)
-            this.notifyListeners()
+            this.triggerUpdate()
         }
     }
 
@@ -178,7 +191,7 @@ export class DataService {
 
     @def
     eventEmitter(): EventEmitter {
-        return new EventEmitter()
+        return new _EventEmitter()
     }
 
     private async ingestSession(base: BlockRef): Promise<void> {
@@ -216,13 +229,7 @@ export class DataService {
                 this.log.error('block finalization lags behind and prevents cache purging')
             }
 
-            this.eventEmitter().emit('batch', {
-                first: this.chain.firstBlockNumber(),
-                last: this.chain.lastBlockNumber(),
-                size: this.chain.size()
-            })
-
-            this.notifyListeners()
+            this.triggerUpdate()
         }
     }
 
@@ -261,6 +268,17 @@ export class DataService {
             let future = this.listeners.pop()!.future
             future.resolve()
         }
+    }
+
+    private triggerUpdate() {
+        this.eventEmitter().emit('update', {
+            first: this.chain.firstBlockNumber(),
+            last: this.chain.lastBlockNumber(),
+            finalized: this.chain.getFinalizedHead().number,
+            size: this.chain.size()
+        })
+
+        this.notifyListeners()
     }
 }
 
