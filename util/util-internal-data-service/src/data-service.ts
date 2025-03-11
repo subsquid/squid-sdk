@@ -1,11 +1,11 @@
 import {createLogger} from '@subsquid/logger'
-import {createFuture, def, Future, last, removeArrayItem, wait} from '@subsquid/util-internal'
+import {createFuture, Future, last, removeArrayItem, wait} from '@subsquid/util-internal'
 import {BlockBatch, DataSource, isForkException} from '@subsquid/util-internal-data-source'
 import assert from 'assert'
 import {Chain} from './chain'
 import {Block, BlockHeader, BlockRef, DataResponse, InvalidBaseBlock} from './types'
 import {isChain} from './util'
-import _EventEmitter from 'events'
+import {Metrics} from './metrics'
 
 
 interface BlockWaiter {
@@ -13,21 +13,10 @@ interface BlockWaiter {
     future: Future<void>
 }
 
-interface Events {
-    'update': (data: {
-        first: number
-        last: number
-        finalized: number
-        size: number
-    }) => void;
-  }
-
-interface EventEmitter {
-    on<E extends keyof Events>(event: E, listener: Events[E]): this
-    emit<E extends keyof Events>(event: E, ...args: Parameters<Events[E]>): boolean
-}
 
 export class DataService {
+    readonly metrics = new Metrics()
+
     private listeners: BlockWaiter[] = []
     private stopped = false
     #chain?: Chain
@@ -189,11 +178,6 @@ export class DataService {
         this.stopped = true
     }
 
-    @def
-    eventEmitter(): EventEmitter {
-        return new _EventEmitter()
-    }
-
     private async ingestSession(base: BlockRef): Promise<void> {
         let finalizedHead: BlockRef | undefined
 
@@ -271,12 +255,10 @@ export class DataService {
     }
 
     private triggerUpdate() {
-        this.eventEmitter().emit('update', {
-            first: this.chain.firstBlockNumber(),
-            last: this.chain.lastBlockNumber(),
-            finalized: this.chain.getFinalizedHead().number,
-            size: this.chain.size()
-        })
+        this.metrics.setFirstBlock(this.chain.firstBlockNumber())
+        this.metrics.setLastBlock(this.chain.lastBlockNumber())
+        this.metrics.setFinalizedBlock(this.chain.getFinalizedHead().number)
+        this.metrics.setStoredBlocks(this.chain.size())
 
         this.notifyListeners()
     }

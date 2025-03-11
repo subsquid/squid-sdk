@@ -3,19 +3,10 @@ import {HttpApp} from '@subsquid/util-internal-http-server'
 import {NAT, object, option, STRING, ValidationFailure} from '@subsquid/util-internal-validation'
 import {DataService} from './data-service'
 import {InvalidBaseBlock} from './types'
-import {Metrics} from './metrics'
 
 
 export function createHttpApp(service: DataService): HttpApp {
     let app = new HttpApp()
-    let metrics = new Metrics()
-
-    service.eventEmitter().on('update', (data) => {
-        metrics.setFirstBlock(data.first)
-        metrics.setLastBlock(data.last)
-        metrics.setFinalizedBlock(data.finalized)
-        metrics.setStoredBlocks(data.size)
-    })
 
     app.add('/', {
         async GET(ctx): Promise<void> {
@@ -97,19 +88,19 @@ export function createHttpApp(service: DataService): HttpApp {
     app.add('/metrics', {
         async GET(ctx) {
             if (ctx.url.searchParams.get('json') === 'true') {
-                let value = await metrics.registry.getMetricsAsJSON()
+                let value = await service.metrics.registry.getMetricsAsJSON()
                 ctx.send(200, value)
             } else {
-                let value = await metrics.registry.metrics()
-                ctx.send(200, value, metrics.registry.contentType)
+                let value = await service.metrics.registry.metrics()
+                ctx.send(200, value, service.metrics.registry.contentType)
             }
         }
     })
 
     app.add('/metrics/{name}', {
         async GET(ctx) {
-            if (metrics.registry.getSingleMetric(ctx.params.name)) {
-                let value = await metrics.registry.getSingleMetricAsString(ctx.params.name)
+            if (service.metrics.registry.getSingleMetric(ctx.params.name)) {
+                let value = await service.metrics.registry.getSingleMetricAsString(ctx.params.name)
                 ctx.send(200, value)
             } else {
                 ctx.send(404, 'requested metric not found')
