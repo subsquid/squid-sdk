@@ -1,4 +1,3 @@
-import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
 import {collectDefaultMetrics, Gauge, Registry} from 'prom-client'
 
 

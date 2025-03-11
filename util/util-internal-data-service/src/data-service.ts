@@ -36,7 +36,7 @@ export class DataService {
         private source: DataSource<Block>,
         private bufferSize: number,
         readonly log = createLogger('sqd:data-service'),
-        private responseLimit = 100,
+        private responseLimit = 100
     ) {}
 
     private get chain(): Chain {

@@ -22,7 +22,6 @@ runProgram(async () => {
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
     program.option('--votes', 'Include vote transactions (by default all votes are excluded)')
-    program.option('--metrics <port>', 'Enable prometheus metrics server', positiveInt)
     program.parse()
 
     let args = program.opts() as {
@@ -34,7 +33,6 @@ runProgram(async () => {
         blockCacheSize: number
         port: number
         votes?: boolean
-        metrics?: number
     }
 
     let dataSourceOptions: DataSourceOptions = {
@@ -67,8 +65,7 @@ runProgram(async () => {
     let service = await runDataService({
         source: dataSource,
         blockCacheSize: args.blockCacheSize,
-        port: args.port,
-        metrics: args.metrics,
+        port: args.port
     })
 
     log.info(`listening on port ${service.port}`)
