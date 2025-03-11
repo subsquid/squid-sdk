@@ -1,10 +1,11 @@
 import {createLogger} from '@subsquid/logger'
-import {createFuture, Future, last, removeArrayItem, wait} from '@subsquid/util-internal'
+import {createFuture, def, Future, last, removeArrayItem, wait} from '@subsquid/util-internal'
 import {BlockBatch, DataSource, isForkException} from '@subsquid/util-internal-data-source'
 import assert from 'assert'
 import {Chain} from './chain'
 import {Block, BlockHeader, BlockRef, DataResponse, InvalidBaseBlock} from './types'
 import {isChain} from './util'
+import EventEmitter from 'events'
 
 
 interface BlockWaiter {
@@ -22,7 +23,7 @@ export class DataService {
         private source: DataSource<Block>,
         private bufferSize: number,
         readonly log = createLogger('sqd:data-service'),
-        private responseLimit = 100
+        private responseLimit = 100,
     ) {}
 
     private get chain(): Chain {
@@ -175,6 +176,11 @@ export class DataService {
         this.stopped = true
     }
 
+    @def
+    eventEmitter(): EventEmitter {
+        return new EventEmitter()
+    }
+
     private async ingestSession(base: BlockRef): Promise<void> {
         let finalizedHead: BlockRef | undefined
 
@@ -209,6 +215,12 @@ export class DataService {
             if (!this.chain.compact()) {
                 this.log.error('block finalization lags behind and prevents cache purging')
             }
+
+            this.eventEmitter().emit('batch', {
+                first: this.chain.firstBlockNumber(),
+                last: this.chain.lastBlockNumber(),
+                size: this.chain.size()
+            })
 
             this.notifyListeners()
         }

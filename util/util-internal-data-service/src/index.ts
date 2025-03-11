@@ -3,6 +3,7 @@ import {ListeningServer} from '@subsquid/util-internal-http-server'
 import {DataService} from './data-service'
 import {createHttpApp} from './http-app'
 import {Block, BlockHeader, BlockRef} from './types'
+import {PrometheusServer} from './prometheus'
 
 
 export {
@@ -20,6 +21,7 @@ export interface DataServiceOptions {
     source: DataSource<Block>
     blockCacheSize?: number
     port?: number
+    metrics?: number
 }
 
 
@@ -29,6 +31,15 @@ export async function runDataService(args: DataServiceOptions): Promise<Listenin
 
     await service.init()
     let server = await app.listen(args.port ?? 3000)
+
+    if (args.metrics) {
+        let prometheus = new PrometheusServer(args.metrics)
+        service.eventEmitter().on('batch', (data: {first: number, last: number, size: number}) => {
+            prometheus.setFirstBlock(data.first)
+            prometheus.setLastBlock(data.last)
+            prometheus.setStoredBlocks(data.size)
+        })
+    }
 
     service.run().then()
 
