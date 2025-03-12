@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.3.0",
+      "tag": "@subsquid/substrate-data_v4.3.0",
+      "date": "Wed, 12 Mar 2025 20:55:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to skip blocks during parsing"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.2.1",
       "tag": "@subsquid/substrate-data_v4.2.1",
       "date": "Mon, 07 Oct 2024 15:13:33 GMT",

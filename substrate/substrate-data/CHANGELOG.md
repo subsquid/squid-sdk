@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Mon, 07 Oct 2024 15:13:33 GMT and should not be manually modified.
+This log was last generated on Wed, 12 Mar 2025 20:55:26 GMT and should not be manually modified.
+
+## 4.3.0
+Wed, 12 Mar 2025 20:55:26 GMT
+
+### Minor changes
+
+- allow to skip blocks during parsing
 
 ## 4.2.1
 Mon, 07 Oct 2024 15:13:33 GMT
