@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-ingest",
+      "comment": "add `--skip-blocks` arg to skip problematic blocks",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-ingest"
+}

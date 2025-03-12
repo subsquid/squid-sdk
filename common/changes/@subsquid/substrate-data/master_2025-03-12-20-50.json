@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "allow to skip blocks during parsing",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}
