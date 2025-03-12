@@ -1,6 +1,11 @@
 # Change Log - @subsquid/solana-objects
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Wed, 12 Mar 2025 09:11:46 GMT and should not be manually modified.
+
+## 0.0.3
+Wed, 12 Mar 2025 09:11:46 GMT
+
+_Version update only_
 
 ## 0.0.2
 Thu, 25 Jul 2024 11:48:18 GMT

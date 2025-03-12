@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-stream",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/solana-stream_v0.2.0",
+      "date": "Wed, 12 Mar 2025 09:11:46 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `balances` and `tokenBalances` relations to transcation request"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.4",
       "tag": "@subsquid/solana-stream_v0.1.4",
       "date": "Mon, 10 Feb 2025 07:46:03 GMT",
