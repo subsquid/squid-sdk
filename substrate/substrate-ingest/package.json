@@ -1,7 +1,7 @@
 {
   "name": "@subsquid/substrate-ingest",
   "description": "Data decoder and fetcher for substrate based chains",
-  "version": "3.6.5",
+  "version": "3.7.0",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@subsquid/rpc-client": "^4.11.0",
-    "@subsquid/substrate-data": "^4.2.1",
+    "@subsquid/substrate-data": "^4.3.0",
     "@subsquid/substrate-data-raw": "^1.2.0",
     "@subsquid/substrate-runtime": "^2.0.1",
     "@subsquid/util-internal": "^3.2.0",
