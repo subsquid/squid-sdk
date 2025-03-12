@@ -136,6 +136,10 @@ export class Chain {
         return this.lastBlock().number
     }
 
+    size(): number {
+        return this.blocks.length
+    }
+
     getFinalizedHead(): BlockRef {
         let block = this.blocks[this.finalizedHead]
         return {

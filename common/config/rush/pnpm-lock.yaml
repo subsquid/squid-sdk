@@ -8788,11 +8788,12 @@ packages:
     dev: false
 
   file:projects/util-internal-data-service.tgz:
-    resolution: {integrity: sha512-OidQjAmWP5IAWusfTsqczZjrqe+L5udtTsjL0exOl1SSqC2eqrHLNEtlh5jjMOGd+fiKWg976NUdTGS6/BpN2w==, tarball: file:projects/util-internal-data-service.tgz}
+    resolution: {integrity: sha512-zHRkqixsLwgJzh+EnjyCNgQeL2D+GfCtSJC9m6RwYrCBbephSIrRJCqC2QK13Vt1qB87mGaVeeKo+Ld+/S3nWA==, tarball: file:projects/util-internal-data-service.tgz}
     name: '@rush-temp/util-internal-data-service'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0
+      prom-client: 14.2.0
       typescript: 5.5.4
     dev: false
 

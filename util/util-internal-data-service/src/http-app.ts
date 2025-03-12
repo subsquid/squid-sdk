@@ -85,6 +85,29 @@ export function createHttpApp(service: DataService): HttpApp {
         }
     })
 
+    app.add('/metrics', {
+        async GET(ctx) {
+            if (ctx.url.searchParams.get('json') === 'true') {
+                let value = await service.metrics.registry.getMetricsAsJSON()
+                ctx.send(200, value)
+            } else {
+                let value = await service.metrics.registry.metrics()
+                ctx.send(200, value, service.metrics.registry.contentType)
+            }
+        }
+    })
+
+    app.add('/metrics/{name}', {
+        async GET(ctx) {
+            if (service.metrics.registry.getSingleMetric(ctx.params.name)) {
+                let value = await service.metrics.registry.getSingleMetricAsString(ctx.params.name)
+                ctx.send(200, value)
+            } else {
+                ctx.send(404, 'requested metric not found')
+            }
+        }
+    })
+
     app.setMaxRequestBody(1024)
 
     return app
