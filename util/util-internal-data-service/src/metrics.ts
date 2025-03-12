@@ -24,7 +24,7 @@ export class Metrics {
 
         this.hotBlocksFinalizedBlockGauge = new Gauge({
             name: 'sqd_hotblocks_finalized_block',
-            help: 'Number of the first stored block',
+            help: 'Number of the finalized stored block',
             registers: [this.registry],
         })
 
@@ -50,6 +50,6 @@ export class Metrics {
     }
 
     setFinalizedBlock(value: number) {
-        this.hotBlocksFinalizedBlockGauge.set({datasource: 'finalized'}, value)
+        this.hotBlocksFinalizedBlockGauge.set({}, value)
     }
 }
