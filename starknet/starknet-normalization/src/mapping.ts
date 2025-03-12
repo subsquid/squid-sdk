@@ -15,7 +15,7 @@ export function mapRpcBlock(src: rpc.Block): Block {
 
     let events: Event[] = []
 
-    let transactions = src.block.transactions
+    let transactions = src.transactions
         ?.map((tx, i) => {
             try {
                 return mapRpcTransaction(i, tx, events)

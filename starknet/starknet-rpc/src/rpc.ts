@@ -12,7 +12,7 @@ import {RangeRequestList, SplitRequest} from '@subsquid/util-internal-range'
 import {Batch, coldIngest} from '@subsquid/util-internal-ingest-tools'
 import {DataRequest} from './base'
 
-export type BlockHeader = Simplify<Omit<Block, 'transactions' | 'events'>>
+export type BlockHeader = Simplify<Omit<Block, 'transactions'>>
 
 export interface IngestOptions {
     stopOnHead?: boolean
@@ -24,7 +24,7 @@ export interface IngestOptions {
 export class Rpc {
     constructor(
         private client: RpcClient,
-        private priority: number,
+        private priority: number = 0,
     ) {
     }
 
@@ -48,7 +48,11 @@ export class Rpc {
         return this.call('starknet_getBlockWithTxHashes', [{block_number: height}], {
             validateResult: getResultValidator(Block),
             validateError: captureBlockNotFound
-        })
+        }).then(block => {
+            const typedBlock = block as unknown as Block;
+            const { transactions, ...blockHeader } = typedBlock;
+            return blockHeader as BlockHeader;
+        });
     }
 
     getBlockBatch(heights: number[]): Promise<(Block | null | undefined)[]> {

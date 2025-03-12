@@ -286,7 +286,7 @@ class StarknetDataSource implements DataSource<PartialBlock> {
             this.isConsistent = true
         } else {
             throw addErrorContext(
-                new Error(`Provided Subsquid Gateway and RPC endpoints don't agree on slot ${blocks.archiveBlock.slot}`),
+                new Error(`Provided Subsquid Gateway and RPC endpoints don't agree on slot ${blocks.archiveBlock.hash}`),
                 blocks
             )
         }
@@ -300,7 +300,7 @@ class StarknetDataSource implements DataSource<PartialBlock> {
         let height = await archive.getFinalizedHeight()
         let archiveBlock = await archive.getBlockHeader(height)
         let rpcBlock = await this.rpc!.getBlockHeader(archiveBlock.height)
-        if (rpcBlock?.blockhash === archiveBlock.hash && rpcBlock.blockHeight === archiveBlock.height) return
+        if (rpcBlock?.block_hash === archiveBlock.hash && rpcBlock.block_number === archiveBlock.height) return
         return {archiveBlock, rpcBlock: rpcBlock || null}
     }
 

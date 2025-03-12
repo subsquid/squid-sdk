@@ -32,15 +32,15 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
     })
 
     let ResourceBounds = object({
-        l1GasMaxAmount: option(NAT),
-        l1GasMaxPricePerUnit: option(NAT),
-        l2GasMaxAmount: option(NAT),
-        l2GasMaxPricePerUnit: option(NAT)
+        l1GasMaxAmount: NAT,
+        l1GasMaxPricePerUnit: NAT,
+        l2GasMaxAmount: NAT,
+        l2GasMaxPricePerUnit: NAT
     })
 
     let ActualFee = object({
-        amount: option(STRING),
-        unit: option(STRING)
+        amount: STRING,
+        unit: STRING
     })
 
     let Transaction = object({

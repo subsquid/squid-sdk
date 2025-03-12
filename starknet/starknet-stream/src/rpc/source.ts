@@ -1,4 +1,4 @@
-import {Hash32, BlockHeader, Rpc} from '@subsquid/starknet-rpc'
+import {BlockHeader, Rpc} from '@subsquid/starknet-rpc'
 import {addErrorContext, wait} from '@subsquid/util-internal'
 import {getRequestAt, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {PartialBlock} from '../data/data-partial'
@@ -29,7 +29,7 @@ export class RpcDataSource {
         throw new Error(`Failed to getBlock with finalized commitment at height ${height} 10 times in a row`)
     }
 
-    async getBlockHash(height: number): Promise<Hash32 | undefined> {
+    async getBlockHash(height: number): Promise<string | undefined> {
         let headHeight = await this.rpc.getFinalizedHeight()
         if (headHeight < height) return
         let block = await this.rpc.getBlockHeader(height)
@@ -41,21 +41,21 @@ export class RpcDataSource {
         stopOnHead?: boolean | undefined
     ): AsyncIterable<PartialBlock[]> {
         let blockStream = this.rpc.ingestFinalizedBlocks(toRpcRequests(requests), {
-            headPollInterval: this.options.concurrentFetchThreshold,
-            splitSize: this.options.strideSize,
-            concurrency: this.options.strideConcurrency,
+            headPollInterval: this.options.concurrentFetchThreshold ?? 1000,
+            splitSize: this.options.strideSize ?? 100,
+            concurrency: this.options.strideConcurrency ?? 5,
             stopOnHead,
         })
 
         for await (let batch of blockStream) {
-            let req = getRequestAt(requests, batch[0].height) || {}
-            yield batch.map(block => {
+            let req = getRequestAt(requests, batch.blocks[0].block_number) || {}
+            yield batch.blocks.map(block => {
                 try {
                     return mapBlock(block, req)
                 } catch(err: any) {
                     throw addErrorContext(err, {
-                        blockHash: block.hash,
-                        blockHeight: block.height
+                        blockHash: block.block_hash,
+                        blockHeight: block.block_number
                     })
                 }
             })
