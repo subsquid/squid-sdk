@@ -1,4 +1,4 @@
-import { GetSrcType, object, STRING, INT, array, nullable } from '@subsquid/util-internal-validation'
+import { GetSrcType, object, STRING, INT, array, option } from '@subsquid/util-internal-validation'
 
 const FELT = STRING
 type FELT = GetSrcType<typeof FELT>
@@ -49,56 +49,54 @@ type EventContent = GetSrcType<typeof EventContent>
 
 const ExecutionResources = object({
     steps: INT,
-    memory_holes: INT,
-    range_check_builtin_applications: INT,
-    pedersen_builtin_applications: INT,
-    poseidon_builtin_applications: INT,
-    ec_op_builtin_applications: INT,
-    ecdsa_builtin_applications: INT,
-    bitwise_builtin_applications: INT,
-    keccak_builtin_applications: INT,
-    segment_arena_builtin: INT
+    memory_holes: option(INT),
+    range_check_builtin_applications: option(INT),
+    pedersen_builtin_applications: option(INT),
+    poseidon_builtin_applications: option(INT),
+    ec_op_builtin_applications: option(INT),
+    ecdsa_builtin_applications: option(INT),
+    bitwise_builtin_applications: option(INT),
+    keccak_builtin_applications: option(INT),
+    segment_arena_builtin: option(INT)
 })
 type ExecutionResources = GetSrcType<typeof ExecutionResources>
 
 const Transaction = object({
     transaction_hash: Hash32,
-    contract_address: nullable(FELT),
-    entry_point_selector: nullable(FELT),
-    calldata: nullable(array(FELT)),
-    max_fee: nullable(FELT),
+    contract_address: option(FELT),
+    entry_point_selector: option(FELT),
+    calldata: option(array(FELT)),
+    max_fee: option(FELT),
     version: STRING,
-    signature: nullable(array(FELT)),
-    nonce: nullable(FELT),
+    signature: option(array(FELT)),
+    nonce: option(FELT),
     type: STRING,
-    sender_address: nullable(FELT),
-    class_hash: nullable(Hash32),
-    compiled_class_hash: nullable(Hash32),
-    contract_address_salt: nullable(FELT),
-    constructor_calldata: nullable(array(STRING)),
-    resource_bounds: nullable(ResourceBoundsMap),
-    tip: nullable(FELT),
-    paymaster_data: nullable(array(FELT)),
-    account_deployment_data: nullable(array(FELT)),
-    nonce_data_availability_mode: nullable(STRING),
-    fee_data_availability_mode: nullable(STRING)
+    sender_address: option(FELT),
+    class_hash: option(Hash32),
+    compiled_class_hash: option(Hash32),
+    contract_address_salt: option(FELT),
+    constructor_calldata: option(array(STRING)),
+    resource_bounds: option(ResourceBoundsMap),
+    tip: option(FELT),
+    paymaster_data: option(array(FELT)),
+    account_deployment_data: option(array(FELT)),
+    nonce_data_availability_mode: option(STRING),
+    fee_data_availability_mode: option(STRING)
 })
 type Transaction = GetSrcType<typeof Transaction>
 
 const Receipt = object({
     transaction_hash: Hash32,
     actual_fee: ActualFee,
-    execution_status: STRING,
+    execution_status: option(STRING),
     finality_status: STRING,
-    block_hash: Hash32,
-    block_number: INT,
     messages_sent: array(MessageToL1),
-    revert_reason: nullable(STRING),
+    revert_reason: option(STRING),
     events: array(EventContent),
     execution_resources: ExecutionResources,
     type: STRING,
-    contract_address: nullable(FELT),
-    message_hash: nullable(Hash32)
+    contract_address: option(FELT),
+    message_hash: option(Hash32)
 })
 type Receipt = GetSrcType<typeof Receipt>
 
@@ -128,14 +126,13 @@ const Block = object({
     sequencer_address: FELT,
     transactions: array(PackedTransaction),
     starknet_version: STRING,
-    l1_gas_price: ResourcePrice,
-    events: nullable(array(Event))
+    l1_gas_price: ResourcePrice
 })
 type Block = GetSrcType<typeof Block>
 
 const EventPage = object({
     events: array(Event),
-    continuation_token: nullable(STRING)
+    continuation_token: option(STRING)
 })
 type EventPage = GetSrcType<typeof EventPage>
 
