@@ -24,7 +24,7 @@ export class FuelDumper extends Dumper<BlockData, Options> {
         return 'sqd:fuel-dump'
     }
 
-    protected getParentBlockHash(block: BlockData): string {
+    protected getPrevBlockHash(block: BlockData): string {
         return block.block.header.prevRoot
     }
 
@@ -64,7 +64,7 @@ export class FuelDumper extends Dumper<BlockData, Options> {
         }
     }
 
-    protected getLastFinalizedBlockNumber(): Promise<number> {
+    protected getFinalizedHeight(): Promise<number> {
         return this.getDataSource().getFinalizedHeight()
     }
 }

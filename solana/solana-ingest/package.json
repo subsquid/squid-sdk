@@ -19,7 +19,6 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/logger": "^1.4.0",
     "@subsquid/solana-normalization": "^0.0.4",
     "@subsquid/solana-rpc-data": "^0.0.3",
     "@subsquid/util-internal": "^3.2.0",
@@ -29,6 +28,6 @@
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
-    "typescript": "5.5.4"
+    "typescript": "~5.5.4"
   }
 }

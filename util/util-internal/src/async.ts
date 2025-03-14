@@ -39,11 +39,11 @@ export class AsyncQueue<T> {
     private pos = 0
     private size = 0
     private closed = false
-    private putFutures: Future<void>[] = []
+    private putFuture?: Future<void>
     private takeFuture?: Future<T | undefined>
     private closeListeners?: (() => void)[]
 
-    constructor(private maxsize: number) {
+    constructor(maxsize: number) {
         assert(maxsize >= 1)
         this.buf = new Array(maxsize)
     }
@@ -54,31 +54,20 @@ export class AsyncQueue<T> {
 
     async put(val: T): Promise<void> {
         if (this.closed) throw new ClosedQueueError()
+
+        assert(this.size < this.buf.length && this.putFuture == null, 'concurrent puts are not allowed')
+
         if (this.takeFuture) {
             this.takeFuture.resolve(val)
             this.takeFuture = undefined
         } else {
-            if (this.size == this.buf.length) {
-                this.enlargeBuffer()
-            }
             this.buf[(this.pos + this.size) % this.buf.length] = val
             this.size += 1
-            if (this.size >= this.maxsize) {
-                let fut = createFuture<void>()
-                this.putFutures.push(fut)
-                await fut.promise()
+            if (this.size == this.buf.length) {
+                this.putFuture = createFuture()
+                await this.putFuture.promise()
             }
         }
-    }
-
-    private enlargeBuffer(): void {
-        let len = this.buf.length + 1
-        for (let i = this.size - this.pos; i < this.size; i++) {
-            let o = this.pos + i
-            this.buf[o % len] = this.buf[o % this.size]
-        }
-        this.buf[this.size % len] = undefined
-        assert(this.buf.length === len)
     }
 
     forcePut(val: T): void {
@@ -104,11 +93,9 @@ export class AsyncQueue<T> {
             this.buf[this.pos] = undefined
             this.pos = (this.pos + 1) % this.buf.length
             this.size -= 1
-            if (this.size < this.maxsize) {
-                for (let fut of this.putFutures) {
-                    fut.resolve()
-                }
-                this.putFutures.length = 0
+            if (this.putFuture) {
+                this.putFuture.resolve()
+                this.putFuture = undefined
             }
             return val
         } else if (this.closed) {
@@ -126,17 +113,14 @@ export class AsyncQueue<T> {
 
     close(): void {
         this.closed = true
-
-        for (let fut of this.putFutures) {
-            fut.reject(new ClosedQueueError())
+        if (this.putFuture) {
+            this.putFuture.reject(new ClosedQueueError())
+            this.putFuture = undefined
         }
-        this.putFutures.length = 0
-
         if (this.takeFuture) {
             this.takeFuture.resolve(undefined)
             this.takeFuture = undefined
         }
-
         if (this.closeListeners) {
             for (let cb of this.closeListeners) {
                 safeCall(cb)
@@ -152,13 +136,6 @@ export class AsyncQueue<T> {
         } else {
             this.closeListeners.push(cb)
         }
-    }
-
-    removeCloseListener(cb: () => void): void {
-        if (this.closeListeners == null) return
-        let index = this.closeListeners.indexOf(cb)
-        if (index < 0) return
-        this.closeListeners.splice(index, 1)
     }
 
     async *iterate(): AsyncIterable<T> {
@@ -177,7 +154,7 @@ export class AsyncQueue<T> {
 
 export async function* concurrentMap<T, R>(
     concurrency: number,
-    stream: AsyncIterable<T> | Iterable<T>,
+    stream: AsyncIterable<T>,
     f: (val: T) => Promise<R>
 ): AsyncIterable<R> {
     let queue = new AsyncQueue<{promise: Promise<R>}>(concurrency)

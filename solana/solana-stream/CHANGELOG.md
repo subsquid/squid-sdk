@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-stream
 
-This log was last generated on Mon, 10 Feb 2025 07:46:03 GMT and should not be manually modified.
+This log was last generated on Wed, 12 Mar 2025 09:11:46 GMT and should not be manually modified.
+
+## 0.2.0
+Wed, 12 Mar 2025 09:11:46 GMT
+
+### Minor changes
+
+- add `balances` and `tokenBalances` relations to transcation request
 
 ## 0.1.4
 Mon, 10 Feb 2025 07:46:03 GMT

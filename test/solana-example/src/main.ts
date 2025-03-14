@@ -11,7 +11,7 @@ import {Exchange} from './model'
 // that defines where to get the data and what data should we get.
 const dataSource = new DataSourceBuilder()
     // Provide Subsquid Network Gateway URL.
-    // .setGateway('https://v2.archive.subsquid.io/network/solana-mainnet')
+    .setGateway('https://v2.archive.subsquid.io/network/solana-mainnet')
     // Subsquid Network is always about 1000 blocks behind the head.
     // We must use regular RPC endpoint to get through the last mile
     // and stay on top of the chain.
@@ -30,7 +30,7 @@ const dataSource = new DataSourceBuilder()
     //
     // NOTE, that block ranges are specified in heights, not in slots !!!
     //
-    .setBlockRange({from: 297875748, to: 297875753})
+    .setBlockRange({from: 240_000_000})
     //
     // Block data returned by the data source has the following structure:
     //

@@ -1,20 +1,14 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, def, last, runProgram, Throttler, waitDrain} from '@subsquid/util-internal'
-import {
-    ArchiveLayout,
-    checkShorHashMatch,
-    getBlockNumber,
-    getParentBlockNumber,
-    RawBlock
-} from '@subsquid/util-internal-archive-layout'
+import {ArchiveLayout, getShortHash} from '@subsquid/util-internal-archive-layout'
 import {FileOrUrl, nat, positiveInt, positiveReal, Url} from '@subsquid/util-internal-commander'
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
 import {Command} from 'commander'
-import {EventEmitter} from 'events'
 import {PrometheusServer} from './prometheus'
+import {EventEmitter} from 'events'
 
 
 export interface DumperOptions {
@@ -26,17 +20,18 @@ export interface DumperOptions {
     firstBlock?: number
     lastBlock?: number
     chunkSize: number
+    writeBatchSize: number
     topDirSize: number
     metrics?: number
 }
 
 
-export abstract class Dumper<B extends RawBlock, O extends DumperOptions = DumperOptions> {
+export abstract class Dumper<B extends {hash: string, height: number}, O extends DumperOptions = DumperOptions> {
     protected abstract getBlocks(range: Range): AsyncIterable<B[]>
 
-    protected abstract getLastFinalizedBlockNumber(): Promise<number>
+    protected abstract getFinalizedHeight(): Promise<number>
 
-    protected abstract getParentBlockHash(block: B): string
+    protected abstract getPrevBlockHash(block: B): string
 
     protected setUpProgram(program: Command): void {}
 
@@ -60,10 +55,11 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         program.option('-r, --endpoint-rate-limit <rps>', 'Maximum RPC rate in requests per second', positiveReal)
         program.option('-b, --endpoint-max-batch-call-size <number>', 'Maximum size of RPC batch call', positiveInt)
         program.option('--dest <archive>', 'Either local dir or s3:// url where to store the dumped data', FileOrUrl(['s3:']))
-        program.option('--first-block <number>', 'First block to dump', nat)
-        program.option('--last-block <number>', 'Last block to dump', nat)
+        program.option('--first-block <number>', 'Height of the first block to dump', nat)
+        program.option('--last-block <number>', 'Height of the last block to dump', nat)
         this.setUpProgram(program)
         program.option('--chunk-size <MB>', 'Data chunk size in megabytes', positiveInt, this.getDefaultChunkSize())
+        program.option('--write-batch-size <number>', 'Number of blocks to write at a time', positiveInt, 10)
         program.option('--top-dir-size <number>', 'Number of items in a top level dir', positiveInt, this.getDefaultTopDirSize())
         program.option('--metrics <port>', 'Enable prometheus metrics server', nat)
         return program
@@ -132,7 +128,7 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
     protected prometheus() {
         let server = new PrometheusServer(
             this.options().metrics ?? 0,
-            () => this.getLastFinalizedBlockNumber(),
+            () => this.getFinalizedHeight(),
             this.rpc(),
             this.log().child('prometheus')
         )
@@ -140,19 +136,19 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         return server
     }
 
-    private async *ingest(from?: number, prevShortHash?: string): AsyncIterable<B[]> {
+    private async *ingest(from?: number, prevHash?: string): AsyncIterable<B[]> {
         let range = from == null ? this.range() : {
             from,
             to: this.range().to
         }
         assertRange(range)
 
-        let head = new Throttler(() => this.getLastFinalizedBlockNumber(), 60_000)
-        let headNumber = await head.get()
+        let height = new Throttler(() => this.getFinalizedHeight(), 60_000)
+        let chainHeight = await height.get()
 
         let progress = new Progress({
             initialValue: this.range().from,
-            targetValue: Math.min(headNumber, rangeEnd(range)),
+            targetValue: Math.min(chainHeight, rangeEnd(range)),
             currentValue: range.from
         })
 
@@ -165,31 +161,27 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         }, 5000)
 
         for await (let blocks of this.getBlocks(range)) {
-            if (from && prevShortHash != null && this.validateChainContinuity()) {
-                let fst = blocks[0]
-                if (
-                    from === getParentBlockNumber(fst) + 1 &&
-                    checkShorHashMatch(this.getParentBlockHash(fst), prevShortHash)
-                ) {} else {
-                    throw new ErrorMessage(
-                        `Block ${getBlockNumber(fst)}#${fst.hash} `  +
-                        `is not a child of already archived block ${prevShortHash}`
-                    )
+            if (this.validateChainContinuity()) {
+                if (blocks[0].height === from && prevHash) {
+                    let parentHash = getShortHash(this.getPrevBlockHash(blocks[0]))
+                    if (parentHash !== prevHash) {
+                        let fallbackHash = getShortHashFallback(this.getPrevBlockHash(blocks[0]))
+                        if (fallbackHash !== prevHash) {
+                            throw new ErrorMessage(
+                                `Block ${blocks[0].height}#${getShortHash(blocks[0].hash)} `  +
+                                `is not a child of already archived block ${parentHash}`
+                            )
+                        }
+                    }
                 }
             }
 
             yield blocks
 
-            {
-                let lst = last(blocks)
-                from = getBlockNumber(lst) + 1
-                prevShortHash = lst.hash
-            }
-
-            progress.setCurrentValue(getBlockNumber(last(blocks)))
-            if (headNumber < rangeEnd(range)) {
-                headNumber = Math.min(await head.get(), rangeEnd(range))
-                progress.setTargetValue(headNumber)
+            progress.setCurrentValue(last(blocks).height)
+            if (chainHeight < rangeEnd(range)) {
+                chainHeight = Math.min(await height.get(), rangeEnd(range))
+                progress.setTargetValue(chainHeight)
             } else {
                 progress.setTargetValue(rangeEnd(range))
             }
@@ -214,7 +206,7 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
                     for (let block of bb) {
                         process.stdout.write(JSON.stringify(block) + '\n')
                     }
-                    prometheus.setLastWrittenBlock(getBlockNumber(last(bb)))
+                    prometheus.setLastWrittenBlock(last(bb).height)
                 }
             } else {
                 let archive = new ArchiveLayout(this.destination(), {
@@ -224,7 +216,8 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
                     blocks: (nextBlock, prevHash) => this.ingest(nextBlock, prevHash),
                     range: this.range(),
                     chunkSize: chunkSize * 1024 * 1024,
-                    onSuccessWrite: ctx => prometheus.setLastWrittenBlock(ctx.blockRange.to.number)
+                    writeBatchSize: this.options().writeBatchSize,
+                    onSuccessWrite: ctx => prometheus.setLastWrittenBlock(ctx.blockRange.to.height)
                 })
             }
         }, err => {
@@ -241,5 +234,14 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
 export class ErrorMessage extends Error {
     constructor(msg: string) {
         super(msg)
+    }
+}
+
+
+function getShortHashFallback(hash: string) {
+    if (hash.startsWith('0x')) {
+        return hash.slice(2, 8)
+    } else {
+        return hash.slice(0, 5)
     }
 }

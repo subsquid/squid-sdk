@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Mon, 07 Oct 2024 08:48:33 GMT and should not be manually modified.
+This log was last generated on Wed, 12 Mar 2025 20:55:26 GMT and should not be manually modified.
+
+## 3.7.0
+Wed, 12 Mar 2025 20:55:26 GMT
+
+### Minor changes
+
+- add `--skip-blocks` arg to skip problematic blocks
 
 ## 3.6.5
 Mon, 07 Oct 2024 08:48:33 GMT
