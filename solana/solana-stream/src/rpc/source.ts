@@ -60,7 +60,7 @@ export class RpcDataSource {
             let req = getRequestAt(requests, batch[0].height) || {}
             yield batch.map(block => {
                 try {
-                    return mapBlock(block, req)
+                    return mapBlock(block, req, this.options.noVotes ?? true)
                 } catch(err: any) {
                     throw addErrorContext(err, {
                         blockHash: block.hash,

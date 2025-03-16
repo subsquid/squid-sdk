@@ -6,9 +6,11 @@ import {filterBlockItems} from './filter'
 import {projectFields} from './project'
 
 
-export function mapBlock(src: rpc.Block, req: DataRequest): PartialBlock {
+export function mapBlock(src: rpc.Block, req: DataRequest, noVotes?: boolean): PartialBlock {
     let block = mapRpcBlock(src)
-    removeVotes(block)
+    if (noVotes) {
+        removeVotes(block)
+    }
     filterBlockItems(block, req)
     return projectFields(block, req.fields || {})
 }

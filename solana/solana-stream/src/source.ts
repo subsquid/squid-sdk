@@ -74,6 +74,12 @@ export interface RpcSettings {
      * another to node `B` with head slot `X - 10`.
      */
     concurrentFetchThreshold?: number
+    /**
+     * Enable filtering out all vote transactions. Disabling it can significantly decrease performance.
+     *
+     * Default is `true`
+     */
+    noVotes?: boolean
 }
 
 
