@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-normalization
 
-This log was last generated on Mon, 10 Feb 2025 07:46:03 GMT and should not be manually modified.
+This log was last generated on Sun, 16 Mar 2025 07:51:27 GMT and should not be manually modified.
+
+## 0.0.5
+Sun, 16 Mar 2025 07:51:27 GMT
+
+### Patches
+
+- check if tx error is an object before looking into its keys
 
 ## 0.0.4
 Mon, 10 Feb 2025 07:46:03 GMT

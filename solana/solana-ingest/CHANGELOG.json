@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-ingest",
   "entries": [
     {
+      "version": "0.0.8",
+      "tag": "@subsquid/solana-ingest_v0.0.8",
+      "date": "Sun, 16 Mar 2025 07:51:27 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-normalization\" from `^0.0.4` to `0.0.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.7",
       "tag": "@subsquid/solana-ingest_v0.0.7",
       "date": "Mon, 10 Feb 2025 07:46:03 GMT",

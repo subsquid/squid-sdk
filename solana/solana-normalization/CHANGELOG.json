@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-normalization",
   "entries": [
     {
+      "version": "0.0.5",
+      "tag": "@subsquid/solana-normalization_v0.0.5",
+      "date": "Sun, 16 Mar 2025 07:51:27 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "check if tx error is an object before looking into its keys"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.4",
       "tag": "@subsquid/solana-normalization_v0.0.4",
       "date": "Mon, 10 Feb 2025 07:46:03 GMT",
