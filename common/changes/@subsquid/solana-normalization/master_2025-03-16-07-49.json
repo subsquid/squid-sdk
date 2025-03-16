@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "check if tx error is an object before looking into its keys",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-normalization"
+}

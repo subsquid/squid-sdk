@@ -159,13 +159,11 @@ class InstructionParser {
             this.messages = messages
         }
         let err: any = this.src.meta.err
-        if (err) {
-            if ('InstructionError' in err) {
-                let pos = err['InstructionError'][0]
-                assert(typeof pos == 'number')
-                assert(0 <= pos && pos < this.src.transaction.message.instructions.length)
-                this.errorPos = pos
-            }
+        if (isIntructionError(err)) {
+            let pos = err.InstructionError[0]
+            assert(typeof pos == 'number')
+            assert(0 <= pos && pos < this.src.transaction.message.instructions.length)
+            this.errorPos = pos
         }
     }
 
@@ -350,9 +348,7 @@ class InstructionParser {
         return this.logLessTraversal(parentStackHeight, instructions, pos, (ins, pos) => {
             ins.hasDroppedLogMessages = ins.hasDroppedLogMessages || messagesDropped
             if (PROGRAMS_MISSING_INVOKE_LOG.has(ins.programId)) {
-            } else if (this.tx.err &&
-                'InstructionError' in this.tx.err &&
-                (this.tx.err.InstructionError as [number, string])[1] === 'CallDepth') {
+            } else if (isIntructionError(this.tx.err) && this.tx.err.InstructionError[1] === 'CallDepth') {
             } else {
                 throw this.error(false, pos, 'invoke message is missing')
             }
@@ -535,4 +531,8 @@ function mapTokenBalances(
     })
 
     return balances
+}
+
+function isIntructionError(err: unknown): err is {InstructionError: [number, string]} {
+    return typeof err == 'object' && err != null && 'InstructionError' in err
 }
