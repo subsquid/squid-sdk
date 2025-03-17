@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/solana-dump",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Data archiving tool for Solana",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
