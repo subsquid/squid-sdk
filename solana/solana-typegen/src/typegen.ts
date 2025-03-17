@@ -138,35 +138,35 @@ export class Typegen {
 
         for (let t of types) {
             const typeName = toTypeName(t.name)
-            t.generics
+            const typeGenerics = t.generics ? `<${t.generics.map((g) => `${g.name}`).join(', ')}>` : ''
+
+            const dslName = toTypeName(t.name)
+            const dslGenerics = t.generics
+                ? `${typeGenerics}(${t.generics
+                      .map((g) => `${g.name}: Codec<${g.name}>`)
+                      .join(', ')}): Codec<${typeName}${typeGenerics}> => `
+                : ''
+
             if (t.type.kind === TypeKind.Enum) {
                 for (const v of t.type.variants) {
                     out.line()
                     out.printType(`export type ${typeName}_${v.name} = `, {type: v.type, name: typeName})
                     out.line()
-                    out.printDsl(`export const ${t.name}_${v.name} = `, {type: v.type, name: t.name})
+                    out.printDsl(`export const ${dslName}_${v.name} = `, {type: v.type, name: dslName})
                 }
             }
             out.line()
             out.blockComment(t.docs)
-            const genericsType = t.generics
-                ? `<${t.generics.map((g) => `${g.name}`).join(', ')}>`
-                : ''
             if (t.type.kind === TypeKind.Struct) {
-                out.printType(`export interface ${typeName}${genericsType} `, {type: t.type, name: typeName})
+                out.printType(`export interface ${typeName}${typeGenerics} `, {type: t.type, name: typeName})
             } else {
-                out.printType(`export type ${typeName}${genericsType} = `, {type: t.type, name: typeName})
+                out.printType(`export type ${typeName}${typeGenerics} = `, {type: t.type, name: typeName})
             }
-
-            const varName = toTypeName(t.name)
             out.line()
             out.blockComment(t.docs)
-            const genericsDsl = t.generics
-                ? `${genericsType}(${t.generics.map((g) => `${g.name}: Codec<${g.name}>`).join(', ')}): Codec<${typeName}${genericsType}> => `
-                : ''
-            out.printDsl(`export const ${varName}${!!genericsDsl ? ` = ${genericsDsl}` : `: Codec<${typeName}> = `}`, {
+            out.printDsl(`export const ${dslName}${!!dslGenerics ? ` = ${dslGenerics}` : `: Codec<${typeName}> = `}`, {
                 type: t.type,
-                name: varName,
+                name: dslName,
             })
         }
 
