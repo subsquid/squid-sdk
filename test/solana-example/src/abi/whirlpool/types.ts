@@ -1,4 +1,38 @@
-import {Codec, struct, u8, u128, u64, bool, i128, fixedArray, address, unit, sum, u16, i32, ref} from '@subsquid/borsh'
+import {Codec, unit, sum, struct, u8, u128, u64, bool, i128, fixedArray, address, array, ref, u16, i32} from '@subsquid/borsh'
+
+export type LockType_Permanent = undefined
+
+export const LockType_Permanent = unit
+
+export type LockType = 
+    | {
+        kind: 'Permanent'
+        value?: LockType_Permanent
+      }
+
+export const LockType: Codec<LockType> = sum(1, {
+    Permanent: {
+        discriminator: 0,
+        value: LockType_Permanent,
+    },
+})
+
+export type LockTypeLabel_Permanent = undefined
+
+export const LockTypeLabel_Permanent = unit
+
+export type LockTypeLabel = 
+    | {
+        kind: 'Permanent'
+        value?: LockTypeLabel_Permanent
+      }
+
+export const LockTypeLabel: Codec<LockTypeLabel> = sum(1, {
+    Permanent: {
+        discriminator: 0,
+        value: LockTypeLabel_Permanent,
+    },
+})
 
 export interface OpenPositionBumps {
     positionBump: number
@@ -46,6 +80,14 @@ export const Tick: Codec<Tick> = struct({
     rewardGrowthsOutside: fixedArray(u128, 3),
 })
 
+export interface WhirlpoolBumps {
+    whirlpoolBump: number
+}
+
+export const WhirlpoolBumps: Codec<WhirlpoolBumps> = struct({
+    whirlpoolBump: u8,
+})
+
 export interface WhirlpoolRewardInfo {
     mint: string
     vault: string
@@ -62,111 +104,135 @@ export const WhirlpoolRewardInfo: Codec<WhirlpoolRewardInfo> = struct({
     growthGlobalX64: u128,
 })
 
-export interface WhirlpoolBumps {
-    whirlpoolBump: number
+export type AccountsType_TransferHookA = undefined
+
+export const AccountsType_TransferHookA = unit
+
+export type AccountsType_TransferHookB = undefined
+
+export const AccountsType_TransferHookB = unit
+
+export type AccountsType_TransferHookReward = undefined
+
+export const AccountsType_TransferHookReward = unit
+
+export type AccountsType_TransferHookInput = undefined
+
+export const AccountsType_TransferHookInput = unit
+
+export type AccountsType_TransferHookIntermediate = undefined
+
+export const AccountsType_TransferHookIntermediate = unit
+
+export type AccountsType_TransferHookOutput = undefined
+
+export const AccountsType_TransferHookOutput = unit
+
+export type AccountsType_SupplementalTickArrays = undefined
+
+export const AccountsType_SupplementalTickArrays = unit
+
+export type AccountsType_SupplementalTickArraysOne = undefined
+
+export const AccountsType_SupplementalTickArraysOne = unit
+
+export type AccountsType_SupplementalTickArraysTwo = undefined
+
+export const AccountsType_SupplementalTickArraysTwo = unit
+
+export type AccountsType = 
+    | {
+        kind: 'TransferHookA'
+        value?: AccountsType_TransferHookA
+      }
+    | {
+        kind: 'TransferHookB'
+        value?: AccountsType_TransferHookB
+      }
+    | {
+        kind: 'TransferHookReward'
+        value?: AccountsType_TransferHookReward
+      }
+    | {
+        kind: 'TransferHookInput'
+        value?: AccountsType_TransferHookInput
+      }
+    | {
+        kind: 'TransferHookIntermediate'
+        value?: AccountsType_TransferHookIntermediate
+      }
+    | {
+        kind: 'TransferHookOutput'
+        value?: AccountsType_TransferHookOutput
+      }
+    | {
+        kind: 'SupplementalTickArrays'
+        value?: AccountsType_SupplementalTickArrays
+      }
+    | {
+        kind: 'SupplementalTickArraysOne'
+        value?: AccountsType_SupplementalTickArraysOne
+      }
+    | {
+        kind: 'SupplementalTickArraysTwo'
+        value?: AccountsType_SupplementalTickArraysTwo
+      }
+
+export const AccountsType: Codec<AccountsType> = sum(1, {
+    TransferHookA: {
+        discriminator: 0,
+        value: AccountsType_TransferHookA,
+    },
+    TransferHookB: {
+        discriminator: 1,
+        value: AccountsType_TransferHookB,
+    },
+    TransferHookReward: {
+        discriminator: 2,
+        value: AccountsType_TransferHookReward,
+    },
+    TransferHookInput: {
+        discriminator: 3,
+        value: AccountsType_TransferHookInput,
+    },
+    TransferHookIntermediate: {
+        discriminator: 4,
+        value: AccountsType_TransferHookIntermediate,
+    },
+    TransferHookOutput: {
+        discriminator: 5,
+        value: AccountsType_TransferHookOutput,
+    },
+    SupplementalTickArrays: {
+        discriminator: 6,
+        value: AccountsType_SupplementalTickArrays,
+    },
+    SupplementalTickArraysOne: {
+        discriminator: 7,
+        value: AccountsType_SupplementalTickArraysOne,
+    },
+    SupplementalTickArraysTwo: {
+        discriminator: 8,
+        value: AccountsType_SupplementalTickArraysTwo,
+    },
+})
+
+export interface RemainingAccountsInfo {
+    slices: Array<RemainingAccountsSlice>
 }
 
-export const WhirlpoolBumps: Codec<WhirlpoolBumps> = struct({
-    whirlpoolBump: u8,
+export const RemainingAccountsInfo: Codec<RemainingAccountsInfo> = struct({
+    slices: array(ref(() => RemainingAccountsSlice)),
 })
 
-export type CurrIndex_Below = undefined
+export interface RemainingAccountsSlice {
+    accountsType: AccountsType
+    length: number
+}
 
-export const CurrIndex_Below = unit
-
-export type CurrIndex_Inside = undefined
-
-export const CurrIndex_Inside = unit
-
-export type CurrIndex_Above = undefined
-
-export const CurrIndex_Above = unit
-
-export type CurrIndex = 
-    | {
-        kind: 'Below'
-        value?: CurrIndex_Below
-      }
-    | {
-        kind: 'Inside'
-        value?: CurrIndex_Inside
-      }
-    | {
-        kind: 'Above'
-        value?: CurrIndex_Above
-      }
-
-export const CurrIndex: Codec<CurrIndex> = sum(1, {
-    Below: {
-        discriminator: 0,
-        value: CurrIndex_Below,
-    },
-    Inside: {
-        discriminator: 1,
-        value: CurrIndex_Inside,
-    },
-    Above: {
-        discriminator: 2,
-        value: CurrIndex_Above,
-    },
-})
-
-export type TickLabel_Upper = undefined
-
-export const TickLabel_Upper = unit
-
-export type TickLabel_Lower = undefined
-
-export const TickLabel_Lower = unit
-
-export type TickLabel = 
-    | {
-        kind: 'Upper'
-        value?: TickLabel_Upper
-      }
-    | {
-        kind: 'Lower'
-        value?: TickLabel_Lower
-      }
-
-export const TickLabel: Codec<TickLabel> = sum(1, {
-    Upper: {
-        discriminator: 0,
-        value: TickLabel_Upper,
-    },
-    Lower: {
-        discriminator: 1,
-        value: TickLabel_Lower,
-    },
-})
-
-export type Direction_Left = undefined
-
-export const Direction_Left = unit
-
-export type Direction_Right = undefined
-
-export const Direction_Right = unit
-
-export type Direction = 
-    | {
-        kind: 'Left'
-        value?: Direction_Left
-      }
-    | {
-        kind: 'Right'
-        value?: Direction_Right
-      }
-
-export const Direction: Codec<Direction> = sum(1, {
-    Left: {
-        discriminator: 0,
-        value: Direction_Left,
-    },
-    Right: {
-        discriminator: 1,
-        value: Direction_Right,
-    },
+export const RemainingAccountsSlice: Codec<RemainingAccountsSlice> = struct({
+    accountsType: ref(() => AccountsType),
+    length: u8,
 })
 
 export interface WhirlpoolsConfig {
@@ -183,6 +249,18 @@ export const WhirlpoolsConfig: Codec<WhirlpoolsConfig> = struct({
     defaultProtocolFeeRate: u16,
 })
 
+export interface WhirlpoolsConfigExtension {
+    whirlpoolsConfig: string
+    configExtensionAuthority: string
+    tokenBadgeAuthority: string
+}
+
+export const WhirlpoolsConfigExtension: Codec<WhirlpoolsConfigExtension> = struct({
+    whirlpoolsConfig: address,
+    configExtensionAuthority: address,
+    tokenBadgeAuthority: address,
+})
+
 export interface FeeTier {
     whirlpoolsConfig: string
     tickSpacing: number
@@ -195,14 +273,20 @@ export const FeeTier: Codec<FeeTier> = struct({
     defaultFeeRate: u16,
 })
 
-export interface PositionBundle {
-    positionBundleMint: string
-    positionBitmap: Array<number>
+export interface LockConfig {
+    position: string
+    positionOwner: string
+    whirlpool: string
+    lockedTimestamp: bigint
+    lockType: LockTypeLabel
 }
 
-export const PositionBundle: Codec<PositionBundle> = struct({
-    positionBundleMint: address,
-    positionBitmap: fixedArray(u8, 32),
+export const LockConfig: Codec<LockConfig> = struct({
+    position: address,
+    positionOwner: address,
+    whirlpool: address,
+    lockedTimestamp: u64,
+    lockType: ref(() => LockTypeLabel),
 })
 
 export interface Position {
@@ -231,6 +315,16 @@ export const Position: Codec<Position> = struct({
     rewardInfos: fixedArray(ref(() => PositionRewardInfo), 3),
 })
 
+export interface PositionBundle {
+    positionBundleMint: string
+    positionBitmap: Array<number>
+}
+
+export const PositionBundle: Codec<PositionBundle> = struct({
+    positionBundleMint: address,
+    positionBitmap: fixedArray(u8, 32),
+})
+
 export interface TickArray {
     startTickIndex: number
     ticks: Array<Tick>
@@ -241,6 +335,16 @@ export const TickArray: Codec<TickArray> = struct({
     startTickIndex: i32,
     ticks: fixedArray(ref(() => Tick), 88),
     whirlpool: address,
+})
+
+export interface TokenBadge {
+    whirlpoolsConfig: string
+    tokenMint: string
+}
+
+export const TokenBadge: Codec<TokenBadge> = struct({
+    whirlpoolsConfig: address,
+    tokenMint: address,
 })
 
 export interface Whirlpool {
@@ -285,4 +389,104 @@ export const Whirlpool: Codec<Whirlpool> = struct({
     feeGrowthGlobalB: u128,
     rewardLastUpdatedTimestamp: u64,
     rewardInfos: fixedArray(ref(() => WhirlpoolRewardInfo), 3),
+})
+
+export interface LiquidityDecreased {
+    whirlpool: string
+    position: string
+    tickLowerIndex: number
+    tickUpperIndex: number
+    liquidity: bigint
+    tokenAAmount: bigint
+    tokenBAmount: bigint
+    tokenATransferFee: bigint
+    tokenBTransferFee: bigint
+}
+
+export const LiquidityDecreased: Codec<LiquidityDecreased> = struct({
+    whirlpool: address,
+    position: address,
+    tickLowerIndex: i32,
+    tickUpperIndex: i32,
+    liquidity: u128,
+    tokenAAmount: u64,
+    tokenBAmount: u64,
+    tokenATransferFee: u64,
+    tokenBTransferFee: u64,
+})
+
+export interface LiquidityIncreased {
+    whirlpool: string
+    position: string
+    tickLowerIndex: number
+    tickUpperIndex: number
+    liquidity: bigint
+    tokenAAmount: bigint
+    tokenBAmount: bigint
+    tokenATransferFee: bigint
+    tokenBTransferFee: bigint
+}
+
+export const LiquidityIncreased: Codec<LiquidityIncreased> = struct({
+    whirlpool: address,
+    position: address,
+    tickLowerIndex: i32,
+    tickUpperIndex: i32,
+    liquidity: u128,
+    tokenAAmount: u64,
+    tokenBAmount: u64,
+    tokenATransferFee: u64,
+    tokenBTransferFee: u64,
+})
+
+export interface PoolInitialized {
+    whirlpool: string
+    whirlpoolsConfig: string
+    tokenMintA: string
+    tokenMintB: string
+    tickSpacing: number
+    tokenProgramA: string
+    tokenProgramB: string
+    decimalsA: number
+    decimalsB: number
+    initialSqrtPrice: bigint
+}
+
+export const PoolInitialized: Codec<PoolInitialized> = struct({
+    whirlpool: address,
+    whirlpoolsConfig: address,
+    tokenMintA: address,
+    tokenMintB: address,
+    tickSpacing: u16,
+    tokenProgramA: address,
+    tokenProgramB: address,
+    decimalsA: u8,
+    decimalsB: u8,
+    initialSqrtPrice: u128,
+})
+
+export interface Traded {
+    whirlpool: string
+    aToB: boolean
+    preSqrtPrice: bigint
+    postSqrtPrice: bigint
+    inputAmount: bigint
+    outputAmount: bigint
+    inputTransferFee: bigint
+    outputTransferFee: bigint
+    lpFee: bigint
+    protocolFee: bigint
+}
+
+export const Traded: Codec<Traded> = struct({
+    whirlpool: address,
+    aToB: bool,
+    preSqrtPrice: u128,
+    postSqrtPrice: u128,
+    inputAmount: u64,
+    outputAmount: u64,
+    inputTransferFee: u64,
+    outputTransferFee: u64,
+    lpFee: u64,
+    protocolFee: u64,
 })

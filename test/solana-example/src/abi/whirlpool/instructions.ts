@@ -1,6 +1,6 @@
-import {struct, address, u16, u128, i32, u8, u64, unit, bool} from '@subsquid/borsh'
+import {struct, address, u16, u128, i32, u8, u64, unit, bool, option} from '@subsquid/borsh'
 import {instruction} from '../abi.support'
-import {WhirlpoolBumps, OpenPositionBumps, OpenPositionWithMetadataBumps} from './types'
+import {WhirlpoolBumps, OpenPositionBumps, OpenPositionWithMetadataBumps, LockType, RemainingAccountsInfo} from './types'
 
 export interface InitializeConfig {
     feeAuthority: string
@@ -690,4 +690,476 @@ export const closeBundledPosition = instruction(
     struct({
         bundleIndex: u16,
     }),
+)
+
+export interface OpenPositionWithTokenExtensions {
+    tickLowerIndex: number
+    tickUpperIndex: number
+    withTokenMetadataExtension: boolean
+}
+
+export const openPositionWithTokenExtensions = instruction(
+    {
+        d8: '0xd42f5f5c726683fa',
+    },
+    {
+        funder: 0,
+        owner: 1,
+        position: 2,
+        positionMint: 3,
+        positionTokenAccount: 4,
+        whirlpool: 5,
+        token2022Program: 6,
+        systemProgram: 7,
+        associatedTokenProgram: 8,
+        metadataUpdateAuth: 9,
+    },
+    struct({
+        tickLowerIndex: i32,
+        tickUpperIndex: i32,
+        withTokenMetadataExtension: bool,
+    }),
+)
+
+export type ClosePositionWithTokenExtensions = undefined
+
+export const closePositionWithTokenExtensions = instruction(
+    {
+        d8: '0x01b6873b9b1963df',
+    },
+    {
+        positionAuthority: 0,
+        receiver: 1,
+        position: 2,
+        positionMint: 3,
+        positionTokenAccount: 4,
+        token2022Program: 5,
+    },
+    unit,
+)
+
+export interface LockPosition {
+    lockType: LockType
+}
+
+export const lockPosition = instruction(
+    {
+        d8: '0xe33e02fcf70aabb9',
+    },
+    {
+        funder: 0,
+        positionAuthority: 1,
+        position: 2,
+        positionMint: 3,
+        positionTokenAccount: 4,
+        lockConfig: 5,
+        whirlpool: 6,
+        token2022Program: 7,
+        systemProgram: 8,
+    },
+    struct({
+        lockType: LockType,
+    }),
+)
+
+export interface CollectFeesV2 {
+    remainingAccountsInfo?: RemainingAccountsInfo | undefined
+}
+
+export const collectFeesV2 = instruction(
+    {
+        d8: '0xcf755fbfe5b4e20f',
+    },
+    {
+        whirlpool: 0,
+        positionAuthority: 1,
+        position: 2,
+        positionTokenAccount: 3,
+        tokenMintA: 4,
+        tokenMintB: 5,
+        tokenOwnerAccountA: 6,
+        tokenVaultA: 7,
+        tokenOwnerAccountB: 8,
+        tokenVaultB: 9,
+        tokenProgramA: 10,
+        tokenProgramB: 11,
+        memoProgram: 12,
+    },
+    struct({
+        remainingAccountsInfo: option(RemainingAccountsInfo),
+    }),
+)
+
+export interface CollectProtocolFeesV2 {
+    remainingAccountsInfo?: RemainingAccountsInfo | undefined
+}
+
+export const collectProtocolFeesV2 = instruction(
+    {
+        d8: '0x6780de8672c816c8',
+    },
+    {
+        whirlpoolsConfig: 0,
+        whirlpool: 1,
+        collectProtocolFeesAuthority: 2,
+        tokenMintA: 3,
+        tokenMintB: 4,
+        tokenVaultA: 5,
+        tokenVaultB: 6,
+        tokenDestinationA: 7,
+        tokenDestinationB: 8,
+        tokenProgramA: 9,
+        tokenProgramB: 10,
+        memoProgram: 11,
+    },
+    struct({
+        remainingAccountsInfo: option(RemainingAccountsInfo),
+    }),
+)
+
+export interface CollectRewardV2 {
+    rewardIndex: number
+    remainingAccountsInfo?: RemainingAccountsInfo | undefined
+}
+
+export const collectRewardV2 = instruction(
+    {
+        d8: '0xb16b25b4a01331d1',
+    },
+    {
+        whirlpool: 0,
+        positionAuthority: 1,
+        position: 2,
+        positionTokenAccount: 3,
+        rewardOwnerAccount: 4,
+        rewardMint: 5,
+        rewardVault: 6,
+        rewardTokenProgram: 7,
+        memoProgram: 8,
+    },
+    struct({
+        rewardIndex: u8,
+        remainingAccountsInfo: option(RemainingAccountsInfo),
+    }),
+)
+
+export interface DecreaseLiquidityV2 {
+    liquidityAmount: bigint
+    tokenMinA: bigint
+    tokenMinB: bigint
+    remainingAccountsInfo?: RemainingAccountsInfo | undefined
+}
+
+export const decreaseLiquidityV2 = instruction(
+    {
+        d8: '0x3a7fbc3e4f52c460',
+    },
+    {
+        whirlpool: 0,
+        tokenProgramA: 1,
+        tokenProgramB: 2,
+        memoProgram: 3,
+        positionAuthority: 4,
+        position: 5,
+        positionTokenAccount: 6,
+        tokenMintA: 7,
+        tokenMintB: 8,
+        tokenOwnerAccountA: 9,
+        tokenOwnerAccountB: 10,
+        tokenVaultA: 11,
+        tokenVaultB: 12,
+        tickArrayLower: 13,
+        tickArrayUpper: 14,
+    },
+    struct({
+        liquidityAmount: u128,
+        tokenMinA: u64,
+        tokenMinB: u64,
+        remainingAccountsInfo: option(RemainingAccountsInfo),
+    }),
+)
+
+export interface IncreaseLiquidityV2 {
+    liquidityAmount: bigint
+    tokenMaxA: bigint
+    tokenMaxB: bigint
+    remainingAccountsInfo?: RemainingAccountsInfo | undefined
+}
+
+export const increaseLiquidityV2 = instruction(
+    {
+        d8: '0x851d59df45eeb00a',
+    },
+    {
+        whirlpool: 0,
+        tokenProgramA: 1,
+        tokenProgramB: 2,
+        memoProgram: 3,
+        positionAuthority: 4,
+        position: 5,
+        positionTokenAccount: 6,
+        tokenMintA: 7,
+        tokenMintB: 8,
+        tokenOwnerAccountA: 9,
+        tokenOwnerAccountB: 10,
+        tokenVaultA: 11,
+        tokenVaultB: 12,
+        tickArrayLower: 13,
+        tickArrayUpper: 14,
+    },
+    struct({
+        liquidityAmount: u128,
+        tokenMaxA: u64,
+        tokenMaxB: u64,
+        remainingAccountsInfo: option(RemainingAccountsInfo),
+    }),
+)
+
+export interface InitializePoolV2 {
+    tickSpacing: number
+    initialSqrtPrice: bigint
+}
+
+export const initializePoolV2 = instruction(
+    {
+        d8: '0xcf2d57f21b3fcc43',
+    },
+    {
+        whirlpoolsConfig: 0,
+        tokenMintA: 1,
+        tokenMintB: 2,
+        tokenBadgeA: 3,
+        tokenBadgeB: 4,
+        funder: 5,
+        whirlpool: 6,
+        tokenVaultA: 7,
+        tokenVaultB: 8,
+        feeTier: 9,
+        tokenProgramA: 10,
+        tokenProgramB: 11,
+        systemProgram: 12,
+        rent: 13,
+    },
+    struct({
+        tickSpacing: u16,
+        initialSqrtPrice: u128,
+    }),
+)
+
+export interface InitializeRewardV2 {
+    rewardIndex: number
+}
+
+export const initializeRewardV2 = instruction(
+    {
+        d8: '0x5b014d32ebe58531',
+    },
+    {
+        rewardAuthority: 0,
+        funder: 1,
+        whirlpool: 2,
+        rewardMint: 3,
+        rewardTokenBadge: 4,
+        rewardVault: 5,
+        rewardTokenProgram: 6,
+        systemProgram: 7,
+        rent: 8,
+    },
+    struct({
+        rewardIndex: u8,
+    }),
+)
+
+export interface SetRewardEmissionsV2 {
+    rewardIndex: number
+    emissionsPerSecondX64: bigint
+}
+
+export const setRewardEmissionsV2 = instruction(
+    {
+        d8: '0x72e44820c130a066',
+    },
+    {
+        whirlpool: 0,
+        rewardAuthority: 1,
+        rewardVault: 2,
+    },
+    struct({
+        rewardIndex: u8,
+        emissionsPerSecondX64: u128,
+    }),
+)
+
+export interface SwapV2 {
+    amount: bigint
+    otherAmountThreshold: bigint
+    sqrtPriceLimit: bigint
+    amountSpecifiedIsInput: boolean
+    aToB: boolean
+    remainingAccountsInfo?: RemainingAccountsInfo | undefined
+}
+
+export const swapV2 = instruction(
+    {
+        d8: '0x2b04ed0b1ac91e62',
+    },
+    {
+        tokenProgramA: 0,
+        tokenProgramB: 1,
+        memoProgram: 2,
+        tokenAuthority: 3,
+        whirlpool: 4,
+        tokenMintA: 5,
+        tokenMintB: 6,
+        tokenOwnerAccountA: 7,
+        tokenVaultA: 8,
+        tokenOwnerAccountB: 9,
+        tokenVaultB: 10,
+        tickArray0: 11,
+        tickArray1: 12,
+        tickArray2: 13,
+        oracle: 14,
+    },
+    struct({
+        amount: u64,
+        otherAmountThreshold: u64,
+        sqrtPriceLimit: u128,
+        amountSpecifiedIsInput: bool,
+        aToB: bool,
+        remainingAccountsInfo: option(RemainingAccountsInfo),
+    }),
+)
+
+export interface TwoHopSwapV2 {
+    amount: bigint
+    otherAmountThreshold: bigint
+    amountSpecifiedIsInput: boolean
+    aToBOne: boolean
+    aToBTwo: boolean
+    sqrtPriceLimitOne: bigint
+    sqrtPriceLimitTwo: bigint
+    remainingAccountsInfo?: RemainingAccountsInfo | undefined
+}
+
+export const twoHopSwapV2 = instruction(
+    {
+        d8: '0xba8fd11dfe02c275',
+    },
+    {
+        whirlpoolOne: 0,
+        whirlpoolTwo: 1,
+        tokenMintInput: 2,
+        tokenMintIntermediate: 3,
+        tokenMintOutput: 4,
+        tokenProgramInput: 5,
+        tokenProgramIntermediate: 6,
+        tokenProgramOutput: 7,
+        tokenOwnerAccountInput: 8,
+        tokenVaultOneInput: 9,
+        tokenVaultOneIntermediate: 10,
+        tokenVaultTwoIntermediate: 11,
+        tokenVaultTwoOutput: 12,
+        tokenOwnerAccountOutput: 13,
+        tokenAuthority: 14,
+        tickArrayOne0: 15,
+        tickArrayOne1: 16,
+        tickArrayOne2: 17,
+        tickArrayTwo0: 18,
+        tickArrayTwo1: 19,
+        tickArrayTwo2: 20,
+        oracleOne: 21,
+        oracleTwo: 22,
+        memoProgram: 23,
+    },
+    struct({
+        amount: u64,
+        otherAmountThreshold: u64,
+        amountSpecifiedIsInput: bool,
+        aToBOne: bool,
+        aToBTwo: bool,
+        sqrtPriceLimitOne: u128,
+        sqrtPriceLimitTwo: u128,
+        remainingAccountsInfo: option(RemainingAccountsInfo),
+    }),
+)
+
+export type InitializeConfigExtension = undefined
+
+export const initializeConfigExtension = instruction(
+    {
+        d8: '0x370935097239d134',
+    },
+    {
+        config: 0,
+        configExtension: 1,
+        funder: 2,
+        feeAuthority: 3,
+        systemProgram: 4,
+    },
+    unit,
+)
+
+export type SetConfigExtensionAuthority = undefined
+
+export const setConfigExtensionAuthority = instruction(
+    {
+        d8: '0x2c5ef17418bc3c8f',
+    },
+    {
+        whirlpoolsConfig: 0,
+        whirlpoolsConfigExtension: 1,
+        configExtensionAuthority: 2,
+        newConfigExtensionAuthority: 3,
+    },
+    unit,
+)
+
+export type SetTokenBadgeAuthority = undefined
+
+export const setTokenBadgeAuthority = instruction(
+    {
+        d8: '0xcfca0420cd4f0db2',
+    },
+    {
+        whirlpoolsConfig: 0,
+        whirlpoolsConfigExtension: 1,
+        configExtensionAuthority: 2,
+        newTokenBadgeAuthority: 3,
+    },
+    unit,
+)
+
+export type InitializeTokenBadge = undefined
+
+export const initializeTokenBadge = instruction(
+    {
+        d8: '0xfd4dcd5f1be059df',
+    },
+    {
+        whirlpoolsConfig: 0,
+        whirlpoolsConfigExtension: 1,
+        tokenBadgeAuthority: 2,
+        tokenMint: 3,
+        tokenBadge: 4,
+        funder: 5,
+        systemProgram: 6,
+    },
+    unit,
+)
+
+export type DeleteTokenBadge = undefined
+
+export const deleteTokenBadge = instruction(
+    {
+        d8: '0x35924408127511b9',
+    },
+    {
+        whirlpoolsConfig: 0,
+        whirlpoolsConfigExtension: 1,
+        tokenBadgeAuthority: 2,
+        tokenMint: 3,
+        tokenBadge: 4,
+        receiver: 5,
+    },
+    unit,
 )

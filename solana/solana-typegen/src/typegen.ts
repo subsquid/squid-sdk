@@ -3,7 +3,8 @@ import {unexpectedCase} from '@subsquid/util-internal'
 import {FileOutput, OutDir} from '@subsquid/util-internal-code-printer'
 import {toCamelCase, toJsName} from '@subsquid/util-naming'
 import {Program} from './program/description'
-import {Primitive, Type, TypeKind} from './program/types'
+import {GenericArgKind, Primitive, Type, TypeKind} from './program/types'
+import assert from 'assert'
 
 export class Typegen {
     private dest: OutDir
@@ -137,6 +138,7 @@ export class Typegen {
 
         for (let t of types) {
             const typeName = toTypeName(t.name)
+            t.generics
             if (t.type.kind === TypeKind.Enum) {
                 for (const v of t.type.variants) {
                     out.line()
@@ -147,16 +149,25 @@ export class Typegen {
             }
             out.line()
             out.blockComment(t.docs)
+            const genericsType = t.generics
+                ? `<${t.generics.map((g) => `${g.name}`).join(', ')}>`
+                : ''
             if (t.type.kind === TypeKind.Struct) {
-                out.printType(`export interface ${typeName} `, {type: t.type, name: typeName})
+                out.printType(`export interface ${typeName}${genericsType} `, {type: t.type, name: typeName})
             } else {
-                out.printType(`export type ${typeName} = `, {type: t.type, name: typeName})
+                out.printType(`export type ${typeName}${genericsType} = `, {type: t.type, name: typeName})
             }
 
             const varName = toTypeName(t.name)
             out.line()
             out.blockComment(t.docs)
-            out.printDsl(`export const ${varName}: Codec<${typeName}> = `, {type: t.type, name: varName})
+            const genericsDsl = t.generics
+                ? `${genericsType}(${t.generics.map((g) => `${g.name}: Codec<${g.name}>`).join(', ')}): Codec<${typeName}${genericsType}> => `
+                : ''
+            out.printDsl(`export const ${varName}${!!genericsDsl ? ` = ${genericsDsl}` : `: Codec<${typeName}> = `}`, {
+                type: t.type,
+                name: varName,
+            })
         }
 
         out.write()
@@ -194,6 +205,7 @@ export class TypeModuleOutput extends FileOutput {
                 this.printDsl(start + `array(`, {type: type.type}, `)` + end)
                 break
             case TypeKind.FixedArray:
+                assert(typeof type.len === 'number', 'Generic array length not supported')
                 this.borsh.add('fixedArray')
                 this.printDsl(start + `fixedArray(`, {type: type.type}, `, ${type.len})` + end)
                 break
@@ -240,7 +252,18 @@ export class TypeModuleOutput extends FileOutput {
                 this.types.add(typeName)
                 if (this.isTypes) {
                     this.borsh.add('ref')
-                    this.line(start + `ref(() => ${typeName})` + end)
+                    start = start + 'ref(() => '
+                    end = ')' + end
+                }
+                if (type.generics) {
+                    this.line(start + typeName + '(')
+                    this.indentation(() => {
+                        for (const g of type.generics!) {
+                            assert(g.kind === GenericArgKind.Type, 'Generic consts not supported')
+                            this.printDsl('', {type: g.type}, ',')
+                        }
+                    })
+                    this.line(')' + end)
                 } else {
                     this.line(start + typeName + end)
                 }
@@ -264,8 +287,9 @@ export class TypeModuleOutput extends FileOutput {
                 })
                 this.line(`})` + end)
                 break
-            default:
-                throw unexpectedCase(type.kind)
+            case TypeKind.Generic:
+                this.line(start + type.name + end)
+                break
         }
     }
 
@@ -313,7 +337,19 @@ export class TypeModuleOutput extends FileOutput {
                 break
             case TypeKind.Defined:
                 this.types.add(toTypeName(type.name))
-                this.line(start + toTypeName(type.name) + end)
+                if (!!type.generics) {
+                    this.line(start + toTypeName(type.name) + '<')
+                    this.indentation(() => {
+                        for (let i = 0; i < type.generics!.length; i++) {
+                            const g = type.generics![i]
+                            assert(g.kind === GenericArgKind.Type, 'Generic consts not supported')
+                            this.printType('', {type: g.type}, i === type.generics!.length - 1 ? '' : ',')
+                        }
+                    })
+                    this.line('>' + end)
+                } else {
+                    this.line(start + toTypeName(type.name) + end)
+                }
                 break
             case TypeKind.Enum:
                 this.line(start)
@@ -334,8 +370,9 @@ export class TypeModuleOutput extends FileOutput {
                 })
                 if (end) this.line(end)
                 break
-            default:
-                throw unexpectedCase(type.kind)
+            case TypeKind.Generic:
+                this.line(start + `${type.name}` + end)
+                break
         }
     }
 
