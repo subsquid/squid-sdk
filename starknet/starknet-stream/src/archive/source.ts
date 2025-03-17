@@ -4,6 +4,7 @@ import {archiveIngest} from '@subsquid/util-internal-ingest-tools'
 import {getRequestAt, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {array, cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
+import {BlockHeader} from '../data/model'
 import {DataRequest} from '../data/data-request'
 import {getDataSchema} from './data-schema'
 import {PartialBlock} from '../data/data-partial'
@@ -24,6 +25,30 @@ export class StarknetGateway {
         })
         assert(blocks.length == 1)
         return blocks[0].header.hash
+    }
+
+    async getBlockHeader(height: number): Promise<BlockHeader> {
+        let blocks = await this.client.query({
+            type: 'starknet',
+            fromBlock: height,
+            toBlock: height,
+            includeAllBlocks: true,
+            fields: {
+                block: {
+                    parentHash: true,
+                    status: true,
+                    newRoot: true,
+                    timestamp: true,
+                    sequencerAddress: true
+                }
+            }
+        })
+        assert(blocks.length == 1)
+        let {number, ...rest} = blocks[0].header
+        return {
+            height: number,
+            ...rest
+        } as BlockHeader
     }
 
     async *getBlockStream(requests: RangeRequestList<DataRequest>, stopOnHead?: boolean | undefined): AsyncIterable<PartialBlock[]> {
