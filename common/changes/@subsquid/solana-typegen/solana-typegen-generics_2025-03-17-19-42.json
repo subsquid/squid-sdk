@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-typegen",
+      "comment": "add generic types support",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-typegen"
+}
