@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-dump",
+      "comment": "allow empty logMessages if tx.err is `MaxLoadedAccountsDataSizeExceeded`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-dump"
+}
