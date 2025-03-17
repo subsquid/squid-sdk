@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-dump
 
-This log was last generated on Wed, 15 Jan 2025 18:59:13 GMT and should not be manually modified.
+This log was last generated on Mon, 17 Mar 2025 09:27:47 GMT and should not be manually modified.
+
+## 0.0.9
+Mon, 17 Mar 2025 09:27:47 GMT
+
+### Patches
+
+- allow empty logMessages if tx.err is `MaxLoadedAccountsDataSizeExceeded`
 
 ## 0.0.8
 Wed, 15 Jan 2025 18:59:13 GMT
