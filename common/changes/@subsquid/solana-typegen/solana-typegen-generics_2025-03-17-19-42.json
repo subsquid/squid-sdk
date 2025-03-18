@@ -4,6 +4,11 @@
       "packageName": "@subsquid/solana-typegen",
       "comment": "add generic types support",
       "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/solana-typegen",
+      "comment": "reduce usage of `ref` codec",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/solana-typegen"
