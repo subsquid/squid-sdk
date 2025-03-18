@@ -2,6 +2,18 @@
   "name": "@subsquid/borsh",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/borsh_v0.3.0",
+      "date": "Tue, 18 Mar 2025 11:56:44 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "don't make `undefined` struct fields optional"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/borsh_v0.2.0",
       "date": "Wed, 15 Jan 2025 18:59:13 GMT",
