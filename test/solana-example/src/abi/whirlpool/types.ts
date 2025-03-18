@@ -1,4 +1,4 @@
-import {Codec, unit, sum, struct, u8, u128, u64, bool, i128, fixedArray, address, array, ref, u16, i32} from '@subsquid/borsh'
+import {Codec, address, array, bool, fixedArray, i128, i32, struct, sum, u128, u16, u64, u8, unit} from '@subsquid/borsh'
 
 export type LockType_Permanent = undefined
 
@@ -217,22 +217,22 @@ export const AccountsType: Codec<AccountsType> = sum(1, {
     },
 })
 
-export interface RemainingAccountsInfo {
-    slices: Array<RemainingAccountsSlice>
-}
-
-export const RemainingAccountsInfo: Codec<RemainingAccountsInfo> = struct({
-    slices: array(ref(() => RemainingAccountsSlice)),
-})
-
 export interface RemainingAccountsSlice {
     accountsType: AccountsType
     length: number
 }
 
 export const RemainingAccountsSlice: Codec<RemainingAccountsSlice> = struct({
-    accountsType: ref(() => AccountsType),
+    accountsType: AccountsType,
     length: u8,
+})
+
+export interface RemainingAccountsInfo {
+    slices: Array<RemainingAccountsSlice>
+}
+
+export const RemainingAccountsInfo: Codec<RemainingAccountsInfo> = struct({
+    slices: array(RemainingAccountsSlice),
 })
 
 export interface WhirlpoolsConfig {
@@ -286,7 +286,7 @@ export const LockConfig: Codec<LockConfig> = struct({
     positionOwner: address,
     whirlpool: address,
     lockedTimestamp: u64,
-    lockType: ref(() => LockTypeLabel),
+    lockType: LockTypeLabel,
 })
 
 export interface Position {
@@ -312,7 +312,7 @@ export const Position: Codec<Position> = struct({
     feeOwedA: u64,
     feeGrowthCheckpointB: u128,
     feeOwedB: u64,
-    rewardInfos: fixedArray(ref(() => PositionRewardInfo), 3),
+    rewardInfos: fixedArray(PositionRewardInfo, 3),
 })
 
 export interface PositionBundle {
@@ -333,7 +333,7 @@ export interface TickArray {
 
 export const TickArray: Codec<TickArray> = struct({
     startTickIndex: i32,
-    ticks: fixedArray(ref(() => Tick), 88),
+    ticks: fixedArray(Tick, 88),
     whirlpool: address,
 })
 
@@ -388,7 +388,7 @@ export const Whirlpool: Codec<Whirlpool> = struct({
     tokenVaultB: address,
     feeGrowthGlobalB: u128,
     rewardLastUpdatedTimestamp: u64,
-    rewardInfos: fixedArray(ref(() => WhirlpoolRewardInfo), 3),
+    rewardInfos: fixedArray(WhirlpoolRewardInfo, 3),
 })
 
 export interface LiquidityDecreased {
