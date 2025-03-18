@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/solana-typegen",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "CLI for generating typescript types for solana",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -19,7 +19,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/borsh": "^0.2.0",
+    "@subsquid/borsh": "^0.3.0",
     "@subsquid/http-client": "^1.6.0",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/rpc-client": "^4.11.0",
