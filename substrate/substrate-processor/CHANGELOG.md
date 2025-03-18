@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Tue, 03 Dec 2024 11:47:42 GMT and should not be manually modified.
+This log was last generated on Tue, 18 Mar 2025 10:45:46 GMT and should not be manually modified.
+
+## 8.6.0
+Tue, 18 Mar 2025 10:45:46 GMT
+
+### Minor changes
+
+- add special support for `Revive.ContractEmitted` event
 
 ## 8.5.2
 Tue, 03 Dec 2024 11:47:42 GMT
