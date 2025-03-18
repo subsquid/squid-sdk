@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/borsh",
+      "comment": "don't make `undefined` struct fields optional",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/borsh"
+}
