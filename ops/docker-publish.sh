@@ -27,14 +27,14 @@ function publish() {
         -t "subsquid/$img:$release" || exit 1
 }
 
-publish solana/solana-dump || exit 1
-publish solana/solana-ingest || exit 1
-publish solana/solana-data-service solana-hotblocks-service || exit 1
-publish tron/tron-dump || exit 1
-publish tron/tron-ingest || exit 1
-publish substrate/substrate-dump || exit 1
-publish substrate/substrate-ingest || exit 1
-publish substrate/substrate-metadata-service || exit 1
+#publish solana/solana-dump || exit 1
+#publish solana/solana-ingest || exit 1
+publish "solana/solana-data-service" "solana-hotblocks-service" || exit 1
+#publish tron/tron-dump || exit 1
+#publish tron/tron-ingest || exit 1
+#publish substrate/substrate-dump || exit 1
+#publish substrate/substrate-ingest || exit 1
+#publish substrate/substrate-metadata-service || exit 1
 
 #git push origin "HEAD:release/${release}" --follow-tags --verbose
 

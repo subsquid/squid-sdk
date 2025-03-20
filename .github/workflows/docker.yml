@@ -28,8 +28,6 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: release/arrowsquid
 
       - name: Build and Publish
         run: ./ops/docker-publish.sh arrowsquid latest
