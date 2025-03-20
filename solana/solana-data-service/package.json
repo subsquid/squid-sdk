@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/solana-data-service",
-  "version": "0.0.3",
+  "version": "0.0.1",
   "description": "Hot block data service for Solana",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
