@@ -31,8 +31,8 @@ export class TransactionContext {
 
         let err = this.tx.meta.err
         if (isIntructionError(err)) {
-            let pos = err.InstructionError?.[0]
-            let type = err.InstructionError?.[1]
+            let pos = err.InstructionError[0]
+            let type = err.InstructionError[1]
             if (Number.isSafeInteger(pos)) {
                 this.erroredInstruction = pos
             } else {
@@ -40,6 +40,9 @@ export class TransactionContext {
                 this.warn({transactionError: err}, 'got InstructionError of unrecognized shape')
             }
             this.exceededCallDepth = type === 'CallDepth'
+        } else if (err != null && !this.tx.meta.logMessages?.length && !this.tx.meta.innerInstructions?.length) {
+            this.erroredInstruction = -1
+            this.exceededCallDepth = false
         } else {
             this.erroredInstruction = tx.transaction.message.instructions.length
             this.exceededCallDepth = false
@@ -75,6 +78,7 @@ export class TransactionContext {
         }, msg)
     }
 }
+
 
 function isIntructionError(err: unknown): err is {InstructionError: [number, string]} {
     return typeof err == 'object' && err != null && 'InstructionError' in err
