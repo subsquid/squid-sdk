@@ -5,7 +5,12 @@ tag=$2
 
 function publish() {
     pkg_path=$1
-    img="$(basename "$pkg_path")"
+    if [ -n "$2" ]
+    then
+       img=$2
+    else
+       img="$(basename "$pkg_path")"
+    fi
     pkg_name="$(node ops/pkg-name.js "$pkg_path")"
     pkg_version="$(node ops/pkg-version.js "$pkg_path")" || exit 1
     major=$(echo "$pkg_version" | cut -d '.' -f1) || exit 1
@@ -24,6 +29,7 @@ function publish() {
 
 publish solana/solana-dump || exit 1
 publish solana/solana-ingest || exit 1
+publish solana/solana-data-service solana-hotblocks-service || exit 1
 publish tron/tron-dump || exit 1
 publish tron/tron-ingest || exit 1
 publish substrate/substrate-dump || exit 1
@@ -31,3 +37,4 @@ publish substrate/substrate-ingest || exit 1
 publish substrate/substrate-metadata-service || exit 1
 
 #git push origin "HEAD:release/${release}" --follow-tags --verbose
+
