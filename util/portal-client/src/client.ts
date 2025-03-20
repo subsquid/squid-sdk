@@ -296,9 +296,9 @@ export class PortalClient {
                 e.response.status === 409 &&
                 query.fromBlock &&
                 query.parentBlockHash &&
-                e.response.body.lastBlocks
+                e.response.body.previousBlocks
             ) {
-                let blocks = e.response.body.lastBlocks as BlockRef[]
+                let blocks = e.response.body.previousBlocks as BlockRef[]
                 e = new ForkException(blocks, {
                     fromBlock: query.fromBlock,
                     parentBlockHash: query.parentBlockHash,
@@ -617,8 +617,8 @@ class LineSplitStream implements ReadableWritablePair<string[], string> {
 export class ForkException extends Error {
     readonly name = 'ForkError'
 
-    constructor(readonly lastBlocks: BlockRef[], readonly query: {fromBlock: number; parentBlockHash: string}) {
-        let parent = last(lastBlocks)
+    constructor(readonly previousBlocks: BlockRef[], readonly query: {fromBlock: number; parentBlockHash: string}) {
+        let parent = last(previousBlocks)
         super(
             `expected ${query.fromBlock} to have parent ${parent.number}#${query.parentBlockHash}, but got ${parent.number}#${parent.hash}`
         )
