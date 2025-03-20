@@ -10,7 +10,7 @@ async function main() {
         minBytes: 50 * 1024 * 1024,
     })
 
-    let from = await portal.getFinalizedHeight().then((h) => h - 1_000_000)
+    let from = await portal.getHead().then((h) => (h?.number ?? 0) - 1_000_000)
 
     let query = {
         type: 'evm',

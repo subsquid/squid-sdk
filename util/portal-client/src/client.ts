@@ -1,4 +1,4 @@
-import {HttpClient, HttpClientOptions, HttpError, HttpResponse} from '@subsquid/http-client'
+import {HttpBody, HttpClient, HttpClientOptions, HttpError, HttpResponse, RequestOptions} from '@subsquid/http-client'
 import {
     addErrorContext,
     createFuture,
@@ -9,6 +9,9 @@ import {
     withErrorContext,
 } from '@subsquid/util-internal'
 import {Readable} from 'stream'
+import {VERSION} from './version'
+
+const USER_AGENT = `@subsquid/portal-client/${VERSION} (https://sqd.ai)`
 
 export interface PortalClientOptions {
     /**
@@ -131,21 +134,21 @@ export class PortalClient {
     }
 
     async getHead(options?: PortalRequestOptions): Promise<BlockRef | undefined> {
-        const res = await this.client.get(this.getDatasetUrl('head'), options)
-        return res ?? undefined
+        const res = await this.request('GET', this.getDatasetUrl('head'), options)
+        return res.body ?? undefined
     }
 
     async getFinalizedHead(options?: PortalRequestOptions): Promise<BlockRef | undefined> {
-        const res = await this.client.get(this.getDatasetUrl('finalized-head'), options)
-        return res ?? undefined
+        const res = await this.request('GET', this.getDatasetUrl('finalized-head'), options)
+        return res.body ?? undefined
     }
 
     /**
      * @deprecated
      */
     async getFinalizedHeight(options?: PortalRequestOptions): Promise<number> {
-        let res: string = await this.client.get(this.getDatasetUrl('finalized-stream/height'), options)
-        let height = parseInt(res)
+        let {body} = await this.request<string>('GET', this.getDatasetUrl('finalized-stream/height'), options)
+        let height = parseInt(body)
         return height
     }
 
@@ -154,7 +157,7 @@ export class PortalClient {
         options?: PortalRequestOptions
     ): Promise<R[]> {
         // FIXME: is it needed or it is better to always use stream?
-        return this.client
+        return this
             .request<Buffer>('POST', this.getDatasetUrl(`finalized-stream`), {
                 ...options,
                 json: query,
@@ -179,7 +182,7 @@ export class PortalClient {
         options?: PortalRequestOptions
     ): Promise<R[]> {
         // FIXME: is it needed or it is better to always use stream?
-        return this.client
+        return this
             .request<Buffer>('POST', this.getDatasetUrl(`stream`), {
                 ...options,
                 json: query,
@@ -259,7 +262,7 @@ export class PortalClient {
 
     private async getStreamRequest(path: string, query: PortalQuery, options?: PortalRequestOptions) {
         try {
-            let res = await this.client
+            let res = await this
                 .request<Readable | undefined>('POST', this.getDatasetUrl(path), {
                     ...options,
                     json: query,
@@ -306,6 +309,16 @@ export class PortalClient {
                 query,
             })
         }
+    }
+
+    private request<T=any>(method: string, url: string, options: RequestOptions & HttpBody = {}) {
+        return this.client.request<T>(method, url, {
+            ...options,
+            headers: {
+                'User-Agent': USER_AGENT,
+                ...options?.headers,
+            },
+        })
     }
 }
 
