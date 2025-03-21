@@ -341,68 +341,65 @@ function createReadablePortalStream<Q extends PortalQuery = PortalQuery, R exten
         let abortSignal = abortStream.signal
         let {fromBlock = 0, toBlock = Infinity, parentBlockHash} = query
 
-        try {
-            while (true) {
-                if (abortSignal.aborted) break
-                if (fromBlock > toBlock) break
+        while (true) {
+            if (abortSignal.aborted) break
+            if (fromBlock > toBlock) break
 
-                let reader: ReadableStreamDefaultReader<string[]> | undefined
-
-                try {
-                    let res = await requestStream(
-                        {
-                            ...query,
-                            fromBlock,
-                            parentBlockHash,
-                        },
-                        {
-                            ...request,
-                            abort: abortSignal,
-                        }
-                    )
-
-                    if (res == null) {
-                        if (stopOnHead) return false
-                        await wait(headPollInterval, abortSignal)
-                    } else {
-                        // no data left
-                        if (res.stream == null) return true
-
-                        finalizedHead = res.finalizedHead
-                        reader = res.stream.getReader()
-
-                        while (true) {
-                            let data = await withAbort(reader.read(), abortSignal)
-                            if (data.done) break
-                            if (data.value.length == 0) continue
-
-                            let blocks: R[] = []
-                            let bytes = 0
-
-                            for (let line of data.value) {
-                                let block = JSON.parse(line) as R
-
-                                blocks.push(block)
-                                bytes += line.length
-
-                                fromBlock = block.header.number + 1
-                                parentBlockHash = block.header.hash
-                            }
-
-                            await withAbort(buffer.put(blocks, bytes), abortSignal)
-                        }
+            let reader: ReadableStreamDefaultReader<string[]> | undefined
+            try {
+                let res = await requestStream(
+                    {
+                        ...query,
+                        fromBlock,
+                        parentBlockHash,
+                    },
+                    {
+                        ...request,
+                        abort: abortSignal,
                     }
+                )
 
-                    buffer.ready()
-                } finally {
-                    reader?.cancel().catch(() => {})
+                if (res == null) {
+                    if (stopOnHead) return false
+                    await wait(headPollInterval, abortSignal)
+                } else {
+                    // no data left
+                    if (res.stream == null) break
+
+                    finalizedHead = res.finalizedHead
+                    reader = res.stream.getReader()
+
+                    while (true) {
+                        let data = await withAbort(reader.read(), abortSignal)
+                        if (data.done) break
+                        if (data.value.length == 0) continue
+
+                        let blocks: R[] = []
+                        let bytes = 0
+
+                        for (let line of data.value) {
+                            let block = JSON.parse(line) as R
+
+                            blocks.push(block)
+                            bytes += line.length
+
+                            fromBlock = block.header.number + 1
+                            parentBlockHash = block.header.hash
+                        }
+
+                        await withAbort(buffer.put(blocks, bytes), abortSignal)
+                    }
                 }
-            }
-        } catch (err) {
-            if (abortSignal.aborted) {
-                // ignore
-            } else {
-                throw err
+
+                buffer.ready()
+            } catch (err) {
+                if (abortSignal.aborted || isStreamAbortedError(err)) {
+                    // ignore
+                } else {
+                    throw err
+                }
+            } finally {
+                reader?.cancel().catch(() => {})
             }
         }
 
@@ -641,4 +638,17 @@ function getFinalizedHeadHeader(headers: HttpResponse['headers']) {
               number: parseInt(finalizedHeadNumber),
           }
         : undefined
+}
+
+function isStreamAbortedError(err: unknown) {
+    if (!(err instanceof Error)) return false
+    if (!('code' in err)) return false
+    switch (err.code) {
+        case 'ABORT_ERR':
+        case 'ERR_STREAM_PREMATURE_CLOSE':
+        case 'ECONNRESET':
+            return true
+        default:
+            return false
+    }
 }

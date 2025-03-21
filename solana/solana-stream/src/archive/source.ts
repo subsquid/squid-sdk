@@ -177,7 +177,7 @@ export class PortalDataSource implements DataSource<PartialBlock> {
             }
         } catch (e: unknown) {
             if (isPortalForkException(e)) {
-                throw new ForkException(e.query.parentBlockHash, e.query.fromBlock, e.lastBlocks)
+                throw new ForkException(e.query.parentBlockHash, e.query.fromBlock, e.previousBlocks)
             }
 
             throw e

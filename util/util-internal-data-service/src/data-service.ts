@@ -85,7 +85,7 @@ export class DataService {
         } catch(err: any) {
             await it.return?.().catch(err => log.error(err))
             if (isForkException(err)) {
-                return new InvalidBaseBlock(err.prevBlocks)
+                return new InvalidBaseBlock(err.previousBlocks)
             } else {
                 throw err
             }
@@ -160,7 +160,7 @@ export class DataService {
             } catch(err: any) {
                 if (isForkException(err)) {
                     stacked = 0
-                    base = this.chain.getForkBase(err.prevBlocks)
+                    base = this.chain.getForkBase(err.previousBlocks)
                 } else {
                     this.log.error(err, 'data ingestion terminated, will resume in 1 minute')
                     await wait(60 * 1000)

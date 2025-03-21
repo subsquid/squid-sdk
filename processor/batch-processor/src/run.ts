@@ -115,7 +115,7 @@ class Processor<B extends BlockBase, S> {
             } catch (e) {
                 if (isForkException(e) && this.db.supportsHotBlocks) {
                     let state = await this.db.getState()
-                    let forkBase = await computeForkBase(state, e.prevBlocks)
+                    let forkBase = await computeForkBase(state, e.previousBlocks)
                     if (forkBase == null) {
                         // rollback all blocks
                         head = {height: -1, hash: '0x'}
