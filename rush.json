@@ -444,6 +444,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/evm-data-service",
+      "projectFolder": "evm/evm-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/graphql-server",
       "projectFolder": "graphql/graphql-server",
       "shouldPublish": true,
