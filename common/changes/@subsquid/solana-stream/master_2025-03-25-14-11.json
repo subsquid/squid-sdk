@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-stream",
+      "comment": "change transaction error type schema to `any`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-stream"
+}
