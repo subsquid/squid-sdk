@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-stream
 
-This log was last generated on Sun, 16 Mar 2025 07:51:27 GMT and should not be manually modified.
+This log was last generated on Tue, 25 Mar 2025 14:14:33 GMT and should not be manually modified.
+
+## 0.2.2
+Tue, 25 Mar 2025 14:14:33 GMT
+
+### Patches
+
+- change transaction error type schema to `any`
 
 ## 0.2.1
 Sun, 16 Mar 2025 07:51:27 GMT
