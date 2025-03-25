@@ -5,6 +5,7 @@ export class Metrics {
     readonly registry = new Registry()
 
     private hotBlocksLastBlockGauge: Gauge
+    private hotBlocksLastBlockLagGauge: Gauge
     private hotBlocksFirstBlockGauge: Gauge
     private hotBlocksFinalizedBlockGauge: Gauge
     private hotBlocksStoredBlocksGauge: Gauge
@@ -13,6 +14,12 @@ export class Metrics {
         this.hotBlocksLastBlockGauge = new Gauge({
             name: 'sqd_hotblocks_last_block',
             help: 'Number of the last stored block',
+            registers: [this.registry],
+        })
+
+        this.hotBlocksLastBlockLagGauge = new Gauge({
+            name: 'sqd_hotblocks_last_block_lag_ms',
+            help: 'Lag of the last stored block in ms',
             registers: [this.registry],
         })
 
@@ -34,11 +41,21 @@ export class Metrics {
             registers: [this.registry],
         })
 
+
+
         collectDefaultMetrics({register: this.registry})
     }
 
     setLastBlock(value: number) {
         this.hotBlocksLastBlockGauge.set({}, value)
+    }
+
+    setLastBlockTimestamp(value: number) {
+        if (value === 0) {
+            this.hotBlocksLastBlockLagGauge.set({}, -1)
+        } else {
+            this.hotBlocksLastBlockLagGauge.set({}, Date.now() - value)
+        }
     }
 
     setFirstBlock(value: number) {
@@ -52,4 +69,6 @@ export class Metrics {
     setFinalizedBlock(value: number) {
         this.hotBlocksFinalizedBlockGauge.set({}, value)
     }
+
+
 }

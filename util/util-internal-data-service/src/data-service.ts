@@ -255,8 +255,11 @@ export class DataService {
     }
 
     private triggerUpdate() {
+        let lastBlock = this.chain.lastBlock()
+
         this.metrics.setFirstBlock(this.chain.firstBlockNumber())
-        this.metrics.setLastBlock(this.chain.lastBlockNumber())
+        this.metrics.setLastBlock(lastBlock.number)
+        this.metrics.setLastBlockTimestamp(lastBlock.timestamp || 0)
         this.metrics.setFinalizedBlock(this.chain.getFinalizedHead().number)
         this.metrics.setStoredBlocks(this.chain.size())
 
