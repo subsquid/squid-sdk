@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Fri, 03 Jan 2025 11:41:05 GMT and should not be manually modified.
+This log was last generated on Fri, 28 Mar 2025 11:16:14 GMT and should not be manually modified.
+
+## 1.27.1
+Fri, 28 Mar 2025 11:16:14 GMT
+
+### Patches
+
+- use zero address as a default value for suicide trace refund address
 
 ## 1.27.0
 Fri, 03 Jan 2025 11:41:05 GMT

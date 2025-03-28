@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.27.1",
+      "tag": "@subsquid/evm-processor_v1.27.1",
+      "date": "Fri, 28 Mar 2025 11:16:14 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "use zero address as a default value for suicide trace refund address"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.27.0",
       "tag": "@subsquid/evm-processor_v1.27.0",
       "date": "Fri, 03 Jan 2025 11:41:05 GMT",
