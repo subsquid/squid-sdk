@@ -5,7 +5,7 @@ import assert from 'assert'
 import {PartialBlock} from '../data/partial'
 import {DataRequest} from '../data/request'
 import {getDataSchema} from './schema'
-import {PortalClient, isForkException as isPortalForkException} from '@subsquid/portal-client'
+import {PortalClient, PortalStreamOptions, isForkException as isPortalForkException} from '@subsquid/portal-client'
 import {BlockRef, DataSource, ForkException, DataSourceStreamOptions, DataSourceStream} from '@subsquid/util-internal-data-source'
 import {BlockHeader} from '../data/model'
 
@@ -96,6 +96,8 @@ export class PortalDataSource implements DataSource<PartialBlock> {
             }
         })
 
+        let getStream = (q: any, o?: PortalStreamOptions) => finalized ? this.client.getFinalizedStream(q, o) : this.client.getStream(q, o)
+
         try {
             let parentBlockNumber = (opts?.range?.from ?? 0) - 1
             let parentBlockHash = opts?.parentHash
@@ -114,9 +116,7 @@ export class PortalDataSource implements DataSource<PartialBlock> {
                         },
                     }
 
-                    let stream = finalized ? this.client.getFinalizedStream(q) : this.client.getStream(q)
-
-                    for await (let data of stream) {
+                    for await (let data of getStream(q)) {
                         let finalizedHead = data.finalizedHead
                         if (finalizedHead != null && finalizedHead.number >= parentBlockNumber) {
                             // the gap is already finalized, we can skip it
@@ -131,7 +131,7 @@ export class PortalDataSource implements DataSource<PartialBlock> {
                     }
                 }
 
-                let stream = this.client.getStream(
+                let stream = getStream(
                     {
                         ...req.request,
                         fromBlock: req.range.from,
