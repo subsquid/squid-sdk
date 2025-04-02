@@ -60,7 +60,7 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
     constructor(private client: PortalClient) {}
 
     getFinalizedHeight(): Promise<number> {
-        return this.client.getFinalizedHeight()
+        return this.client.getFinalizedHead().then((h) => h?.number ?? -1)
     }
 
     async getBlockHash(height: number): Promise<Bytes32> {
