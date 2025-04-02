@@ -5,6 +5,7 @@ import assert from 'assert'
 import {Chain} from './chain'
 import {Block, BlockHeader, BlockRef, DataResponse, InvalidBaseBlock} from './types'
 import {isChain} from './util'
+import {Metrics} from './metrics'
 
 
 interface BlockWaiter {
@@ -14,6 +15,8 @@ interface BlockWaiter {
 
 
 export class DataService {
+    readonly metrics = new Metrics()
+
     private listeners: BlockWaiter[] = []
     private stopped = false
     #chain?: Chain
@@ -142,7 +145,7 @@ export class DataService {
         })) {
             assert(batch.blocks.length === 1)
             this.#chain = new Chain(batch.blocks[0], this.bufferSize)
-            this.notifyListeners()
+            this.triggerUpdate()
         }
     }
 
@@ -217,7 +220,7 @@ export class DataService {
                 this.log.error('block finalization lags behind and prevents cache purging')
             }
 
-            this.notifyListeners()
+            this.triggerUpdate()
         }
     }
 
@@ -256,6 +259,18 @@ export class DataService {
             let future = this.listeners.pop()!.future
             future.resolve()
         }
+    }
+
+    private triggerUpdate() {
+        let lastBlock = this.chain.lastBlock()
+
+        this.metrics.setFirstBlock(this.chain.firstBlockNumber())
+        this.metrics.setLastBlock(lastBlock.number)
+        this.metrics.setLastBlockTimestamp(lastBlock.timestamp || 0)
+        this.metrics.setFinalizedBlock(this.chain.getFinalizedHead().number)
+        this.metrics.setStoredBlocks(this.chain.size())
+
+        this.notifyListeners()
     }
 }
 

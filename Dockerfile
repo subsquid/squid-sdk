@@ -14,12 +14,12 @@ RUN rm common/config/rush/build-cache.json
 RUN node common/scripts/install-run-rush.js build
 
 
-FROM builder AS solana-data-service-builder
+FROM builder AS solana-hotblocks-service-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/solana-data-service
 
 
-FROM node AS solana-data-service
-COPY --from=solana-data-service-builder /squid/common/deploy /squid
+FROM node AS solana-hotblocks-service
+COPY --from=solana-hotblocks-service-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/solana/solana-data-service/lib/main.js"]
 
 

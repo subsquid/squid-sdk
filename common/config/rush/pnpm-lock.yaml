@@ -503,6 +503,9 @@ dependencies:
   typeorm:
     specifier: ^0.3.17
     version: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
+  typescript:
+    specifier: 5.5.4
+    version: 5.5.4
   upath:
     specifier: ^2.0.1
     version: 2.0.1
@@ -7179,7 +7182,7 @@ packages:
     dev: false
 
   file:projects/batch-processor.tgz:
-    resolution: {integrity: sha512-bQPcYVFHx6ZOLQpL78ZgV3YWHe4FKWSL9G/EJyzmnyvKvm87h4b0BOJvmMJX1BKJxaqGJztUS9Zv6wxM047Rhg==, tarball: file:projects/batch-processor.tgz}
+    resolution: {integrity: sha512-3lfR/c2AMXwdcXQ7A+FwyOADOEvV00qsvVpUhktfr/qDLrhbaK2HcwcKRTefYK9ASCaLjCcJKel6uaFGAz+Vcw==, tarball: file:projects/batch-processor.tgz}
     name: '@rush-temp/batch-processor'
     version: 0.0.0
     dependencies:
@@ -7608,7 +7611,7 @@ packages:
     dev: false
 
   file:projects/portal-client.tgz:
-    resolution: {integrity: sha512-pbgQKxXzHf+VnuzfaxJ6HPz0cHEdqcufxV+ztN/6aTP4tDaAaHGnS7iKdUZNmj/ZOxhkeMRPrxdjsJQQyuy+Iw==, tarball: file:projects/portal-client.tgz}
+    resolution: {integrity: sha512-y1L5OtbP8rCmhZFlnK7dzfZPpx5XYdZYMiOPjqN/Nrj4xQrnlmbMfJeqBO3eRewQfcneXNh31byqD6Oo8tqOug==, tarball: file:projects/portal-client.tgz}
     name: '@rush-temp/portal-client'
     version: 0.0.0
     dependencies:
@@ -7779,7 +7782,7 @@ packages:
     dev: false
 
   file:projects/solana-objects.tgz:
-    resolution: {integrity: sha512-Wh7UaU2FxOH+AiGQ3bw0UxllTgSUpMYvStPgpe7baL0OeaUVbLy/wrQ9tjub0bOpdOGvphbwdjV9ti5i/GY76A==, tarball: file:projects/solana-objects.tgz}
+    resolution: {integrity: sha512-AOfyoXZHouRiH0LEcoEXeEDjv0g690bHJmUw7mkWsEBNfnkPzIhlOWOJg7etaQQ392Rhl1jVwER7CdYC8myevg==, tarball: file:projects/solana-objects.tgz}
     name: '@rush-temp/solana-objects'
     version: 0.0.0
     dependencies:
@@ -7806,7 +7809,7 @@ packages:
     dev: false
 
   file:projects/solana-stream.tgz:
-    resolution: {integrity: sha512-grwaf/cHLe1+6Kao0WbSzNy4E3rsUf/Rp1iFdzE4y34cpJl9W2QWyhgwKegkIvWJJfrTTvX+ShX2GeXLV1+syA==, tarball: file:projects/solana-stream.tgz}
+    resolution: {integrity: sha512-EVkWoP70qctYsgRmA22x7+VYLp8x0Nr8PhCIQ4k2o5J0lXeoT74yOfQwp5guN37B0X80FQlxvDYQ0JBLyb+ukA==, tarball: file:projects/solana-stream.tgz}
     name: '@rush-temp/solana-stream'
     version: 0.0.0
     dependencies:
@@ -8254,11 +8257,12 @@ packages:
     dev: false
 
   file:projects/util-internal-data-service.tgz:
-    resolution: {integrity: sha512-OidQjAmWP5IAWusfTsqczZjrqe+L5udtTsjL0exOl1SSqC2eqrHLNEtlh5jjMOGd+fiKWg976NUdTGS6/BpN2w==, tarball: file:projects/util-internal-data-service.tgz}
+    resolution: {integrity: sha512-zHRkqixsLwgJzh+EnjyCNgQeL2D+GfCtSJC9m6RwYrCBbephSIrRJCqC2QK13Vt1qB87mGaVeeKo+Ld+/S3nWA==, tarball: file:projects/util-internal-data-service.tgz}
     name: '@rush-temp/util-internal-data-service'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0
+      prom-client: 14.2.0
       typescript: 5.5.4
     dev: false
 
