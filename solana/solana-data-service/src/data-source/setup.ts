@@ -41,6 +41,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         source = new GeyserDataSource(
             rpcSource,
             client,
+            !options.votes,
             options.geyserBlockQueueSize
         )
     } else {

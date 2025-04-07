@@ -65,9 +65,10 @@ class ItemMapping {
     ) {
         let transactions = block.transactions ?? []
         for (let i = 0; i < transactions.length; i++) {
-            let tx = transactions[i]
+            let tx: rpc.Transaction & {_index?: number} = transactions[i]
+            let txIndex = tx._index ?? i
             try {
-                this.processTransaction(i, tx)
+                this.processTransaction(txIndex, tx)
             } catch(err: any) {
                 throw addErrorContext(err, {
                     transactionHash: tx.transaction.signatures[0]

@@ -26,6 +26,7 @@ export class GeyserDataSource implements DataSource<Block> {
     constructor(
         private rpc: SolanaRpcDataSource,
         private geyser: Client,
+        private noVotes: boolean,
         private blockBufferSize = 10,
         private log = createLogger('sqd:solana-data-service:geyser')
     ) {
@@ -131,7 +132,7 @@ export class GeyserDataSource implements DataSource<Block> {
 
                 let block
                 try {
-                    block = mapBlock(geyserBlock)
+                    block = mapBlock(geyserBlock, this.noVotes)
                 } catch(err: any) {
                     reject(addErrorContext(err, {
                         geyserBlockSlot: geyserBlock.slot,
@@ -217,17 +218,21 @@ export class GeyserDataSource implements DataSource<Block> {
 }
 
 
-function mapBlock(g: SubscribeUpdateBlock): Block {
+function mapBlock(g: SubscribeUpdateBlock, noVotes: boolean): Block {
+    let transactions = g.transactions
+    if (noVotes) {
+        transactions = transactions.filter(tx => !tx.isVote)
+    }
     let block: GetBlock = {
         blockhash: g.blockhash,
         parentSlot: nat(g.parentSlot, 'parentSlot'),
         previousBlockhash: g.parentBlockhash,
         blockHeight: g.blockHeight == null ? null : nat(g.blockHeight.blockHeight, 'blockHeight'),
         blockTime: g.blockTime == null ? null : nat(g.blockTime.timestamp, 'blockTime'),
-        transactions: g.transactions
+        transactions: transactions
             .map(mapTransaction)
             // transactions come unordered
-            .sort((a, b) => a[kIndex] - b[kIndex]),
+            .sort((a, b) => a._index - b._index),
         rewards: g.rewards?.rewards.map(mapReward)
     }
     return {
@@ -237,10 +242,7 @@ function mapBlock(g: SubscribeUpdateBlock): Block {
 }
 
 
-const kIndex = Symbol('index')
-
-
-function mapTransaction(gtx: SubscribeUpdateTransactionInfo): Transaction & {[kIndex]: number} {
+function mapTransaction(gtx: SubscribeUpdateTransactionInfo): Transaction & {_index: number} {
     let tx = assertNotNull(gtx.transaction, 'no .transaction field in geyser transaction')
     let message = assertNotNull(tx.message, 'no .transaction.message field in geyser transaction')
     let header = assertNotNull(message.header, 'no .transaction.message.header field in geyser transaction')
@@ -310,7 +312,7 @@ function mapTransaction(gtx: SubscribeUpdateTransactionInfo): Transaction & {[kI
                 data: [base64encode(meta.returnData.data), 'base64']
             }
         },
-        [kIndex]: nat(gtx.index, '.index in geyser transaction')
+        _index: nat(gtx.index, '.index in geyser transaction')
     }
 }
 
