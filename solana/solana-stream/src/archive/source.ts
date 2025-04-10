@@ -2,21 +2,21 @@ import {assertNotNull, last} from '@subsquid/util-internal'
 import {applyRangeBound, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {array, cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
-import {PartialBlock} from '../data/partial'
 import {DataRequest} from '../data/request'
 import {getDataSchema} from './schema'
 import {PortalClient, PortalStreamOptions, isForkException as isPortalForkException} from '@subsquid/portal-client'
 import {BlockRef, DataSource, ForkException, DataSourceStreamOptions, DataSourceStream} from '@subsquid/util-internal-data-source'
-import {BlockHeader} from '../data/model'
+import {Block, BlockHeader, FieldSelection} from '../data/model'
 
-export class PortalDataSource implements DataSource<PartialBlock> {
-    constructor(private client: PortalClient, private requests: RangeRequestList<DataRequest>) {}
+export class PortalDataSource<F extends FieldSelection = {}, B extends Block<F> = Block<F>> implements DataSource<B> {
+    constructor(private client: PortalClient, private requests: RangeRequestList<DataRequest>, private opts?: {squidId?: string}) {}
 
     getHead(): Promise<BlockRef | undefined> {
-        return this.client.getHead()
+        return this.client.getHead({headers: this.getHeaders()})
     }
+
     getFinalizedHead(): Promise<BlockRef | undefined> {
-        return this.client.getFinalizedHead()
+        return this.client.getFinalizedHead({headers: this.getHeaders()})
     }
 
     async getBlockHash(height: number): Promise<string | undefined> {
@@ -31,6 +31,8 @@ export class PortalDataSource implements DataSource<PartialBlock> {
                 },
             },
             includeAllBlocks: true,
+        }, {
+            headers: this.getHeaders(),
         })
         assert(blocks.length == 1)
         return blocks[0].header.hash
@@ -57,20 +59,22 @@ export class PortalDataSource implements DataSource<PartialBlock> {
                     timestamp: true,
                 },
             },
+        }, {
+            headers: this.getHeaders(),
         })
         assert(blocks.length == 1)
         return blocks[0].header as BlockHeader
     }
 
-    getFinalizedStream(opts?: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
+    getFinalizedStream(opts?: DataSourceStreamOptions): DataSourceStream<B> {
         return this._getStream(opts, true)
     }
 
-    getStream(opts?: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
+    getStream(opts?: DataSourceStreamOptions): DataSourceStream<B> {
         return this._getStream(opts, false)
     }
 
-    private async *_getStream(opts?: DataSourceStreamOptions, finalized?: boolean): DataSourceStream<PartialBlock> {
+    private async *_getStream(opts?: DataSourceStreamOptions, finalized?: boolean): DataSourceStream<B> {
         let requests = applyRangeBound(this.requests, opts?.range)
 
         let archiveRequests = mapRangeRequestList(requests, (req) => {
@@ -116,7 +120,7 @@ export class PortalDataSource implements DataSource<PartialBlock> {
                         },
                     }
 
-                    for await (let data of getStream(q)) {
+                    for await (let data of getStream(q, {request: {headers: this.getHeaders()}})) {
                         let finalizedHead = data.finalizedHead
                         if (finalizedHead != null && finalizedHead.number >= parentBlockNumber) {
                             // the gap is already finalized, we can skip it
@@ -138,7 +142,10 @@ export class PortalDataSource implements DataSource<PartialBlock> {
                         toBlock: req.range.to,
                         parentBlockHash: parentBlockHash,
                     },
-                    {stopOnHead: opts?.stopOnHead}
+                    {
+                        stopOnHead: opts?.stopOnHead,
+                        request: {headers: this.getHeaders()}
+                    },
                 )
 
                 let fields = assertNotNull(req?.request.fields)
@@ -158,7 +165,7 @@ export class PortalDataSource implements DataSource<PartialBlock> {
                     })
 
                     yield {
-                        blocks,
+                        blocks: blocks as B[],
                         finalizedHead: batch.finalizedHead,
                     }
 
@@ -182,5 +189,11 @@ export class PortalDataSource implements DataSource<PartialBlock> {
 
             throw e
         }
+    }
+
+    private getHeaders() {
+        return this.opts?.squidId ? {
+            'x-squid-id': this.opts.squidId
+        } : undefined
     }
 }

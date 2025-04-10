@@ -1,5 +1,4 @@
-import {HttpAgent, HttpClient} from '@subsquid/http-client'
-import {def, last} from '@subsquid/util-internal'
+import {def} from '@subsquid/util-internal'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
 import {
     applyRangeBound,
@@ -11,7 +10,6 @@ import {
 import assert from 'assert'
 import {getFields} from './data/fields'
 import {Block, FieldSelection} from './data/model'
-import {PartialBlock} from './data/partial'
 import {
     BalanceRequest,
     DataRequest,
@@ -23,7 +21,7 @@ import {
 } from './data/request'
 import {PortalDataSource} from './archive/source'
 import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
-import {BlockRef, DataSource, DataSourceStream, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
+import {BlockBatch, BlockRef, DataSource, DataSourceStream, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
 
 export interface GatewaySettings {
     /**
@@ -37,15 +35,6 @@ export interface GatewaySettings {
 }
 
 
-export interface PortalSettings extends Omit<PortalClientOptions, 'http'> {
-    /**
-     * Request timeout in ms
-     */
-    requestTimeout?: number
-
-    retryAttempts?: number
-}
-
 interface BlockRange {
     range?: Range
 }
@@ -54,7 +43,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
-    private archive?: PortalSettings
+    private archive?: PortalClient | PortalClientOptions
 
     /**
      * Set SQD Network Portal endpoint.
@@ -65,11 +54,11 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
      * @example
      * source.setGateway('https://portal.sqd.dev/datasets/solana-mainnet')
      */
-    setPortal(url: string | PortalSettings): this {
-        if (typeof url == 'string') {
-            this.archive = {url}
+    setPortal(portal: string | PortalClientOptions | PortalClient): this {
+        if (typeof portal == 'string') {
+            this.archive = {url: portal}
         } else {
-            this.archive = {...url}
+            this.archive = portal
         }
         return this
     }
@@ -199,6 +188,8 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
     }
 
     build(): DataSource<Block<F>> {
+        assert(this.archive, 'Portal settings not set')
+
         return new SolanaDataSource(
             this.getRequests(),
             this.archive,
@@ -208,15 +199,14 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
 
 export type GetDataSourceBlock<T> = T extends DataSource<infer B> ? B : never
 
-class SolanaDataSource implements DataSource<PartialBlock> {
-    private isConsistent?: boolean
-    private ranges: Range[]
-
+export class SolanaDataSource<F extends FieldSelection = {}, B extends Block<F> = Block<F>> implements DataSource<B> {
+    private portal: PortalClient
+    
     constructor(
         private requests: RangeRequestList<DataRequest>,
-        private archiveSettings?: PortalSettings,
+        portal: PortalClient | PortalClientOptions,
     ) {
-        this.ranges = this.requests.map((req) => req.range)
+        this.portal = portal instanceof PortalClient ? portal : new PortalClient(portal)
     }
 
     getHead(): Promise<BlockRef | undefined> {
@@ -227,68 +217,31 @@ class SolanaDataSource implements DataSource<PartialBlock> {
         return this.createArchive().getFinalizedHead()
     }
 
-    getFinalizedStream(opts: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
+    getFinalizedStream(opts: DataSourceStreamOptions): DataSourceStream<B> {
         return this._getStream(opts, true)
     }
 
-    getStream(opts?: DataSourceStreamOptions): DataSourceStream<PartialBlock> {
+    getStream(opts?: DataSourceStreamOptions): DataSourceStream<B> {
         return this._getStream(opts, false)
     }
 
-    private async *_getStream(opts?: DataSourceStreamOptions, finalized?: boolean): DataSourceStream<PartialBlock> {
-        let from = opts?.range?.from ?? 0
-        let parentHash = opts?.parentHash
-        if (this.archiveSettings) {
-            let agent = new HttpAgent({keepAlive: true})
-            try {
-                let archive = this.createArchive(agent)
+    private async *_getStream(opts?: DataSourceStreamOptions, finalized?: boolean): DataSourceStream<B> {
+        let archive = this.createArchive()
 
-                let stream = finalized
-                    ? archive.getFinalizedStream({
-                          range: {from, to: opts?.range?.to},
-                          stopOnHead: opts?.stopOnHead,
-                          parentHash,
-                      })
-                    : archive.getStream({
-                          range: {from, to: opts?.range?.to},
-                          stopOnHead: opts?.stopOnHead,
-                          parentHash,
-                      })
+        let stream = finalized
+            ? archive.getFinalizedStream(opts)
+            : archive.getStream(opts)
 
-                for await (let batch of stream) {
-                    yield batch
-                    from = last(batch.blocks).header.number + 1
-                    parentHash = last(batch.blocks).header.hash
-                }
-            } finally {
-                agent.close()
-            }
+        for await (let batch of stream) {
+            yield batch as BlockBatch<B>
         }
     }
 
-    private createArchive(agent?: HttpAgent): PortalDataSource {
-        assert(this.archiveSettings)
-
-        let headers = {
-            'x-squid-id': this.getSquidId(),
-        }
-
+    private createArchive() {
         return new PortalDataSource(
-            new PortalClient({
-                http: new HttpClient({
-                    headers,
-                    agent,
-                    httpTimeout: this.archiveSettings.requestTimeout,
-                    retryAttempts: this.archiveSettings.retryAttempts ?? Infinity,
-                }),
-                url: this.archiveSettings.url,
-                minBytes: this.archiveSettings.minBytes,
-                maxIdleTime: this.archiveSettings.maxIdleTime,
-                maxBytes: this.archiveSettings.maxBytes,
-                maxWaitTime: this.archiveSettings.maxWaitTime,
-                headPollInterval: this.archiveSettings.headPollInterval,
-            }),
-            this.requests
+            this.portal,
+            this.requests,
+            {squidId: this.getSquidId()},
         )
     }
 
