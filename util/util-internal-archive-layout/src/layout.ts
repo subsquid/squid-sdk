@@ -133,7 +133,14 @@ export class ArchiveLayout {
         if (nextBlock > rangeEnd(range)) return
 
         const getNextChunk = (first: BlockRef, last: BlockRef): Fs => {
-            let from = first.parentNumber == null ? first.number : first.parentNumber + 1
+            let from
+            if (first.parentNumber == null) {
+                from = first.number
+            } else if (first.number == 0 && first.parentNumber == 0) {
+                from = first.number
+            } else {
+                from = first.parentNumber + 1
+            }
             let to = last.number
             assert(nextBlock === from)
             assert(from <= to)
