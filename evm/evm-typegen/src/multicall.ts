@@ -146,7 +146,7 @@ export class Multicall extends ContractBase {
         return [calls, page]
       }
       default:
-        throw new Error('unexpected number of arguments')
+        throw new Error(`Unexpected number of arguments: ${args.length}`)
     }
   }
 }
@@ -165,7 +165,7 @@ function* splitSlice(maxSize: number, beg: number, end?: number): Iterable<[beg:
 
 function* splitArray<T>(maxSize: number, arr: T[]): Iterable<T[]> {
   if (arr.length <= maxSize) {
-      arr
+      yield arr
   } else {
       for (let [beg, end] of splitSlice(maxSize, 0, arr.length)) {
           yield arr.slice(beg, end)
