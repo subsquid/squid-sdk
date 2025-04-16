@@ -143,13 +143,14 @@ export class PortalDataSource<F extends FieldSelection = {}, B extends Block<F> 
                         parentBlockHash: parentBlockHash,
                     },
                     {
-                        stopOnHead: opts?.stopOnHead,
                         request: {headers: this.getHeaders()}
                     },
                 )
 
                 let fields = assertNotNull(req?.request.fields)
                 let schema = array(getDataSchema(fields))
+
+                let lastBlock: BlockRef | undefined
                 for await (let batch of stream) {
                     let blocks = cast(schema, batch.blocks).map((b) => {
                         let {header, ...items} = b
@@ -175,16 +176,10 @@ export class PortalDataSource<F extends FieldSelection = {}, B extends Block<F> 
                         parentBlockHash = lastBlock.hash
                     }
                 }
-
-                // FIXME: don't like this solution
-                if (!stream[PortalClient.completed]) {
-                    assert(opts?.stopOnHead, 'unexpected end of stream')
-                    break
-                }
             }
         } catch (e: unknown) {
             if (isPortalForkException(e)) {
-                throw new ForkException(e.query.parentBlockHash, e.query.fromBlock, e.previousBlocks)
+                throw new ForkException(e.head.hash, e.head.number, e.lastBlocks)
             }
 
             throw e

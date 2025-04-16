@@ -70,7 +70,7 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
         })
         let blocks = await this.client.getFinalizedQuery(query)
         assert(blocks.length == 1)
-        return blocks[0].header.hash
+        return blocks[0].header.hash!
     }
 
     async *getFinalizedBlocks(
@@ -82,7 +82,7 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
             let endBlock = req.range.to || Infinity
             let query = makeQuery(req)
 
-            for await (let {blocks: batch, finalizedHead} of this.client.getFinalizedStream(query, {stopOnHead})) {
+            for await (let {blocks: batch, finalizedHead} of this.client.getFinalizedStream(query)) {
                 assert(batch.length > 0, 'boundary blocks are expected to be included')
                 lastBlock = last(batch).header.number
 
@@ -97,18 +97,16 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
                     }
                 })
 
+                let isHead = lastBlock >= (finalizedHead?.number ?? -1)
+                
                 yield {
                     blocks,
-                    isHead: lastBlock >= (finalizedHead?.number ?? -1),
+                    isHead,
                 }
-            }
 
-            // stream ended before requested range,
-            // which means we reached the last available block
-            // should not happen if stopOnHead is set to false
-            if (lastBlock < endBlock) {
-                assert(stopOnHead, 'unexpected end of stream')
-                break
+                if (stopOnHead && isHead) {
+                    break
+                }
             }
         }
     }
