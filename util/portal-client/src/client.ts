@@ -157,11 +157,10 @@ export class PortalClient {
         options?: PortalRequestOptions
     ): Promise<R[]> {
         // FIXME: is it needed or it is better to always use stream?
-        return this
-            .request<Buffer>('POST', this.getDatasetUrl(`finalized-stream`), {
-                ...options,
-                json: query,
-            })
+        return this.request<Buffer>('POST', this.getDatasetUrl(`finalized-stream`), {
+            ...options,
+            json: query,
+        })
             .catch(
                 withErrorContext({
                     archiveQuery: query,
@@ -182,11 +181,10 @@ export class PortalClient {
         options?: PortalRequestOptions
     ): Promise<R[]> {
         // FIXME: is it needed or it is better to always use stream?
-        return this
-            .request<Buffer>('POST', this.getDatasetUrl(`stream`), {
-                ...options,
-                json: query,
-            })
+        return this.request<Buffer>('POST', this.getDatasetUrl(`stream`), {
+            ...options,
+            json: query,
+        })
             .catch(
                 withErrorContext({
                     archiveQuery: query,
@@ -262,17 +260,15 @@ export class PortalClient {
 
     private async getStreamRequest(path: string, query: PortalQuery, options?: PortalRequestOptions) {
         try {
-            let res = await this
-                .request<Readable | undefined>('POST', this.getDatasetUrl(path), {
-                    ...options,
-                    json: query,
-                    stream: true,
+            let res = await this.request<Readable | undefined>('POST', this.getDatasetUrl(path), {
+                ...options,
+                json: query,
+                stream: true,
+            }).catch(
+                withErrorContext({
+                    query: query,
                 })
-                .catch(
-                    withErrorContext({
-                        query: query,
-                    })
-                )
+            )
 
             switch (res.status) {
                 case 200:
@@ -311,7 +307,7 @@ export class PortalClient {
         }
     }
 
-    private request<T=any>(method: string, url: string, options: RequestOptions & HttpBody = {}) {
+    private request<T = any>(method: string, url: string, options: RequestOptions & HttpBody = {}) {
         return this.client.request<T>(method, url, {
             ...options,
             headers: {
@@ -391,7 +387,7 @@ function createReadablePortalStream<Q extends PortalQuery = PortalQuery, R exten
                     }
                 }
 
-                buffer.ready()
+                buffer.flush()
             } catch (err) {
                 if (abortSignal.aborted || isStreamAbortedError(err)) {
                     // ignore
@@ -442,15 +438,15 @@ function createReadablePortalStream<Q extends PortalQuery = PortalQuery, R exten
 
 class PortalStreamBuffer<B> {
     private buffer: {blocks: B[]; bytes: number} | undefined
-    private state: 'open' | 'failed' | 'closed' = 'open'
+    private state: 'pending' | 'ready' | 'failed' | 'closed' = 'pending'
     private error: unknown
 
     private readyFuture: Future<void> = createFuture()
     private takeFuture: Future<void> = createFuture()
     private putFuture: Future<void> = createFuture()
 
-    private lastChunkTimestamp = Date.now()
-    private idleInterval: ReturnType<typeof setInterval> | undefined
+    private idleTimeout: ReturnType<typeof setTimeout> | undefined
+    private waitTimeout: ReturnType<typeof setTimeout> | undefined
 
     private minBytes: number
     private maxBytes: number
@@ -464,17 +460,52 @@ class PortalStreamBuffer<B> {
         this.maxIdleTime = options.maxIdleTime
     }
 
-    async take(): Promise<{done: true; value?: undefined} | {value: B[]; done: false}> {
-        let waitTimeout = setTimeout(() => {
+    private reset() {
+        this.readyFuture = createFuture()
+        this.putFuture = createFuture()
+        this.takeFuture = createFuture()
+        this.state = 'pending'
+    }
+
+    private ready() {
+        if (this.state === 'pending') {
+            this.state = 'ready'
             this.readyFuture.resolve()
-        }, this.maxWaitTime)
-        this.readyFuture.promise().finally(() => clearTimeout(waitTimeout))
+        }
+        if (this.idleTimeout != null) {
+            clearTimeout(this.idleTimeout)
+            this.idleTimeout = undefined
+        }
+        if (this.waitTimeout != null) {
+            clearTimeout(this.waitTimeout)
+            this.waitTimeout = undefined
+        }
+    }
 
-        await Promise.all([this.readyFuture.promise(), this.putFuture.promise()])
+    private cleanup() {
+        if (this.idleTimeout != null) {
+            clearTimeout(this.idleTimeout)
+            this.idleTimeout = undefined
+        }
+        if (this.waitTimeout != null) {
+            clearTimeout(this.waitTimeout)
+            this.waitTimeout = undefined
+        }
+        this.readyFuture.resolve()
+        this.putFuture.resolve()
+        this.takeFuture.resolve()
+    }
 
+    async take(): Promise<{done: true; value?: undefined} | {value: B[]; done: false}> {
         if (this.state === 'failed') {
             throw this.error
         }
+
+        if (this.state === 'pending') {
+            this.waitTimeout = setTimeout(() => this.ready(), this.maxWaitTime)
+        }
+
+        await Promise.all([this.readyFuture.promise(), this.putFuture.promise()])
 
         let value = this.buffer?.blocks
         this.buffer = undefined
@@ -483,33 +514,25 @@ class PortalStreamBuffer<B> {
 
         if (this.state === 'closed') {
             return value == null ? {done: true} : {value, done: false}
-        } else {
-            if (value == null) {
-                throw new Error('buffer is empty')
-            }
-
-            this.takeFuture = createFuture()
-            this.putFuture = createFuture()
-            this.readyFuture = createFuture()
-
-            return {value, done: false}
         }
+
+        if (value == null) {
+            throw new Error('buffer is empty')
+        }
+
+        this.reset()
+
+        return {value, done: false}
     }
 
     async put(blocks: B[], bytes: number) {
-        if (this.state !== 'open') {
+        if (this.state === 'closed' || this.state === 'failed') {
             throw new Error('buffer is closed')
         }
 
-        this.lastChunkTimestamp = Date.now()
-        if (this.idleInterval == null) {
-            this.idleInterval = setInterval(() => {
-                if (Date.now() - this.lastChunkTimestamp >= this.maxIdleTime) {
-                    this.readyFuture.resolve()
-                }
-            }, Math.ceil(this.maxIdleTime / 3))
-            this.readyFuture.promise().finally(() => clearInterval(this.idleInterval))
-            this.takeFuture.promise().finally(() => (this.idleInterval = undefined))
+        if (this.idleTimeout != null) {
+            clearTimeout(this.idleTimeout)
+            this.idleTimeout = undefined
         }
 
         if (this.buffer == null) {
@@ -525,34 +548,34 @@ class PortalStreamBuffer<B> {
         this.putFuture.resolve()
 
         if (this.buffer.bytes >= this.minBytes) {
-            this.readyFuture.resolve()
+            this.ready()
         }
 
         if (this.buffer.bytes >= this.maxBytes) {
             await this.takeFuture.promise()
         }
+
+        if (this.state === 'pending') {
+            this.idleTimeout = setTimeout(() => this.ready(), this.maxIdleTime)
+        }
     }
 
-    ready() {
+    flush() {
         if (this.buffer == null) return
-        this.readyFuture.resolve()
+        this.ready()
     }
 
     close() {
-        if (this.state !== 'open') return
+        if (this.state === 'closed' || this.state === 'failed') return
         this.state = 'closed'
-        this.readyFuture.resolve()
-        this.putFuture.resolve()
-        this.takeFuture.resolve()
+        this.cleanup()
     }
 
     fail(err: unknown) {
-        if (this.state !== 'open') return
+        if (this.state === 'closed' || this.state === 'failed') return
         this.state = 'failed'
         this.error = err
-        this.readyFuture.resolve()
-        this.putFuture.resolve()
-        this.takeFuture.resolve()
+        this.cleanup()
     }
 }
 
@@ -614,7 +637,10 @@ class LineSplitStream implements ReadableWritablePair<string[], string> {
 export class ForkException extends Error {
     readonly name = 'ForkError'
 
-    constructor(readonly previousBlocks: BlockRef[], readonly query: PortalQuery) {
+    constructor(
+        readonly previousBlocks: BlockRef[],
+        readonly query: Required<Pick<PortalQuery, 'fromBlock' | 'parentBlockHash'>>
+    ) {
         let parent = last(previousBlocks)
         super(
             `expected ${query.fromBlock} to have parent ${parent.number}#${parent.hash}, but got ${parent.number}#${query.parentBlockHash}`
