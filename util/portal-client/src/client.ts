@@ -614,10 +614,10 @@ class LineSplitStream implements ReadableWritablePair<string[], string> {
 export class ForkException extends Error {
     readonly name = 'ForkError'
 
-    constructor(readonly previousBlocks: BlockRef[], readonly query: {fromBlock: number; parentBlockHash: string}) {
+    constructor(readonly previousBlocks: BlockRef[], readonly query: PortalQuery) {
         let parent = last(previousBlocks)
         super(
-            `expected ${query.fromBlock} to have parent ${parent.number}#${query.parentBlockHash}, but got ${parent.number}#${parent.hash}`
+            `expected ${query.fromBlock} to have parent ${parent.number}#${parent.hash}, but got ${parent.number}#${query.parentBlockHash}`
         )
     }
 }
