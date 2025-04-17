@@ -33,6 +33,8 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
 
     protected abstract getPrevBlockHash(block: B): string
 
+    protected abstract getBlockTimestamp(block: B): number
+
     protected setUpProgram(program: Command): void {}
 
     protected getDefaultChunkSize(): number {
@@ -175,6 +177,11 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
                     }
                 }
             }
+
+            const lastBlock = last(blocks)
+            const receivedTimestamp = Math.floor(Date.now() / 1000)
+            const mintedTimestamp = this.getBlockTimestamp(lastBlock)
+            this.prometheus().setLatestBlockMetrics(lastBlock.height, receivedTimestamp, mintedTimestamp)
 
             yield blocks
 

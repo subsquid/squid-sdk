@@ -26,6 +26,10 @@ export class TronDumper extends Dumper<BlockData, Options> {
         return block.block.block_header.raw_data.parentHash
     }
 
+    protected getBlockTimestamp(block: BlockData): number {
+        return block.block.block_header.raw_data.timestamp ?? 0
+    }
+
     @def
     httpApi(): HttpApi {
         let client = new TronHttpClient({
