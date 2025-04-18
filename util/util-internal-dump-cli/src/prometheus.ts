@@ -10,6 +10,9 @@ export class PrometheusServer {
     private lastWrittenBlockGauge: Gauge
     private rpcRequestsGauge: Gauge
     private s3RequestsCounter: Counter
+    private latestBlockNumberGauge: Gauge
+    private latestBlockReceivedTimestampGauge: Gauge
+    private latestBlockMintedTimestampGauge: Gauge
 
     constructor(
         private port: number,
@@ -36,6 +39,24 @@ export class PrometheusServer {
         this.lastWrittenBlockGauge = new Gauge({
             name: 'sqd_dump_last_written_block',
             help: 'Last saved block',
+            registers: [this.registry]
+        })
+
+        this.latestBlockNumberGauge = new Gauge({
+            name: 'sqd_latest_block_number',
+            help: 'Latest block number received',
+            registers: [this.registry]
+        })
+
+        this.latestBlockReceivedTimestampGauge = new Gauge({
+            name: 'sqd_latest_block_received_timestamp',
+            help: 'Timestamp when latest block was received',
+            registers: [this.registry]
+        })
+
+        this.latestBlockMintedTimestampGauge = new Gauge({
+            name: 'sqd_latest_block_minted_timestamp',
+            help: 'Timestamp when latest block was minted',
             registers: [this.registry]
         })
 
@@ -71,6 +92,12 @@ export class PrometheusServer {
 
     setLastWrittenBlock(block: number) {
         this.lastWrittenBlockGauge.set(block)
+    }
+
+    setLatestBlockMetrics(blockNumber: number, receivedTimestamp: number, mintedTimestamp: number) {
+        this.latestBlockNumberGauge.set(blockNumber)
+        this.latestBlockReceivedTimestampGauge.set(receivedTimestamp)
+        this.latestBlockMintedTimestampGauge.set(mintedTimestamp)
     }
 
     incS3Requests(kind: string, value?: number) {

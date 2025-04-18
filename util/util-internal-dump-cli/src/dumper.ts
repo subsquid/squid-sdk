@@ -23,6 +23,8 @@ export interface DumperOptions {
     writeBatchSize: number
     topDirSize: number
     metrics?: number
+    enableBlockMetrics?: boolean
+    blockMetricsInterval?: number
 }
 
 
@@ -32,6 +34,10 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
     protected abstract getFinalizedHeight(): Promise<number>
 
     protected abstract getPrevBlockHash(block: B): string
+
+    protected abstract getBlockTimestamp(block: B): number
+
+    protected abstract getLatestBlock(): Promise<B>
 
     protected setUpProgram(program: Command): void {}
 
@@ -62,6 +68,8 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
         program.option('--write-batch-size <number>', 'Number of blocks to write at a time', positiveInt, 10)
         program.option('--top-dir-size <number>', 'Number of items in a top level dir', positiveInt, this.getDefaultTopDirSize())
         program.option('--metrics <port>', 'Enable prometheus metrics server', nat)
+        program.option('--enable-block-metrics', 'Enable collection of latest block metrics', false)
+        program.option('--block-metrics-interval <ms>', 'Interval for block metrics collection', positiveInt, 5000)
         return program
     }
 
@@ -143,6 +151,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
         }
         assertRange(range)
 
+        let lastBlockThrottler = new Throttler(() => this.getLatestBlock(), this.options().blockMetricsInterval || 5000)
         let height = new Throttler(() => this.getFinalizedHeight(), 60_000)
         let chainHeight = await height.get()
 
@@ -173,6 +182,18 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
                             )
                         }
                     }
+                }
+            }
+
+            if (this.options().enableBlockMetrics) {
+                try {
+                    const lastBlock = await lastBlockThrottler.get()
+                    const receivedTimestamp = Math.floor(Date.now() / 1000)
+                    const mintedTimestamp = this.getBlockTimestamp(lastBlock)
+                    this.prometheus().setLatestBlockMetrics(lastBlock.height, receivedTimestamp, mintedTimestamp)
+                    this.log().debug(`Latest block metrics: ${lastBlock.height}, ${receivedTimestamp}, ${mintedTimestamp}`)
+                } catch (error) {
+                    this.log().error(`Error getting latest block metrics: ${error}`)
                 }
             }
 
