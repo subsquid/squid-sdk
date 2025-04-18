@@ -115,6 +115,36 @@ export class SubstrateDumper extends Dumper<BlockData, Options> {
     }
 
     protected getBlockTimestamp(block: BlockData): number {
-        return (Date.now() / 1000); //mocked timestamp for now
+        return Math.floor(Date.now() / 1000); //mocked timestamp for now
+    }
+
+    protected async getLatestBlock(): Promise<BlockData> {
+        const height = await this.getDataSource().getFinalizedHeight();
+        const {withTrace} = this.options();
+        const request: DataRequest = {
+            runtimeVersion: true,
+            extrinsics: true,
+            events: true,
+            trace: typeof withTrace === 'string'
+                ? withTrace
+                : withTrace ? '' : undefined
+        };
+        
+        const batches = this.getDataSource().getFinalizedBlocks([{
+            range: { from: height, to: height },
+            request
+        }]);
+        
+        for await (const batch of batches) {
+            if (batch.blocks.length > 0) {
+                const block = batch.blocks[0];
+                if (block.runtimeVersion && !block.metadata) {
+                    block.metadata = await this.getDataSource().rpc.getMetadata(block.hash);
+                }
+                return block;
+            }
+        }
+        
+        throw new Error(`Failed to get latest block at height ${height}`);
     }
 }

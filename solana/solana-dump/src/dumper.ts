@@ -2,6 +2,7 @@ import {Block, ingestFinalizedBlocks, Rpc} from '@subsquid/solana-rpc'
 import {def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
 import assert from 'assert'
+import {toBlock} from '@subsquid/solana-rpc/lib/util'
 
 
 interface Options extends DumperOptions {
@@ -48,6 +49,23 @@ export class SolanaDumper extends Dumper<Block, Options> {
 
     protected getBlockTimestamp(block: Block): number {
         return Number(block.block.blockTime) ?? 0
+    }
+
+    protected getLatestBlock(): Promise<Block> {
+        return this.solanaRpc().getTopSlot('finalized')
+            .then(slot => {
+                return this.solanaRpc().getBlockBatch([slot], {
+                    rewards: true,
+                    transactionDetails: 'full',
+                    maxSupportedTransactionVersion: 0
+                })
+                .then(blocks => {
+                    if (!blocks[0]) {
+                        throw new Error(`Failed to get block at slot ${slot}`)
+                    }
+                    return toBlock(slot, blocks[0])
+                })
+            })
     }
 
     @def
@@ -98,7 +116,10 @@ function checkLogMessages(block: Block): void {
     if (block.height < 130000000) return
 
     for (let tx of block.block.transactions!) {
-        if (tx.meta.logMessages == null && tx.meta.err != 'MaxLoadedAccountsDataSizeExceeded') {
+        // Skip transactions with null log messages if they have one of these errors
+        const allowedErrors = ['MaxLoadedAccountsDataSizeExceeded', 'ProgramAccountNotFound'];
+        
+        if (tx.meta.logMessages == null && !allowedErrors.includes(tx.meta.err as string)) {
             throw new Error(`Log message recording was not enabled for transaction ${tx.transaction.signatures[0]} at slot ${block.slot}`)
         }
     }
