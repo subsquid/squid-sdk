@@ -71,6 +71,9 @@ dependencies:
   '@rush-temp/evm-codec':
     specifier: file:./projects/evm-codec.tgz
     version: file:projects/evm-codec.tgz(supports-color@8.1.1)
+  '@rush-temp/evm-data-service':
+    specifier: file:./projects/evm-data-service.tgz
+    version: file:projects/evm-data-service.tgz
   '@rush-temp/evm-processor':
     specifier: file:./projects/evm-processor.tgz
     version: file:projects/evm-processor.tgz
@@ -7834,6 +7837,20 @@ packages:
       - terser
       - utf-8-validate
       - zod
+    dev: false
+
+  file:projects/evm-data-service.tgz:
+    resolution: {integrity: sha512-xNz0QdE0UMTZI7zQOzdtSdmsaoL4Tw2/o0wow188Q5Ohs03NAqIOVw5Dhwg/9DxQsFg+7r/B8bJeTaz7DdEM2Q==, tarball: file:projects/evm-data-service.tgz}
+    name: '@rush-temp/evm-data-service'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      commander: 11.1.0
+      ethers: 6.9.0
+      typescript: 5.5.4
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
     dev: false
 
   file:projects/evm-processor.tgz:
