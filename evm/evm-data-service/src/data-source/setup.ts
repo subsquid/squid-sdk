@@ -9,7 +9,11 @@ const log = createLogger('sqd:evm-data-service/data-source')
 
 
 export interface DataSourceOptions {
-    httpRpc: string
+    httpRpc: string,
+    ratelimit: number | undefined,
+    traces: boolean | undefined,
+    diffs: boolean | undefined,
+    receipts: boolean | undefined,
 }
 
 export function createDataSource(options: DataSourceOptions): DataSource<Block> {
@@ -20,11 +24,21 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         requestTimeout: 16000,
         // retryAttempts: 5,
         // retrySchedule: [500, 1000, 2000, 5000, 10000, 20000],
-        // rateLimit: 1,
+        rateLimit: options.ratelimit,
         log
     })
     let httpRpc = new Rpc(httpRpcClient);
-    httpRpc.setChannels(getSuggestedChannelsByURL(options.httpRpc))
+    let suggest = getSuggestedChannelsByURL(options.httpRpc);
+    if (options.traces !== undefined) {
+        suggest.push(["traces", options.traces])
+    }
+    if (options.diffs !== undefined) {
+        suggest.push(["stateDiffs", options.diffs])
+    }
+    if (options.receipts !== undefined) {
+        suggest.push(["receipts", options.receipts])
+    }
+    httpRpc.setChannels(suggest)
     let rpcSource = new EVMRpcDataSource({
         rpc: httpRpc,
         req: {

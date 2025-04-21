@@ -7,6 +7,8 @@ import {Command} from 'commander'
 
 import {DataSourceOptions} from './data-source/setup'
 import {WorkerClient} from './data-source/worker-client'
+import { exit } from 'node:process'
+import { trace } from 'node:console'
 
 const log = createLogger('sqd:evm-data-service')
 
@@ -14,21 +16,35 @@ const log = createLogger('sqd:evm-data-service')
 runProgram(async () => {
     let program = new Command()
     program.description('Hot block data service for EVM')
-    program.requiredOption('--http-rpc <url>', 'HTTP RPC url', Url(['http:', 'https:']))
-    program.option('--ws-rpc <url>', 'Websocket RPC url', Url(['ws:', 'wss:']))
+    program.requiredOption('--http-rpc <url>', 'HTTP/Websocket RPC url', Url(['http:', 'https:', 'ws:', 'wss:']))
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
+    program.option('-r, --ratelimit <number>', 'Ratelimet', positiveInt)
+    program.option('--traces', 'Force enable traces');
+    program.option('--no-traces', "Force disable traces");
+    program.option('--diffs', 'Force enable diffs');
+    program.option('--no-diffs', "Force disable diffs");
+    program.option('--receipts', 'Force enable receipts');
+    program.option('--no-receipts', "Force disable receipts");
     program.parse()
 
     let args = program.opts() as {
         httpRpc: string
         wsRpc?: string
         blockCacheSize: number
-        port: number
+        port: number,
+        traces?: boolean,
+        diffs?: boolean,
+        receipts?: boolean
+        ratelimit?: number
     }
 
     let dataSourceOptions: DataSourceOptions = {
-        httpRpc: args.httpRpc
+        httpRpc: args.httpRpc,
+        traces: args.traces,
+        diffs: args.diffs,
+        receipts: args.receipts,
+        ratelimit: args.ratelimit
     }
 
     let mainWorker = new WorkerClient(dataSourceOptions)
