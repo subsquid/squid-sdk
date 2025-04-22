@@ -35,26 +35,6 @@ export class FuelDumper extends Dumper<BlockData, Options> {
         return Number(unixTimeMs);
     }
 
-    protected async getLatestBlock(): Promise<BlockData> {
-        const height = await this.getDataSource().getFinalizedHeight();
-        const batches = this.getDataSource().getFinalizedBlocks([{
-            range: { from: height, to: height },
-            request: {
-                transactions: true,
-                inputs: true,
-                outputs: true,
-                receipts: true
-            }
-        }]);
-        for await (const batch of batches) {
-            if (batch.blocks.length > 0) {
-                return batch.blocks[0];
-            }
-        }
-        
-        throw new Error(`Failed to get latest block at height ${height}`);
-    }
-
     protected validateChainContinuity(): boolean {
         return false
     }

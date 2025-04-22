@@ -30,26 +30,6 @@ export class TronDumper extends Dumper<BlockData, Options> {
         return block.block.block_header.raw_data.timestamp ?? 0
     }
 
-    protected async getLatestBlock(): Promise<BlockData> {
-        const height = await this.getDataSource().getFinalizedHeight();
-        
-        const blockStream = this.getDataSource().getFinalizedBlocks([{
-            range: { from: height, to: height },
-            request: {
-                transactions: true,
-                transactionsInfo: true
-            }
-        }]);
-        
-        for await (const batch of blockStream) {
-            if (batch.blocks.length > 0) {
-                return batch.blocks[0];
-            }
-        }
-        
-        throw new Error(`Failed to get latest block at height ${height}`);
-    }
-
     @def
     httpApi(): HttpApi {
         let client = new TronHttpClient({
