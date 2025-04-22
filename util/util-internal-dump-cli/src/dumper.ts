@@ -151,7 +151,19 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
         }
         assertRange(range)
 
-        let lastBlockThrottler = new Throttler(() => this.getLatestBlock(), this.options().blockMetricsInterval || 5000)
+        let lastBlockThrottler = new Throttler(async () => {
+            if (this.options().enableBlockMetrics) {
+                try {
+                    const lastBlock = await this.getLatestBlock()
+                    const receivedTimestamp = Math.floor(Date.now() / 1000)
+                    const mintedTimestamp = this.getBlockTimestamp(lastBlock)
+                    this.prometheus().setLatestBlockMetrics(lastBlock.height, receivedTimestamp, mintedTimestamp)
+                } catch (error) {
+                    this.log().error(`Error getting latest block metrics: ${error}`)
+                }
+            }
+        }, this.options().blockMetricsInterval || 5000)
+       
         let height = new Throttler(() => this.getFinalizedHeight(), 60_000)
         let chainHeight = await height.get()
 
@@ -185,17 +197,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
                 }
             }
 
-            if (this.options().enableBlockMetrics) {
-                try {
-                    const lastBlock = await lastBlockThrottler.get()
-                    const receivedTimestamp = Math.floor(Date.now() / 1000)
-                    const mintedTimestamp = this.getBlockTimestamp(lastBlock)
-                    this.prometheus().setLatestBlockMetrics(lastBlock.height, receivedTimestamp, mintedTimestamp)
-                    this.log().debug(`Latest block metrics: ${lastBlock.height}, ${receivedTimestamp}, ${mintedTimestamp}`)
-                } catch (error) {
-                    this.log().error(`Error getting latest block metrics: ${error}`)
-                }
-            }
+            await lastBlockThrottler.get();
 
             yield blocks
 
