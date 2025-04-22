@@ -39,7 +39,12 @@ export class FuelDumper extends Dumper<BlockData, Options> {
         const height = await this.getDataSource().getFinalizedHeight();
         const batches = this.getDataSource().getFinalizedBlocks([{
             range: { from: height, to: height },
-            request: {}
+            request: {
+                transactions: true,
+                inputs: true,
+                outputs: true,
+                receipts: true
+            }
         }]);
         for await (const batch of batches) {
             if (batch.blocks.length > 0) {
