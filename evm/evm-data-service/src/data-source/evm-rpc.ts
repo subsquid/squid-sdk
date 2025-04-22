@@ -160,6 +160,16 @@ export class Rpc {
         })
     }
 
+    getLightFinalizedBatch(numbers: number[]): Promise<(GetBlock | null | undefined)[]> {
+        return this.getLatestBlockhash("finalized").then((blockhash) => {
+            let filtered_promises = numbers
+                .filter((v) => v <= blockhash.number)
+                .map((number) => "0x" + number.toString(16))
+                .map((hex_number) => this.call("eth_getBlockByNumber", [hex_number, false]))
+            return Promise.all(filtered_promises);
+        })
+    }
+
     getBlockBatch(numbers: number[], options?: GetBlockOptions): Promise<(GetBlock | null | undefined)[]> {
         let requests = this.requests.filter((v) => v.enabled)
         let req_count = requests.length

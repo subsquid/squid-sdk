@@ -27,11 +27,7 @@ class Finalizer {
     private async probe(): Promise<void> {
         let probes = this.queue.splice(0, 10)
 
-        // TODO: solana commitment: finalized was here, check again in RPC 
-        let infos = await this.rpc.getBlockBatch(probes.map(ref => ref.number), {
-            transactionDetails: false
-        })
-
+        let infos = await this.rpc.getLightFinalizedBatch(probes.map(ref => ref.number))
         let i
         for (i = infos.length - 1; i >= 0; i--) {
             let ref = probes[i]
@@ -74,7 +70,7 @@ class Finalizer {
             }
         } else {
             for (let block of batch.blocks) {
-                if (this.queue.length > 50) {
+                if (this.queue.length > 150) {
                     this.queue[this.queue.length - 1] = getBlockRef(block)
                 } else {
                     this.queue.push(getBlockRef(block))
