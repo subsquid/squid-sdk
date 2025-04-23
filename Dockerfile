@@ -28,7 +28,7 @@ ENTRYPOINT ["node", "/squid/solana/solana-data-service/lib/main.js"]
 
 FROM node AS evm-hotblocks-service
 COPY --from=evm-hotblocks-service-builder /squid/common/deploy /squid
-ENTRYPOINT ["node", "/squid/solana/evm-data-service/lib/main.js"]
+ENTRYPOINT ["node", "/squid/evm/evm-data-service/lib/main.js"]
 
 
 FROM builder AS solana-dump-builder
