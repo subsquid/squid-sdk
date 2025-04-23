@@ -24,7 +24,7 @@ export type MulticallResult<T extends AbiFunction<any, any>> = {
 
 type AnyFunc = AbiFunction<any, any>
 type AggregateTuple<T extends AnyFunc = AnyFunc> = [func: T, address: string, args: T extends AnyFunc ? FunctionArguments<T> : never]
-type Call = {target: string, callData: string}
+type Call = {target: string, func: AnyFunc, callData: string}
 
 export class Multicall extends ContractBase {
   static aggregate = aggregate
@@ -34,31 +34,32 @@ export class Multicall extends ContractBase {
     func: TF,
     address: string,
     calls: FunctionArguments<TF>[],
-    paging?: number
+    pageSize?: number
   ): Promise<FunctionReturn<TF>[]>
 
   aggregate<TF extends AnyFunc>(
     func: TF,
     calls: (readonly [address: string, args: FunctionArguments<TF>])[],
-    paging?: number
+    pageSize?: number
   ): Promise<FunctionReturn<TF>[]>
 
   aggregate(
     calls: AggregateTuple[],
-    paging?: number
+    pageSize?: number
   ): Promise<any[]>
 
   async aggregate(...args: any[]): Promise<any[]> {
-    let [calls, funcs, page] = this.makeCalls(args)
-    let size = calls.length
-    let results = new Array(size)
-    for (let [from, to] of splitIntoPages(size, page)) {
-      let {returnData} = await this.eth_call(aggregate, {calls: calls.slice(from, to)})
-      for (let i = from; i < to; i++) {
-        let data = returnData[i - from]
-        results[i] = funcs[i].decodeResult(data)
-      }
-    }
+    let [calls, pageSize] = this.makeCalls(args)
+    if (calls.length === 0) return []
+
+    const pages = Array.from(splitArray(pageSize, calls))
+    const results = await Promise.all(
+        pages.flatMap(async (page) => {
+            const {returnData} = await this.eth_call(aggregate, {calls: page})
+            return returnData.map((data, i) => page[i].func.decodeResult(data)) 
+        })
+    )
+
     return results
   }
 
@@ -66,101 +67,108 @@ export class Multicall extends ContractBase {
     func: TF,
     address: string,
     calls: FunctionArguments<TF>[],
-    paging?: number
+    pageSize?: number
   ): Promise<MulticallResult<TF>[]>
 
   tryAggregate<TF extends AnyFunc>(
     func: TF,
     calls: (readonly [address: string, args: FunctionArguments<TF>])[],
-    paging?: number
+    pageSize?: number
   ): Promise<MulticallResult<TF>[]>
 
   tryAggregate(
     calls: AggregateTuple[],
-    paging?: number
+    pageSize?: number
   ): Promise<MulticallResult<any>[]>
 
   async tryAggregate(...args: any[]): Promise<any[]> {
-    let [calls, funcs, page] = this.makeCalls(args)
-    let size = calls.length
-    let results = new Array(size)
-    for (let [from, to] of splitIntoPages(size, page)) {
-      let response = await this.eth_call(tryAggregate, {
-        requireSuccess: false,
-        calls: calls.slice(from, to)
-      })
-      for (let i = from; i < to; i++) {
-        let res = response[i - from]
-        if (res.success) {
-          try {
-            results[i] = {
-              success: true,
-              value: funcs[i].decodeResult(res.returnData)
-            }
-          } catch (err: any) {
-            results[i] = {success: false, returnData: res.returnData}
-          }
-        } else {
-          results[i] = {success: false}
-        }
-      }
-    }
+    let [calls, pageSize] = this.makeCalls(args)
+    if (calls.length === 0) return []
+
+    const pages = Array.from(splitArray(pageSize, calls))
+    const results = await Promise.all(
+        pages.flatMap(async (page) => {
+            const response = await this.eth_call(tryAggregate, {
+                requireSuccess: false,
+                calls: page,
+            })
+            return response.map((res, i) => {
+              if (res.success) {
+                try {
+                  return {
+                    success: true,
+                    value: page[i].func.decodeResult(res.returnData)
+                  }
+                } catch (err: any) {
+                  return {success: false, returnData: res.returnData}
+                }
+              } else {
+                return {success: false}
+              }
+            }) 
+        })
+    )
+
     return results
   }
 
-  private makeCalls(args: any[]): [calls: Call[], funcs: AnyFunc[], page: number] {
+  private makeCalls(args: any[]): [calls: Call[], page: number] {
     let page = typeof args[args.length - 1] == 'number' ? args.pop()! : Number.MAX_SAFE_INTEGER
     switch (args.length) {
       case 1: {
         let list: AggregateTuple[] = args[0]
         let calls: Call[] = new Array(list.length)
-        let funcs = new Array(list.length)
         for (let i = 0; i < list.length; i++) {
           let [func, address, args] = list[i]
-          calls[i] = {target: address, callData: func.encode(args)}
-          funcs[i] = func
+          calls[i] = {target: address, callData: func.encode(args), func}
         }
-        return [calls, funcs, page]
+        return [calls, page]
       }
       case 2: {
         let func: AnyFunc = args[0]
         let list: [address: string, args: any][] = args[1]
         let calls: Call[] = new Array(list.length)
-        let funcs = new Array(list.length)
         for (let i = 0; i < list.length; i++) {
           let [address, args] = list[i]
-          calls[i] = {target: address, callData: func.encode(args)}
-          funcs[i] = func
+          calls[i] = {target: address, callData: func.encode(args), func}
         }
-        return [calls, funcs, page]
+        return [calls, page]
       }
       case 3: {
         let func: AnyFunc = args[0]
         let address: string = args[1]
         let list: any = args[2]
         let calls: Call[] = new Array(list.length)
-        let funcs = new Array(list.length)
         for (let i = 0; i < list.length; i++) {
           let args = list[i]
-          calls[i] = {target: address, callData: func.encode(args)}
-          funcs[i] = func
+          calls[i] = {target: address, callData: func.encode(args), func}
         }
-        return [calls, funcs, page]
+        return [calls, page]
       }
       default:
-        throw new Error('unexpected number of arguments')
+        throw new Error(`Unexpected number of arguments: ${args.length}`)
     }
   }
 }
 
+function* splitSlice(maxSize: number, beg: number, end?: number): Iterable<[beg: number, end: number]> {
+  maxSize = Math.max(1, maxSize)
+  end = end ?? Number.MAX_SAFE_INTEGER
+  while (beg < end) {
+      let left = end - beg
+      let splits = Math.ceil(left / maxSize)
+      let step = Math.round(left / splits)
+      yield [beg, beg + step]
+      beg += step
+  }
+}
 
-function* splitIntoPages(size: number, page: number): Iterable<[from: number, to: number]> {
-  let from = 0
-  while (size) {
-    let step = Math.min(page, size)
-    let to = from + step
-    yield [from, to]
-    size -= step
-    from = to
+function* splitArray<T>(maxSize: number, arr: T[]): Iterable<T[]> {
+  if (arr.length <= maxSize) {
+      yield arr
+  } else {
+      for (let [beg, end] of splitSlice(maxSize, 0, arr.length)) {
+          yield arr.slice(beg, end)
+      }
   }
 }
