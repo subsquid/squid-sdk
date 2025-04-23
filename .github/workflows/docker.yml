@@ -2,10 +2,6 @@ name: docker
 on:
   workflow_dispatch: # manually run
     inputs:
-      branch:
-        description: 'Branch to checkout (can be any branch, not just release)'
-        required: true
-        default: 'release/arrowsquid'
       release:
         description: 'Release name for tagging'
         required: true
@@ -52,8 +48,10 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.branch }}
+
+      - name: Get branch name
+        id: branch_name
+        run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
 
       - name: Get commit short SHA
         id: commit_sha
@@ -62,12 +60,12 @@ jobs:
       - name: Build and Publish
         run: |
           CUSTOM_TAG="${{ inputs.custom_tag }}"
-          if [ -z "$CUSTOM_TAG" ] && [[ "${{ inputs.branch }}" != release/* ]]; then
+          if [ -z "$CUSTOM_TAG" ] && [[ "${{ steps.branch_name.outputs.branch }}" != release/* ]]; then
             CUSTOM_TAG="${{ steps.commit_sha.outputs.sha }}"
           fi
           
           IS_TEST_BUILD="${{ inputs.is_test_build }}"
-          if [[ "${{ inputs.branch }}" != release/* ]] && [ "$IS_TEST_BUILD" != "false" ]; then
+          if [[ "${{ steps.branch_name.outputs.branch }}" != release/* ]] && [ "$IS_TEST_BUILD" != "false" ]; then
             IS_TEST_BUILD="true"
           fi
           
