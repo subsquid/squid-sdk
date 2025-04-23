@@ -2,8 +2,12 @@ name: docker
 on:
   workflow_dispatch: # manually run
     inputs:
+      branch:
+        description: 'Branch to checkout (can be any branch, not just release)'
+        required: true
+        default: 'release/arrowsquid'
       release:
-        description: 'Release name'
+        description: 'Release name for tagging'
         required: true
         default: 'arrowsquid'
       tag:
@@ -13,6 +17,11 @@ on:
       custom_tag:
         description: 'Custom tag (e.g. commit hash)'
         required: false
+      is_test_build:
+        description: 'Whether this is a test build (uses simplified tagging)'
+        type: boolean
+        required: false
+        default: false
       images:
         description: 'Space-separated list of images to publish (leave empty for all)'
         required: false
@@ -44,9 +53,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: release/${{ inputs.release }}
+          ref: ${{ inputs.branch }}
+
+      - name: Get commit short SHA
+        id: commit_sha
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Build and Publish
         run: |
+          CUSTOM_TAG="${{ inputs.custom_tag }}"
+          if [ -z "$CUSTOM_TAG" ] && [[ "${{ inputs.branch }}" != release/* ]]; then
+            CUSTOM_TAG="${{ steps.commit_sha.outputs.sha }}"
+          fi
+          
+          IS_TEST_BUILD="${{ inputs.is_test_build }}"
+          if [[ "${{ inputs.branch }}" != release/* ]] && [ "$IS_TEST_BUILD" != "false" ]; then
+            IS_TEST_BUILD="true"
+          fi
+          
           IFS=' ' read -r -a image_array <<< "${{ inputs.images }}"
-          ./ops/docker-publish.sh "${{ inputs.release }}" "${{ inputs.tag }}" "${{ inputs.custom_tag }}" "${image_array[@]}"
+          ./ops/docker-publish.sh "${{ inputs.release }}" "${{ inputs.tag }}" "$CUSTOM_TAG" "$IS_TEST_BUILD" "${image_array[@]}"

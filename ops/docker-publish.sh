@@ -3,7 +3,8 @@
 release=$1
 tag=$2
 custom_tag=$3
-images=("${@:4}")
+is_test_build=$4
+images=("${@:5}")
 
 function publish() {
     pkg_path=$1
@@ -12,12 +13,22 @@ function publish() {
     pkg_version="$(node ops/pkg-version.js "$pkg_path")" || exit 1
     major=$(echo "$pkg_version" | cut -d '.' -f1) || exit 1
 
-    git tag -a "${pkg_name}_v${pkg_version}" -m "${pkg_name} v${pkg_version}" --force
+    if [ "$is_test_build" != "true" ]; then
+        git tag -a "${pkg_name}_v${pkg_version}" -m "${pkg_name} v${pkg_version}" --force
+    fi
 
-    tags="-t subsquid/$img:$pkg_version -t subsquid/$img:$major -t subsquid/$img:$tag -t subsquid/$img:$release"
-    
-    if [ -n "$custom_tag" ]; then
-        tags="$tags -t subsquid/$img:$custom_tag"
+    if [ "$is_test_build" = "true" ]; then
+        if [ -n "$custom_tag" ]; then
+            tags="-t subsquid/$img:$custom_tag"
+        else
+            tags="-t subsquid/$img:test-latest"
+        fi
+    else
+        tags="-t subsquid/$img:$pkg_version -t subsquid/$img:$major -t subsquid/$img:$tag -t subsquid/$img:$release"
+        
+        if [ -n "$custom_tag" ]; then
+            tags="$tags -t subsquid/$img:$custom_tag"
+        fi
     fi
 
     docker buildx build . --platform "linux/amd64,linux/arm64" \
