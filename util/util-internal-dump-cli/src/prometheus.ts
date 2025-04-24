@@ -10,9 +10,10 @@ export class PrometheusServer {
     private lastWrittenBlockGauge: Gauge
     private rpcRequestsGauge: Gauge
     private s3RequestsCounter: Counter
-    private latestBlockNumberGauge: Gauge
-    private latestBlockReceivedTimestampGauge: Gauge
-    private latestBlockMintedTimestampGauge: Gauge
+    private latestReceivedBlockNumberGauge: Gauge
+    private latestReceivedBlockTimestampGauge: Gauge
+    private latestProcessedBlockTimestampGauge: Gauge
+    private blocksProcessingTimeGauge: Gauge
 
     constructor(
         private port: number,
@@ -42,21 +43,27 @@ export class PrometheusServer {
             registers: [this.registry]
         })
 
-        this.latestBlockNumberGauge = new Gauge({
-            name: 'sqd_latest_block_number',
+        this.latestReceivedBlockNumberGauge = new Gauge({
+            name: 'sqd_latest_received_block_number',
             help: 'Latest block number received',
             registers: [this.registry]
         })
 
-        this.latestBlockReceivedTimestampGauge = new Gauge({
-            name: 'sqd_latest_block_received_timestamp',
-            help: 'Timestamp when latest block was received',
+        this.latestReceivedBlockTimestampGauge = new Gauge({
+            name: 'sqd_latest_received_block_timestamp',
+            help: 'Timestamp of latest received block',
             registers: [this.registry]
         })
 
-        this.latestBlockMintedTimestampGauge = new Gauge({
-            name: 'sqd_latest_block_minted_timestamp',
-            help: 'Timestamp when latest block was minted',
+        this.latestProcessedBlockTimestampGauge = new Gauge({
+            name: 'sqd_latest_processed_block_timestamp',
+            help: 'Timestamp of the latest processed block',
+            registers: [this.registry]
+        })
+
+        this.blocksProcessingTimeGauge = new Gauge({
+            name: 'sqd_blocks_processing_time',
+            help: 'Time taken to process blocks (in seconds)',
             registers: [this.registry]
         })
 
@@ -94,10 +101,14 @@ export class PrometheusServer {
         this.lastWrittenBlockGauge.set(block)
     }
 
-    setLatestBlockMetrics(blockNumber: number, receivedTimestamp: number, mintedTimestamp: number) {
-        this.latestBlockNumberGauge.set(blockNumber)
-        this.latestBlockReceivedTimestampGauge.set(receivedTimestamp)
-        this.latestBlockMintedTimestampGauge.set(mintedTimestamp)
+    setLatestBlockMetrics(blockNumber: number, mintedTimestamp: number) {
+        this.latestReceivedBlockNumberGauge.set(blockNumber)
+        this.latestReceivedBlockTimestampGauge.set(mintedTimestamp)
+    }
+
+    setProcessedBlockMetrics(blockTimestamp: number, processingTime: number) {
+        this.latestProcessedBlockTimestampGauge.set(blockTimestamp)
+        this.blocksProcessingTimeGauge.set(processingTime)
     }
 
     incS3Requests(kind: string, value?: number) {

@@ -23,10 +23,29 @@ export interface DumperOptions {
     writeBatchSize: number
     topDirSize: number
     metrics?: number
+    maxCacheSize?: number
 }
 
 
 export abstract class Dumper<B extends {hash: string, height: number}, O extends DumperOptions = DumperOptions> {
+    
+    private blockCache = new Map<number, B>();
+    
+    private addToCache(block: B): void {
+        const maxCacheSize = this.options().maxCacheSize ?? this.getDefaultCacheSize();
+        if (this.blockCache.size >= maxCacheSize) {
+            const heights = Array.from(this.blockCache.keys()).sort((a, b) => a - b);
+            const removeCount = Math.ceil(maxCacheSize * 0.2);
+            const keysToRemove = heights.slice(0, removeCount);
+            for (const key of keysToRemove) {
+                this.blockCache.delete(key);
+            }
+            this.log().debug(`Cache cleanup: removed ${keysToRemove.length} oldest blocks`);
+        }
+        
+        this.blockCache.set(block.height, block);
+    }
+    
     protected abstract getBlocks(range: Range): AsyncIterable<B[]>
 
     protected abstract getFinalizedHeight(): Promise<number>
@@ -43,6 +62,10 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
 
     protected getDefaultTopDirSize(): number {
         return 1024
+    }
+
+    protected getDefaultCacheSize(): number {
+        return 10
     }
 
     protected getLoggingNamespace(): string {
@@ -63,6 +86,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
         program.option('--chunk-size <MB>', 'Data chunk size in megabytes', positiveInt, this.getDefaultChunkSize())
         program.option('--write-batch-size <number>', 'Number of blocks to write at a time', positiveInt, 10)
         program.option('--top-dir-size <number>', 'Number of items in a top level dir', positiveInt, this.getDefaultTopDirSize())
+        program.option('--max-cache-size <number>', 'Maximum number of blocks to keep in memory cache', positiveInt, this.getDefaultCacheSize())
         program.option('--metrics <port>', 'Enable prometheus metrics server', nat)
         return program
     }
@@ -179,9 +203,15 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
             }
 
             const lastBlock = last(blocks)
-            const receivedTimestamp = Math.floor(Date.now() / 1000)
             const mintedTimestamp = this.getBlockTimestamp(lastBlock)
-            this.prometheus().setLatestBlockMetrics(lastBlock.height, receivedTimestamp, mintedTimestamp)
+            
+            for (const block of blocks) {
+                this.addToCache(block);
+            }
+            
+            this.prometheus().setLatestBlockMetrics(lastBlock.height, mintedTimestamp)
+            this.log().debug(`Received block ${lastBlock.height} with minted timestamp ${mintedTimestamp}`)
+            this.log().debug(`Cache size: ${this.blockCache.size}`)
 
             yield blocks
 
@@ -213,7 +243,12 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
                     for (let block of bb) {
                         process.stdout.write(JSON.stringify(block) + '\n')
                     }
-                    prometheus.setLastWrittenBlock(last(bb).height)
+                    const lastBlockHeight = last(bb).height;
+                    prometheus.setLastWrittenBlock(lastBlockHeight);
+                    const processedTimestamp = this.getBlockTimestamp(last(bb));
+                    const processingTime = Math.floor(Date.now() / 1000) - processedTimestamp;
+                    prometheus.setProcessedBlockMetrics(processedTimestamp, processingTime);
+                    this.log().debug(`Processed block ${lastBlockHeight} at ${processedTimestamp} with processing time ${processingTime}`);
                 }
             } else {
                 let archive = new ArchiveLayout(this.destination(), {
@@ -224,7 +259,20 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
                     range: this.range(),
                     chunkSize: chunkSize * 1024 * 1024,
                     writeBatchSize: this.options().writeBatchSize,
-                    onSuccessWrite: ctx => prometheus.setLastWrittenBlock(ctx.blockRange.to.height)
+                    onSuccessWrite: ctx => {
+                        const blockHeight = ctx.blockRange.to.height;
+                        prometheus.setLastWrittenBlock(blockHeight);
+                        
+                        const cachedBlock = this.blockCache.get(blockHeight);
+                        if (cachedBlock) {
+                            const processedTimestamp = this.getBlockTimestamp(cachedBlock);
+                            const processingTime = Math.floor(Date.now() / 1000) - processedTimestamp;
+                            prometheus.setProcessedBlockMetrics(processedTimestamp, processingTime);
+                            this.log().debug(`Processed block ${blockHeight} at ${processedTimestamp} with processing time ${processingTime}`);
+                        } else {
+                            this.log().warn(`No cached block available for height ${blockHeight}`);
+                        }
+                    }
                 })
             }
         }, err => {
