@@ -66,7 +66,7 @@ export class Mapping implements DataSource<Block> {
             hash: block.block.hash,
             parentNumber: block.number - 1,
             parentHash: block.block.parentHash,
-            timestamp: parseInt(block.block.timestamp, 16),
+            timestamp: parseInt(block.block.timestamp, 16) * 1000,
             jsonLineGzip
         }
     }
