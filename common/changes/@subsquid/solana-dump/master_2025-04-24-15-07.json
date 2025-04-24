@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-dump",
+      "comment": "allow empty logMessages for failed transactions",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-dump"
+}

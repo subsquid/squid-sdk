@@ -94,7 +94,7 @@ function checkLogMessages(block: Block): void {
     if (block.height < 130000000) return
 
     for (let tx of block.block.transactions!) {
-        if (tx.meta.logMessages == null && tx.meta.err != 'MaxLoadedAccountsDataSizeExceeded') {
+        if (tx.meta.logMessages == null && tx.meta.err == null) {
             throw new Error(`Log message recording was not enabled for transaction ${tx.transaction.signatures[0]} at slot ${block.slot}`)
         }
     }
