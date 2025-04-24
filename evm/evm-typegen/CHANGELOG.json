@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "4.4.0",
+      "tag": "@subsquid/evm-typegen_v4.4.0",
+      "date": "Thu, 24 Apr 2025 15:09:16 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "concurently fetch multicall pages"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.3.0",
       "tag": "@subsquid/evm-typegen_v4.3.0",
       "date": "Thu, 27 Jun 2024 09:24:39 GMT",

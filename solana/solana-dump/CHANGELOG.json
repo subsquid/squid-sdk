@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-dump",
   "entries": [
     {
+      "version": "0.0.10",
+      "tag": "@subsquid/solana-dump_v0.0.10",
+      "date": "Thu, 24 Apr 2025 15:09:16 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "allow empty logMessages for failed transactions"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.9",
       "tag": "@subsquid/solana-dump_v0.0.9",
       "date": "Mon, 17 Mar 2025 09:27:47 GMT",
