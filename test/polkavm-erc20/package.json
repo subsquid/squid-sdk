@@ -15,7 +15,7 @@
     "typeorm": "^0.3.17"
   },
   "devDependencies": {
-    "@subsquid/evm-typegen": "^4.3.0",
+    "@subsquid/evm-typegen": "^4.4.0",
     "@subsquid/evm-codec": "^0.3.0",
     "@subsquid/evm-abi": "^0.3.1",
     "@subsquid/typeorm-codegen": "^2.0.2",
