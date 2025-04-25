@@ -17,7 +17,7 @@ function publish() {
     tags="-t subsquid/$img:$pkg_version -t subsquid/$img:$major -t subsquid/$img:$tag -t subsquid/$img:$release"
     
     if [ -n "$custom_tag" ]; then
-        tags="$tags -t subsquid/$img:$custom_tag"
+        tags="-t subsquid/$img:$custom_tag"
     fi
 
     docker buildx build . --platform "linux/amd64,linux/arm64" \
