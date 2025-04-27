@@ -1,15 +1,13 @@
 import {RpcClient} from '@subsquid/rpc-client'
 import {Block as RpcBlock, Rpc, SolanaRpcDataSource} from '@subsquid/solana-rpc'
 import {Block, DataSource} from '@subsquid/util-internal-data-service'
-import GeyserClient from '@subsquid/util-internal-geyser-client'
 import {GeyserDataSource} from './geyser'
 import {Mapping} from './mapping'
 
 
 export interface DataSourceOptions {
     httpRpc: string
-    geyserRpc?: string
-    geyserRpcToken?: string
+    geyserProxy?: string
     geyserBlockQueueSize?: number
     votes?: boolean
 }
@@ -33,10 +31,10 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
     })
 
     let source: DataSource<RpcBlock>
-    if (options.geyserRpc) {
-        let client = new GeyserClient(options.geyserRpc, options.geyserRpcToken, {
-            'grpc.max_receive_message_length': 128 * 1024 * 1024, // 128MiB
-            'grpc.default_compression_algorithm': 2 // gzip
+    if (options.geyserProxy) {
+        let client = new RpcClient({
+            url: options.geyserProxy,
+            fixUnsafeIntegers: true
         })
         source = new GeyserDataSource(
             rpcSource,

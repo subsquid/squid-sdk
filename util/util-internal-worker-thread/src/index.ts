@@ -34,6 +34,7 @@ export interface WorkerOptions {
     args?: any
     transferList?: TransferListItem[]
     name?: string
+    execArgv?: string[]
 }
 
 
@@ -42,6 +43,7 @@ export function createWorker(options: WorkerOptions): Client {
         workerData: options.args,
         transferList: options.transferList,
         name: options.name,
+        execArgv: options.execArgv,
         env: {
             ...process.env,
             FORCE_PRETTY_LOGGER: process.env.FORCE_PRETTY_LOGGER ?? (process.stdout.isTTY ? '1' : '0')

@@ -1,6 +1,7 @@
 import {last} from '@subsquid/util-internal'
 import {BlockRef, BlockStream, DataSource, ForkException, StreamRequest} from '@subsquid/util-internal-data-source'
 import {Range} from '@subsquid/util-internal-range'
+import assert from 'assert'
 import {Commitment, Rpc} from '../rpc'
 import {Block, DataRequest} from '../types'
 import {finalize} from './finalizer'
@@ -51,7 +52,8 @@ export class SolanaRpcDataSource implements DataSource<Block> {
         let stream = this.ensureContinuity(
             this.ingest('finalized', req),
             req.from,
-            req.parentHash
+            req.parentHash,
+            req.to
         )
 
         for await (let {blocks, finalized} of stream) {
@@ -66,7 +68,8 @@ export class SolanaRpcDataSource implements DataSource<Block> {
         let stream = this.ensureContinuity(
             this.ingest('confirmed', req),
             req.from,
-            req.parentHash
+            req.parentHash,
+            req.to
         )
         return this.finalize(stream)
     }
@@ -78,10 +81,11 @@ export class SolanaRpcDataSource implements DataSource<Block> {
     async *ensureContinuity(
         stream: AsyncIterable<IngestBatch>,
         from: number,
-        parentHash?: string
+        parentHash?: string,
+        to?: number
     ): AsyncIterable<IngestBatch>
     {
-        for await (let batch of this.fillGaps(stream, from, 0)) {
+        for await (let batch of this.fillGaps(0, stream, from, to ?? Infinity)) {
             for (let i = 0; i < batch.blocks.length; i++) {
                 let block = batch.blocks[i]
                 if (parentHash === block.block.previousBlockhash || parentHash == null) {
@@ -117,24 +121,36 @@ export class SolanaRpcDataSource implements DataSource<Block> {
     }
 
     private async *fillGaps(
+        depth: number,
         stream: AsyncIterable<IngestBatch>,
         from: number,
-        depth: number
+        to: number
     ): AsyncIterable<IngestBatch>
     {
+        if (from > to) return
         if (depth > 10) {
-            throw new Error('rpc endpoint is too behind from upstream block source')
+            throw new Error('rpc endpoint is too far behind from upstream block source')
         }
 
         for await (let batch of stream) {
+            batch.blocks.reduce((prev, b) => {
+                assert(prev < b.slot, 'batch blocks are not monotonic')
+                return b.slot
+            }, -1)
+
             let offset = 0
             let i = 0
-
             while (i < batch.blocks.length) {
                 let block = batch.blocks[i]
-                if (block.block.parentSlot < from || block.slot == 0) {
-                    from = block.slot + 1
+                if (block.slot < from) {
+                    assert(offset == i)
+                    offset += 1
                     i += 1
+                } else if (block.block.parentSlot < from || block.slot == 0) {
+                    from = block.slot + 1
+                    if (block.slot <= to) {
+                        i += 1
+                    }
                 } else {
                     if (offset < i) {
                         yield {
@@ -147,14 +163,16 @@ export class SolanaRpcDataSource implements DataSource<Block> {
 
                     let missing = this.ingest(
                         batch.finalized ? 'finalized' : 'confirmed',
-                        {from, to: block.block.parentSlot}
+                        {from, to: Math.min(to, block.block.parentSlot)}
                     )
 
-                    for await (let missingBatch of this.fillGaps(missing, from, depth + 1)) {
+                    for await (let missingBatch of this.fillGaps(depth + 1, missing, from, Infinity)) {
                         from = last(missingBatch.blocks).slot + 1
                         yield missingBatch
                     }
                 }
+
+                if (from > to) break
             }
 
             if (offset < i) {
@@ -163,6 +181,8 @@ export class SolanaRpcDataSource implements DataSource<Block> {
                     finalized: batch.finalized
                 }
             }
+
+            if (from > to) return
         }
     }
 

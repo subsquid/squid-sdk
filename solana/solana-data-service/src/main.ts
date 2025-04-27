@@ -4,7 +4,7 @@ import {positiveInt, Url} from '@subsquid/util-internal-commander'
 import {Block, BlockStream, DataSource, runDataService, StreamRequest} from '@subsquid/util-internal-data-service'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
 import {Command} from 'commander'
-import {DataSourceOptions} from './data-source/setup'
+import {createDataSource, DataSourceOptions} from './data-source/setup'
 import {WorkerClient} from './data-source/worker-client'
 
 
@@ -15,9 +15,7 @@ runProgram(async () => {
     let program = new Command()
     program.description('Hot block data service for Solana')
     program.requiredOption('--http-rpc <url>', 'HTTP RPC url', Url(['http:', 'https:']))
-    program.option('--ws-rpc <url>', 'Websocket RPC url', Url(['ws:', 'wss:']))
-    program.option('--geyser-rpc <url>', 'Yellowstone gRPC url')
-    program.option('--geyser-rpc-token <string>', 'gRPC xToken')
+    program.option('--geyser-proxy <url>', 'Yellowstone Geyser proxy URL')
     program.option('--geyser-block-queue-size <number>', 'Max queue size of Geyser subscription', positiveInt, 10)
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
@@ -27,8 +25,7 @@ runProgram(async () => {
     let args = program.opts() as {
         httpRpc: string
         wsRpc?: string
-        geyserRpc?: string
-        geyserRpcToken?: string
+        geyserProxy?: string
         geyserBlockQueueSize: number
         blockCacheSize: number
         port: number
@@ -37,13 +34,12 @@ runProgram(async () => {
 
     let dataSourceOptions: DataSourceOptions = {
         httpRpc: args.httpRpc,
-        geyserRpc: args.geyserRpc,
-        geyserRpcToken: args.geyserRpcToken,
+        geyserProxy: args.geyserProxy,
         geyserBlockQueueSize: args.geyserBlockQueueSize,
         votes: args.votes
     }
 
-    let mainWorker = new WorkerClient(dataSourceOptions)
+    let mainWorker = createDataSource(dataSourceOptions)
 
     let dataSource: DataSource<Block> = {
         getFinalizedHead() {

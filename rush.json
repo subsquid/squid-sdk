@@ -820,12 +820,6 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/util-internal-geyser-client",
-      "projectFolder": "util/util-internal-geyser-client",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/util-internal-hex",
       "projectFolder": "util/util-internal-hex",
       "shouldPublish": true,
