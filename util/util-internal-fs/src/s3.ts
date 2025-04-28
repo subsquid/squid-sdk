@@ -76,7 +76,8 @@ export class S3Fs implements Fs {
                     Bucket,
                     Prefix,
                     Delimiter: '/',
-                    ContinuationToken
+                    ContinuationToken,
+                    RequestPayer: 'requester'
                 })
             )
             this.eventEmitter?.emit('S3FsOperation', 'ListObjectsV2')
@@ -167,7 +168,8 @@ export class S3Fs implements Fs {
         let [Bucket, Key] = splitPath(this.resolve([path]))
         let res = await this.client.send(new GetObjectCommand({
             Bucket,
-            Key
+            Key,
+            RequestPayer: 'requester'
         }))
         this.eventEmitter?.emit('S3FsOperation', 'GetObject')
         assert(res.Body instanceof Readable)

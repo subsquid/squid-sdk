@@ -16,7 +16,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.133.3",
+  "rushVersion": "5.149.0",
 
   /**
    * The next field selects which package manager should be installed and determines its version.
@@ -684,6 +684,12 @@
     {
       "packageName": "@subsquid/fuel-stream",
       "projectFolder": "fuel/fuel-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-ingest",
+      "projectFolder": "hyperliquid/hyperliquid-ingest",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
