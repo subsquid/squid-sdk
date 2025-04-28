@@ -166,12 +166,10 @@ export class GeyserDataSource implements DataSource<Block> {
 
         queue.addCloseListener(stop)
 
-        future.promise().finally(() => {
+        return future.promise().finally(() => {
             queue.removeCloseListener(stop)
             stop()
         })
-
-        return future.promise()
     }
 }
 
