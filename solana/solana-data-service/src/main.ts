@@ -4,7 +4,7 @@ import {positiveInt, Url} from '@subsquid/util-internal-commander'
 import {Block, BlockStream, DataSource, runDataService, StreamRequest} from '@subsquid/util-internal-data-service'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
 import {Command} from 'commander'
-import {createDataSource, DataSourceOptions} from './data-source/setup'
+import {DataSourceOptions} from './data-source/setup'
 import {WorkerClient} from './data-source/worker-client'
 
 
@@ -39,7 +39,7 @@ runProgram(async () => {
         votes: args.votes
     }
 
-    let mainWorker = createDataSource(dataSourceOptions)
+    let mainWorker = new WorkerClient(dataSourceOptions)
 
     let dataSource: DataSource<Block> = {
         getFinalizedHead() {
