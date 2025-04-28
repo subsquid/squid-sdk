@@ -1,6 +1,7 @@
 import {createLogger} from '@subsquid/logger'
-import {archive, mapRpcBlock, removeVotes} from '@subsquid/solana-normalization'
+import {archive, mapRpcBlock} from '@subsquid/solana-normalization'
 import * as rpc from '@subsquid/solana-rpc'
+import * as rpcData from '@subsquid/solana-rpc-data'
 import {withErrorContext} from '@subsquid/util-internal'
 import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
 import {toJSON} from '@subsquid/util-internal-json'
@@ -51,6 +52,10 @@ export class Mapping implements DataSource<Block> {
     }
 
     private async mapRpcBlock(block: rpc.Block): Promise<Block> {
+        if (!this.votes) {
+            removeVoteTransactions(block)
+        }
+
         let normalized = mapRpcBlock(
             block.slot,
             block.block,
@@ -60,13 +65,11 @@ export class Mapping implements DataSource<Block> {
             })
         )
 
-        if (!this.votes) {
-            removeVotes(normalized)
-        }
-
         let json = archive.toArchiveBlock(normalized)
         let jsonLine = JSON.stringify(toJSON(json)) + '\n'
-        let jsonLineGzip = await gzip(jsonLine)
+        let jsonLineGzip = await gzip(jsonLine, {
+            level: zlib.constants.Z_BEST_SPEED
+        })
 
         return {
             number: block.slot,
@@ -77,4 +80,17 @@ export class Mapping implements DataSource<Block> {
             jsonLineGzip
         }
     }
+}
+
+
+function removeVoteTransactions(block: rpc.Block): void {
+    block.block.transactions = block.block.transactions?.filter((transaction, index) => {
+        let tx: rpcData.Transaction & {_index?: number} = transaction
+        tx._index = tx._index ?? index
+        for (let ins of tx.transaction.message.instructions) {
+            let program = tx.transaction.message.accountKeys[ins.programIdIndex]
+            if (program === 'Vote111111111111111111111111111111111111111') return false
+        }
+        return true
+    })
 }
