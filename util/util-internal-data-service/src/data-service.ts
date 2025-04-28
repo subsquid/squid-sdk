@@ -148,28 +148,31 @@ export class DataService {
         let base: BlockRef = this.chain.getHeader()
         let stacked = 0
         while (!this.stopped) {
+            let err: Error | undefined = undefined
             try {
                 if (stacked > 1) {
                     await this.init()
                     base = this.chain.getHeader()
                     this.log.info(`restarted data ingestion at ${base.number}#${base.hash}`)
                 }
-                return await this.ingestSession(base)
-            } catch(err: any) {
-                if (isForkException(err)) {
-                    stacked = 0
-                    base = this.chain.getForkBase(err.prev)
+                await this.ingestSession(base)
+            } catch(ex: any) {
+                err = ex
+            }
+            if (this.stopped) return
+            if (isForkException(err)) {
+                stacked = 0
+                base = this.chain.getForkBase(err.prev)
+            } else {
+                this.log.error(err, 'data ingestion terminated, will resume in 1 minute')
+                await wait(60 * 1000)
+                let head = this.chain.getHeader()
+                if (head.number === base.number) {
+                    stacked += 1
                 } else {
-                    this.log.error(err, 'data ingestion terminated, will resume in 1 minute')
-                    await wait(60 * 1000)
-                    let head = this.chain.getHeader()
-                    if (head.number === base.number) {
-                        stacked += 1
-                    } else {
-                        stacked = 0
-                    }
-                    base = head
+                    stacked = 0
                 }
+                base = head
             }
         }
     }
