@@ -29,21 +29,21 @@ export interface DumperOptions {
 
 export abstract class Dumper<B extends {hash: string, height: number}, O extends DumperOptions = DumperOptions> {
     
-    private blockCache = new Map<number, B>();
+    private timestampCache = new Map<number, number>();
     
     private addToCache(block: B): void {
         const maxCacheSize = this.options().maxCacheSize ?? this.getDefaultCacheSize();
-        if (this.blockCache.size >= maxCacheSize) {
-            const heights = Array.from(this.blockCache.keys()).sort((a, b) => a - b);
+        if (this.timestampCache.size >= maxCacheSize) {
+            const heights = Array.from(this.timestampCache.keys()).sort((a, b) => a - b);
             const removeCount = Math.ceil(maxCacheSize * 0.2);
             const keysToRemove = heights.slice(0, removeCount);
             for (const key of keysToRemove) {
-                this.blockCache.delete(key);
+                this.timestampCache.delete(key);
             }
-            this.log().debug(`Cache cleanup: removed ${keysToRemove.length} oldest blocks`);
+            this.log().debug(`Cache cleanup: removed ${keysToRemove.length} oldest block timestamps`);
         }
         
-        this.blockCache.set(block.height, block);
+        this.timestampCache.set(block.height, this.getBlockTimestamp(block));
     }
     
     protected abstract getBlocks(range: Range): AsyncIterable<B[]>
@@ -211,7 +211,7 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
             
             this.prometheus().setLatestBlockMetrics(lastBlock.height, mintedTimestamp)
             this.log().debug(`Received block ${lastBlock.height} with minted timestamp ${mintedTimestamp}`)
-            this.log().debug(`Cache size: ${this.blockCache.size}`)
+            this.log().debug(`Cache size: ${this.timestampCache.size}`)
 
             yield blocks
 
@@ -263,14 +263,13 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
                         const blockHeight = ctx.blockRange.to.height;
                         prometheus.setLastWrittenBlock(blockHeight);
                         
-                        const cachedBlock = this.blockCache.get(blockHeight);
-                        if (cachedBlock) {
-                            const processedTimestamp = this.getBlockTimestamp(cachedBlock);
-                            const processingTime = Math.floor(Date.now() / 1000) - processedTimestamp;
-                            prometheus.setProcessedBlockMetrics(processedTimestamp, processingTime);
-                            this.log().debug(`Processed block ${blockHeight} at ${processedTimestamp} with processing time ${processingTime}`);
+                        const cachedTimestamp = this.timestampCache.get(blockHeight);
+                        if (cachedTimestamp) {
+                            const processingTime = Math.floor(Date.now() / 1000) - cachedTimestamp;
+                            prometheus.setProcessedBlockMetrics(cachedTimestamp, processingTime);
+                            this.log().debug(`Processed block ${blockHeight} at ${cachedTimestamp} with processing time ${processingTime}`);
                         } else {
-                            this.log().warn(`No cached block available for height ${blockHeight}`);
+                            this.log().warn(`No cached timestamp available for height ${blockHeight}`);
                         }
                     }
                 })
