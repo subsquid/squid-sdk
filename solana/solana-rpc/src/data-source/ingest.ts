@@ -1,3 +1,4 @@
+import {removeVoteTransactions} from '@subsquid/solana-rpc-data'
 import {concurrentMap, last, Throttler, wait} from '@subsquid/util-internal'
 import {BlockRef} from '@subsquid/util-internal-data-source'
 import {Range, splitRange} from '@subsquid/util-internal-range'
@@ -27,6 +28,7 @@ export interface IngestOptions {
     strideSize: number
     strideConcurrency: number
     maxConfirmationAttempts: number
+    noVotes?: boolean
 }
 
 
@@ -42,7 +44,8 @@ export function ingest(args: IngestOptions): AsyncIterable<IngestBatch> {
         req,
         strideConcurrency,
         strideSize,
-        maxConfirmationAttempts
+        maxConfirmationAttempts,
+        noVotes = false
     } = args
 
     let finalizedHeadTracker = new Throttler(
@@ -125,7 +128,17 @@ export function ingest(args: IngestOptions): AsyncIterable<IngestBatch> {
     return concurrentMap(
         strideConcurrency,
         cleanup(jobs(), () => finalizedHeadTracker.disablePrefetch()),
-        job => job.promise
+        async job => {
+            if (noVotes) {
+                let batch = await job.promise
+                for (let block of batch.blocks) {
+                    removeVoteTransactions(block.block)
+                }
+                return batch
+            } else {
+                return job.promise
+            }
+        }
     )
 }
 

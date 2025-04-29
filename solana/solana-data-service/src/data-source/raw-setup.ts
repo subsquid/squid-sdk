@@ -1,11 +1,10 @@
 import {RpcClient} from '@subsquid/rpc-client'
-import {Block as RpcBlock, Rpc, SolanaRpcDataSource} from '@subsquid/solana-rpc'
-import {Block, DataSource} from '@subsquid/util-internal-data-service'
+import {Block, Rpc, SolanaRpcDataSource} from '@subsquid/solana-rpc'
+import {DataSource} from '@subsquid/util-internal-data-service'
 import {GeyserDataSource} from './geyser'
-import {Mapping} from './mapping'
 
 
-export interface DataSourceOptions {
+export interface RawDataSourceOptions {
     httpRpc: string
     geyserProxy?: string
     geyserBlockQueueSize?: number
@@ -13,12 +12,12 @@ export interface DataSourceOptions {
 }
 
 
-export function createDataSource(options: DataSourceOptions): DataSource<Block> {
+export function createDataSource(options: RawDataSourceOptions): DataSource<Block> {
     let httpRpc = new RpcClient({
         url: options.httpRpc,
         capacity: 50,
         fixUnsafeIntegers: true,
-        requestTimeout: 16000,
+        requestTimeout: 20000,
         retryAttempts: 5
     })
 
@@ -27,24 +26,23 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         req: {
             transactions: true,
             rewards: true
-        }
+        },
+        noVotes: !options.votes
     })
 
-    let source: DataSource<RpcBlock>
     if (options.geyserProxy) {
-        let client = new RpcClient({
+        let proxy = new RpcClient({
             url: options.geyserProxy,
+            requestTimeout: 5000,
             fixUnsafeIntegers: true
         })
-        source = new GeyserDataSource(
+        return new GeyserDataSource(
             rpcSource,
-            client,
+            proxy,
             !options.votes,
             options.geyserBlockQueueSize
         )
     } else {
-        source = rpcSource
+        return rpcSource
     }
-
-    return new Mapping(source, options.votes)
 }

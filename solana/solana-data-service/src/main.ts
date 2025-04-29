@@ -4,8 +4,7 @@ import {positiveInt, Url} from '@subsquid/util-internal-commander'
 import {Block, BlockStream, DataSource, runDataService, StreamRequest} from '@subsquid/util-internal-data-service'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
 import {Command} from 'commander'
-import {DataSourceOptions} from './data-source/setup'
-import {WorkerClient} from './data-source/worker-client'
+import {DataSourceOptions, MainDataWorker, SecondaryDataWorker} from './data-source'
 
 
 const log = createLogger('sqd:solana-data-service')
@@ -24,7 +23,6 @@ runProgram(async () => {
 
     let args = program.opts() as {
         httpRpc: string
-        wsRpc?: string
         geyserProxy?: string
         geyserBlockQueueSize: number
         blockCacheSize: number
@@ -39,14 +37,14 @@ runProgram(async () => {
         votes: args.votes
     }
 
-    let mainWorker = new WorkerClient(dataSourceOptions)
+    let mainWorker = new MainDataWorker(dataSourceOptions)
 
     let dataSource: DataSource<Block> = {
         getFinalizedHead() {
             return mainWorker.getFinalizedHead()
         },
         async *getFinalizedStream(req: StreamRequest): BlockStream<Block> {
-            let worker = new WorkerClient(dataSourceOptions)
+            let worker = new SecondaryDataWorker(dataSourceOptions)
             try {
                 yield* worker.getFinalizedStream(req)
             } finally {

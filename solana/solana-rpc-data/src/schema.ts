@@ -123,7 +123,13 @@ export const Transaction = object({
 })
 
 
-export type Transaction = GetSrcType<typeof Transaction>
+export type Transaction = GetSrcType<typeof Transaction> & {
+    /**
+     * Represents original transaction position in a block,
+     * when some transactions where filtered out
+     */
+    _index?: number
+}
 
 
 export const GetBlock = object({

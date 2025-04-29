@@ -14,6 +14,7 @@ export interface SolanaRpcDataSourceOptions {
     strideSize?: number
     strideConcurrency?: number
     maxConfirmationAttempts?: number
+    noVotes?: boolean
 }
 
 
@@ -23,6 +24,7 @@ export class SolanaRpcDataSource implements DataSource<Block> {
     private strideSize: number
     private strideConcurrency: number
     private maxConfirmationAttempts: number
+    private noVotes: boolean
 
     constructor(options: SolanaRpcDataSourceOptions) {
         this.rpc = options.rpc
@@ -30,6 +32,7 @@ export class SolanaRpcDataSource implements DataSource<Block> {
         this.strideSize = Math.max(1, options.strideSize ?? 5)
         this.strideConcurrency = Math.max(1, Math.min(options.strideConcurrency ?? 5, this.rpc.getConcurrency()))
         this.maxConfirmationAttempts = options.maxConfirmationAttempts ?? 10
+        this.noVotes = options.noVotes ?? false
     }
 
     async getFinalizedHead(): Promise<BlockRef> {
@@ -194,7 +197,8 @@ export class SolanaRpcDataSource implements DataSource<Block> {
             range,
             strideSize: this.strideSize,
             strideConcurrency: this.strideConcurrency,
-            maxConfirmationAttempts: this.maxConfirmationAttempts
+            maxConfirmationAttempts: this.maxConfirmationAttempts,
+            noVotes: this.noVotes
         })
     }
 }
