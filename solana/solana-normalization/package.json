@@ -13,7 +13,8 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "node --test lib/mapping.test.js"
   },
   "dependencies": {
     "@subsquid/solana-rpc-data": "^0.0.3",

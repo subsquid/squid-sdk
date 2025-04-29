@@ -1,6 +1,6 @@
 import {createLogger} from '@subsquid/logger'
-import {archive, Journal, mapRpcBlock, removeVotes} from '@subsquid/solana-normalization'
-import {GetBlock} from '@subsquid/solana-rpc-data'
+import {archive, Journal, mapRpcBlock} from '@subsquid/solana-normalization'
+import {GetBlock, removeVoteTransactions} from '@subsquid/solana-rpc-data'
 import {addErrorContext, def} from '@subsquid/util-internal'
 import {Command, Ingest, IngestOptions, Range} from '@subsquid/util-internal-ingest-cli'
 import {toJSON} from '@subsquid/util-internal-json'
@@ -59,15 +59,17 @@ export class SolanaIngest extends Ingest<Options> {
         return function mapRawBlock(raw: unknown): object {
             assertValidity(RawBlock, raw)
 
+            if (!votes) {
+                removeVoteTransactions(raw.block)
+            }
+
             let journal = relaxed ? loggingJournal.child({
                 blockSlot: raw.number,
                 blockHash: raw.hash
             }) : failingJournal
 
             let normalized = mapRpcBlock(raw.number, raw.block, journal)
-            if (!votes) {
-                removeVotes(normalized)
-            }
+
             return archive.toArchiveBlock(normalized)
         }
     }

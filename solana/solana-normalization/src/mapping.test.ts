@@ -1,4 +1,4 @@
-import {GetBlock} from '@subsquid/solana-rpc-data'
+import {GetBlock, removeVoteTransactions} from '@subsquid/solana-rpc-data'
 import {toJSON} from '@subsquid/util-internal-json'
 import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
 import assert, {fail} from 'assert'
@@ -6,7 +6,6 @@ import * as fs from 'fs'
 import {it} from 'node:test'
 import * as Path from 'path'
 import {Journal, mapRpcBlock} from './mapping'
-import {removeVotes} from './votes'
 
 
 const FIXTURES_DIR = Path.resolve(__dirname, '../fixtures')
@@ -53,9 +52,9 @@ const failingJournal: Journal = {
 
 
 for (let fix of listFixtures()) {
+    removeVoteTransactions(fix.block)
     it(fix.name, () => {
         let result = mapRpcBlock(0, fix.block, failingJournal)
-        removeVotes(result)
         let resultJson = normalizeJson(result)
         try {
             assert.deepStrictEqual(resultJson, fix.result)
