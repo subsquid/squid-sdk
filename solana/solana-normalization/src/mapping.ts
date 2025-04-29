@@ -65,7 +65,7 @@ class ItemMapping {
     ) {
         let transactions = block.transactions ?? []
         for (let i = 0; i < transactions.length; i++) {
-            let tx: rpc.Transaction & {_index?: number} = transactions[i]
+            let tx = transactions[i]
             let txIndex = tx._index ?? i
             try {
                 this.processTransaction(txIndex, tx)

@@ -1,5 +1,6 @@
 import {
     ANY,
+    ANY_INT,
     ANY_NAT,
     array,
     B58,
@@ -7,7 +8,6 @@ import {
     BIG_NAT,
     constant,
     GetSrcType,
-    INT,
     NAT,
     nullable,
     object,
@@ -72,7 +72,7 @@ export type TokenBalance = GetSrcType<typeof TokenBalance>
 
 export const Reward = object({
     pubkey: B58,
-    lamports: INT,
+    lamports: ANY_INT,
     postBalance: ANY_NAT,
     rewardType: option(STRING),
     commission: option(NAT)
@@ -119,17 +119,16 @@ export const Transaction = object({
     version: oneOf({
         legacy: constant('legacy'),
         versionNumber: NAT
-    })
+    }),
+    /**
+     * Represents original transaction position in a block.
+     * Might be set, when some block transactions where filtered out
+     */
+    _index: option(NAT)
 })
 
 
-export type Transaction = GetSrcType<typeof Transaction> & {
-    /**
-     * Represents original transaction position in a block,
-     * when some transactions where filtered out
-     */
-    _index?: number
-}
+export type Transaction = GetSrcType<typeof Transaction>
 
 
 export const GetBlock = object({

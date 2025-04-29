@@ -33,8 +33,7 @@ export function createDataSource(options: RawDataSourceOptions): DataSource<Bloc
     if (options.geyserProxy) {
         let proxy = new RpcClient({
             url: options.geyserProxy,
-            requestTimeout: 5000,
-            fixUnsafeIntegers: true
+            requestTimeout: 5000
         })
         return new GeyserDataSource(
             rpcSource,
