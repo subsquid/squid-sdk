@@ -506,6 +506,7 @@ export class RpcClient {
         if (err instanceof HttpTimeoutError) return true
         if (err instanceof HttpError) {
             switch(err.response.status) {
+                case 408:
                 case 429:
                 case 502:
                 case 503:
