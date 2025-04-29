@@ -23,7 +23,7 @@ export interface DataServiceOptions {
 }
 
 
-export async function runDataService(args: DataServiceOptions): Promise<ListeningServer> {
+export async function runDataService(args: DataServiceOptions): Promise<ListeningServer & {started: Promise<void>}> {
     let service = new DataService(args.source, args.blockCacheSize ?? 1000)
     let app = createHttpApp(service)
 
@@ -33,6 +33,7 @@ export async function runDataService(args: DataServiceOptions): Promise<Listenin
     service.run().then()
 
     return {
+        started: service.started(),
         port: server.port,
         close(): Promise<void> {
             service.stop()

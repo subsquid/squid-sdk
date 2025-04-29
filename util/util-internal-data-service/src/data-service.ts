@@ -3,9 +3,9 @@ import {createFuture, Future, last, removeArrayItem, wait} from '@subsquid/util-
 import {BlockBatch, DataSource, isForkException} from '@subsquid/util-internal-data-source'
 import assert from 'assert'
 import {Chain} from './chain'
+import {Metrics} from './metrics'
 import {Block, BlockHeader, BlockRef, DataResponse, InvalidBaseBlock} from './types'
 import {isChain} from './util'
-import {Metrics} from './metrics'
 
 
 interface BlockWaiter {
@@ -19,6 +19,8 @@ export class DataService {
 
     private listeners: BlockWaiter[] = []
     private stopped = false
+    private firstBlockIngested = false
+    private firstBlockIngestedFuture = createFuture<void>()
     #chain?: Chain
 
     constructor(
@@ -26,7 +28,9 @@ export class DataService {
         private bufferSize: number,
         readonly log = createLogger('sqd:data-service'),
         private responseLimit = 100
-    ) {}
+    ) {
+        this.firstBlockIngestedFuture.promise().catch(() => {})
+    }
 
     private get chain(): Chain {
         assert(this.#chain, 'chain is not yet initialized')
@@ -144,13 +148,17 @@ export class DataService {
         }
     }
 
+    started(): Promise<void> {
+        return this.firstBlockIngestedFuture.promise()
+    }
+
     async run(): Promise<void> {
         let base: BlockRef = this.chain.getHeader()
         let stacked = 0
         while (!this.stopped) {
             let err: Error | undefined = undefined
             try {
-                if (stacked > 1) {
+                if (stacked > 5) {
                     await this.init()
                     base = this.chain.getHeader()
                     this.log.info(`restarted data ingestion at ${base.number}#${base.hash}`)
@@ -159,13 +167,19 @@ export class DataService {
             } catch(ex: any) {
                 err = ex
             }
+
             if (this.stopped) return
+
+            if (!this.firstBlockIngested) {
+                return this.firstBlockIngestedFuture.reject(
+                    err ?? new Error('data ingestion unexpectedly terminated')
+                )
+            }
+
             if (isForkException(err)) {
                 stacked = 0
                 base = this.chain.getForkBase(err.prev)
             } else {
-                this.log.error(err, 'data ingestion terminated, will resume in 1 minute')
-                await wait(60 * 1000)
                 let head = this.chain.getHeader()
                 if (head.number === base.number) {
                     stacked += 1
@@ -173,6 +187,10 @@ export class DataService {
                     stacked = 0
                 }
                 base = head
+
+                let pause = stacked > 1 ? 30 : 0
+                this.log.error(err, `data ingestion terminated, will restart in ${pause} seconds`)
+                await wait(pause * 1000)
             }
         }
     }
@@ -199,6 +217,10 @@ export class DataService {
                     this.chain.getHeader(),
                     'new head'
                 )
+                if (!this.firstBlockIngested) {
+                    this.firstBlockIngested = true
+                    this.firstBlockIngestedFuture.resolve()
+                }
             }
 
             finalizedHead = (finalizedHead?.number ?? 0) > (batch.finalizedHead?.number ?? 0)

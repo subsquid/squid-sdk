@@ -63,5 +63,9 @@ runProgram(async () => {
     })
 
     log.info(`listening on port ${service.port}`)
-    return waitForInterruption(service)
+
+    return new Promise((resolve, reject) => {
+        waitForInterruption(service).then(resolve, reject)
+        service.started.catch(reject)
+    })
 }, err => log.fatal(err))
