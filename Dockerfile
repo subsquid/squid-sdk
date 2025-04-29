@@ -90,3 +90,12 @@ RUN node common/scripts/install-run-rush.js deploy --project @subsquid/fuel-inge
 FROM node AS fuel-ingest
 COPY --from=fuel-ingest-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/fuel/fuel-ingest/bin/run.js"]
+
+
+FROM builder AS hyperliquid-ingest-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/hyperliquid-ingest
+
+
+FROM node AS hyperliquid-ingest
+COPY --from=hyperliquid-ingest-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/hyperliquid/hyperliquid-ingest/bin/run.js"]

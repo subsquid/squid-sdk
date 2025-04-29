@@ -37,6 +37,7 @@ all_images=(
     "substrate/substrate-metadata-service"
     "fuel/fuel-dump"
     "fuel/fuel-ingest"
+    "hyperliquid/hyperliquid-ingest"
 )
 
 if [ ${#images[@]} -eq 0 ]; then
