@@ -14,6 +14,7 @@ interface Block {
 interface Options extends DumperOptions {
     strideConcurrency: number
     strideSize: number
+    maxConfirmationAttempts: number
 }
 
 
@@ -24,6 +25,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
         removeOption(program, 'endpointCapacity')
         program.option('--stride-size <N>', 'Maximum size of getBlock batch call', positiveInt, 5)
         program.option('--stride-concurrency <N>', 'Maximum number of pending getBlock batch calls', positiveInt, 5)
+        program.option('--max-confirmation-attempts <N>', 'Maximum number of confirmation attempts', positiveInt, 10)
     }
 
     @def
@@ -59,7 +61,8 @@ export class SolanaDumper extends Dumper<Block, Options> {
             rpc: new Rpc(this.rpc()),
             req: {transactions: true, rewards: true},
             strideSize: this.options().strideSize,
-            strideConcurrency: this.options().strideConcurrency
+            strideConcurrency: this.options().strideConcurrency,
+            maxConfirmationAttempts: this.options().maxConfirmationAttempts,
         })
     }
 
