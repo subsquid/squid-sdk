@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-data",
+      "comment": "change InputCoin.witnessIndex type from number to string",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/fuel-data"
+}

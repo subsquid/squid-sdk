@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-normalization",
+      "comment": "handle changed InputCoin.witnessIndex type",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/fuel-normalization"
+}
