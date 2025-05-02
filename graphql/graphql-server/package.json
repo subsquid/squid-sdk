@@ -32,7 +32,7 @@
     "@subsquid/util-internal-http-server": "^2.0.0",
     "@subsquid/util-internal-ts-node": "^0.0.0",
     "@subsquid/apollo-server-core": "^3.14.0",
-    "@subsquid/apollo-server-express": "^3.14.0",
+    "@subsquid/apollo-server-express": "^3.14.1",
     "commander": "^11.1.0",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",

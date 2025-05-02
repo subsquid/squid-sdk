@@ -342,8 +342,8 @@ dependencies:
     specifier: ^3.14.0
     version: 3.14.0(graphql@15.8.0)
   '@subsquid/apollo-server-express':
-    specifier: ^3.14.0
-    version: 3.14.0(express@4.18.2)(graphql@15.8.0)
+    specifier: ^3.14.1
+    version: 3.14.1(express@4.18.2)(graphql@15.8.0)
   '@subsquid/graphiql-console':
     specifier: ^0.3.0
     version: 0.3.0
@@ -2642,8 +2642,8 @@ packages:
       - encoding
     dev: false
 
-  /@subsquid/apollo-server-express@3.14.0(express@4.18.2)(graphql@15.8.0):
-    resolution: {integrity: sha512-i5S1V3XEfrcs3uiG3RQf6EWETslbMDbQF5J6nHLVIuHLl3Y11JLg2blzNZGpqcKCs1MZu2RAhbS9PrVnQEKzcw==}
+  /@subsquid/apollo-server-express@3.14.1(express@4.18.2)(graphql@15.8.0):
+    resolution: {integrity: sha512-A4gr0CACz8TNpsDPT3E8DvN7YZwmmMgpSk0WYMtcUkVOd+2Z6rVhYsmctV2KsEX07GcQta8VUOafkY+GmgtSNA==}
     engines: {node: '>=12.0'}
     peerDependencies:
       express: ^4.17.1
@@ -7304,7 +7304,7 @@ packages:
     dev: false
 
   file:projects/graphql-server.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-2s2/YUEFrtcCXgIU5ACYnLfot9O0Bkl3/eD5orlvMwRwgzbN0Gua9Y5tq3a/ywtd2HkZQ8C7J/qokSS+e1s7vA==, tarball: file:projects/graphql-server.tgz}
+    resolution: {integrity: sha512-OZrDqN92VnqBCdQ4Sx8MCuzi1pBC0x8PbZ/YSmsQAKonKhzTc4wRpfWs05PnaIry3mZKYfxVaZ3AfbeF9DnCqQ==, tarball: file:projects/graphql-server.tgz}
     id: file:projects/graphql-server.tgz
     name: '@rush-temp/graphql-server'
     version: 0.0.0
@@ -7316,7 +7316,7 @@ packages:
       '@graphql-tools/utils': 10.0.11(graphql@15.8.0)
       '@keyv/redis': 2.5.8(supports-color@8.1.1)
       '@subsquid/apollo-server-core': 3.14.0(graphql@15.8.0)
-      '@subsquid/apollo-server-express': 3.14.0(express@4.18.2)(graphql@15.8.0)
+      '@subsquid/apollo-server-express': 3.14.1(express@4.18.2)(graphql@15.8.0)
       '@types/express': 4.17.21
       '@types/mocha': 10.0.8
       '@types/node': 18.19.0
@@ -7410,14 +7410,14 @@ packages:
     dev: false
 
   file:projects/openreader.tgz(supports-color@8.1.1):
-    resolution: {integrity: sha512-pql0n+DmHADkxXxgMbcBAEWCEHuOwayFsDbWaYUV/qyqpTvcIfyy3auKX9mK1F/Vlw0xqPL37KWlInI5mCrtLg==, tarball: file:projects/openreader.tgz}
+    resolution: {integrity: sha512-yrG6rS2FKr8WFc0z6qlSKnsyeWhQMNUTu3HJfyDfwp2ZvaH6yxmncWPM5SR5PgYhl3Nwjyq823g0KoqqDtBjeA==, tarball: file:projects/openreader.tgz}
     id: file:projects/openreader.tgz
     name: '@rush-temp/openreader'
     version: 0.0.0
     dependencies:
       '@graphql-tools/merge': 9.0.1(graphql@15.8.0)
       '@subsquid/apollo-server-core': 3.14.0(graphql@15.8.0)
-      '@subsquid/apollo-server-express': 3.14.0(express@4.18.2)(graphql@15.8.0)
+      '@subsquid/apollo-server-express': 3.14.1(express@4.18.2)(graphql@15.8.0)
       '@subsquid/graphiql-console': 0.3.0
       '@types/deep-equal': 1.0.4
       '@types/express': 4.17.21
