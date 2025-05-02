@@ -12,7 +12,7 @@ import {ResponseSizeLimit} from '@subsquid/openreader/lib/util/limit'
 import {def} from '@subsquid/util-internal'
 import {ListeningServer} from '@subsquid/util-internal-http-server'
 import {isTsNode} from '@subsquid/util-internal-ts-node'
-import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from 'apollo-server-core'
+import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from '@subsquid/apollo-server-core'
 import responseCachePlugin from 'apollo-server-plugin-response-cache'
 import assert from 'assert'
 import {GraphQLInt, GraphQLObjectType, GraphQLSchema, GraphQLString} from 'graphql'
@@ -36,6 +36,7 @@ export interface ServerOptions {
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionMaxResponseNodes?: number
+    validationMaxErrors?: number
     dumbCache?: DumbRedisCacheOptions | DumbInMemoryCacheOptions
     dialect?: Dialect
 }
@@ -97,6 +98,7 @@ export class Server {
             graphiqlConsole: true,
             maxRequestSizeBytes: this.options.maxRequestSizeBytes,
             maxRootFields: this.options.maxRootFields,
+            validationMaxErrors: this.options.validationMaxErrors,
             cache: this.cache()
         })
     }
