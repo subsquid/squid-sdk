@@ -176,10 +176,11 @@ export class DataService {
                 )
             }
 
-            if (isForkException(err)) {
-                stacked = 0
-                base = this.chain.getForkBase(err.prev)
-            } else {
+            // if (isForkException(err)) {
+            //     stacked = 0
+            //     base = this.chain.getForkBase(err.prev)
+            // } else
+            {
                 let head = this.chain.getHeader()
                 if (head.number === base.number) {
                     stacked += 1

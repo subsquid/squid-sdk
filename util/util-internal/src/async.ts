@@ -180,6 +180,13 @@ export async function* concurrentMap<T, R>(
     stream: AsyncIterable<T> | Iterable<T>,
     f: (val: T) => Promise<R>
 ): AsyncIterable<R> {
+    if (concurrency == 0) {
+        for await (let val of stream) {
+            yield await f(val)
+        }
+        return
+    }
+
     let queue = new AsyncQueue<{promise: Promise<R>}>(concurrency)
 
     async function map() {
