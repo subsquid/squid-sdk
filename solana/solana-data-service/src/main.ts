@@ -4,9 +4,7 @@ import {positiveInt, Url} from '@subsquid/util-internal-commander'
 import {Block, BlockStream, DataSource, runDataService, StreamRequest} from '@subsquid/util-internal-data-service'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
 import {Command} from 'commander'
-import {DataSourceOptions, SecondaryDataWorker} from './data-source'
-import {Mapping} from './data-source/mapping'
-import {createDataSource} from './data-source/raw-setup'
+import {DataSourceOptions, MainDataWorker, SecondaryDataWorker} from './data-source'
 
 
 const log = createLogger('sqd:solana-data-service')
@@ -39,7 +37,7 @@ runProgram(async () => {
         votes: args.votes
     }
 
-    let mainWorker = new Mapping(createDataSource(dataSourceOptions))
+    let mainWorker = new MainDataWorker(dataSourceOptions)
 
     let dataSource: DataSource<Block> = {
         getFinalizedHead() {

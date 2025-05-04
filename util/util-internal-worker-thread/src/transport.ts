@@ -31,7 +31,7 @@ export interface CallStream {
 export interface CallError {
     type: 'call-error'
     call: CallId
-    error: Error
+    error: any
 }
 
 
@@ -57,7 +57,7 @@ export interface StreamItem {
 export interface StreamError {
     type: 'stream-error'
     stream: StreamId
-    error: Error
+    error: any
 }
 
 

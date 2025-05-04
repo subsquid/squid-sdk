@@ -1,6 +1,7 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {createFuture, Future} from '@subsquid/util-internal'
 import {TransferListItem, Worker} from 'worker_threads'
+import {RemoteError} from './error'
 import {
     Call,
     CallError,
@@ -106,7 +107,7 @@ export class Client {
     }
 
     private onCallError(msg: CallError): void {
-        this.takeCallFuture(msg)?.reject(msg.error)
+        this.takeCallFuture(msg)?.reject(new RemoteError(msg.error))
     }
 
     private takeCallFuture(msg: CallError | CallValue | CallStream): Future<any> | undefined {
@@ -254,10 +255,11 @@ class Stream implements AsyncIterableIterator<any> {
         switch(this.state.type) {
             case 'next':
             case 'return':
-                this.state.future.reject(msg.error)
+                let err = new RemoteError(msg.error)
+                this.state.future.reject(err)
                 this.state = {
                     type: 'error',
-                    error: msg.error
+                    error: err
                 }
                 this.map.delete(this.id)
                 break

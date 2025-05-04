@@ -25,6 +25,15 @@ export class ChainFixer implements AsyncIterableIterator<IngestBatch> {
     }
 
     async next(): Promise<IteratorResult<IngestBatch, undefined>> {
+        try {
+            return await this._next()
+        } catch(err: any) {
+            await this.return().catch(() => {})
+            throw err
+        }
+    }
+
+    private async _next(): Promise<IteratorResult<IngestBatch, undefined>> {
         while (true) {
             let batch = await this.nextBatch()
             if (batch == null) return {done: true, value: undefined}

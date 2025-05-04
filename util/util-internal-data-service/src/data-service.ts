@@ -170,17 +170,16 @@ export class DataService {
 
             if (this.stopped) return
 
-            if (!this.firstBlockIngested) {
-                return this.firstBlockIngestedFuture.reject(
-                    err ?? new Error('data ingestion unexpectedly terminated')
-                )
-            }
+            if (isForkException(err)) {
+                stacked = 0
+                base = this.chain.getForkBase(err.prev)
+            } else {
+                if (!this.firstBlockIngested) {
+                    return this.firstBlockIngestedFuture.reject(
+                        err ?? new Error('data ingestion unexpectedly terminated')
+                    )
+                }
 
-            // if (isForkException(err)) {
-            //     stacked = 0
-            //     base = this.chain.getForkBase(err.prev)
-            // } else
-            {
                 let head = this.chain.getHeader()
                 if (head.number === base.number) {
                     stacked += 1

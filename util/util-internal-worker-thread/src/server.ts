@@ -1,6 +1,7 @@
 import {createLogger} from '@subsquid/logger'
 import {ensureError} from '@subsquid/util-internal'
 import {MessagePort} from 'worker_threads'
+import {serializeError} from './error'
 import {Transfer} from './transfer'
 import {Call, CallId, ClientMessage, ServerMessage, StreamId, StreamNext, StreamReturn} from './transport'
 
@@ -45,7 +46,7 @@ export class Server {
         })
 
         this.port.on('messageerror', () => {
-            this.log.error('failed to receive some message')
+            this.log.error('failed to send some message')
         })
 
         this.port.on('close', () => {
@@ -105,7 +106,7 @@ export class Server {
             return {
                 type: 'call-error',
                 call,
-                error: ensureError(err)
+                error: err
             }
         }
     }
@@ -180,7 +181,18 @@ export class Server {
 
     private send(msg: ServerMessage | Transfer<ServerMessage>): void {
         if (this.closed) return
-        // this.log.debug({message: msg}, 'send')
+        msg = Transfer.map(msg, msg => {
+            switch(msg.type) {
+                case 'stream-error':
+                case 'call-error':
+                    return {
+                        ...msg,
+                        error: serializeError(ensureError(msg.error))
+                    }
+                default:
+                    return msg
+            }
+        })
         try {
             Transfer.send(this.port, msg)
         } catch(err: any) {
