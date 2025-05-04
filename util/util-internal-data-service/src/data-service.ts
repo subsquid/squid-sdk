@@ -1,5 +1,5 @@
 import {createLogger} from '@subsquid/logger'
-import {createFuture, Future, last, removeArrayItem, wait} from '@subsquid/util-internal'
+import {addErrorContext, createFuture, Future, last, removeArrayItem, wait} from '@subsquid/util-internal'
 import {BlockBatch, DataSource, isForkException} from '@subsquid/util-internal-data-source'
 import assert from 'assert'
 import {Chain} from './chain'
@@ -172,7 +172,16 @@ export class DataService {
 
             if (isForkException(err)) {
                 stacked = 0
-                base = this.chain.getForkBase(err.prev)
+                let forkBase = this.chain.getForkBase(err.prev)
+                if (forkBase) {
+                    base = forkBase
+                    this.log.info({forkBase: base, upstreamBlocks: err.prev}, 'fork encountered')
+                } else {
+                    throw addErrorContext(new Error('rollback behind finalized head'), {
+                        finalizedHead: this.chain.getFinalizedHead(),
+                        upstreamBlocks: err.prev
+                    })
+                }
             } else {
                 if (!this.firstBlockIngested) {
                     return this.firstBlockIngestedFuture.reject(

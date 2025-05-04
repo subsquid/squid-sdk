@@ -1,4 +1,4 @@
-import {bisect, last} from '@subsquid/util-internal'
+import {addErrorContext, bisect, last} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Block, BlockHeader, BlockRef, DataResponse, InvalidBaseBlock} from './types'
 import {isChain} from './util'
@@ -178,7 +178,7 @@ export class Chain {
         }
     }
 
-    getForkBase(prev: BlockRef[]): BlockRef {
+    getForkBase(prev: BlockRef[]): BlockRef | undefined {
         prev = prev.slice()
         let fh = prev.pop()
         let top = this.blocks.length - 1
@@ -196,6 +196,5 @@ export class Chain {
             if (fh.number === head.number && fh.hash === head.hash) return head
             top -= 1
         }
-        throw new Error('attempt to rollback behind finalized head')
     }
 }
