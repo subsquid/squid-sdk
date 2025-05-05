@@ -1,6 +1,8 @@
-import {Block as RpcBlock, Rpc, SolanaRpcDataSource} from '@subsquid/solana-rpc'
+import type {Block as RpcBlock} from '@subsquid/solana-rpc'
 import {def} from '@subsquid/util-internal'
+import {DataSource} from '@subsquid/util-internal-data-source'
 import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
+import {DataWorker} from './data-client'
 
 
 interface Block {
@@ -11,7 +13,7 @@ interface Block {
 }
 
 
-interface Options extends DumperOptions {
+export interface Options extends DumperOptions {
     strideConcurrency: number
     strideSize: number
     maxConfirmationAttempts: number
@@ -56,14 +58,8 @@ export class SolanaDumper extends Dumper<Block, Options> {
     }
 
     @def
-    private dataSource(): SolanaRpcDataSource {
-        return new SolanaRpcDataSource({
-            rpc: new Rpc(this.rpc()),
-            req: {transactions: true, rewards: true},
-            strideSize: this.options().strideSize,
-            strideConcurrency: this.options().strideConcurrency,
-            maxConfirmationAttempts: this.options().maxConfirmationAttempts,
-        })
+    private dataSource(): DataSource<RpcBlock> {
+        return new DataWorker(this.options())
     }
 
     protected async getLastFinalizedBlockNumber(): Promise<number> {
