@@ -106,7 +106,7 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         let options = this.options()
         return new RpcClient({
             url: options.endpoint,
-            capacity: options.endpointCapacity,
+            capacity: options.endpointCapacity || 10,
             maxBatchCallSize: options.endpointMaxBatchCallSize,
             rateLimit: options.endpointRateLimit,
             requestTimeout: 180_000,
