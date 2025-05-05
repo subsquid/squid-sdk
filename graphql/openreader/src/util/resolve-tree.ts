@@ -1,4 +1,4 @@
-import {UserInputError} from "apollo-server-core"
+import {UserInputError} from "@subsquid/apollo-server-core"
 import assert from "assert"
 import {GraphQLResolveInfo, GraphQLSchema} from "graphql"
 import {

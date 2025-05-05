@@ -29,6 +29,7 @@ GraphQL server for postgres-compatible databases
     program.option('--max-root-fields <count>', 'max number of root fields in a query', nat)
     program.option('--max-response-size <nodes>', 'max response size measured in nodes', nat)
     program.option('--sql-statement-timeout <ms>', 'sql statement timeout in ms', nat)
+    program.option('--validation-max-errors <count>', 'max validation errors', nat)
     program.option('--subscriptions', 'enable gql subscriptions')
     program.option('--subscription-poll-interval <ms>', 'subscription poll interval in ms', nat, 1000)
     program.option('--subscription-max-response-size <nodes>', 'max response size measured in nodes', nat)
@@ -42,6 +43,7 @@ GraphQL server for postgres-compatible databases
         maxRootFields?: number
         maxResponseSize?: number
         sqlStatementTimeout?: number
+        validationMaxErrors?: number
         subscriptions?: boolean
         subscriptionPollInterval: number
         subscriptionMaxResponseSize?: number
@@ -65,7 +67,8 @@ GraphQL server for postgres-compatible databases
         maxResponseNodes: opts.maxResponseSize,
         subscriptions: opts.subscriptions,
         subscriptionPollInterval: opts.subscriptionPollInterval,
-        subscriptionMaxResponseNodes: opts.subscriptionMaxResponseSize
+        subscriptionMaxResponseNodes: opts.subscriptionMaxResponseSize,
+        validationMaxErrors: opts.validationMaxErrors
     })
 
     LOG.info(`listening on port ${server.port}`)

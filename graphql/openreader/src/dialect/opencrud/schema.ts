@@ -1,6 +1,6 @@
 import {def, unexpectedCase} from '@subsquid/util-internal'
 import {toCamelCase, toPlural} from '@subsquid/util-naming'
-import {UserInputError} from 'apollo-server-core'
+import {UserInputError} from '@subsquid/apollo-server-core'
 import assert from 'assert'
 import {
     GraphQLBoolean,
