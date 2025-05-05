@@ -1,4 +1,4 @@
-import {addErrorContext, bisect, last} from '@subsquid/util-internal'
+import {bisect, last} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Block, BlockHeader, BlockRef, DataResponse, InvalidBaseBlock} from './types'
 import {isChain} from './util'
@@ -25,19 +25,20 @@ export class Chain {
     }
 
     push(newBlock: Block): void {
-        if (this.lastBlock().number < newBlock.number) {
+        if (this.lastBlock().number === newBlock.parentNumber) {
             assert(isChain(this.lastBlock(), newBlock))
             this.blocks.push(newBlock)
             return
         }
 
-        let pos = this.bisect(newBlock.number)
-        assert(pos > this.finalizedHead, 'attempt to revert finalized head')
+        let pos = this.bisect(newBlock.parentNumber)
+        assert(pos >= this.finalizedHead, 'attempt to revert finalized head')
+        assert(pos < this.blocks.length, 'there is a gap between received block and the current head')
 
         // rollback
-        let prev = this.blocks[pos - 1]
+        let prev = this.blocks[pos]
         assert(isChain(prev, newBlock))
-        this.blocks = this.blocks.slice(0, pos)
+        this.blocks = this.blocks.slice(0, pos + 1)
         this.blocks.push(newBlock)
     }
 
