@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "Allows to specify --validation-max-errors option to abort validation and exit with an error message \"Too many validation errors, error limit reached. Validation aborted\".",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}
