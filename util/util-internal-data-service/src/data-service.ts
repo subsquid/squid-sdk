@@ -26,8 +26,7 @@ export class DataService {
     constructor(
         private source: DataSource<Block>,
         private bufferSize: number,
-        readonly log = createLogger('sqd:data-service'),
-        private responseLimit = 100
+        readonly log = createLogger('sqd:data-service')
     ) {
         this.firstBlockIngestedFuture.promise().catch(() => {})
     }
@@ -49,11 +48,11 @@ export class DataService {
         if (from <= this.chain.firstBlock().parentNumber) {
             return this.belowQuery(from, parentHash)
         } else {
-            let res = this.chain.query(this.responseLimit, from, parentHash)
+            let res = this.chain.query(from, parentHash)
             if (res instanceof InvalidBaseBlock) return res
             if (res.tail) return res
             await this.waitForBlock(from)
-            return this.chain.query(this.responseLimit, from, parentHash)
+            return this.chain.query(from, parentHash)
         }
     }
 
@@ -67,10 +66,8 @@ export class DataService {
             missing
         }, 'below query')
 
-        // read all necessary `this.chain` properties know for consistency
-        let responseLimit = this.responseLimit
-        let existing = Math.max(0, responseLimit - missing)
-        let tail = this.chain.first(existing)
+        // read all necessary `this.chain` properties now for consistency
+        let tail = this.chain.snapshot()
         let finalizedHead = this.chain.getFinalizedHead()
 
         // Now setup streaming of missing blocks
@@ -96,27 +93,25 @@ export class DataService {
             }
         }
 
-        async function* head(): AsyncIterable<Block> {
-            let blocksServed = 0
+        async function* head(): AsyncIterable<Block[]> {
             let prev: Block | undefined
 
             for (let block of firstBatch.blocks) {
                 assertChainContinuity(parentHash, prev, block)
-                yield block
                 prev = block
-                blocksServed += 1
             }
 
+            yield firstBatch.blocks
+
             try {
-                while (blocksServed < responseLimit) {
+                while (true) {
                     let item = await it.next()
                     if (item.done) break
                     for (let block of item.value.blocks) {
                         assertChainContinuity(parentHash, prev, block)
-                        yield block
                         prev = block
-                        blocksServed += 1
                     }
+                    yield item.value.blocks
                 }
             } finally {
                 await it.return?.().catch(err => log.error(err))

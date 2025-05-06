@@ -68,9 +68,9 @@ export class Chain {
         return this.finalizedHead > current
     }
 
-    query(limit: number, from: number): DataResponse
-    query(limit: number, from: number, baseBlockHash?: string): DataResponse | InvalidBaseBlock
-    query(limit: number, from: number, baseBlockHash?: string): DataResponse | InvalidBaseBlock {
+    query(from: number): DataResponse
+    query(from: number, baseBlockHash?: string): DataResponse | InvalidBaseBlock
+    query(from: number, baseBlockHash?: string): DataResponse | InvalidBaseBlock {
         if (from <= this.firstBlock().parentNumber) return {}
 
         let pos = this.bisect(from)
@@ -91,7 +91,7 @@ export class Chain {
             } else {
                 return {
                     finalizedHead: this.getFinalizedHead(),
-                    tail: this.blocks.slice(pos, pos + limit)
+                    tail: this.blocks.slice(pos)
                 }
             }
         } else if (
@@ -113,8 +113,8 @@ export class Chain {
         }
     }
 
-    first(count: number): Block[] {
-        return this.blocks.slice(0, count)
+    snapshot(): Block[] {
+        return this.blocks.slice()
     }
 
     private bisect(blockNumber: number): number {

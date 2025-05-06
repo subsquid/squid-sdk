@@ -26,6 +26,9 @@ export function createHttpApp(service: DataService): HttpApp {
                 return ctx.send(400, req.toString())
             }
 
+            let start = Date.now()
+            let maxDuration = 60 * 1000 // 1 minute
+
             let res = await service.query(req.fromBlock, req.parentBlockHash)
             if (res instanceof InvalidBaseBlock) {
                 return ctx.send(409, {previousBlocks: res.prev})
@@ -52,17 +55,30 @@ export function createHttpApp(service: DataService): HttpApp {
             }
 
             if (res.head) {
-                for await (let block of res.head) {
-                    if (ctx.response.writableNeedDrain || !ctx.response.writable) {
-                        await waitDrain(ctx.response)
+                for await (let batch of res.head) {
+                    for (let block of batch) {
+                        if (ctx.response.writableNeedDrain || !ctx.response.writable) {
+                            if (Date.now() - start > maxDuration) {
+                                break
+                            }
+                            await waitDrain(ctx.response)
+                        }
+                        ctx.response.write(block.jsonLineGzip)
                     }
-                    ctx.response.write(block.jsonLineGzip)
+                    // check after each batch to ensure,
+                    // that time limits are checked in case of slow arriving tiny batches
+                    if (Date.now() - start > maxDuration) {
+                        break
+                    }
                 }
             }
 
             if (res.tail) {
                 for (let block of res.tail) {
                     if (ctx.response.writableNeedDrain || !ctx.response.writable) {
+                        if (Date.now() - start > maxDuration) {
+                            break
+                        }
                         await waitDrain(ctx.response)
                     }
                     ctx.response.write(block.jsonLineGzip)
