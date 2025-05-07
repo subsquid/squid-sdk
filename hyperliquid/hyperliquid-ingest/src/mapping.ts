@@ -13,6 +13,7 @@ export interface Transaction {
 export interface BlockHeader {
     height: number
     hash: string
+    parentHash: string
     proposer: string
     blockTime: number
 }
@@ -24,10 +25,11 @@ export interface Block {
 }
 
 
-export function mapRawBlock(raw: RawBlock): Block {
+export function mapRawBlock(raw: RawBlock, prevHash: string): Block {
     let header = {
         height: raw.header.height,
         hash: raw.header.hash,
+        parentHash: prevHash,
         proposer: raw.header.proposer,
         blockTime: Date.parse(raw.header.block_time)
     }

@@ -29,10 +29,17 @@ export class HyperliquidIngest extends Ingest<HyperliquidIngestOptions> {
     }
 
     protected async *getBlocks(range: Range): AsyncIterable<object[]> {
-        for await (let blocks of this.hlArchive().getRawBlocks(range)) {
+        let newRange = {from: range.from - 1, to: range.to}
+        let prevHash: string | undefined
+        for await (let blocks of this.hlArchive().getRawBlocks(newRange)) {
+            if (prevHash == null) {
+                prevHash = blocks[0].header.hash
+                blocks = blocks.slice(1)
+            }
             yield blocks.map(raw => {
                 try {
-                    let block = mapRawBlock(raw)
+                    let block = mapRawBlock(raw, prevHash!)
+                    prevHash = raw.header.hash
                     return toJSON(block)
                 } catch(err: any) {
                     throw addErrorContext(err, {
