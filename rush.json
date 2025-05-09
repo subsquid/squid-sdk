@@ -420,6 +420,24 @@
     //   // "versionPolicyName": ""
     // },
     {
+      "packageName": "@subsquid/evm-dump",
+      "projectFolder": "evm/evm-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-ingest",
+      "projectFolder": "evm/evm-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "projectFolder": "evm/evm-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-processor",
       "projectFolder": "evm/evm-processor",
       "shouldPublish": true,
@@ -440,6 +458,12 @@
     {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm/evm-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-data-service",
+      "projectFolder": "evm/evm-data-service",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

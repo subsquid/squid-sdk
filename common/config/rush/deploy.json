@@ -20,6 +20,7 @@
   "deploymentProjectNames": [
     "@subsquid/fuel-dump",
     "@subsquid/fuel-ingest",
+    "@subsquid/evm-data-service",
     "@subsquid/solana-data-service",
     "@subsquid/solana-dump",
     "@subsquid/solana-ingest",

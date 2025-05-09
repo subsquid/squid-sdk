@@ -68,9 +68,21 @@ dependencies:
   '@rush-temp/evm-codec':
     specifier: file:./projects/evm-codec.tgz
     version: file:projects/evm-codec.tgz(supports-color@8.1.1)
+  '@rush-temp/evm-data-service':
+    specifier: file:./projects/evm-data-service.tgz
+    version: file:projects/evm-data-service.tgz
+  '@rush-temp/evm-dump':
+    specifier: file:./projects/evm-dump.tgz
+    version: file:projects/evm-dump.tgz
+  '@rush-temp/evm-ingest':
+    specifier: file:./projects/evm-ingest.tgz
+    version: file:projects/evm-ingest.tgz
   '@rush-temp/evm-processor':
     specifier: file:./projects/evm-processor.tgz
     version: file:projects/evm-processor.tgz
+  '@rush-temp/evm-rpc':
+    specifier: file:./projects/evm-rpc.tgz
+    version: file:projects/evm-rpc.tgz
   '@rush-temp/evm-typegen':
     specifier: file:./projects/evm-typegen.tgz
     version: file:projects/evm-typegen.tgz
@@ -7481,9 +7493,50 @@ packages:
       - zod
     dev: false
 
+  file:projects/evm-data-service.tgz:
+    resolution: {integrity: sha512-T9hKAC1wVrhCXPyaLz1najuB20D/pishDZdHp9yyI6sGOUMwoo2iH7TIpKhWsJSZfnbLqwpdasWTF4oGbTzc3w==, tarball: file:projects/evm-data-service.tgz}
+    name: '@rush-temp/evm-data-service'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      commander: 11.1.0
+      ethers: 6.9.0
+      typescript: 5.5.4
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
+  file:projects/evm-dump.tgz:
+    resolution: {integrity: sha512-6u/Ooa8DtYsu379QYj4n8+uS/Uikerc9hXdefZv/QYFV8TqlARpi8S15etrOAcgy2b0d23CJmBZ6SjZxRN+U6g==, tarball: file:projects/evm-dump.tgz}
+    name: '@rush-temp/evm-dump'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.5.4
+    dev: false
+
+  file:projects/evm-ingest.tgz:
+    resolution: {integrity: sha512-P+OKf/VkIaOvTPvmq1J1Cv7YaJkUPgxGv8rptC17VHNhtrAxb0FoJ424cGOck4ooIEmwoxLZPGmNYCk9fnlu6w==, tarball: file:projects/evm-ingest.tgz}
+    name: '@rush-temp/evm-ingest'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.5.4
+    dev: false
+
   file:projects/evm-processor.tgz:
     resolution: {integrity: sha512-q7mNjRAMaqJzPyb0cBk3Xx+8EKJa9G+rgGzoS+XBQyJckaYmNHcf3vbEA4dKaELVqMvd/zichiKm1aLiuGwH7g==, tarball: file:projects/evm-processor.tgz}
     name: '@rush-temp/evm-processor'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.5.4
+    dev: false
+
+  file:projects/evm-rpc.tgz:
+    resolution: {integrity: sha512-F6bmRaP0zWn9x0rlf/0+2DuWyyLUKqQoF9e4u3M8wu1E36w0OG4n/T8YBcpaFFM5+EBhNHjGj0pkVc17KdfuJA==, tarball: file:projects/evm-rpc.tgz}
+    name: '@rush-temp/evm-rpc'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0

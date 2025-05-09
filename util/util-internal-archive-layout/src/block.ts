@@ -1,3 +1,9 @@
+import assert from 'assert'
+
+
+export type HexNumber = string
+
+
 export interface BlockRef {
     hash: string
     number: number
@@ -7,7 +13,7 @@ export interface BlockRef {
 
 export type RawBlock = {
     hash: string
-    number: number
+    number: number | HexNumber
     parentNumber?: number
     height?: number
 } | {
@@ -27,7 +33,7 @@ export function peekBlockRef(block: RawBlock): BlockRef {
     } else {
         return {
             hash: block.hash,
-            number: block.number,
+            number: toSafeInteger(block.number),
             parentNumber: block.parentNumber
         }
     }
@@ -35,7 +41,7 @@ export function peekBlockRef(block: RawBlock): BlockRef {
 
 
 export function getBlockNumber(block: RawBlock): number {
-    return block.number == null ? block.height : block.number
+    return block.number == null ? block.height : toSafeInteger(block.number)
 }
 
 
@@ -65,4 +71,11 @@ export function getShortHash(hash: string): string {
 
 export function formatBlockNumber(number: number): string {
     return String(number).padStart(10, '0')
+}
+
+
+function toSafeInteger(number: number | HexNumber): number {
+    let val = Number(number)
+    assert(Number.isSafeInteger(val))
+    return val
 }

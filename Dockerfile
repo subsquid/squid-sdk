@@ -18,9 +18,17 @@ FROM builder AS solana-hotblocks-service-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/solana-data-service
 
 
+FROM builder AS evm-hotblocks-service-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/evm-data-service
+
 FROM node AS solana-hotblocks-service
 COPY --from=solana-hotblocks-service-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/solana/solana-data-service/lib/main.js"]
+
+
+FROM node AS evm-hotblocks-service
+COPY --from=evm-hotblocks-service-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/evm/evm-data-service/lib/main.js"]
 
 
 FROM builder AS solana-dump-builder
