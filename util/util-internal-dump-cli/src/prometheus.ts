@@ -17,7 +17,8 @@ export class PrometheusServer {
     private latestReceivedBlockTimestampGauge: Gauge
     private latestProcessedBlockTimestampGauge: Gauge
     private blocksProcessingTimeGauge: Gauge
-
+    private latestProcessedBlockNumberGauge: Gauge
+    private blocksDeliveryDelayGauge: Gauge
     constructor(
         private port: number,
         getFinalizedHeight: () => Promise<number>,
@@ -55,6 +56,19 @@ export class PrometheusServer {
         this.latestReceivedBlockTimestampGauge = new Gauge({
             name: 'sqd_latest_received_block_timestamp',
             help: 'Timestamp of latest received block',
+            registers: [this.registry]
+        })
+
+        this.blocksDeliveryDelayGauge = new Gauge({
+            name: 'sqd_blocks_delivery_delay',
+            help: 'Delay in seconds between block minted and received',
+            registers: [this.registry]
+        })
+
+        // Duplicate metric of sqd_dump_last_written_block for compatibility with archive.py dumper
+        this.latestProcessedBlockNumberGauge = new Gauge({
+            name: 'sqd_latest_processed_block_number',
+            help: 'Latest processed block number',
             registers: [this.registry]
         })
 
@@ -145,16 +159,18 @@ export class PrometheusServer {
 
     setLastWrittenBlock(block: number) {
         this.lastWrittenBlockGauge.set(block)
+        this.latestProcessedBlockNumberGauge.set(block)
     }
 
     setLatestBlockMetrics(blockNumber: number, mintedTimestamp: number) {
         this.latestReceivedBlockNumberGauge.set(blockNumber)
         this.latestReceivedBlockTimestampGauge.set(mintedTimestamp)
+        this.blocksDeliveryDelayGauge.set(Math.floor(Date.now() / 1000) - mintedTimestamp)
     }
 
-    setProcessedBlockMetrics(blockTimestamp: number, processingTime: number) {
+    setProcessedBlockMetrics(blockTimestamp: number) {
         this.latestProcessedBlockTimestampGauge.set(blockTimestamp)
-        this.blocksProcessingTimeGauge.set(processingTime)
+        this.blocksProcessingTimeGauge.set(Math.floor(Date.now() / 1000) - blockTimestamp)
     }
 
     incS3Requests(kind: string, value?: number) {

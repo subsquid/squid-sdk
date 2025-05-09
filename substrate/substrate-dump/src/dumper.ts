@@ -115,6 +115,6 @@ export class SubstrateDumper extends Dumper<BlockData, Options> {
     }
 
     protected getBlockTimestamp(block: BlockData): number {
-        return (Date.now() / 1000); //mocked timestamp for now
+        return Math.floor(Date.now() / 1000); //mocked timestamp for now
     }
 }

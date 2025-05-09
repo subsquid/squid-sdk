@@ -246,9 +246,8 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
                     const lastBlockHeight = last(bb).height;
                     prometheus.setLastWrittenBlock(lastBlockHeight);
                     const processedTimestamp = this.getBlockTimestamp(last(bb));
-                    const processingTime = Math.floor(Date.now() / 1000) - processedTimestamp;
-                    prometheus.setProcessedBlockMetrics(processedTimestamp, processingTime);
-                    this.log().debug(`Processed block ${lastBlockHeight} at ${processedTimestamp} with processing time ${processingTime}`);
+                    prometheus.setProcessedBlockMetrics(processedTimestamp);
+                    this.log().debug(`Processed block ${lastBlockHeight} at ${processedTimestamp}`);
                 }
             } else {
                 let archive = new ArchiveLayout(this.destination(), {
@@ -265,9 +264,8 @@ export abstract class Dumper<B extends {hash: string, height: number}, O extends
                         
                         const cachedTimestamp = this.timestampCache.get(blockHeight);
                         if (cachedTimestamp) {
-                            const processingTime = Math.floor(Date.now() / 1000) - cachedTimestamp;
-                            prometheus.setProcessedBlockMetrics(cachedTimestamp, processingTime);
-                            this.log().debug(`Processed block ${blockHeight} at ${cachedTimestamp} with processing time ${processingTime}`);
+                            prometheus.setProcessedBlockMetrics(cachedTimestamp);
+                            this.log().debug(`Processed block ${blockHeight} at ${cachedTimestamp}`);
                         } else {
                             this.log().warn(`No cached timestamp available for height ${blockHeight}`);
                         }
