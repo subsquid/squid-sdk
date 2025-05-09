@@ -1,6 +1,13 @@
 # Change Log - @subsquid/fuel-data
 
-This log was last generated on Tue, 03 Dec 2024 11:47:42 GMT and should not be manually modified.
+This log was last generated on Fri, 02 May 2025 09:41:23 GMT and should not be manually modified.
+
+## 1.1.4
+Fri, 02 May 2025 09:41:23 GMT
+
+### Patches
+
+- change InputCoin.witnessIndex type from number to string
 
 ## 1.1.3
 Tue, 03 Dec 2024 11:47:42 GMT

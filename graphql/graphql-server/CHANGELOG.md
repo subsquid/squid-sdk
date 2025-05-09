@@ -1,6 +1,13 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Fri, 20 Sep 2024 15:57:10 GMT and should not be manually modified.
+This log was last generated on Mon, 05 May 2025 11:31:26 GMT and should not be manually modified.
+
+## 4.10.0
+Mon, 05 May 2025 11:31:26 GMT
+
+### Minor changes
+
+- Allows to specify --validation-max-errors option to abort validation and exit with an error message "Too many validation errors, error limit reached. Validation aborted".
 
 ## 4.9.0
 Fri, 20 Sep 2024 15:57:10 GMT
