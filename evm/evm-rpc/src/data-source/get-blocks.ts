@@ -1,6 +1,7 @@
 import {FiniteRange} from '@subsquid/util-internal-range'
-import {Rpc} from './evm-rpc'
-import {Block, DataRequest} from './evm-types'
+import {Rpc} from '../rpc'
+import {Block, DataRequest} from '../types'
+
 
 export async function getBlocks(
     rpc: Rpc,

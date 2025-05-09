@@ -1,11 +1,9 @@
 // import type * as rpc from '@subsquid/solana-rpc-data'
 
 import {addErrorContext, assertNotNull} from '@subsquid/util-internal'
-// import assert from 'assert'
-// import {Balance, Block, BlockHeader, Instruction, LogMessage, Reward, TokenBalance, Transaction} from './evm-data'
 import {Block, BlockHeader, Transaction, Access, EIP7702Authorization, Log, Trace, TraceActionCreate, TraceActionCall, TraceActionReward, TraceActionSelfdestruct, StateDiff, TraceResultCreate, TraceResultCall} from './evm-data'
 // import { GetBlock, Transaction as RpcTransaction, Access as RpcAccess, EIP7702Authorization as RpcEIP7702Authorization, Receipt, Trace as RpcTrace } from './evm-rpc-data'
-import * as rpc from './evm-rpc-data'
+import * as rpc from '@subsquid/evm-rpc/lib/rpc-data'
 import { Logger } from '@subsquid/logger'
 import { assert, log } from 'node:console'
 // import {InstructionTreeTraversal, MessageStream, ParsingError} from './instruction-parser'

@@ -1,6 +1,6 @@
-import {GetBlock} from './evm-rpc-data'
-import {Commitment, Rpc} from './evm-rpc'
-import {Block, DataRequest} from './evm-types'
+import {GetBlock} from '../rpc-data'
+import {Commitment, Rpc} from '../rpc'
+import {Block, DataRequest} from '../types'
 
 
 export interface PollStreamOptions {

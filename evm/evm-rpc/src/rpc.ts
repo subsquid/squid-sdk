@@ -1,9 +1,7 @@
 import {CallOptions, RpcClient, RpcProtocolError} from '@subsquid/rpc-client'
 import {RpcCall} from '@subsquid/rpc-client/lib/interfaces'
-import {GetBlock, RawBlock, Receipt, StateDiff, Trace, TraceTransactionReplay} from './evm-rpc-data'
 import {
     array,
-    B58,
     BYTES,
     DataValidationError,
     GetSrcType,
@@ -13,6 +11,7 @@ import {
     Validator
 } from '@subsquid/util-internal-validation'
 import assert from 'assert'
+import {GetBlock, RawBlock, Receipt, StateDiff, Trace, TraceTransactionReplay} from './rpc-data'
 
 
 export type Commitment = 'finalized' | 'latest'

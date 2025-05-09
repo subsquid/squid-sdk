@@ -1,13 +1,13 @@
 import {last} from '@subsquid/util-internal'
 import {BlockRef, BlockStream, DataSource, ForkException, StreamRequest} from '@subsquid/util-internal-data-source'
 import {Range} from '@subsquid/util-internal-range'
-import {Commitment, Rpc} from './evm-rpc'
-import {Block, DataRequest} from './evm-types'
-import {finalize} from './evm-finalizer'
-import {ingest, IngestBatch} from './evm-ingest'
+import {Commitment, Rpc} from '../rpc'
+import {Block, DataRequest} from '../types'
+import {finalize} from './finalizer'
+import {ingest, IngestBatch} from './ingest'
 
 
-export interface SolanaRpcDataSourceOptions {
+export interface EvmRpcDataSourceOptions {
     rpc: Rpc
     req: DataRequest
     strideSize?: number
@@ -16,14 +16,14 @@ export interface SolanaRpcDataSourceOptions {
 }
 
 
-export class EVMRpcDataSource implements DataSource<Block> {
+export class EvmRpcDataSource implements DataSource<Block> {
     private rpc: Rpc
     public readonly req: DataRequest
     private strideSize: number
     private strideConcurrency: number
     private maxConfirmationAttempts: number
 
-    constructor(options: SolanaRpcDataSourceOptions) {
+    constructor(options: EvmRpcDataSourceOptions) {
         this.rpc = options.rpc
         this.req = options.req
         this.strideSize = Math.max(1, options.strideSize ?? 5)
@@ -33,27 +33,6 @@ export class EVMRpcDataSource implements DataSource<Block> {
 
     async getFinalizedHead(): Promise<BlockRef> {
         let res = await this.rpc.getLatestBlockhash('finalized')
-        // console.log("FIN HEAD: ", res)
-        // return {
-        //     number: 22210000,
-        //     hash: "0x76e10d6c09b7334e2165316e8e432125a95cadc3ac16f812926d50152e45b927"
-        // }
-        // return {
-        //     number: 134150000,
-        //     hash: "0x13ee48de20ea2a7c13b5f538244a68aaa6f3c1b3d3cb6d68b1ee4aeb2b73885f"
-        // }
-        // return {
-        //     number: 321846884,
-        //     hash: "0xf526a2d2c17bafca995eed14f6476f120d18700237a157db740860e3bb10e15a"
-        // }
-        // return {
-        //     number: 22215265,
-        //     hash: "0x2408301809284471f236094abe5196db21fbd4147fc0bc816be90d37945ee9e3"
-        // }
-        // return {
-        //     number: 22286467,
-        //     hash: "0xd22b93b8d88e99f630114c533b3702cdad90d9b49fa9f83ae63779b661b6a1e5"
-        // }
         return {
             number: res.number,
             hash: res.hash
@@ -62,7 +41,6 @@ export class EVMRpcDataSource implements DataSource<Block> {
 
     async getHead(): Promise<BlockRef> {
         let res = await this.rpc.getLatestBlockhash('latest')
-        console.log("REG HEAD: ", res)
         return {
             number: res.number,
             hash: res.hash
@@ -70,7 +48,6 @@ export class EVMRpcDataSource implements DataSource<Block> {
     }
 
     async *getFinalizedStream(req: StreamRequest): BlockStream<Block> {
-        console.log("FIN STREAM: ", req)
         let stream = this.ensureContinuity(
             this.ingest('finalized', req),
             req.from,
@@ -86,7 +63,6 @@ export class EVMRpcDataSource implements DataSource<Block> {
     }
 
     getStream(req: StreamRequest): BlockStream<Block> {
-        console.log("REG STREAM: ", req)
         let stream = this.ensureContinuity(
             this.ingest('latest', req),
             req.from,

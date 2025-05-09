@@ -1,9 +1,9 @@
 import { RpcClient } from '@subsquid/rpc-client'
-import { getSuggestedChannelsByURL, Rpc } from './evm-rpc'
+import { getSuggestedChannelsByURL, Rpc, EvmRpcDataSource } from '@subsquid/evm-rpc'
 import { Block, DataSource } from '@subsquid/util-internal-data-service'
 import { createLogger } from '@subsquid/logger';
-import { EVMRpcDataSource } from './evm-rpc-data-source';
 import { Mapping } from './mapping';
+
 
 const log = createLogger('sqd:evm-data-service/data-source')
 
@@ -39,7 +39,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         suggest.push(["receipts", options.receipts])
     }
     httpRpc.setChannels(suggest)
-    let rpcSource = new EVMRpcDataSource({
+    let rpcSource = new EvmRpcDataSource({
         rpc: httpRpc,
         req: {
             transactions: true,

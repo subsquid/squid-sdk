@@ -1,10 +1,11 @@
 import {concurrentMap, last, Throttler, wait} from '@subsquid/util-internal'
 import {BlockRef} from '@subsquid/util-internal-data-source'
 import {Range, splitRange} from '@subsquid/util-internal-range'
-import {Commitment, Rpc} from './evm-rpc'
-import {Block, DataRequest, getBlockRef} from './evm-types'
-import {getBlocks} from './evm-get-blocks'
-import {PollStream} from './evm-poll-stream'
+import {Commitment, Rpc} from '../rpc'
+import {Block, DataRequest} from '../types'
+import {getBlockRef} from '../util'
+import {getBlocks} from './get-blocks'
+import {PollStream} from './poll-stream'
 
 
 export interface IngestBatch {

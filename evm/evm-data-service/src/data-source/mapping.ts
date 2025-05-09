@@ -1,10 +1,10 @@
 import {createLogger} from '@subsquid/logger'
-import {mapRpcBlock} from './evm-normaliztion'
-import { Block as RpcBlock } from './evm-types'
+import {Block as RpcBlock} from '@subsquid/evm-rpc'
 import {withErrorContext} from '@subsquid/util-internal'
 import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
 import {promisify} from 'node:util'
 import * as zlib from 'node:zlib'
+import {mapRpcBlock} from './evm-normaliztion'
 
 
 const gzip = promisify(zlib.gzip)

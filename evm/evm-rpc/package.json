@@ -1,0 +1,34 @@
+{
+  "name": "@subsquid/evm-rpc",
+  "version": "0.0.1",
+  "description": "EVM-based chains RPC data ingestion tools",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/logger": "^1.4.0",
+    "@subsquid/solana-rpc-data": "^0.0.3",
+    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/util-internal-data-source": "^0.0.0",
+    "@subsquid/util-internal-range": "^0.3.0",
+    "@subsquid/util-internal-validation": "^0.7.0"
+  },
+  "peerDependencies": {
+    "@subsquid/rpc-client": "^4.11.0"
+  },
+  "devDependencies": {
+    "@subsquid/rpc-client": "^4.11.0",
+    "@types/node": "^18.18.14",
+    "typescript": "5.5.4"
+  }
+}

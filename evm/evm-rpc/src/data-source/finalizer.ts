@@ -1,8 +1,9 @@
 import {AsyncQueue, ensureError, last} from '@subsquid/util-internal'
 import {BlockBatch, BlockRef, BlockStream} from '@subsquid/util-internal-data-source'
-import {Rpc} from './evm-rpc'
-import {Block, getBlockRef} from './evm-types'
-import {IngestBatch} from './evm-ingest'
+import {Rpc} from '../rpc'
+import {Block} from '../types'
+import {getBlockRef} from '../util'
+import {IngestBatch} from './ingest'
 
 // TODO: check closely
 
