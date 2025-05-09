@@ -134,25 +134,19 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
             if (blocks.length > 0) {
                 const lastBlock = blocks[blocks.length - 1]
 
-                //console.log(lastBlock)
-
                 const lastBlockHeight = this.getBlockHeight(lastBlock)
                 const lastBlockTimestamp = this.getBlockTimestamp(lastBlock)
                 
                 prometheus.setLastReceivedBlock(lastBlockHeight, lastBlockTimestamp)
-                //change to debug later
-                this.log().info(`Received block ${lastBlockHeight} at ${lastBlockTimestamp}`)
+                this.log().debug(`Received block ${lastBlockHeight} at ${lastBlockTimestamp}`)
 
                 for (let block of blocks) {
-                    await new Promise(resolve => setTimeout(resolve, 100))
-                    //uncomment this later
-                    //writable.write(JSON.stringify(block) + '\n')
+                    writable.write(JSON.stringify(block) + '\n')
                 }
 
                 prometheus.setProcessedBlockMetrics(lastBlockHeight, lastBlockTimestamp)
                 
-                //change to debug later
-                this.log().info(`Processed block ${lastBlockHeight} at ${lastBlockTimestamp}`)
+                this.log().debug(`Processed block ${lastBlockHeight} at ${lastBlockTimestamp}`)
             }
         }
     }
