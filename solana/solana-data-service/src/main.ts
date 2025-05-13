@@ -14,6 +14,8 @@ runProgram(async () => {
     let program = new Command()
     program.description('Hot block data service for Solana')
     program.requiredOption('--http-rpc <url>', 'HTTP RPC url', Url(['http:', 'https:']))
+    program.option('--http-rpc-stride-size <number>', 'The size of getBlock batch call', positiveInt, 5)
+    program.option('--http-rpc-stride-concurrency <number>', 'Max number of concurrent getBlock batch calls', positiveInt, 5)
     program.option('--geyser-proxy <url>', 'Yellowstone Geyser proxy URL')
     program.option('--geyser-block-queue-size <number>', 'Max queue size of Geyser subscription', positiveInt, 10)
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
@@ -23,6 +25,8 @@ runProgram(async () => {
 
     let args = program.opts() as {
         httpRpc: string
+        httpRpcStrideSize: number
+        httpRpcStrideConcurrency: number
         geyserProxy?: string
         geyserBlockQueueSize: number
         blockCacheSize: number
@@ -32,6 +36,8 @@ runProgram(async () => {
 
     let dataSourceOptions: DataSourceOptions = {
         httpRpc: args.httpRpc,
+        httpRpcStrideSize: args.httpRpcStrideSize,
+        httpRpcStrideConcurrency: args.httpRpcStrideConcurrency,
         geyserProxy: args.geyserProxy,
         geyserBlockQueueSize: args.geyserBlockQueueSize,
         votes: args.votes

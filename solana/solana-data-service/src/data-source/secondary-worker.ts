@@ -3,13 +3,14 @@ import {Mapping} from './mapping'
 import {createDataSource, RawDataSourceOptions} from './raw-setup'
 import {startServer} from './worker'
 
-const options: RawDataSourceOptions = getServerArguments();
+const {
+    geyserProxy,
+    geyserBlockQueueSize,
+    ...options
+} = getServerArguments<RawDataSourceOptions>();
 
 // plain RPC data source (no geyser)
-const rpc = createDataSource({
-    httpRpc: options.httpRpc,
-    votes: options.votes
-})
+const rpc = createDataSource(options)
 
 const mapping = new Mapping(rpc)
 

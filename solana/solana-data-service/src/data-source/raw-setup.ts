@@ -6,6 +6,8 @@ import {GeyserDataSource} from './geyser'
 
 export interface RawDataSourceOptions {
     httpRpc: string
+    httpRpcStrideSize?: number
+    httpRpcStrideConcurrency?: number
     geyserProxy?: string
     geyserBlockQueueSize?: number
     votes?: boolean
@@ -27,7 +29,9 @@ export function createDataSource(options: RawDataSourceOptions): DataSource<Bloc
             transactions: true,
             rewards: true
         },
-        noVotes: !options.votes
+        noVotes: !options.votes,
+        strideSize: options.httpRpcStrideSize,
+        strideConcurrency: options.httpRpcStrideConcurrency
     })
 
     if (options.geyserProxy) {
