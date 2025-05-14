@@ -7,6 +7,7 @@ import assert from 'assert'
 interface Options extends DumperOptions {
     strideConcurrency: number
     strideSize: number
+    maxConfirmationAttempts: number
 }
 
 
@@ -17,6 +18,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
         removeOption(program, 'endpointCapacity')
         program.option('--stride-size <N>', 'Maximum size of getBlock batch call', positiveInt, 5)
         program.option('--stride-concurrency <N>', 'Maximum number of pending getBlock batch calls', positiveInt, 5)
+        program.option('--max-confirmation-attempts <N>', 'Maximum number of confirmation attempts', positiveInt, 10)
     }
 
     @def
@@ -48,7 +50,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
 
     @def
     private solanaRpc(): Rpc {
-        return new Rpc(this.rpc())
+        return new Rpc(this.rpc(), 0, this.options().maxConfirmationAttempts)
     }
 
     protected async* getBlocks(range: Range): AsyncIterable<Block[]> {

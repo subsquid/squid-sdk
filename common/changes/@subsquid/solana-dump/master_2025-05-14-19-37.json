@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-dump",
+      "comment": "add `--max-confirmation-attempts` cli option",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-dump"
+}
