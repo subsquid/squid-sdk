@@ -143,10 +143,6 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
                 for (let block of blocks) {
                     writable.write(JSON.stringify(block) + '\n')
                 }
-
-                prometheus.setProcessedBlockMetrics(lastBlockHeight, lastBlockTimestamp)
-                
-                this.log().debug(`Processed block ${lastBlockHeight} at ${lastBlockTimestamp}`)
             }
         }
     }

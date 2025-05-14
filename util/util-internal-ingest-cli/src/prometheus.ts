@@ -6,9 +6,6 @@ export class PrometheusServer {
     private s3RequestsCounter: Counter
     private latestReceivedBlockNumberGauge: Gauge
     private latestReceivedBlockTimestampGauge: Gauge
-    private latestProcessedBlockNumberGauge: Gauge
-    private latestProcessedBlockTimestampGauge: Gauge
-    private blocksProcessingTimeGauge: Gauge
     private blocksDeliveryDelayGauge: Gauge
     constructor(
         private port: number
@@ -38,24 +35,6 @@ export class PrometheusServer {
             registers: [this.registry]
         })
 
-        this.latestProcessedBlockNumberGauge = new Gauge({
-            name: 'sqd_latest_processed_block_number',
-            help: 'Latest processed block number',
-            registers: [this.registry]
-        })
-
-        this.latestProcessedBlockTimestampGauge = new Gauge({
-            name: 'sqd_latest_processed_block_timestamp',
-            help: 'Timestamp of the latest processed block',
-            registers: [this.registry]
-        })
-
-        this.blocksProcessingTimeGauge = new Gauge({
-            name: 'sqd_blocks_processing_time',
-            help: 'Time it takes to process a block in seconds',
-            registers: [this.registry]
-        })
-
         collectDefaultMetrics({register: this.registry})
     }
 
@@ -67,12 +46,6 @@ export class PrometheusServer {
         this.latestReceivedBlockNumberGauge.set(blockHeight)
         this.latestReceivedBlockTimestampGauge.set(blockTimestamp)
         this.blocksDeliveryDelayGauge.set(Math.floor(Date.now() / 1000) - blockTimestamp)
-    }
-
-    setProcessedBlockMetrics(blockHeight: number, blockTimestamp: number) {
-        this.latestProcessedBlockNumberGauge.set(blockHeight)
-        this.latestProcessedBlockTimestampGauge.set(blockTimestamp)
-        this.blocksProcessingTimeGauge.set(Math.floor(Date.now() / 1000) - blockTimestamp)
     }
 
     serve(): Promise<ListeningServer> {
