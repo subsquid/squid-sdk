@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-rpc
 
-This log was last generated on Wed, 15 Jan 2025 18:59:13 GMT and should not be manually modified.
+This log was last generated on Wed, 14 May 2025 19:46:11 GMT and should not be manually modified.
+
+## 0.1.0
+Wed, 14 May 2025 19:46:11 GMT
+
+### Minor changes
+
+- allow to configure max number of confirmation attempts
 
 ## 0.0.4
 Wed, 15 Jan 2025 18:59:13 GMT

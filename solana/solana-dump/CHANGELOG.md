@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-dump
 
-This log was last generated on Thu, 24 Apr 2025 15:09:16 GMT and should not be manually modified.
+This log was last generated on Wed, 14 May 2025 19:46:11 GMT and should not be manually modified.
+
+## 0.1.0
+Wed, 14 May 2025 19:46:11 GMT
+
+### Minor changes
+
+- add `--max-confirmation-attempts` cli option
 
 ## 0.0.10
 Thu, 24 Apr 2025 15:09:16 GMT

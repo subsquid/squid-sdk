@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-stream",
   "entries": [
     {
+      "version": "0.2.3",
+      "tag": "@subsquid/solana-stream_v0.2.3",
+      "date": "Wed, 14 May 2025 19:46:11 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc\" from `^0.0.4` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.2",
       "tag": "@subsquid/solana-stream_v0.2.2",
       "date": "Tue, 25 Mar 2025 14:14:33 GMT",

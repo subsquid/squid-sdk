@@ -1,6 +1,11 @@
 # Change Log - @subsquid/solana-stream
 
-This log was last generated on Tue, 25 Mar 2025 14:14:33 GMT and should not be manually modified.
+This log was last generated on Wed, 14 May 2025 19:46:11 GMT and should not be manually modified.
+
+## 0.2.3
+Wed, 14 May 2025 19:46:11 GMT
+
+_Version update only_
 
 ## 0.2.2
 Tue, 25 Mar 2025 14:14:33 GMT

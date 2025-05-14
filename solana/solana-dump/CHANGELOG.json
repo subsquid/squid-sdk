@@ -2,6 +2,23 @@
   "name": "@subsquid/solana-dump",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/solana-dump_v0.1.0",
+      "date": "Wed, 14 May 2025 19:46:11 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `--max-confirmation-attempts` cli option"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc\" from `^0.0.4` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.10",
       "tag": "@subsquid/solana-dump_v0.0.10",
       "date": "Thu, 24 Apr 2025 15:09:16 GMT",
