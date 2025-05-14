@@ -92,7 +92,7 @@ export class Rpc {
             await wait(100)
             attempts -= 1
         }
-        throw new Error(`Failed to getBlock with finalized commitment at slot ${slot} 10 times in a row`)
+        throw new Error(`Failed to getBlock with finalized commitment at slot ${slot} ${this.maxConfirmationAttempts} times in a row`)
     }
 
     async getFinalizedBlockHeight(slot: number): Promise<number> {
