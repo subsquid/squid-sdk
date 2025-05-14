@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/solana-rpc",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "description": "Solana RPC data ingestion tools",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
