@@ -3,7 +3,7 @@
     {
       "packageName": "@subsquid/starknet-rpc",
       "comment": "Initial starknet RPC interface implementation",
-      "type": "major"
+      "type": "none"
     }
   ],
   "packageName": "@subsquid/starknet-rpc"

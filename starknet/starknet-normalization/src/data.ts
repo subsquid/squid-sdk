@@ -12,15 +12,19 @@ export interface BlockHeader {
 }
 
 export interface ResourceBounds {
-    l1GasMaxAmount: number
-    l1GasMaxPricePerUnit: number
-    l2GasMaxAmount: number
-    l2GasMaxPricePerUnit: number
+    l1GasMaxAmount: bigint
+    l1GasMaxPricePerUnit: bigint
+    l1DataGasMaxAmount: bigint
+    l1DataGasMaxPricePerUnit: bigint
+    l2GasMaxAmount: bigint
+    l2GasMaxPricePerUnit: bigint
 }
+
+export type PriceUnit = 'WEI' | 'FRI'
 
 export interface ActualFee {
     amount: string
-    unit: string
+    unit: PriceUnit
 }
 
 export type TransactionType = 'INVOKE' | 'DECLARE' | 'DEPLOY_ACCOUNT' | 'DEPLOY' | 'L1_HANDLER'
@@ -36,7 +40,7 @@ export interface Transaction {
     senderAddress?: FELT
     version: string
     signature?: FELT[]
-    nonce?: number
+    nonce?: bigint
     classHash?: FELT
     compiledClassHash?: FELT
     contractAddressSalt?: FELT

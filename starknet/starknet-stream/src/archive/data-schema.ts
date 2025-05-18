@@ -32,15 +32,20 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
     })
 
     let ResourceBounds = object({
-        l1GasMaxAmount: NAT,
-        l1GasMaxPricePerUnit: NAT,
-        l2GasMaxAmount: NAT,
-        l2GasMaxPricePerUnit: NAT
+        l1GasMaxAmount: BIG_NAT,
+        l1GasMaxPricePerUnit: BIG_NAT,
+        l1DataGasMaxAmount: BIG_NAT,
+        l1DataGasMaxPricePerUnit: BIG_NAT,
+        l2GasMaxAmount: BIG_NAT,
+        l2GasMaxPricePerUnit: BIG_NAT
     })
 
     let ActualFee = object({
         amount: STRING,
-        unit: STRING
+        unit: oneOf({
+            WEI: constant('WEI'),
+            FRI: constant('FRI')
+        })
     })
 
     let Transaction = object({
@@ -62,7 +67,7 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             senderAddress: option(FELT),
             version: STRING,
             signature: option(array(FELT)),
-            nonce: option(NAT),
+            nonce: option(BIG_NAT),
             classHash: option(FELT),
             compiledClassHash: option(FELT),
             contractAddressSalt: option(FELT),

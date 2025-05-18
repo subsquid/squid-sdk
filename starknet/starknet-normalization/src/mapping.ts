@@ -1,5 +1,5 @@
 import type * as rpc from '@subsquid/starknet-data'
-import {Block, BlockHeader, Transaction, Event, TransactionType} from './data'
+import {Block, BlockHeader, Transaction, Event, TransactionType, PriceUnit} from './data'
 import {addErrorContext} from '@subsquid/util-internal'
 
 export function mapRpcBlock(src: rpc.Block): Block {
@@ -54,16 +54,18 @@ function mapRpcTransaction(
         senderAddress: tx.sender_address || undefined,
         version: tx.version,
         signature: tx.signature || undefined,
-        nonce: tx.nonce != null ? Number(tx.nonce) : undefined,
+        nonce: tx.nonce != null ? BigInt(tx.nonce) : undefined,
         classHash: tx.class_hash || undefined,
         compiledClassHash: tx.compiled_class_hash || undefined,
         contractAddressSalt: tx.contract_address_salt || undefined,
         constructorCalldata: tx.constructor_calldata || undefined,
         resourceBounds: tx.resource_bounds ? {
-            l1GasMaxAmount: Number(tx.resource_bounds.l1_gas.max_amount),
-            l1GasMaxPricePerUnit: Number(tx.resource_bounds.l1_gas.max_price_per_unit),
-            l2GasMaxAmount: Number(tx.resource_bounds.l2_gas.max_amount),
-            l2GasMaxPricePerUnit: Number(tx.resource_bounds.l2_gas.max_price_per_unit)
+            l1GasMaxAmount: BigInt(tx.resource_bounds.l1_gas.max_amount),
+            l1GasMaxPricePerUnit: BigInt(tx.resource_bounds.l1_gas.max_price_per_unit),
+            l1DataGasMaxAmount: BigInt(tx.resource_bounds.l1_data_gas.max_amount),
+            l1DataGasMaxPricePerUnit: BigInt(tx.resource_bounds.l1_data_gas.max_price_per_unit),
+            l2GasMaxAmount: BigInt(tx.resource_bounds.l2_gas.max_amount),
+            l2GasMaxPricePerUnit: BigInt(tx.resource_bounds.l2_gas.max_price_per_unit)
         } : undefined,
         tip: tx.tip || undefined,
         paymasterData: tx.paymaster_data || undefined,
@@ -73,7 +75,7 @@ function mapRpcTransaction(
         messageHash: receipt.message_hash || undefined,
         actualFee: {
             amount: receipt.actual_fee.amount,
-            unit: receipt.actual_fee.unit
+            unit: receipt.actual_fee.unit as PriceUnit
         },
         finalityStatus: receipt.finality_status
     };

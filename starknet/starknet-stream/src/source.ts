@@ -44,13 +44,13 @@ export interface RpcSettings {
      */
     client: StarknetRpcClient
     /**
-     * `getBlock` batch call size.
+     * RPC batch call size.
      *
      * Default is `5`.
      */
     strideSize?: number
     /**
-     * Maximum number of concurrent `getBlock` batch calls.
+     * Maximum number of concurrent RPC batch calls.
      *
      * Default is `10`
      */
@@ -61,12 +61,8 @@ export interface RpcSettings {
      *
      * Default is `50` blocks.
      *
-     * Concurrent fetch procedure can perform multiple `getBlock` batch calls simultaneously and is faster,
+     * Concurrent fetch procedure can perform multiple RPC batch calls simultaneously and is faster,
      * but assumes consistent behaviour of RPC endpoint.
-     *
-     * The latter might not be the case due to load balancing,
-     * when one request is sent to node `A` with head slot `X` and
-     * another to node `B` with head slot `X - 10`.
      */
     concurrentFetchThreshold?: number
 }
@@ -286,7 +282,7 @@ class StarknetDataSource implements DataSource<PartialBlock> {
             this.isConsistent = true
         } else {
             throw addErrorContext(
-                new Error(`Provided Subsquid Gateway and RPC endpoints don't agree on slot ${blocks.archiveBlock.hash}`),
+                new Error(`Provided Subsquid Gateway and RPC endpoints don't agree on block hash ${blocks.archiveBlock.hash}`),
                 blocks
             )
         }

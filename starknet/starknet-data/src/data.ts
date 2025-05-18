@@ -1,4 +1,4 @@
-import { GetSrcType, object, STRING, INT, array, option } from '@subsquid/util-internal-validation'
+import { GetSrcType, object, STRING, ANY_INT, INT, array, option } from '@subsquid/util-internal-validation'
 
 const FELT = STRING
 type FELT = GetSrcType<typeof FELT>
@@ -16,13 +16,14 @@ const ResourcePrice = object({
 type ResourcePrice = GetSrcType<typeof ResourcePrice>
 
 const ResourceBounds = object({
-    max_amount: Qty,
-    max_price_per_unit: Qty
+    max_amount: ANY_INT,
+    max_price_per_unit: ANY_INT
 })
 type ResourceBounds = GetSrcType<typeof ResourceBounds>
 
 const ResourceBoundsMap = object({
     l1_gas: ResourceBounds,
+    l1_data_gas: ResourceBounds,
     l2_gas: ResourceBounds
 })
 type ResourceBoundsMap = GetSrcType<typeof ResourceBoundsMap>
@@ -47,7 +48,14 @@ const EventContent = object({
 })
 type EventContent = GetSrcType<typeof EventContent>
 
+const DataAvailability = object({
+    l1_gas: INT,
+    l1_data_gas: INT,
+})
+type DataAvailability = GetSrcType<typeof DataAvailability>
+
 const ExecutionResources = object({
+    data_availability: DataAvailability,
     steps: INT,
     memory_holes: option(INT),
     range_check_builtin_applications: option(INT),
@@ -117,16 +125,19 @@ const Event = object({
 type Event = GetSrcType<typeof Event>
 
 const Block = object({
-    block_number: INT,
+    status: STRING,
     block_hash: Hash32,
     parent_hash: Hash32,
-    status: STRING,
+    block_number: INT,
     new_root: Hash32,
     timestamp: INT,
     sequencer_address: FELT,
-    transactions: array(PackedTransaction),
+    l1_gas_price: ResourcePrice,
+    l2_gas_price: ResourcePrice,
+    l1_data_gas_price: ResourcePrice,
+    l1_da_mode: STRING,
     starknet_version: STRING,
-    l1_gas_price: ResourcePrice
+    transactions: array(PackedTransaction)
 })
 type Block = GetSrcType<typeof Block>
 

@@ -90,19 +90,16 @@ const getItemFilter = weakMemo((dataRequest: DataRequest) => {
 })
 
 export function filterBlock(block: Block, dataRequest: DataRequest): void {
-    // If includeAllBlocks is true, don't filter anything
-    if (dataRequest.includeAllBlocks) return
-    
     // Get filters for this request
     let items = getItemFilter(dataRequest)
-    
+
     // Track entities to keep
     let include = new IncludeSet()
-    
+
     // Create lookup maps
     let transactions = new Map(block.transactions.map(tx => [tx.transactionIndex, tx]))
     let eventsByTx = groupBy(block.events, event => event.transactionIndex)
-    
+
     // Filter transactions
     if (items.transactions.present()) {
         for (let tx of block.transactions) {
@@ -120,7 +117,7 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             }
         }
     }
-    
+
     // Filter events
     if (items.events.present()) {
         for (let event of block.events) {
@@ -136,7 +133,7 @@ export function filterBlock(block: Block, dataRequest: DataRequest): void {
             }
         }
     }
-    
+
     // Update block with filtered entities
     block.transactions = block.transactions.filter(tx => include.transactions.has(tx))
     block.events = block.events.filter(event => include.events.has(event))
