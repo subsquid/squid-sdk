@@ -49,11 +49,6 @@ export function createHttpApp(service: DataService): HttpApp {
                 ctx.response.setHeader('content-encoding', 'gzip')
             }
 
-            if (res.head == null && res.tail?.length) {
-                let len = res.tail.reduce((len, block) => len + block.jsonLineGzip.length, 0)
-                ctx.response.setHeader('content-length', len)
-            }
-
             if (res.head) {
                 for await (let batch of res.head) {
                     for (let block of batch) {
