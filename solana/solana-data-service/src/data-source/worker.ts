@@ -11,7 +11,7 @@ export function startServer(source: DataSource<any>): void {
 }
 
 
-export class DataWorker<B> implements DataSource<B> {
+export class RemoteDataSource<B> implements DataSource<B> {
     constructor(private worker: Client) {}
 
     close(): void {

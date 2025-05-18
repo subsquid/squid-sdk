@@ -1,2 +1,3 @@
-export * from './main-client'
-export * from './secondary-client'
+export * from './main'
+export * from './secondary'
+export {DataSourceOptions} from './setup'

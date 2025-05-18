@@ -1,11 +1,10 @@
-import {removeVoteTransactions} from '@subsquid/solana-rpc-data'
 import {concurrentMap, last, Throttler, wait} from '@subsquid/util-internal'
 import {BlockRef} from '@subsquid/util-internal-data-source'
 import {Range, splitRange} from '@subsquid/util-internal-range'
-import {Commitment, Rpc} from '../rpc'
+import {Commitment, RpcApi} from '../rpc'
 import {Block, DataRequest} from '../types'
 import {getBlockRef} from '../util'
-import {getBlocks} from './get-blocks'
+import {getBlocks} from './fetch'
 import {PollStream} from './poll-stream'
 
 
@@ -21,14 +20,13 @@ export interface IngestBatch {
 
 
 export interface IngestOptions {
-    rpc: Rpc
+    rpc: RpcApi
     commitment: Commitment
     req: DataRequest
     range: Range
     strideSize: number
     strideConcurrency: number
     maxConfirmationAttempts: number
-    noVotes?: boolean
 }
 
 
@@ -44,8 +42,7 @@ export function ingest(args: IngestOptions): AsyncIterable<IngestBatch> {
         req,
         strideConcurrency,
         strideSize,
-        maxConfirmationAttempts,
-        noVotes = false
+        maxConfirmationAttempts
     } = args
 
     let finalizedHeadTracker = new Throttler(
@@ -62,7 +59,8 @@ export function ingest(args: IngestOptions): AsyncIterable<IngestBatch> {
         req,
         from: args.range.from,
         strideSize,
-        maxConfirmationAttempts
+        maxConfirmationAttempts,
+        confirmationPauseMs: 100
     })
 
     interface Job {
@@ -128,17 +126,7 @@ export function ingest(args: IngestOptions): AsyncIterable<IngestBatch> {
     return concurrentMap(
         strideConcurrency,
         cleanup(jobs(), () => finalizedHeadTracker.disablePrefetch()),
-        async job => {
-            if (noVotes) {
-                let batch = await job.promise
-                for (let block of batch.blocks) {
-                    removeVoteTransactions(block.block)
-                }
-                return batch
-            } else {
-                return job.promise
-            }
-        }
+        job => job.promise
     )
 }
 

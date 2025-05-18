@@ -1,3 +1,4 @@
+import {createLogger} from '@subsquid/logger'
 import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {RpcCall, RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {GetBlock} from '@subsquid/solana-rpc-data'
@@ -17,27 +18,48 @@ import assert from 'assert'
 export type Commitment = 'finalized' | 'confirmed'
 
 
-export class Rpc {
+const LatestBlockhash = object({
+    context: object({
+        slot: NAT
+    }),
+    value: object({
+        blockhash: B58,
+        lastValidBlockHeight: NAT
+    })
+})
+
+
+export type LatestBlockhash = GetSrcType<typeof LatestBlockhash>
+
+
+export interface GetBlockOptions {
+    commitment?: Commitment
+    transactionDetails?: 'full' | 'none'
+    maxSupportedTransactionVersion?: number
+    rewards?: boolean
+}
+
+
+export interface RpcApi {
+    getLatestBlockhash(commitment: Commitment, minContextSlot?: number): Promise<LatestBlockhash>
+    getBlocks(commitment: Commitment, startSlot: number, endSlot: number): Promise<number[]>
+    getBlock(slot: number, options?: GetBlockOptions): Promise<GetBlock | 'skipped' | null | undefined>
+    getBlockBatch(slots: number[], options?: GetBlockOptions): Promise<(GetBlock | 'skipped' | null | undefined)[]>
+}
+
+
+export class Rpc implements RpcApi {
     constructor(
-        private client: RpcClient,
-        private priority: number = 0
-    ) {
-    }
-
-    withPriority(priority: number): Rpc {
-        return new Rpc(this.client, priority)
-    }
-
-    getConcurrency(): number {
-        return this.client.getConcurrency()
-    }
+        public readonly client: RpcClient,
+        public readonly log = createLogger('sqd:solana-rpc')
+    ) {}
 
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
-        return this.client.call(method, params, {priority: this.priority, ...options})
+        return this.client.call(method, params, options)
     }
 
     batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions<T>): Promise<T[]> {
-        return this.client.batchCall(batch, {priority: this.priority, ...options})
+        return this.client.batchCall(batch, options)
     }
 
     getLatestBlockhash(commitment: Commitment, minContextSlot?: number): Promise<LatestBlockhash> {
@@ -66,14 +88,14 @@ export class Rpc {
         })
     }
 
-    getBlock(slot: number, options?: GetBlockOptions): Promise<GetBlock | null | undefined> {
-        return this.call('getBlock', options ? [slot, options] : [slot], {
+    getBlock(slot: number, options?: GetBlockOptions): Promise<GetBlock | 'skipped' | null | undefined> {
+        return this.call<GetBlock | 'skipped' | null | undefined>('getBlock', options ? [slot, options] : [slot], {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: captureNoBlockAtSlot
         })
     }
 
-    getBlockBatch(slots: number[], options?: GetBlockOptions): Promise<(GetBlock | null | undefined)[]> {
+    getBlockBatch(slots: number[], options?: GetBlockOptions): Promise<(GetBlock | 'skipped' | null | undefined)[]> {
         assert(
             options?.maxSupportedTransactionVersion == null || options.maxSupportedTransactionVersion === 0,
             'maximum supported transaction version is 0'
@@ -84,7 +106,7 @@ export class Rpc {
             let params = options ? [slot, options] : [slot]
             call[i] = {method: 'getBlock', params}
         }
-        return this.reduceBatchOnRetry(call, {
+        return this.reduceBatchOnRetry<GetBlock | 'skipped' | null | undefined>(call, {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: captureNoBlockAtSlot
         })
@@ -94,11 +116,14 @@ export class Rpc {
         if (batch.length <= 1) return this.batchCall(batch, options)
 
         let result = await this.batchCall(batch, {...options, retryAttempts: 0}).catch(err => {
-            if (this.client.isConnectionError(err) || err instanceof RpcProtocolError) return
-            throw err
+            if (this.client.isConnectionError(err) || err instanceof RpcProtocolError) {
+                this.log.warn(err, 'will retry request with reduced batch')
+            } else {
+                throw err
+            }
         })
 
-        if (result) return result
+        if (result != null) return result
 
         let pack = await Promise.all([
             this.reduceBatchOnRetry(batch.slice(0, Math.ceil(batch.length / 2)), options),
@@ -110,30 +135,9 @@ export class Rpc {
 }
 
 
-const LatestBlockhash = object({
-    context: object({
-        slot: NAT
-    }),
-    value: object({
-        blockhash: B58,
-        lastValidBlockHeight: NAT
-    })
-})
-
-
-export type LatestBlockhash = GetSrcType<typeof LatestBlockhash>
-
-
-export interface GetBlockOptions {
-    commitment?: Commitment
-    transactionDetails?: 'full' | 'none'
-    maxSupportedTransactionVersion?: number
-    rewards?: boolean
-}
-
-
-function captureNoBlockAtSlot(info: RpcErrorInfo): undefined {
-    if (/slot \d+/i.test(info.message)) return undefined
+function captureNoBlockAtSlot(info: RpcErrorInfo): 'skipped' | undefined {
+    if (info.message.startsWith('Block not available for slot')) return undefined
+    if (/was skipped/.test(info.message)) return 'skipped'
     throw new RpcError(info)
 }
 

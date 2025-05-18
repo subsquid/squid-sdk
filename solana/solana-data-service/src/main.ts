@@ -4,7 +4,7 @@ import {positiveInt, Url} from '@subsquid/util-internal-commander'
 import {Block, BlockStream, DataSource, runDataService, StreamRequest} from '@subsquid/util-internal-data-service'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
 import {Command} from 'commander'
-import {DataSourceOptions, MainDataWorker, SecondaryDataWorker} from './data-source'
+import {DataSourceOptions, MainDataSource, SecondaryDataSource} from './data-source'
 
 
 const log = createLogger('sqd:solana-data-service')
@@ -16,6 +16,8 @@ runProgram(async () => {
     program.requiredOption('--http-rpc <url>', 'HTTP RPC url', Url(['http:', 'https:']))
     program.option('--http-rpc-stride-size <number>', 'The size of getBlock batch call', positiveInt, 5)
     program.option('--http-rpc-stride-concurrency <number>', 'Max number of concurrent getBlock batch calls', positiveInt, 5)
+    program.option('--http-rpc-max-confirmation-attempts <number>', 'Max number of getBlock retries for missing block', positiveInt, 10)
+    program.option('--http-rpc-workers <number>', 'Number of worker threads to use for RPC requests', positiveInt, 5)
     program.option('--geyser-proxy <url>', 'Yellowstone Geyser proxy URL')
     program.option('--geyser-block-queue-size <number>', 'Max queue size of Geyser subscription', positiveInt, 10)
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
@@ -27,6 +29,8 @@ runProgram(async () => {
         httpRpc: string
         httpRpcStrideSize: number
         httpRpcStrideConcurrency: number
+        httpRpcMaxConfirmationAttempts: number
+        httpRpcWorkers: number
         geyserProxy?: string
         geyserBlockQueueSize: number
         blockCacheSize: number
@@ -38,19 +42,21 @@ runProgram(async () => {
         httpRpc: args.httpRpc,
         httpRpcStrideSize: args.httpRpcStrideSize,
         httpRpcStrideConcurrency: args.httpRpcStrideConcurrency,
+        httpRpcMaxConfirmationAttempts: args.httpRpcMaxConfirmationAttempts,
+        httpRpcWorkers: args.httpRpcWorkers,
         geyserProxy: args.geyserProxy,
         geyserBlockQueueSize: args.geyserBlockQueueSize,
         votes: args.votes
     }
 
-    let mainWorker = new MainDataWorker(dataSourceOptions)
+    let mainWorker = new MainDataSource(dataSourceOptions)
 
     let dataSource: DataSource<Block> = {
         getFinalizedHead() {
             return mainWorker.getFinalizedHead()
         },
         async *getFinalizedStream(req: StreamRequest): BlockStream<Block> {
-            let worker = new SecondaryDataWorker(dataSourceOptions)
+            let worker = new SecondaryDataSource(dataSourceOptions)
             try {
                 yield* worker.getFinalizedStream(req)
             } finally {

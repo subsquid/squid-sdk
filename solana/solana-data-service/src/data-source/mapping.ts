@@ -1,6 +1,7 @@
 import {createLogger} from '@subsquid/logger'
 import {archive, mapRpcBlock} from '@subsquid/solana-normalization'
 import * as rpc from '@subsquid/solana-rpc'
+import {removeVoteTransactions} from '@subsquid/solana-rpc-data'
 import {withErrorContext} from '@subsquid/util-internal'
 import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
 import {toJSON} from '@subsquid/util-internal-json'
@@ -16,6 +17,7 @@ export class Mapping implements DataSource<Block> {
 
     constructor(
         private inner: DataSource<rpc.Block>,
+        private votes: boolean
     ) {}
 
     getFinalizedHead(): Promise<BlockRef> {
@@ -50,6 +52,10 @@ export class Mapping implements DataSource<Block> {
     }
 
     private async mapRpcBlock(block: rpc.Block): Promise<Block> {
+        if (!this.votes) {
+            removeVoteTransactions(block.block)
+        }
+
         let normalized = mapRpcBlock(
             block.slot,
             block.block,

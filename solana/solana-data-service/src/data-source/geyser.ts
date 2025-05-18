@@ -1,9 +1,9 @@
 import {createLogger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {Block, SolanaRpcDataSource} from '@subsquid/solana-rpc'
+import {Block} from '@subsquid/solana-rpc'
 import {GetBlock} from '@subsquid/solana-rpc-data'
 import {AsyncQueue, createFuture, last, wait} from '@subsquid/util-internal'
-import {BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
+import {BlockStream} from '@subsquid/util-internal-data-service'
 import {assertValidity, NAT, object} from '@subsquid/util-internal-validation'
 import assert from 'node:assert'
 
@@ -19,37 +19,16 @@ interface IngestBatch {
 }
 
 
-export class GeyserDataSource implements DataSource<Block> {
+export class Geyser {
     constructor(
-        private rpc: SolanaRpcDataSource,
         private geyserProxy: RpcClient,
-        private noVotes: boolean,
         private blockBufferSize = 10,
         private log = createLogger('sqd:solana-data-service:geyser')
     ) {
         assert(this.blockBufferSize > 0)
     }
 
-    getFinalizedHead(): Promise<BlockRef> {
-        return this.rpc.getFinalizedHead()
-    }
-
-    getFinalizedStream(req: StreamRequest): BlockStream<Block> {
-        return this.rpc.getFinalizedStream(req)
-    }
-
-    getStream(req: StreamRequest): BlockStream<Block> {
-        return this.rpc.finalize(
-            this.rpc.ensureContinuity(
-                this.ingest(),
-                req.from,
-                req.parentHash,
-                req.to
-            )
-        )
-    }
-
-    private async *ingest(): BlockStream<Block> {
+    async *getStream(): BlockStream<Block> {
         let queue = new AsyncQueue<IngestBatch | Error>(1)
         let yielded = false
 

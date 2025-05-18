@@ -1,6 +1,6 @@
 import {AsyncQueue, ensureError, last} from '@subsquid/util-internal'
 import {BlockBatch, BlockRef, BlockStream} from '@subsquid/util-internal-data-source'
-import {Rpc} from '../rpc'
+import {RpcApi} from '../rpc'
 import {Block} from '../types'
 import {getBlockRef} from '../util'
 import {IngestBatch} from './ingest'
@@ -12,7 +12,7 @@ class Finalizer {
     private checks = new AsyncQueue<null>(1)
 
     constructor(
-        private rpc: Rpc,
+        private rpc: RpcApi,
         private output: AsyncQueue<BlockBatch<Block> | Error>
     ) {}
 
@@ -41,7 +41,7 @@ class Finalizer {
             }
 
             let info = infos[i]
-            if (info == null) continue
+            if (info == null || info === 'skipped') continue
 
             if (info.blockhash === ref.hash) {
                 this.queue.unshift(...probes.slice(i + 1))
@@ -110,7 +110,7 @@ class Finalizer {
 }
 
 
-export async function* finalize(rpc: Rpc, stream: AsyncIterable<IngestBatch>): BlockStream<Block> {
+export async function* finalize(rpc: RpcApi, stream: AsyncIterable<IngestBatch>): BlockStream<Block> {
     let output = new AsyncQueue<BlockBatch<Block> | Error>(1)
 
     new Finalizer(rpc, output).run(stream)

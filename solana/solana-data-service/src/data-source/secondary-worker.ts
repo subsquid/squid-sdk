@@ -1,17 +1,8 @@
 import {getServerArguments} from '@subsquid/util-internal-worker-thread'
-import {Mapping} from './mapping'
-import {createDataSource, RawDataSourceOptions} from './raw-setup'
+import {createSecondaryDataSource, DataSourceOptions} from './setup'
 import {startServer} from './worker'
 
-const {
-    geyserProxy,
-    geyserBlockQueueSize,
-    ...options
-} = getServerArguments<RawDataSourceOptions>();
+const options = getServerArguments<DataSourceOptions>();
+const source = createSecondaryDataSource(options)
 
-// plain RPC data source (no geyser)
-const rpc = createDataSource(options)
-
-const mapping = new Mapping(rpc)
-
-startServer(mapping)
+startServer(source)
