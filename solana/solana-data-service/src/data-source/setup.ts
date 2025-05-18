@@ -4,7 +4,6 @@ import {GeyserDataSource} from './geyser-data-source'
 import {RemoteGeyser} from './geyser-remote'
 import {Mapping} from './mapping'
 import {RemoteRpcPool} from './rpc-remote'
-import {createRpc} from './rpc-setup'
 
 
 export interface DataSourceOptions {
@@ -39,7 +38,7 @@ export function createMainDataSource(options: DataSourceOptions): DataSource<Blo
 
 
 export function createSecondaryDataSource(options: DataSourceOptions): DataSource<Block> {
-    let rpc = createRpc(options.httpRpc)
+    let rpc = new RemoteRpcPool(options.httpRpcWorkers, options.httpRpc)
     let raw = createSolanaRpcDataSource(rpc, options)
     return new Mapping(raw, !!options.votes)
 }
