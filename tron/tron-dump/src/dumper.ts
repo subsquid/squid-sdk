@@ -27,7 +27,7 @@ export class TronDumper extends Dumper<BlockData, Options> {
     }
 
     protected getBlockTimestamp(block: BlockData): number {
-        return block.block.block_header.raw_data.timestamp ?? 0
+        return block.block.block_header.raw_data.timestamp || 0
     }
 
     @def

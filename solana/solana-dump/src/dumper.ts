@@ -47,7 +47,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
     }
 
     protected getBlockTimestamp(block: Block): number {
-        return Number(block.block.blockTime) ?? 0
+        return Number(block.block.blockTime) || 0
     }
 
     @def
