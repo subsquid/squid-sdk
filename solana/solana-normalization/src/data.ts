@@ -46,6 +46,7 @@ export interface AddressTableLookup {
 
 export interface Instruction {
     transactionIndex: number
+    innerInstructionIndex: number
     instructionAddress: number[]
     programId: Base58Bytes
     accounts: Base58Bytes[]
