@@ -45,4 +45,12 @@ export class SolanaIngest extends Ingest<Options> {
             })
         }
     }
+
+    protected getBlockHeight(block: any): number {
+        return Number(block.header.height) || 0
+    }
+
+    protected getBlockTimestamp(block: any): number {
+        return Number(block.header.timestamp) || 0
+    }
 }

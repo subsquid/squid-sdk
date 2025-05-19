@@ -113,4 +113,8 @@ export class SubstrateDumper extends Dumper<BlockData, Options> {
     protected getPrevBlockHash(block: BlockData): string {
         return block.block.block.header.parentHash
     }
+
+    protected getBlockTimestamp(block: BlockData): number {
+        return Math.floor(Date.now() / 1000); //mocked timestamp for now
+    }
 }

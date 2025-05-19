@@ -48,6 +48,10 @@ export class SolanaDumper extends Dumper<Block, Options> {
         return block.block.previousBlockhash
     }
 
+    protected getBlockTimestamp(block: Block): number {
+        return Number(block.block.blockTime) || 0
+    }
+
     @def
     private solanaRpc(): Rpc {
         return new Rpc(this.rpc(), 0, this.options().maxConfirmationAttempts)

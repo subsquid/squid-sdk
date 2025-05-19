@@ -62,6 +62,15 @@ export interface RpcClientOptions {
     log?: Logger | null
 }
 
+// Add interface for RPC metrics
+export interface RpcMetrics {
+    url: string
+    requestsServed: number
+    connectionErrors: number
+    notificationsReceived: number
+    avg_response_time: number
+}
+
 
 export interface CallOptions<R=any> {
     priority?: number
@@ -113,6 +122,7 @@ export class RpcClient {
     private connectionErrors = 0
     private requestsServed = 0
     private notificationsReceived = 0
+    private totalResponseTime = 0
     private backoffEpoch = 0
     private backoffTime?: number
     private notificationListeners: ((msg: RpcNotification) => void)[] = []
@@ -179,12 +189,13 @@ export class RpcClient {
         return this.maxCapacity
     }
 
-    getMetrics() {
+    getMetrics(): RpcMetrics {
         return {
             url: this.url,
             requestsServed: this.requestsServed,
             connectionErrors: this.connectionErrors,
-            notificationsReceived: this.notificationsReceived
+            notificationsReceived: this.notificationsReceived,
+            avg_response_time: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0
         }
     }
 
@@ -364,6 +375,7 @@ export class RpcClient {
         this.capacity -= 1
         let backoffEpoch = this.backoffEpoch
         let promise: Promise<any>
+        const startTime = Date.now()
         if (Array.isArray(req.call)) {
             let call = req.call
             this.log?.debug({rpcBatchId: [call[0].id, last(call).id]}, 'rpc send')
@@ -382,6 +394,9 @@ export class RpcClient {
             })
         }
         promise.then(result => {
+            const responseTimeSeconds = (Date.now() - startTime) / 1000
+            this.totalResponseTime += responseTimeSeconds
+            
             this.requestsServed += 1
             if (this.backoffEpoch == backoffEpoch) {
                 this.connectionErrorsInRow = 0
