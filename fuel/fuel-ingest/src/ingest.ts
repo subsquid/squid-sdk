@@ -31,7 +31,7 @@ export class FuelIngest extends Ingest<IngestOptions> {
     }
 
     protected getBlockHeight(block: any): number {
-        return Number(block.header.height) ?? 0
+        return Number(block.header.height) || 0
     }
 
     protected getBlockTimestamp(block: any): number {
