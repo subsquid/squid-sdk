@@ -1,3 +1,4 @@
+import {createLogger} from '@subsquid/logger'
 import {concurrentMap, last} from '@subsquid/util-internal'
 import {ForkException} from '@subsquid/util-internal-data-source'
 import {splitRange} from '@subsquid/util-internal-range'
@@ -5,6 +6,9 @@ import assert from 'assert'
 import {getBlockRef} from '../util'
 import {getBlocks} from './fetch'
 import {IngestBatch, IngestOptions} from './ingest'
+
+
+const log = createLogger('sqd:solana-rpc:chain-fixer')
 
 
 export function ensureContinuity(
@@ -67,6 +71,9 @@ export class ChainFixer {
             let to = batch.blocks[0].block.parentSlot
             assert(this.from <= to)
 
+            let gapLog = log.child({from: this.from, to, depth})
+            gapLog.debug('got a gap')
+
             for await (let missingBatch of this.fetch(this.from, to)) {
                 let {head, tail} = this.acceptBatch(missingBatch)
 
@@ -84,6 +91,7 @@ export class ChainFixer {
             this.from = to + 1
 
             if (batch.blocks[0].block.previousBlockhash === this.parentHash) {
+                gapLog.debug('gap filled')
                 let {head, tail} = this.acceptBatch(batch)
                 if (head) {
                     yield head
@@ -104,6 +112,7 @@ export class ChainFixer {
                         break
                     }
                 }
+                gapLog.debug({dropped: i, left: batch.blocks.length - 1}, 'gap break')
                 if (i < batch.blocks.length) {
                     batch = batchSlice(batch, i)
                 } else {
