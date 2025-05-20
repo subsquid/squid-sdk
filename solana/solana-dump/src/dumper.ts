@@ -1,4 +1,4 @@
-import {Block as RpcBlock, RemoteRpcPool, Rpc, SolanaRpcDataSource} from '@subsquid/solana-rpc'
+import {Block as RpcBlock, RemoteRpcPool, SolanaRpcDataSource} from '@subsquid/solana-rpc'
 import {def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
 
