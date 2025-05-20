@@ -1,9 +1,8 @@
-import {Block as RpcBlock, RpcApi, SolanaRpcDataSource} from '@subsquid/solana-rpc'
+import {Block as RpcBlock, RemoteRpcOptions, RemoteRpcPool, RpcApi, SolanaRpcDataSource} from '@subsquid/solana-rpc'
 import {Block, DataSource} from '@subsquid/util-internal-data-service'
 import {GeyserDataSource} from './geyser-data-source'
 import {RemoteGeyser} from './geyser-remote'
 import {Mapping} from './mapping'
-import {RemoteRpcPool} from './rpc-remote'
 
 
 export interface DataSourceOptions {
@@ -19,7 +18,7 @@ export interface DataSourceOptions {
 
 
 export function createMainDataSource(options: DataSourceOptions): DataSource<Block> {
-    let rpc = new RemoteRpcPool(options.httpRpcWorkers, options.httpRpc)
+    let rpc = new RemoteRpcPool(options.httpRpcWorkers, createRpcOptions(options))
 
     let rpcDataSource = createSolanaRpcDataSource(rpc, options)
 
@@ -38,9 +37,20 @@ export function createMainDataSource(options: DataSourceOptions): DataSource<Blo
 
 
 export function createSecondaryDataSource(options: DataSourceOptions): DataSource<Block> {
-    let rpc = new RemoteRpcPool(options.httpRpcWorkers, options.httpRpc)
+    let rpc = new RemoteRpcPool(options.httpRpcWorkers, createRpcOptions(options))
     let raw = createSolanaRpcDataSource(rpc, options)
     return new Mapping(raw, !!options.votes)
+}
+
+
+function createRpcOptions(options: DataSourceOptions): RemoteRpcOptions {
+    return {
+        url: options.httpRpc,
+        capacity: Number.MAX_SAFE_INTEGER,
+        requestTimeout: 20_000,
+        retryAttempts: 5,
+        noVotes: !options.votes
+    }
 }
 
 

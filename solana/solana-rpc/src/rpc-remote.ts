@@ -1,16 +1,33 @@
-import {Commitment, GetBlockOptions, LatestBlockhash, RpcApi} from '@subsquid/solana-rpc'
+import {RpcClientOptions} from '@subsquid/rpc-client'
 import {GetBlock} from '@subsquid/solana-rpc-data'
 import {Client, createWorker} from '@subsquid/util-internal-worker-thread'
 import assert from 'node:assert'
+import {Commitment, GetBlockOptions, LatestBlockhash, RpcApi} from './rpc'
+
+
+export type RemoteRpcOptions = Pick<
+    RpcClientOptions,
+    'url' |
+    'capacity' |
+    'requestTimeout' |
+    'retryAttempts' |
+    'retrySchedule' |
+    'headers'
+> & {
+    /**
+     * Remove vote transactions from all relevant responses
+     */
+    noVotes?: boolean
+}
 
 
 export class RemoteRpc implements RpcApi {
     private worker: Client
 
-    constructor(url: string) {
+    constructor(options: RemoteRpcOptions) {
         this.worker = createWorker({
             script: require.resolve('./rpc-worker'),
-            args: url,
+            args: options,
             name: 'rpc-worker'
         })
     }
@@ -41,10 +58,10 @@ export class RemoteRpcPool implements RpcApi {
     private workers: RemoteRpc[] = []
     private turn = 0
 
-    constructor(workers: number, url: string) {
+    constructor(workers: number, workerOptions: RemoteRpcOptions) {
         assert(workers > 0)
         for (let i = 0; i < workers; i++) {
-            this.workers.push(new RemoteRpc(url))
+            this.workers.push(new RemoteRpc(workerOptions))
         }
     }
 

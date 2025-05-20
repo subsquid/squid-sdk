@@ -1,4 +1,4 @@
-import {Block as RpcBlock, Rpc, SolanaRpcDataSource} from '@subsquid/solana-rpc'
+import {Block as RpcBlock, RemoteRpcPool, Rpc, SolanaRpcDataSource} from '@subsquid/solana-rpc'
 import {def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
 
@@ -23,6 +23,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
         program.description('Data archiving tool for Solana')
         removeOption(program, 'endpointMaxBatchCallSize')
         removeOption(program, 'endpointCapacity')
+        removeOption(program, 'rateLimit')
         program.option('--stride-size <N>', 'Maximum size of getBlock batch call', positiveInt, 5)
         program.option('--stride-concurrency <N>', 'Maximum number of pending getBlock batch calls', positiveInt, 5)
         program.option('--max-confirmation-attempts <N>', 'Maximum number of confirmation attempts', positiveInt, 10)
@@ -57,8 +58,16 @@ export class SolanaDumper extends Dumper<Block, Options> {
 
     @def
     private dataSource(): SolanaRpcDataSource {
+        let options = this.options()
+
+        let rpc = new RemoteRpcPool(options.strideConcurrency, {
+            url: options.endpoint,
+            retryAttempts: Number.MAX_SAFE_INTEGER,
+            requestTimeout: 30_000
+        })
+
         return new SolanaRpcDataSource({
-            rpc: new Rpc(this.rpc()),
+            rpc,
             req: {transactions: true, rewards: true},
             strideSize: this.options().strideSize,
             strideConcurrency: this.options().strideConcurrency,
