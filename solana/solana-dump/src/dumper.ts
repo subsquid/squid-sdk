@@ -29,13 +29,6 @@ export class SolanaDumper extends Dumper<Block, Options> {
         program.option('--max-confirmation-attempts <N>', 'Maximum number of confirmation attempts', positiveInt, 10)
     }
 
-    @def
-    protected options(): Options {
-        let options = this.program().parse().opts<Options>()
-        options.endpointCapacity = options.strideConcurrency + 5
-        return options
-    }
-
     protected fixUnsafeIntegers(): boolean {
         return true
     }
@@ -62,6 +55,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
 
         let rpc = new RemoteRpcPool(options.strideConcurrency, {
             url: options.endpoint,
+            capacity: Number.MAX_SAFE_INTEGER,
             retryAttempts: Number.MAX_SAFE_INTEGER,
             requestTimeout: 30_000
         })
