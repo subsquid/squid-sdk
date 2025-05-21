@@ -22,6 +22,7 @@ const PROGRAMS_MISSING_INVOKE_LOG = new Set([
 export class ParsingError {
     instructionIndex?: number
     innerInstructionIndex?: number
+    programId?: string
     logMessageIndex?: number
 
     constructor(
@@ -90,10 +91,12 @@ export class InstructionTreeTraversal {
         } else {
             this.assert(
                 this.instructions.length === 1,
-                'failed instructions should not have inner calls'
+                'failed instructions should not have inner calls',
+                0
             )
             this.push(1)
         }
+        this.assert(this.ended, 'not all inner instructions where consumed', 0)
     }
 
     private call(stackHeight: number): void {
@@ -128,16 +131,14 @@ export class InstructionTreeTraversal {
         }
 
         if (PROGRAMS_MISSING_INVOKE_LOG.has(programId)) {
-            this.push(stackHeight).hasDroppedLogMessages = true
-            this.dropNonInvokeMessages()
-            return
+        } else if (this.messages.ended) {
+            this.warn('unexpected end of message log', this.pos)
+        } else {
+            this.warn('missing invoke message', this.pos, this.messages.position)
         }
 
-        if (this.messages.ended) {
-            throw this.error('unexpected end of message log', this.pos)
-        }
-
-        throw this.error('missing invoke message', this.pos, this.messages.position)
+        this.push(stackHeight).hasDroppedLogMessages = true
+        this.dropNonInvokeMessages()
     }
 
     private invoke(stackHeight: number): void {
@@ -159,7 +160,8 @@ export class InstructionTreeTraversal {
         assert(result.kind === 'invoke-result')
         this.assert(
             result.programId === ins.programId,
-            'invoke result message and instruction program ids don\'t match'
+            'invoke result message and instruction program ids don\'t match',
+            pos
         )
         ins.error = result.error
         this.messages.advance()
@@ -202,10 +204,7 @@ export class InstructionTreeTraversal {
                 // we've reached the max stack depth,
                 // there will be no invoke message either
             } else {
-                this.tx.error({
-                    instruction: this.instructionIndex,
-                    innerInstruction: pos - 1
-                }, 'missing invoke message for inner instruction')
+                this.warn('missing invoke message for inner instruction', pos)
             }
         }
     }
@@ -290,20 +289,26 @@ export class InstructionTreeTraversal {
         return !this.unfinished
     }
 
-    private assert(ok: any, msg: string, pos?: number, messagePos?: number): void {
+    private assert(ok: any, msg: string, pos: number, messagePos?: number): void {
         if (!ok) throw this.error(msg, pos, messagePos)
     }
 
-    private error(msg: string, pos?: number, messagePos?: number): ParsingError {
+    private error(msg: string, pos: number, messagePos?: number): ParsingError {
         let err = new ParsingError(msg)
         err.instructionIndex = this.instructionIndex
         if (pos) {
             err.innerInstructionIndex = pos - 1
         }
+        err.programId = this.tx.getAccount(this.instructions[pos].programIdIndex)
         if (messagePos != null) {
             err.logMessageIndex = messagePos
         }
         return err
+    }
+
+    private warn(msg: string, pos: number, messagePos?: number): void {
+        let {msg: message, ...props} = this.error(msg, pos, messagePos)
+        this.tx.warn(props, message)
     }
 
     private push(stackHeight: number): Instruction {

@@ -89,6 +89,11 @@ class ItemMapping {
         try {
             this.traverseInstructions(ctx, messages)
             mapped.hasDroppedLogMessages = messages.truncated
+            if (!messages.ended) {
+                let err = new ParsingError('not all log messages where consumed')
+                err.logMessageIndex = messages.position
+                throw err
+            }
         } catch(err: any) {
             if (err instanceof ParsingError) {
                 // report parsing problem

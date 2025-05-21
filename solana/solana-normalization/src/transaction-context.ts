@@ -30,7 +30,7 @@ export class TransactionContext {
         }
 
         let err = this.tx.meta.err
-        if (isIntructionError(err)) {
+        if (isInstructionError(err)) {
             let pos = err.InstructionError[0]
             let type = err.InstructionError[1]
             if (Number.isSafeInteger(pos)) {
@@ -80,6 +80,6 @@ export class TransactionContext {
 }
 
 
-function isIntructionError(err: unknown): err is {InstructionError: [number, string]} {
+function isInstructionError(err: unknown): err is {InstructionError: [number, string]} {
     return typeof err == 'object' && err != null && 'InstructionError' in err
 }
