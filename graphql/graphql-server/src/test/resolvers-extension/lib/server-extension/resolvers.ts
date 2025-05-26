@@ -67,3 +67,11 @@ export class PingPong {
         return msg
     }
 }
+
+@Resolver()
+export class ArgResolver {
+    @Query(() => Boolean, { nullable: false })
+    stringArray(@Arg('ids', () => [String]) ids: string[]): boolean {
+        return true
+    }
+}
