@@ -11,6 +11,10 @@ export class GeyserDataSource implements DataSource<Block> {
         }
     ) {}
 
+    getHead(): Promise<BlockRef> {
+        return this.rpc.getHead()
+    }
+
     getFinalizedHead(): Promise<BlockRef> {
         return this.rpc.getFinalizedHead()
     }

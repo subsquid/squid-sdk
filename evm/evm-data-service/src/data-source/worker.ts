@@ -11,6 +11,7 @@ getServer()
     .def('getFinalizedStream', (req: StreamRequest) => {
         return source.getFinalizedStream(req)
     })
+    .def('getHead', () => source.getHead())
     .def('getStream', (req: StreamRequest) => {
         return source.getStream(req)
     })

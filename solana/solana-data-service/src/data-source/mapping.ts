@@ -20,6 +20,10 @@ export class Mapping implements DataSource<Block> {
         private votes: boolean
     ) {}
 
+    getHead(): Promise<BlockRef> {
+        return this.inner.getHead()
+    }
+
     getFinalizedHead(): Promise<BlockRef> {
         return this.inner.getFinalizedHead()
     }

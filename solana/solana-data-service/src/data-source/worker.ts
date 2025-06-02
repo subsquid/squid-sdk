@@ -6,6 +6,7 @@ export function startServer(source: DataSource<any>): void {
     getServer()
         .def('getFinalizedHead', () => source.getFinalizedHead())
         .def('getFinalizedStream', (req: StreamRequest) => source.getFinalizedStream(req))
+        .def('getHead', () => source.getHead())
         .def('getStream', (req: StreamRequest) => source.getStream(req))
         .start()
 }
@@ -24,6 +25,10 @@ export class RemoteDataSource<B> implements DataSource<B> {
 
     getFinalizedStream(req: StreamRequest): BlockStream<B> {
         return this.stream('getFinalizedStream', req)
+    }
+
+    getHead(): Promise<BlockRef> {
+        return this.worker.call('getHead', [])
     }
 
     getStream(req: StreamRequest): BlockStream<B> {

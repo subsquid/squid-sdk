@@ -28,6 +28,8 @@ export interface DataSource<B> {
 
     getFinalizedStream(req: StreamRequest): BlockStream<B>
 
+    getHead(): Promise<BlockRef>
+
     getStream(req: StreamRequest): BlockStream<B>
 }
 

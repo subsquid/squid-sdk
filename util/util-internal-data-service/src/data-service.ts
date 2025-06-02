@@ -21,7 +21,6 @@ export class DataService {
     private stopped = false
     private firstBlockIngested = false
     private firstBlockIngestedFuture = createFuture<void>()
-    private ready = false
     #chain?: Chain
 
     constructor(
@@ -47,11 +46,10 @@ export class DataService {
 
     /**
      * Are we on the head?
-     *
-     * Right now it is a dummy value, that gets set 30 seconds after the start
      */
-    isReady(): boolean {
-        return this.ready
+    async isReady(): Promise<boolean> {
+        let head = await this.source.getHead()
+        return head.number <= this.getHead().number
     }
 
     async query(from: number, parentHash?: string): Promise<DataResponse | InvalidBaseBlock> {
@@ -158,8 +156,6 @@ export class DataService {
     }
 
     async run(): Promise<void> {
-        setTimeout(() => this.ready = true, 30_000)
-
         let base: BlockRef = this.chain.getHeader()
         let stacked = 0
         while (!this.stopped) {

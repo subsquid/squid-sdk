@@ -17,6 +17,10 @@ export class WorkerClient implements DataSource<Block> {
         this.worker.close()
     }
 
+    getHead(): Promise<BlockRef> {
+        return this.worker.call('getHead', [])
+    }
+
     getFinalizedHead(): Promise<BlockRef> {
         return this.worker.call('getFinalizedHead', [])
     }

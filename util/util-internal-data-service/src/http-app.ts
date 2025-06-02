@@ -98,7 +98,7 @@ export function createHttpApp(service: DataService): HttpApp {
 
     app.add('/readiness', {
         async GET(ctx): Promise<void> {
-            if (service.isReady()) {
+            if (await service.isReady()) {
                 ctx.send(200, 'true')
             } else {
                 ctx.send(503, 'false')
