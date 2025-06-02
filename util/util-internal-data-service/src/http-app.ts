@@ -96,6 +96,16 @@ export function createHttpApp(service: DataService): HttpApp {
         }
     })
 
+    app.add('/readiness', {
+        async GET(ctx): Promise<void> {
+            if (service.isReady()) {
+                ctx.send(200, 'true')
+            } else {
+                ctx.send(503, 'false')
+            }
+        }
+    })
+
     app.add('/metrics', {
         async GET(ctx) {
             if (ctx.url.searchParams.get('json') === 'true') {
