@@ -52,6 +52,9 @@ runProgram(async () => {
     let mainWorker = new MainDataSource(dataSourceOptions)
 
     let dataSource: DataSource<Block> = {
+        getHead() {
+            return mainWorker.getHead()
+        },
         getFinalizedHead() {
             return mainWorker.getFinalizedHead()
         },
