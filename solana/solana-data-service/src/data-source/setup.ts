@@ -47,7 +47,7 @@ function createRpcOptions(options: DataSourceOptions): RemoteRpcOptions {
     return {
         url: options.httpRpc,
         capacity: Number.MAX_SAFE_INTEGER,
-        requestTimeout: 20_000,
+        requestTimeout: 10_000,
         retryAttempts: 5,
         noVotes: !options.votes
     }
