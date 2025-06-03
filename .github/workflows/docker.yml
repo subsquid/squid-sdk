@@ -1,6 +1,23 @@
 name: docker
 on:
   workflow_dispatch: # manually run
+    inputs:
+      pkg_path:
+        description: 'Package path to publish'
+        required: true
+        default: 'solana/solana-data-service'
+      image:
+        description: 'Image name (if differs from package)'
+        required: false
+        default: 'solana-hotblocks-service'
+      release:
+        description: 'Release name'
+        required: true
+        default: 'arrowsquid'
+      tag:
+        description: 'Tag name'
+        required: true
+        default: 'latest'
 
 env:
   CI: true
@@ -30,4 +47,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build and Publish
-        run: ./ops/docker-publish.sh arrowsquid latest
+        run: ./ops/docker-publish.sh "${{ inputs.release }}" "${{ inputs.tag }}" "${{ inputs.pkg_path }}" "${{ inputs.image }}"

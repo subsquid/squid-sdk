@@ -2,6 +2,8 @@
 
 release=$1
 tag=$2
+pkg_path=$3
+img=$4
 
 function publish() {
     pkg_path=$1
@@ -27,10 +29,12 @@ function publish() {
         -t "subsquid/$img:$release" || exit 1
 }
 
+publish "$pkg_path" "$img" || exit 1
+
 #publish solana/solana-dump || exit 1
 #publish solana/solana-ingest || exit 1
 #publish "solana/solana-data-service" "solana-hotblocks-service" || exit 1
-publish "evm/evm-data-service" "evm-hotblocks-service" || exit 1
+#publish "evm/evm-data-service" "evm-hotblocks-service" || exit 1
 #publish tron/tron-dump || exit 1
 #publish tron/tron-ingest || exit 1
 #publish substrate/substrate-dump || exit 1
