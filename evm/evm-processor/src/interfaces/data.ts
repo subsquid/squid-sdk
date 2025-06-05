@@ -86,9 +86,10 @@ type ExcludeUndefined<T> = {
 
 
 type MergeDefault<T, D> = Simplify<
-    undefined extends T ? D : Omit<D, keyof ExcludeUndefined<T>> & ExcludeUndefined<T>
->
-
+    T extends Object
+        ? Omit<D, keyof ExcludeUndefined<T>> & T
+        : D
+>;
 
 type TrueFields<F> = keyof {
     [K in keyof F as true extends F[K] ? K : never]: true
