@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "add innerInstructionIndex to instruction",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-normalization"
+}
