@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-rpc-data
 
-This log was last generated on Tue, 03 Dec 2024 11:47:42 GMT and should not be manually modified.
+This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+
+## 0.1.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- Add block timestamp extraction method for Solana blocks with Unix timestamp support
 
 ## 0.0.3
 Tue, 03 Dec 2024 11:47:42 GMT

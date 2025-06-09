@@ -2,6 +2,29 @@
   "name": "@subsquid/solana-dump",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/solana-dump_v0.2.0",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add block timestamp extraction method for Solana dumper with Unix timestamp support"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.11.0` to `4.12.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc\" from `^0.1.0` to `0.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^1.0.0` to `1.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/solana-dump_v0.1.0",
       "date": "Wed, 14 May 2025 19:46:11 GMT",

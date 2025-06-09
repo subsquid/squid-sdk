@@ -2,6 +2,18 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "4.11.0",
+      "tag": "@subsquid/graphql-server_v4.11.0",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "override validate function to make it compatible with the latest class-validator package"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.10.0",
       "tag": "@subsquid/graphql-server_v4.10.0",
       "date": "Mon, 05 May 2025 11:31:26 GMT",

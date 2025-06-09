@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-dump
 
-This log was last generated on Wed, 14 May 2025 19:46:11 GMT and should not be manually modified.
+This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+
+## 0.2.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- Add block timestamp extraction method for Solana dumper with Unix timestamp support
 
 ## 0.1.0
 Wed, 14 May 2025 19:46:11 GMT

@@ -2,6 +2,23 @@
   "name": "@subsquid/solana-normalization",
   "entries": [
     {
+      "version": "0.0.6",
+      "tag": "@subsquid/solana-normalization_v0.0.6",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "extend PROGRAMS_MISSING_INVOKE_LOG set"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^0.0.3` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.5",
       "tag": "@subsquid/solana-normalization_v0.0.5",
       "date": "Sun, 16 Mar 2025 07:51:27 GMT",

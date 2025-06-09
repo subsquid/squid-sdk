@@ -1,6 +1,13 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Mon, 05 May 2025 11:31:26 GMT and should not be manually modified.
+This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+
+## 4.11.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- override validate function to make it compatible with the latest class-validator package
 
 ## 4.10.0
 Mon, 05 May 2025 11:31:26 GMT

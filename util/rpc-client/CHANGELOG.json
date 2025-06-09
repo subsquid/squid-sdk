@@ -2,6 +2,18 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "4.12.0",
+      "tag": "@subsquid/rpc-client_v4.12.0",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Extend metrics with `avgResponseTime`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.11.0",
       "tag": "@subsquid/rpc-client_v4.11.0",
       "date": "Tue, 26 Nov 2024 06:42:52 GMT",

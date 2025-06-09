@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-ingest
 
-This log was last generated on Sun, 16 Mar 2025 07:51:27 GMT and should not be manually modified.
+This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+
+## 0.1.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- Add block height and timestamp extraction methods for Solana ingestion with Unix timestamp support
 
 ## 0.0.8
 Sun, 16 Mar 2025 07:51:27 GMT

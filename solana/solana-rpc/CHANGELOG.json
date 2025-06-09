@@ -2,6 +2,24 @@
   "name": "@subsquid/solana-rpc",
   "entries": [
     {
+      "version": "0.1.1",
+      "tag": "@subsquid/solana-rpc_v0.1.1",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^0.0.3` to `0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.11.0` to `4.12.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.11.0` to `4.12.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/solana-rpc_v0.1.0",
       "date": "Wed, 14 May 2025 19:46:11 GMT",

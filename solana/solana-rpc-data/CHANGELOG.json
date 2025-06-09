@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-rpc-data",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/solana-rpc-data_v0.1.0",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add block timestamp extraction method for Solana blocks with Unix timestamp support"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/solana-rpc-data_v0.0.3",
       "date": "Tue, 03 Dec 2024 11:47:42 GMT",
