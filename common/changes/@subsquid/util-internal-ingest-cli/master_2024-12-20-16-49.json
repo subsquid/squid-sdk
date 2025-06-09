@@ -2,9 +2,9 @@
   "changes": [
     {
       "packageName": "@subsquid/util-internal-ingest-cli",
-      "comment": "",
-      "type": "none"
+      "comment": "Add prometheus metrics integration for block ingestion monitoring and processing statistics",
+      "type": "minor"
     }
-  ],
+  ],  
   "packageName": "@subsquid/util-internal-ingest-cli"
 }

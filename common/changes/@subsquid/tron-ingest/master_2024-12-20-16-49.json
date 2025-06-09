@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-ingest",
+      "comment": "Add block height and timestamp extraction methods for TRON ingestion with Unix timestamp support",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/tron-ingest"
+} 

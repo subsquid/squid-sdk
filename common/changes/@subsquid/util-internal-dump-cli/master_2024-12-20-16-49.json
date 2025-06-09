@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/util-internal-dump-cli",
-      "comment": "",
-      "type": "none"
+      "comment": "Add block metrics tracking with timestamp caching and prometheus integration for dumper operations",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/util-internal-dump-cli"
