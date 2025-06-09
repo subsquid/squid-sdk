@@ -62,13 +62,13 @@ export interface RpcClientOptions {
     log?: Logger | null
 }
 
-// Add interface for RPC metrics
+
 export interface RpcMetrics {
     url: string
     requestsServed: number
     connectionErrors: number
     notificationsReceived: number
-    avg_response_time: number
+    avgResponseTime: number
 }
 
 
@@ -195,7 +195,7 @@ export class RpcClient {
             requestsServed: this.requestsServed,
             connectionErrors: this.connectionErrors,
             notificationsReceived: this.notificationsReceived,
-            avg_response_time: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0
+            avgResponseTime: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0
         }
     }
 

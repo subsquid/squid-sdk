@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/rpc-client",
-      "comment": "",
-      "type": "none"
+      "comment": "Extend metrics with `avgResponseTime`",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/rpc-client"
