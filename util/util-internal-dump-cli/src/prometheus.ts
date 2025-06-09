@@ -129,7 +129,7 @@ export class PrometheusServer {
                 
                 this.set({
                     url: metrics.url,
-                }, metrics.avg_response_time)
+                }, metrics.avgResponseTime)
             }
         });
         this.rpcConnectionErrorsTotal = new Counter({

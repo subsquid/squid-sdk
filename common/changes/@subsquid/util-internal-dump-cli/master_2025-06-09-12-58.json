@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "comment": "adapt for the latest changes in rpc-client",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-cli"
+}
