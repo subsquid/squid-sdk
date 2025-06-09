@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-dump",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Raw data archiving tool for substrate based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -20,7 +20,7 @@
   "dependencies": {
     "@subsquid/substrate-data-raw": "^1.2.0",
     "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-dump-cli": "^1.0.0",
+    "@subsquid/util-internal-dump-cli": "^1.1.0",
     "@subsquid/util-internal-hex": "^1.2.2"
   },
   "devDependencies": {

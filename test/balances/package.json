@@ -6,7 +6,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/graphql-server": "^4.10.0",
+    "@subsquid/graphql-server": "^4.11.0",
     "@subsquid/ss58": "^2.0.2",
     "@subsquid/substrate-processor": "^8.6.0",
     "@subsquid/substrate-runtime": "^2.0.1",

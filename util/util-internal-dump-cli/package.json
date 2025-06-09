@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-dump-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "RPC data dumper template",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@subsquid/logger": "^1.4.0",
-    "@subsquid/rpc-client": "^4.11.0",
+    "@subsquid/rpc-client": "^4.12.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-archive-layout": "^1.0.0",
     "@subsquid/util-internal-commander": "^1.4.0",

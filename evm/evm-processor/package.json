@@ -19,7 +19,7 @@
   "dependencies": {
     "@subsquid/http-client": "^1.6.0",
     "@subsquid/logger": "^1.4.0",
-    "@subsquid/rpc-client": "^4.11.0",
+    "@subsquid/rpc-client": "^4.12.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-archive-client": "^0.1.2",
     "@subsquid/util-internal-hex": "^1.2.2",
