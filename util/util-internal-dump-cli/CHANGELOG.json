@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-dump-cli",
   "entries": [
     {
+      "version": "1.1.1",
+      "tag": "@subsquid/util-internal-dump-cli_v1.1.1",
+      "date": "Mon, 09 Jun 2025 13:01:23 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "adapt for the latest changes in rpc-client"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.0",
       "tag": "@subsquid/util-internal-dump-cli_v1.1.0",
       "date": "Mon, 09 Jun 2025 12:15:37 GMT",
