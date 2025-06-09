@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-dump",
-      "comment": "",
-      "type": "none"
+      "comment": "Add block timestamp extraction method for substrate dumper with mocked timestamp implementation",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/substrate-dump"

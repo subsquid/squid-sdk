@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/fuel-ingest",
-      "comment": "",
-      "type": "none"
+      "comment": "Add block height and timestamp extraction methods for Fuel ingestion with TAI64 timestamp support",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/fuel-ingest"

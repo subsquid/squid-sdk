@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-ingest",
+      "comment": "Add block height and timestamp extraction methods for Solana ingestion with Unix timestamp support",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-ingest"
+} 

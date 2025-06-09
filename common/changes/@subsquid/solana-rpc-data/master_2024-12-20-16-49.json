@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/solana-rpc-data",
-      "comment": "",
-      "type": "none"
+      "comment": "Add block timestamp extraction method for Solana blocks with Unix timestamp support",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/solana-rpc-data"

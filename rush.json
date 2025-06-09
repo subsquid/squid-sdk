@@ -124,7 +124,7 @@
    * LTS schedule: https://nodejs.org/en/about/releases/
    * LTS versions: https://nodejs.org/en/download/releases/
    */
-  "nodeSupportedVersionRange": ">=18.13.1 <23.0.0",
+  "nodeSupportedVersionRange": ">=18.13.1 <23.11.0",
 
   /**
    * Odd-numbered major versions of Node.js are experimental.  Even-numbered releases
@@ -290,7 +290,7 @@
      * your PR branch, and in this situation "rush change" will also automatically invoke "git fetch"
      * to retrieve the latest activity for the remote master branch.
      */
-     "url": "https://github.com/subsquid/squid"
+     "url": "https://github.com/subsquid/squid-sdk"
 
     /**
      * The default branch name. This tells "rush change" which remote branch to compare against.

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-dump",
+      "comment": "Add block timestamp extraction method for TRON dumper with Unix timestamp support",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/tron-dump"
+} 
