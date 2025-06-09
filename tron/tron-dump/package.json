@@ -20,7 +20,7 @@
   "dependencies": {
     "@subsquid/tron-data": "^0.0.3",
     "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-dump-cli": "^1.1.0"
+    "@subsquid/util-internal-dump-cli": "^1.1.1"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
