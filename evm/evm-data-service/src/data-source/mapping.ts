@@ -4,7 +4,7 @@ import {withErrorContext} from '@subsquid/util-internal'
 import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
 import {promisify} from 'node:util'
 import * as zlib from 'node:zlib'
-import {mapRpcBlock} from './evm-normaliztion'
+import {mapRpcBlock} from './evm-normalization'
 
 
 const gzip = promisify(zlib.gzip)
@@ -46,19 +46,18 @@ export class Mapping implements DataSource<Block> {
     private mapRpcBatch(blocks: RpcBlock[]): Promise<Block[]> {
         return Promise.all(blocks.map(block => {
             return this.mapRpcBlock(block).catch(withErrorContext({
-                blockSlot: block.number,
-                blockHash: block.block.hash
+                blockNumber: block.number,
+                blockHash: block.hash
             }))
         }))
     }
 
     private async mapRpcBlock(block: RpcBlock): Promise<Block> {
         let normalized = mapRpcBlock(
-            block.number,
-            block.block,
+            block,
             this.dataNormalizationLogger.child({
-                blockSlot: block.number,
-                blockHash: block.block.hash
+                blockNumber: block.number,
+                blockHash: block.hash
             })
         )
 

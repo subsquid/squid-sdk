@@ -1,5 +1,4 @@
-import {CallOptions, RpcClient, RpcProtocolError} from '@subsquid/rpc-client'
-import {RpcCall} from '@subsquid/rpc-client/lib/interfaces'
+import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {
     array,
     BYTES,
@@ -10,95 +9,23 @@ import {
     object,
     Validator
 } from '@subsquid/util-internal-validation'
-import assert from 'assert'
-import {GetBlock, RawBlock, Receipt, StateDiff, Trace, TraceTransactionReplay} from './rpc-data'
+import {GetBlock, Receipt, TraceFrame, TraceTransactionReplay} from './rpc-data'
+import {Block, DataRequest} from './types'
+import {qty2Int, toQty, getTxHash} from './util'
 
 
 export type Commitment = 'finalized' | 'latest'
-export type RequestHelperField = "base" | "receipts" | "traces" | "stateDiffs"
 
-export function getSuggestedChannelsByURL(rpc_url: string): [RequestHelperField, boolean][] {
-    let url = new URL(rpc_url)
-    let hostname = url.hostname;
-    let [dataset, provider, ...other] = hostname.split(".")
-    if (provider === "blastapi") {
-        switch (dataset) {
-            case "arbitrum-one":
-                return [["traces", false], ["stateDiffs", false]];
-            case "eth-mainnet":
-                return [["traces", true], ["stateDiffs", true]];
-        }
-    }
-    if (provider === "infura") {
-        switch (dataset) {
-            case "mainnet":
-                return [["traces", true], ["stateDiffs", true]]
-        }
-    }
-    if (provider === "dwellir") {
-        switch (dataset) {
-            case "api-eth-mainnet-archive":
-                return [["traces", true], ["stateDiffs", true]]
-        }        
-    }
-    return []
-}
 
 export class Rpc {
     constructor(
         private client: RpcClient,
         private priority: number = 0,
-        private requests: {
-            field: RequestHelperField,
-            method: string,
-            long_params: boolean,
-            additional_params: any[],
-            enabled: boolean 
-        }[] = [
-            {
-                field: "base",
-                method: "eth_getBlockByNumber",
-                long_params: true,
-                additional_params: [],
-                enabled: true
-            },
-            {
-                field: "receipts",
-                method: "eth_getBlockReceipts",
-                long_params: false,
-                additional_params: [],
-                enabled: true
-            },
-            {
-                field: "traces",
-                method: "trace_block",
-                long_params: false,
-                additional_params: [],
-                enabled: false
-            },
-            {
-                field: "stateDiffs",
-                method: "trace_replayBlockTransactions",
-                long_params: false,
-                additional_params: [['stateDiff']],
-                enabled: false
-            }
-        ]
     ) {
     }
 
     withPriority(priority: number): Rpc {
         return new Rpc(this.client, priority)
-    }
-
-    setChannels(channels: [RequestHelperField, boolean][]) {
-        for (let idx in channels) {
-            let [field, enabled] = channels[idx];
-            if (field == "base") {
-                assert(enabled == true)
-            }
-            this.requests.filter(v => v.field == field).map(v => v.enabled = enabled);
-        }
     }
 
     getConcurrency(): number {
@@ -113,101 +40,177 @@ export class Rpc {
         return this.client.batchCall(batch, {priority: this.priority, ...options})
     }
 
-    getLatestBlockhash(commitment: Commitment): Promise<LatestBlockhash> {
-        return this.call('eth_getBlockByNumber', [commitment, false], {
+    async getLatestBlockhash(commitment: Commitment): Promise<LatestBlockhash> {
+        let block = await this.call('eth_getBlockByNumber', [commitment, false], {
             validateResult: getResultValidator(GetBlock)
-        } ).then((block) => {
+        })
+        return {
+            number: qty2Int(block.number),
+            hash: block.hash
+        }
+    }
+
+    async getFinalizedBlockBatch(numbers: number[]): Promise<Block[]> {
+        let blockhash = await this.getLatestBlockhash('finalized')
+        let finalized = numbers.filter(n => n <= blockhash.number)
+        return this.getBlockBatch(finalized)
+    }
+
+    async getBlockBatch(numbers: number[], req?: DataRequest): Promise<Block[]> {
+        let blocks = await this.getBlocks(numbers, req?.transactions ?? false)
+
+        let chain: Block[] = []
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            if (block == null) break
+            if (i > 0 && chain[i - 1].block.hash !== block.block.parentHash) break
+            chain.push(block)
+        }
+
+        await this.addRequestedData(chain, req)
+
+        for (let i = 0; i < chain.length; i++) {
+            if (chain[i]._isInvalid) return chain.slice(0, i)
+        }
+        return chain
+    }
+
+    private async getBlocks(numbers: number[], withTransactions: boolean): Promise<(Block | null)[]> {
+        let call = numbers.map(height => ({
+            method: 'eth_getBlockByNumber',
+            params: [toQty(height), withTransactions]
+        }))
+
+        let blocks = await this.reduceBatchOnRetry(call, {
+            validateResult: getResultValidator(nullable(GetBlock)),
+            validateError: info => {
+                // Avalanche
+                if (/cannot query unfinalized data/i.test(info.message)) return null
+                throw new RpcError(info)
+            }
+        })
+
+        return blocks.map(block => {
+            if (block == null) return block
             return {
-                number: parseInt(block.number, 16),
+                number: qty2Int(block.number),
                 hash: block.hash,
-            };
+                block
+            }
         })
     }
 
-    getBlock(number: number, options?: GetBlockOptions): Promise<GetBlock | null | undefined> {
-        let requests = this.requests.filter((v) => v.enabled)
-        let req_count = requests.length
-        let promises = []
-        let params = ["0x" + number.toString(16), options?.transactionDetails]
-        let shortParams = ["0x" + number.toString(16)]
-        for (let z = 0; z < req_count; z++) {
-            let local_params: any[] = []
-            local_params = local_params.concat(requests[z].long_params ? params : shortParams)
-            local_params = local_params.concat(requests[z].additional_params)
-            promises.push(this.call(requests[z].method, local_params))
+    private async addRequestedData(blocks: Block[], req?: DataRequest) {
+        let subtasks = []
+
+        if (req?.receipts) {
+            subtasks.push(this.addReceipts(blocks))
         }
 
-        return Promise.all(promises).then(results => {
-            let holder: {
-                base: RawBlock | undefined,
-                receipts: Receipt[] | undefined,
-                traces: Trace[] | undefined,
-                stateDiffs: TraceTransactionReplay[] | undefined,
-            } = {base: undefined, receipts: undefined, traces: undefined, stateDiffs: undefined}
-            for (let z = 0; z < req_count; z++) {
-                holder[requests[z].field] = results[z]
-            }
-            assert(holder["base"] !== undefined);
-            let block = {
-                ...holder["base"],
-                receipts: holder["receipts"],
-                traces: holder["traces"],
-                stateDiffs: holder["stateDiffs"]
-            };
-            let validator = getResultValidator(nullable(GetBlock))
-            return validator(block)
-        })
-    }
-
-    getLightFinalizedBatch(numbers: number[]): Promise<(GetBlock | null | undefined)[]> {
-        return this.getLatestBlockhash("finalized").then((blockhash) => {
-            let filtered_promises = numbers
-                .filter((v) => v <= blockhash.number)
-                .map((number) => "0x" + number.toString(16))
-                .map((hex_number) => this.call("eth_getBlockByNumber", [hex_number, false]))
-            return Promise.all(filtered_promises);
-        })
-    }
-
-    getBlockBatch(numbers: number[], options?: GetBlockOptions): Promise<(GetBlock | null | undefined)[]> {
-        let requests = this.requests.filter((v) => v.enabled)
-        let req_count = requests.length
-        let call: RpcCall[] = new Array(numbers.length * req_count)
-        for (let i = 0; i < numbers.length; i++) {
-            let number = numbers[i]
-            let params = ["0x" + number.toString(16), options?.transactionDetails]
-            let shortParams = ["0x" + number.toString(16)]
-            for (let z = 0; z < req_count; z++) {
-                let local_params: any[] = []
-                local_params = local_params.concat(requests[z].long_params ? params : shortParams)
-                local_params = local_params.concat(requests[z].additional_params)
-                call[req_count * i + z] = {method: requests[z].method, params: local_params}
-            }
+        if (req?.traces) {
+            subtasks.push(this.addTraces(blocks))
         }
-        return this.reduceBatchOnRetry(call, {})
-        .then(flat_result => {
-            let res : GetBlock[] = [];
-            for (let i = 0; i < flat_result.length / req_count; i++) {
-                let holder: {
-                    base: RawBlock | undefined,
-                    receipts: Receipt[] | undefined,
-                    traces: Trace[] | undefined,
-                    stateDiffs: TraceTransactionReplay[] | undefined,
-                } = {base: undefined, receipts: undefined, traces: undefined, stateDiffs: undefined}
-                for (let z = 0; z < req_count; z++) {
-                    holder[requests[z].field] = flat_result[req_count * i + z]
+
+        if (req?.stateDiffs) {
+            subtasks.push(this.addStateDiffs(blocks))
+        }
+
+        await Promise.all(subtasks)
+    }
+
+    private async addReceipts(blocks: Block[]) {
+        let call = blocks.map(block => ({
+            method: 'eth_getBlockReceipts',
+            params: [block.block.number]
+        }))
+
+        let results: (Receipt[] | null)[] = await this.batchCall(call, {
+            validateResult: getResultValidator(nullable(array(Receipt)))
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let receipts = results[i]
+            if (receipts == null) {
+                block._isInvalid = true
+                continue
+            } 
+
+            block.receipts = receipts
+
+            for (let receipt of receipts) {
+                if (receipt.blockHash !== block.block.hash) {
+                    block._isInvalid = true
                 }
-                assert(holder["base"] !== undefined);
-                res.push({
-                    ...holder["base"],
-                    receipts: holder["receipts"],
-                    traces: holder["traces"],
-                    stateDiffs: holder["stateDiffs"]
-                });
             }
-            let validator = getResultValidator(nullable(GetBlock))
-            return res.map(validator)
+
+            if (block.block.transactions.length !== receipts.length) {
+                block._isInvalid = true
+            }
+        }
+    }
+
+    private async addTraces(blocks: Block[]) {
+        let call = blocks.map(block => ({
+            method: 'trace_block',
+            params: [block.block.number]
+        }))
+
+        let results = await this.batchCall(call, {
+            validateResult: getResultValidator(array(TraceFrame))
         })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let frames = results[i]
+
+            if (frames.length == 0) {
+                if (block.block.transactions.length > 0) {
+                    block._isInvalid = true
+                }
+                continue
+            }
+
+            for (let frame of frames) {
+                if (frame.blockHash !== block.block.hash) {
+                    block._isInvalid = true
+                    break
+                }
+
+                if (!block._isInvalid) {
+                    block.traces = frames
+                }
+            }
+        }
+    }
+
+    private async addStateDiffs(blocks: Block[]) {
+        let tracers = ['stateDiff']
+
+        let call = blocks.map(block => ({
+            method: 'trace_replayBlockTransactions',
+            params: [block.block.number, tracers]
+        }))
+
+        let replaysByBlock = await this.batchCall(call, {
+            validateResult: getResultValidator(array(TraceTransactionReplay))
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let replays = replaysByBlock[i]
+            let txs = new Set(block.block.transactions.map(getTxHash))
+
+            for (let rep of replays) {
+                if (!txs.has(rep.transactionHash)) {
+                    block._isInvalid = true
+                    break
+                }
+            }
+
+            block.stateDiffs = replays
+        }
     }
 
     private async reduceBatchOnRetry<T=any>(batch: {method: string, params?: any[]}[], options: CallOptions<T>): Promise<T[]>  {
@@ -237,11 +240,6 @@ const LatestBlockhash = object({
 
 
 export type LatestBlockhash = GetSrcType<typeof LatestBlockhash>
-
-
-export interface GetBlockOptions {
-    transactionDetails?: boolean
-}
 
 
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {

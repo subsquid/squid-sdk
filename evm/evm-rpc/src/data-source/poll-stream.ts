@@ -1,4 +1,3 @@
-import {GetBlock} from '../rpc-data'
 import {Commitment, Rpc} from '../rpc'
 import {Block, DataRequest} from '../types'
 
@@ -11,12 +10,6 @@ export interface PollStreamOptions {
     strideSize?: number
     maxConfirmationAttempts?: number
     confirmationPauseMs?: number
-}
-
-
-interface Slot {
-    slot: number
-    block?: GetBlock | undefined | null
 }
 
 
@@ -77,25 +70,10 @@ export class PollStream {
 
     private async fetchBlocks(): Promise<Block[]> {
         let plan = this.makePlan();
-        let batch = await this.rpc.getBlockBatch(
-            plan,
-            {
-                transactionDetails: this.req.transactions
-            }
-        )
-
-        let blocks: Block[] = []
-
-        for (let i = 0; i < batch.length; i++) {
-            let candidate = batch[i]
-            if (candidate === undefined || candidate === null) {
-                break
-            }
-            blocks.push({block: candidate, number: plan[i]})
-        }
+        let blocks = await this.rpc.getBlockBatch(plan, this.req)
         if (blocks.length > 0) {
             this.lastRead = blocks[blocks.length - 1].number
         }
-        return blocks;
+        return blocks
     }
 }

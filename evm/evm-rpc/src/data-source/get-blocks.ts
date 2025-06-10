@@ -10,21 +10,8 @@ export async function getBlocks(
 ): Promise<Block[]>
 {
     let numbers: number[] = []
-    for (let i = range.from; i <= range.to ; i++) {
+    for (let i = range.from; i <= range.to; i++) {
         numbers.push(i)
     }
-    
-    let batch = await rpc.getBlockBatch(numbers, {transactionDetails: req.transactions});
-
-    let result: Block[] = []
-    for (let i = 0; i < batch.length; i++) {
-        let block = batch[i]
-        if (block) {
-            result.push({
-                number: parseInt(block.number, 16),
-                block
-            })
-        }
-    }
-    return result
+    return rpc.getBlockBatch(numbers, req)
 }

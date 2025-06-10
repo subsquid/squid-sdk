@@ -4,6 +4,7 @@ import {addErrorContext, assertNotNull} from '@subsquid/util-internal'
 import {Block, BlockHeader, Transaction, Access, EIP7702Authorization, Log, Trace, TraceActionCreate, TraceActionCall, TraceActionReward, TraceActionSelfdestruct, StateDiff, TraceResultCreate, TraceResultCall} from './evm-data'
 // import { GetBlock, Transaction as RpcTransaction, Access as RpcAccess, EIP7702Authorization as RpcEIP7702Authorization, Receipt, Trace as RpcTrace } from './evm-rpc-data'
 import * as rpc from '@subsquid/evm-rpc/lib/rpc-data'
+import * as rpcTypes from '@subsquid/evm-rpc/lib/types'
 import { Logger } from '@subsquid/logger'
 import { assert, log } from 'node:console'
 // import {InstructionTreeTraversal, MessageStream, ParsingError} from './instruction-parser'
@@ -146,7 +147,7 @@ function extractRevertReason(result: rpc.TraceResultCall | rpc.TraceResultCreate
     return buff.subarray(1, len + 1).toString();
 }
 
-function mapTraces(trace: rpc.Trace): Trace {
+function mapTraces(trace: rpc.TraceFrame): Trace {
     return {
         transactionIndex: trace.transactionPosition,
         traceAddress: trace.traceAddress,
@@ -302,38 +303,38 @@ function mapTransaction(tx: rpc.Transaction | string): Transaction {
     };
 }
 
-export function mapRpcBlock(slot: number, src: rpc.GetBlock, _journal: Logger): Block {
+export function mapRpcBlock(src: rpcTypes.Block, _journal: Logger): Block {
     let header: BlockHeader = {
-        number: parseInt(src.number, 16),
+        number: src.number,
         hash: src.hash,
-        parentHash: src.parentHash,
-        timestamp: parseInt(src.timestamp, 16),
-        transactionsRoot: src.transactionsRoot,
-        receiptsRoot: src.receiptsRoot,
-        stateRoot: src.stateRoot,
-        logsBloom: src.logsBloom,
-        sha3Uncles: src.sha3Uncles,
-        extraData: src.extraData,
-        miner: src.miner,
-        nonce: src.nonce ? src.nonce : null,
-        mixHash: src.mixHash ? src.mixHash : null,
-        size: parseInt(src.size, 16),
-        gasLimit: src.gasLimit,
-        gasUsed: src.gasUsed,
-        difficulty: src.difficulty ? src.difficulty : null,
-        totalDifficulty: src.totalDifficulty ? src.totalDifficulty : null,
-        baseFeePerGas: src.baseFeePerGas ? src.baseFeePerGas : null,
+        parentHash: src.block.parentHash,
+        timestamp: parseInt(src.block.timestamp, 16),
+        transactionsRoot: src.block.transactionsRoot,
+        receiptsRoot: src.block.receiptsRoot,
+        stateRoot: src.block.stateRoot,
+        logsBloom: src.block.logsBloom,
+        sha3Uncles: src.block.sha3Uncles,
+        extraData: src.block.extraData,
+        miner: src.block.miner,
+        nonce: src.block.nonce ? src.block.nonce : null,
+        mixHash: src.block.mixHash ? src.block.mixHash : null,
+        size: parseInt(src.block.size, 16),
+        gasLimit: src.block.gasLimit,
+        gasUsed: src.block.gasUsed,
+        difficulty: src.block.difficulty ? src.block.difficulty : null,
+        totalDifficulty: src.block.totalDifficulty ? src.block.totalDifficulty : null,
+        baseFeePerGas: src.block.baseFeePerGas ? src.block.baseFeePerGas : null,
         // withdrawalsRoot: src.withdrawalsRoot ? src.withdrawalsRoot : null,
-        blobGasUsed: src.blobGasUsed ? src.blobGasUsed : null,
-        excessBlobGas: src.excessBlobGas ? src.excessBlobGas : null,
+        blobGasUsed: src.block.blobGasUsed ? src.block.blobGasUsed : null,
+        excessBlobGas: src.block.excessBlobGas ? src.block.excessBlobGas : null,
         // parentBeaconBlockRoot: src.parentBeaconBlockRoot ? src.parentBeaconBlockRoot : null,
         // requestsHash: Bytes | null,
         // uncles: Hash32[],
-        l1BlockNumber: src.l1BlockNumber ? parseInt(src.l1BlockNumber) : null
+        l1BlockNumber: src.block.l1BlockNumber ? parseInt(src.block.l1BlockNumber) : null
     }
 
 
-    let transactions: Transaction[] = src.transactions.map(mapTransaction);
+    let transactions: Transaction[] = src.block.transactions.map(mapTransaction);
     transactions = transactions.map((tx, idx) => upgradeWithRecipts(tx, src.receipts ? src.receipts[idx] : undefined));
 
     let logs: Log[] | undefined = src.receipts ? src.receipts.map(mapReceptToLogs).flat() : undefined;

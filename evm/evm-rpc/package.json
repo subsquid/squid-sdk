@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/evm-rpc",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "EVM-based chains RPC data ingestion tools",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

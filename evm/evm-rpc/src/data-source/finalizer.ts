@@ -28,7 +28,7 @@ class Finalizer {
     private async probe(): Promise<void> {
         let probes = this.queue.splice(0, 10)
 
-        let infos = await this.rpc.getLightFinalizedBatch(probes.map(ref => ref.number))
+        let infos = await this.rpc.getFinalizedBlockBatch(probes.map(ref => ref.number))
         let i
         for (i = infos.length - 1; i >= 0; i--) {
             let ref = probes[i]

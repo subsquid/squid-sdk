@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/evm-ingest",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "Data fetcher and normalizer for EVM-based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

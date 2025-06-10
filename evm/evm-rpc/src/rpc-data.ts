@@ -26,7 +26,9 @@ export const Access = object({
     storageKeys: array(BYTES)
 })
 
+
 export type Access = GetSrcType<typeof Access>
+
 
 export const EIP7702Authorization = object({
     chainId: BYTES,
@@ -37,7 +39,9 @@ export const EIP7702Authorization = object({
     s: BYTES,
 })
 
+
 export type EIP7702Authorization = GetSrcType<typeof EIP7702Authorization>
+
 
 export const Transaction = object({
     accessList: option(array(Access)),
@@ -66,7 +70,9 @@ export const Transaction = object({
     authorizationList: option(array(EIP7702Authorization)),
 })
 
+
 export type Transaction = GetSrcType<typeof Transaction>
+
 
 export const Withdrawal = object(
     {
@@ -77,7 +83,9 @@ export const Withdrawal = object(
     }
 )
 
+
 export type Withdrawal = GetSrcType<typeof Withdrawal>
+
 
 export const Log = object({
     address: BYTES,
@@ -91,7 +99,9 @@ export const Log = object({
     removed: BOOLEAN
 })
 
+
 export type Log = GetSrcType<typeof Log>
+
 
 export const Receipt = object({
     blockHash: BYTES,
@@ -119,7 +129,9 @@ export const Receipt = object({
     l1GasUsed: option(BYTES),
 })
 
+
 export type Receipt = GetSrcType<typeof Receipt>
+
 
 export const TraceActionCreate = object({
     from: BYTES,
@@ -132,7 +144,9 @@ export const TraceActionCreate = object({
     }))
 })
 
+
 export type TraceActionCreate = GetSrcType<typeof TraceActionCreate>
+
 
 export const TraceActionCall = object({
     callType: oneOf({
@@ -148,7 +162,9 @@ export const TraceActionCall = object({
     value: BYTES
 })
 
+
 export type TraceActionCall = GetSrcType<typeof TraceActionCall>
+
 
 export const TraceActionReward = object({
     author: BYTES,
@@ -161,7 +177,9 @@ export const TraceActionReward = object({
     value: BYTES
 })
 
+
 export type TraceActionReward = GetSrcType<typeof TraceActionReward>
+
 
 export const TraceActionSelfdestruct = object({
     address: BYTES,
@@ -169,7 +187,9 @@ export const TraceActionSelfdestruct = object({
     refundAddress: BYTES
 })
 
+
 export type TraceActionSelfdestruct = GetSrcType<typeof TraceActionSelfdestruct>
+
 
 export const TraceResultCreate = object({
     gasUsed: BYTES,
@@ -177,17 +197,20 @@ export const TraceResultCreate = object({
     address: BYTES
 })
 
+
 export type TraceResultCreate = GetSrcType<typeof TraceResultCreate>
+
 
 export const TraceResultCall = object({
     gasUsed: BYTES,
     output: BYTES
 })
 
+
 export type TraceResultCall = GetSrcType<typeof TraceResultCall>
 
 
-export const Trace = object({
+export const TraceFrame = object({
     action: oneOf({
         create: TraceActionCreate,
         call: TraceActionCall,
@@ -213,30 +236,39 @@ export const Trace = object({
     error: option(STRING),
 })
 
-export type Trace = GetSrcType<typeof Trace>
+
+export type TraceFrame = GetSrcType<typeof TraceFrame>
+
 
 export const TraceAddDiff = object({
     "+": BYTES
 })
 
+
 export type TraceAddDiff = GetSrcType<typeof TraceAddDiff>
+
 
 export const TraceChangeValue = object({
     "from": BYTES,
     "to": BYTES
 })
 
+
 export type TraceChangeValue = GetSrcType<typeof TraceChangeValue>
+
 
 export const TraceChangeDiff = object({
     "*": TraceChangeValue
 })
 
+
 export type TraceChangeDiff = GetSrcType<typeof TraceChangeDiff>
+
 
 export const TraceDeleteDiff = object({
     "-": BYTES
 })
+
 
 export type TraceDeleteDiff = GetSrcType<typeof TraceDeleteDiff>
 
@@ -248,6 +280,7 @@ export const TraceDiff = oneOf({
     delete: TraceDeleteDiff
 })
 
+
 export type TraceDiff = GetSrcType<typeof TraceDiff>
 
 
@@ -258,17 +291,20 @@ export const StateDiff = object({
     storage: record(BYTES, TraceDiff)
 })
 
+
 export type StateDiff = GetSrcType<typeof StateDiff>
 
-export const TraceTransactionReplay = object({
-    output: BYTES,
-    stateDiff: option(record(BYTES, StateDiff)),
-    trace: option(array(Trace)),
-    transactionHash: BYTES,
 
+export const TraceTransactionReplay = object({
+    output: option(BYTES),
+    stateDiff: option(record(BYTES, StateDiff)),
+    trace: option(array(TraceFrame)),
+    transactionHash: BYTES,
 })
 
+
 export type TraceTransactionReplay = GetSrcType<typeof TraceTransactionReplay>
+
 
 export const GetBlock = object({
     baseFeePerGas: option(BYTES),
@@ -302,47 +338,7 @@ export const GetBlock = object({
 
     l1BlockNumber: option(BYTES),
     totalDifficulty: option(BYTES),
-
-    receipts: option(array(Receipt)),
-    traces: option(array(Trace)),
-    stateDiffs: option(array(TraceTransactionReplay))
 })
+
 
 export type GetBlock = GetSrcType<typeof GetBlock>
-
-export const RawBlock = object({
-    baseFeePerGas: option(BYTES),
-    blobGasUsed: option(BYTES),
-    difficulty: option(BYTES),
-    excessBlobGas: option(BYTES),
-    extraData: BYTES,
-    gasLimit: BYTES,
-    gasUsed: BYTES,
-    hash: BYTES,
-    logsBloom: BYTES,
-    miner: BYTES,
-    mixHash: option(BYTES),
-    nonce: option(BYTES),
-    number: BYTES,
-    parentBeaconBlockRoot: option(BYTES),
-    parentHash: BYTES,
-    receiptsRoot: BYTES,
-    sha3Uncles: BYTES,
-    size: BYTES,
-    stateRoot: BYTES,
-    timestamp: BYTES,
-    transactions: oneOf({
-        justHashes: array(BYTES),
-        fullTransactions: array(Transaction)
-    }),
-    transactionsRoot: BYTES,
-    uncles: array(BYTES),
-    withdrawals: option(array(Withdrawal)),
-    withdrawalsRoot: option(BYTES),
-
-    l1BlockNumber: option(BYTES),
-    totalDifficulty: option(BYTES)    
-})
-
-
-export type RawBlock = GetSrcType<typeof RawBlock>
