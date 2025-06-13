@@ -26,7 +26,7 @@
     "@subsquid/util-internal-validation": "^0.7.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "^20.10.0",
     "typescript": "5.5.4"
   }
 }
