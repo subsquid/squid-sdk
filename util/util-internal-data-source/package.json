@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "^20.19.0",
     "typescript": "5.5.4"
   }
 }

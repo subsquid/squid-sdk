@@ -222,6 +222,10 @@ export class DataService {
 
             for (let block of batch.blocks) {
                 this.chain.push(block)
+                
+                if (block.timestamp) {
+                    this.metrics.observeBlockProcessingTime(block.timestamp * 1000);
+                }
             }
 
             if (batch.blocks.length > 0) {
