@@ -1,23 +1,19 @@
 import {
-    ANY,
-    ANY_NAT,
     array,
-    B58,
-    B64,
-    BIG_NAT,
     BOOLEAN,
     BYTES,
     constant,
     GetSrcType,
-    INT,
     NAT,
     nullable,
     object,
     oneOf,
     option,
+    QTY,
     record,
+    SMALL_QTY,
     STRING,
-    tuple
+    STRING_FLOAT
 } from '@subsquid/util-internal-validation'
 
 
@@ -31,12 +27,12 @@ export type Access = GetSrcType<typeof Access>
 
 
 export const EIP7702Authorization = object({
-    chainId: BYTES,
+    chainId: SMALL_QTY,
     address: BYTES,
-    nonce: BYTES,
-    yParity: BYTES,
+    nonce: SMALL_QTY,
+    yParity: SMALL_QTY,
     r: BYTES,
-    s: BYTES,
+    s: BYTES
 })
 
 
@@ -44,58 +40,55 @@ export type EIP7702Authorization = GetSrcType<typeof EIP7702Authorization>
 
 
 export const Transaction = object({
-    accessList: option(array(Access)),
+    blockNumber: SMALL_QTY,
     blockHash: BYTES,
-    blockNumber: BYTES,
-    chainId: option(BYTES),
-    from: BYTES,
-    gas: BYTES,
-    gasPrice: BYTES,
     hash: BYTES,
+    transactionIndex: SMALL_QTY,
+    chainId: option(SMALL_QTY),
+    from: BYTES,
+    to: nullable(BYTES),
+    gas: QTY,
+    gasPrice: QTY,
     input: BYTES,
-    maxFeePerGas: option(BYTES),
-    maxPriorityFeePerGas: option(BYTES),
-    nonce: BYTES,
+    maxFeePerGas: option(QTY),
+    maxPriorityFeePerGas: option(QTY),
+    nonce: SMALL_QTY,
+    v: QTY,
     r: BYTES,
     s: BYTES,
-    to: nullable(BYTES),
-    transactionIndex: BYTES,
-    type: BYTES,
-    v: BYTES,
-    value: BYTES,
-    yParity: option(BYTES),
-
-    maxFeePerBlobGas: option(BYTES),
+    type: SMALL_QTY,
+    value: QTY,
+    yParity: option(SMALL_QTY),
+    accessList: option(array(Access)),
+    maxFeePerBlobGas: option(QTY),
     blobVersionedHashes: option(array(BYTES)),
-    authorizationList: option(array(EIP7702Authorization)),
+    authorizationList: option(array(EIP7702Authorization))
 })
 
 
 export type Transaction = GetSrcType<typeof Transaction>
 
 
-export const Withdrawal = object(
-    {
-        address: BYTES,
-        amount: BYTES,
-        index: BYTES,
-        validatorIndex: BYTES,
-    }
-)
+export const Withdrawal = object({
+    address: BYTES,
+    amount: QTY,
+    index: QTY,
+    validatorIndex: QTY
+})
 
 
 export type Withdrawal = GetSrcType<typeof Withdrawal>
 
 
 export const Log = object({
+    blockHash: BYTES,
+    blockNumber: SMALL_QTY,
+    transactionHash: BYTES,
+    transactionIndex: SMALL_QTY,
+    logIndex: SMALL_QTY,
     address: BYTES,
     topics: array(BYTES),
     data: BYTES,
-    blockNumber: BYTES,
-    transactionHash: BYTES,
-    transactionIndex: BYTES,
-    blockHash: BYTES,
-    logIndex: BYTES,
     removed: BOOLEAN
 })
 
@@ -105,28 +98,26 @@ export type Log = GetSrcType<typeof Log>
 
 export const Receipt = object({
     blockHash: BYTES,
-    blockNumber: BYTES,
+    blockNumber: SMALL_QTY,
+    transactionHash: BYTES,
+    transactionIndex: SMALL_QTY,
     contractAddress: nullable(BYTES),
-    cumulativeGasUsed: BYTES,
+    cumulativeGasUsed: QTY,
     from: BYTES,
-    gasUsed: BYTES,
-    effectiveGasPrice: BYTES,
+    gasUsed: QTY,
+    effectiveGasPrice: QTY,
     logs: array(Log),
     logsBloom: BYTES,
-    status: BYTES,
+    status: SMALL_QTY,
     to: nullable(BYTES),
-    transactionHash: BYTES,
-    transactionIndex: BYTES,
-    type: BYTES,
-
-
-    l1BaseFeeScalar: option(BYTES),
-    l1BlobBaseFee: option(BYTES),
-    l1BlobBaseFeeScalar: option(BYTES),
-    l1Fee: option(BYTES),
-    l1FeeScalar: option(BYTES),
-    l1GasPrice: option(BYTES),
-    l1GasUsed: option(BYTES),
+    type: SMALL_QTY,
+    l1Fee: option(QTY),
+    l1FeeScalar: option(STRING_FLOAT),
+    l1BaseFeeScalar: option(QTY),
+    l1BlobBaseFee: option(QTY),
+    l1BlobBaseFeeScalar: option(QTY),
+    l1GasPrice: option(QTY),
+    l1GasUsed: option(QTY)
 })
 
 
@@ -135,12 +126,12 @@ export type Receipt = GetSrcType<typeof Receipt>
 
 export const TraceActionCreate = object({
     from: BYTES,
-    value: BYTES,
-    gas: BYTES,
+    value: QTY,
+    gas: QTY,
     init: BYTES,
     creation_method: option(oneOf({
-        create: constant("create"),
-        create2: constant("create2")
+        create: constant('create'),
+        create2: constant('create2')
     }))
 })
 
@@ -150,16 +141,16 @@ export type TraceActionCreate = GetSrcType<typeof TraceActionCreate>
 
 export const TraceActionCall = object({
     callType: oneOf({
-        'call': constant("call"),
-        'callcode': constant("callcode"),
-        'delegatecall': constant("delegatecall"),
-        'staticcall': constant("staticcall")
+        'call': constant('call'),
+        'callcode': constant('callcode'),
+        'delegatecall': constant('delegatecall'),
+        'staticcall': constant('staticcall')
     }),
     from: BYTES,
-    gas: BYTES,
+    gas: QTY,
     input: BYTES,
     to: BYTES,
-    value: BYTES
+    value: QTY
 })
 
 
@@ -169,12 +160,12 @@ export type TraceActionCall = GetSrcType<typeof TraceActionCall>
 export const TraceActionReward = object({
     author: BYTES,
     rewardType: oneOf({
-        'block': constant("block"),
-        'uncle': constant("uncle"),
-        'emptyStep': constant("emptyStep"),
-        'external': constant("external")
+        'block': constant('block'),
+        'uncle': constant('uncle'),
+        'emptyStep': constant('emptyStep'),
+        'external': constant('external')
     }),
-    value: BYTES
+    value: QTY
 })
 
 
@@ -183,7 +174,7 @@ export type TraceActionReward = GetSrcType<typeof TraceActionReward>
 
 export const TraceActionSelfdestruct = object({
     address: BYTES,
-    balance: BYTES,
+    balance: QTY,
     refundAddress: BYTES
 })
 
@@ -192,7 +183,7 @@ export type TraceActionSelfdestruct = GetSrcType<typeof TraceActionSelfdestruct>
 
 
 export const TraceResultCreate = object({
-    gasUsed: BYTES,
+    gasUsed: QTY,
     code: BYTES,
     address: BYTES
 })
@@ -202,7 +193,7 @@ export type TraceResultCreate = GetSrcType<typeof TraceResultCreate>
 
 
 export const TraceResultCall = object({
-    gasUsed: BYTES,
+    gasUsed: QTY,
     output: BYTES
 })
 
@@ -228,12 +219,12 @@ export const TraceFrame = object({
     transactionHash: nullable(BYTES),
     transactionPosition: NAT,
     type: oneOf({
-        create: constant("create"),
-        call: constant("call"),
-        reward: constant("reward"),
-        selfdestruct: constant("suicide")
+        create: constant('create'),
+        call: constant('call'),
+        reward: constant('reward'),
+        selfdestruct: constant('suicide')
     }),
-    error: option(STRING),
+    error: option(STRING)
 })
 
 
@@ -241,7 +232,7 @@ export type TraceFrame = GetSrcType<typeof TraceFrame>
 
 
 export const TraceAddDiff = object({
-    "+": BYTES
+    '+': BYTES
 })
 
 
@@ -249,8 +240,8 @@ export type TraceAddDiff = GetSrcType<typeof TraceAddDiff>
 
 
 export const TraceChangeValue = object({
-    "from": BYTES,
-    "to": BYTES
+    'from': BYTES,
+    'to': BYTES
 })
 
 
@@ -258,7 +249,7 @@ export type TraceChangeValue = GetSrcType<typeof TraceChangeValue>
 
 
 export const TraceChangeDiff = object({
-    "*": TraceChangeValue
+    '*': TraceChangeValue
 })
 
 
@@ -266,7 +257,7 @@ export type TraceChangeDiff = GetSrcType<typeof TraceChangeDiff>
 
 
 export const TraceDeleteDiff = object({
-    "-": BYTES
+    '-': BYTES
 })
 
 
@@ -274,7 +265,7 @@ export type TraceDeleteDiff = GetSrcType<typeof TraceDeleteDiff>
 
 
 export const TraceDiff = oneOf({
-    same: constant("="),
+    same: constant('='),
     add: TraceAddDiff,
     change: TraceChangeDiff,
     delete: TraceDeleteDiff
@@ -299,7 +290,7 @@ export const TraceTransactionReplay = object({
     output: option(BYTES),
     stateDiff: option(record(BYTES, StateDiff)),
     trace: option(array(TraceFrame)),
-    transactionHash: BYTES,
+    transactionHash: BYTES
 })
 
 
@@ -307,37 +298,37 @@ export type TraceTransactionReplay = GetSrcType<typeof TraceTransactionReplay>
 
 
 export const GetBlock = object({
-    baseFeePerGas: option(BYTES),
-    blobGasUsed: option(BYTES),
-    difficulty: option(BYTES),
-    excessBlobGas: option(BYTES),
-    extraData: BYTES,
-    gasLimit: BYTES,
-    gasUsed: BYTES,
+    number: SMALL_QTY,
     hash: BYTES,
+    parentHash: BYTES,
+    difficulty: option(QTY),
+    totalDifficulty: option(QTY),
+    excessBlobGas: option(QTY),
+    extraData: BYTES,
+    gasLimit: QTY,
+    gasUsed: QTY,
+    sha3Uncles: BYTES,
     logsBloom: BYTES,
+    transactionsRoot: BYTES,
+    receiptsRoot: BYTES,
+    stateRoot: BYTES,
     miner: BYTES,
     mixHash: option(BYTES),
     nonce: option(BYTES),
-    number: BYTES,
+    baseFeePerGas: option(QTY),
+    blobGasUsed: option(QTY),
     parentBeaconBlockRoot: option(BYTES),
-    parentHash: BYTES,
-    receiptsRoot: BYTES,
-    sha3Uncles: BYTES,
-    size: BYTES,
-    stateRoot: BYTES,
-    timestamp: BYTES,
+    size: QTY,
+    timestamp: QTY,
     transactions: oneOf({
         justHashes: array(BYTES),
         fullTransactions: array(Transaction)
     }),
-    transactionsRoot: BYTES,
     uncles: array(BYTES),
     withdrawals: option(array(Withdrawal)),
     withdrawalsRoot: option(BYTES),
-
-    l1BlockNumber: option(BYTES),
-    totalDifficulty: option(BYTES),
+    requestsHash: option(BYTES),
+    l1BlockNumber: option(SMALL_QTY)
 })
 
 
