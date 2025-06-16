@@ -71,6 +71,8 @@ runProgram(async () => {
     let service = await runDataService({
         source: dataSource,
         blockCacheSize: args.blockCacheSize,
+        dataset: 'ethereum',
+        network: 'mainnet',
         port: args.port
     })
 

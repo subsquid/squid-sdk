@@ -1,5 +1,5 @@
-import {collectDefaultMetrics, Gauge, Registry} from 'prom-client'
-
+import {collectDefaultMetrics, Counter, Gauge, Histogram, register, Registry} from 'prom-client'
+import { Block } from './types';
 
 export class Metrics {
     readonly registry = new Registry()
@@ -9,6 +9,9 @@ export class Metrics {
     private hotBlocksFirstBlockGauge: Gauge
     private hotBlocksFinalizedBlockGauge: Gauge
     private hotBlocksStoredBlocksGauge: Gauge
+    private blockLagHistogram: Histogram
+    private blockProcessingTimeHistogram: Histogram
+    private blockIngestionTimestamp: Gauge
 
     constructor() {
         this.hotBlocksLastBlockGauge = new Gauge({
@@ -41,7 +44,27 @@ export class Metrics {
             registers: [this.registry],
         })
 
+        this.blockLagHistogram = new Histogram({
+            name: 'sqd_hotblocks_block_lag_ms',
+            help: 'Time to process a block from creation to end of processing in ms',
+            buckets: [50, 100, 200, 300, 400, 500, 750, 1000, 2000],
+            registers: [this.registry],
+        })
 
+        this.blockProcessingTimeHistogram = new Histogram({
+            name: 'block_processing_duration_seconds',
+            help: 'Time taken to process a block in seconds',
+            labelNames: ['dataset', 'network'],
+            buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+            registers: [this.registry]
+        });
+  
+        this.blockIngestionTimestamp = new Gauge({
+            name: 'block_ingestion_timestamp',
+            help: 'Timestamp (in milliseconds since epoch) when the block was received by the ingestion service',
+            labelNames: ['dataset', 'network', 'blockHeight', 'blockHash'],
+            registers: [this.registry]
+        });
 
         collectDefaultMetrics({register: this.registry})
     }
@@ -70,5 +93,28 @@ export class Metrics {
         this.hotBlocksFinalizedBlockGauge.set({}, value)
     }
 
+    observeBlockLag(blockTimestamp: number) {
+        if (blockTimestamp === 0) return;
 
+        const processingLag = Date.now() - blockTimestamp;
+        this.blockLagHistogram.observe(processingLag);
+    }
+
+    recordBlockIngestion(block: Block, dataset: string, network: string) {
+        const now = Date.now();
+        this.blockIngestionTimestamp.labels({
+          dataset,
+          network,
+          blockHeight: block.number.toString(),
+          blockHash: block.hash
+        }).set(now);
+    }
+
+    trackProcessingTime(startTime: number, dataset: string, network: string) {
+        const duration = (Date.now() - startTime) / 1000;
+        this.blockProcessingTimeHistogram.labels({
+          dataset,
+          network
+        }).observe(duration);
+    }
 }
