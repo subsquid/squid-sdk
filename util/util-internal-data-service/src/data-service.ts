@@ -26,6 +26,8 @@ export class DataService {
     constructor(
         private source: DataSource<Block>,
         private bufferSize: number,
+        private dataset: string,
+        private network: string,
         readonly log = createLogger('sqd:data-service')
     ) {
         this.firstBlockIngestedFuture.promise().catch(() => {})
@@ -220,9 +222,12 @@ export class DataService {
         })) {
             if (this.stopped) return
 
+            const startTime = Date.now();
+
             for (let block of batch.blocks) {
                 this.chain.push(block)
 
+                this.metrics.recordBlockIngestion(block, this.dataset, this.network)
                 if (block.timestamp) {
                     this.metrics.observeBlockLag(block.timestamp);
                 }
@@ -255,6 +260,8 @@ export class DataService {
             }
 
             this.triggerUpdate()
+
+            this.metrics.trackProcessingTime(startTime, this.dataset, this.network)
         }
     }
 
