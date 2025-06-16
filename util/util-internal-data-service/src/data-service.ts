@@ -222,9 +222,9 @@ export class DataService {
 
             for (let block of batch.blocks) {
                 this.chain.push(block)
-                
+
                 if (block.timestamp) {
-                    this.metrics.observeBlockProcessingTime(block.timestamp * 1000);
+                    this.metrics.observeBlockLag(block.timestamp);
                 }
             }
 

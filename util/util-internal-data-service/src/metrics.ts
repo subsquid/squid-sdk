@@ -9,9 +9,7 @@ export class Metrics {
     private hotBlocksFirstBlockGauge: Gauge
     private hotBlocksFinalizedBlockGauge: Gauge
     private hotBlocksStoredBlocksGauge: Gauge
-    private blockProcessingTimeHistogram: Histogram
-    private blocksSLOSuccessCounter: Counter
-    private blocksSLOFailureCounter: Counter
+    private blockLagHistogram: Histogram
 
     constructor() {
         this.hotBlocksLastBlockGauge = new Gauge({
@@ -44,22 +42,10 @@ export class Metrics {
             registers: [this.registry],
         })
 
-        this.blockProcessingTimeHistogram = new Histogram({
-            name: 'sqd_hotblocks_processing_time_ms',
-            help: 'Time to process a block from creation to database availability in ms',
+        this.blockLagHistogram = new Histogram({
+            name: 'sqd_hotblocks_block_lag_ms',
+            help: 'Time to process a block from creation to end of processing in ms',
             buckets: [50, 100, 200, 300, 400, 500, 750, 1000, 2000],
-            registers: [this.registry],
-        })
-
-        this.blocksSLOSuccessCounter = new Counter({
-            name: 'sqd_hotblocks_slo_success_total',
-            help: 'Number of blocks processed within SLO (500ms)',
-            registers: [this.registry],
-        })
-        
-        this.blocksSLOFailureCounter = new Counter({
-            name: 'sqd_hotblocks_slo_failure_total',
-            help: 'Number of blocks processed outside SLO (>500ms)',
             registers: [this.registry],
         })
 
@@ -90,16 +76,10 @@ export class Metrics {
         this.hotBlocksFinalizedBlockGauge.set({}, value)
     }
 
-    observeBlockProcessingTime(blockTimestamp: number) {
+    observeBlockLag(blockTimestamp: number) {
         if (blockTimestamp === 0) return;
-        
-        const processingTime = Date.now() - blockTimestamp;
-        this.blockProcessingTimeHistogram.observe(processingTime);
-        
-        if (processingTime <= 500) {
-            this.blocksSLOSuccessCounter.inc();
-        } else {
-            this.blocksSLOFailureCounter.inc();
-        }
+
+        const processingLag = Date.now() - blockTimestamp;
+        this.blockLagHistogram.observe(processingLag);
     }
 }
