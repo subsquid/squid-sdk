@@ -2,6 +2,9 @@ import {GetBlock, Receipt, TraceFrame, TraceTransactionReplay} from './rpc-data'
 
 
 export type Qty = string
+export type Bytes = string
+export type Bytes8 = string
+export type Bytes20 = string
 export type Bytes32 = string
 
 

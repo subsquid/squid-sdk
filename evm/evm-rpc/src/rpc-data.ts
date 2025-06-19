@@ -113,9 +113,9 @@ export const Receipt = object({
     type: SMALL_QTY,
     l1Fee: option(QTY),
     l1FeeScalar: option(STRING_FLOAT),
-    l1BaseFeeScalar: option(QTY),
+    l1BaseFeeScalar: option(SMALL_QTY),
     l1BlobBaseFee: option(QTY),
-    l1BlobBaseFeeScalar: option(QTY),
+    l1BlobBaseFeeScalar: option(SMALL_QTY),
     l1GasPrice: option(QTY),
     l1GasUsed: option(QTY)
 })
@@ -141,10 +141,10 @@ export type TraceActionCreate = GetSrcType<typeof TraceActionCreate>
 
 export const TraceActionCall = object({
     callType: oneOf({
-        'call': constant('call'),
-        'callcode': constant('callcode'),
-        'delegatecall': constant('delegatecall'),
-        'staticcall': constant('staticcall')
+        call: constant('call'),
+        callcode: constant('callcode'),
+        delegatecall: constant('delegatecall'),
+        staticcall: constant('staticcall')
     }),
     from: BYTES,
     gas: QTY,
@@ -160,10 +160,10 @@ export type TraceActionCall = GetSrcType<typeof TraceActionCall>
 export const TraceActionReward = object({
     author: BYTES,
     rewardType: oneOf({
-        'block': constant('block'),
-        'uncle': constant('uncle'),
-        'emptyStep': constant('emptyStep'),
-        'external': constant('external')
+        block: constant('block'),
+        uncle: constant('uncle'),
+        emptyStep: constant('emptyStep'),
+        external: constant('external')
     }),
     value: QTY
 })

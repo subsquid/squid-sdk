@@ -1,7 +1,7 @@
 {
-  "name": "@subsquid/evm-rpc",
+  "name": "@subsquid/evm-normalization",
   "version": "0.0.0",
-  "description": "EVM-based chains RPC data ingestion tools",
+  "description": "EVM-based chains data model",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -13,20 +13,16 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "node --test lib/mapping.test.js"
   },
   "dependencies": {
-    "@subsquid/logger": "^1.4.0",
+    "@subsquid/evm-rpc": "^0.0.0",
     "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-data-source": "^0.0.0",
-    "@subsquid/util-internal-range": "^0.3.0",
     "@subsquid/util-internal-validation": "^0.7.0"
   },
-  "peerDependencies": {
-    "@subsquid/rpc-client": "^4.11.0"
-  },
   "devDependencies": {
-    "@subsquid/rpc-client": "^4.11.0",
+    "@subsquid/util-internal-json": "^1.2.3",
     "@types/node": "^18.18.14",
     "typescript": "5.5.4"
   }

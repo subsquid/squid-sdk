@@ -1,3 +1,4 @@
+import {createLogger} from '@subsquid/logger'
 import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {
     array,
@@ -19,25 +20,20 @@ export type Commitment = 'finalized' | 'latest'
 
 export class Rpc {
     constructor(
-        private client: RpcClient,
-        private priority: number = 0,
-    ) {
-    }
-
-    withPriority(priority: number): Rpc {
-        return new Rpc(this.client, priority)
-    }
+        public readonly client: RpcClient,
+        public readonly log = createLogger('sqd:evm-rpc')
+    ) {}
 
     getConcurrency(): number {
         return this.client.getConcurrency()
     }
 
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
-        return this.client.call(method, params, {priority: this.priority, ...options})
+        return this.client.call(method, params, options)
     }
 
     batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions<T>): Promise<T[]> {
-        return this.client.batchCall(batch, {priority: this.priority, ...options})
+        return this.client.batchCall(batch, options)
     }
 
     async getLatestBlockhash(commitment: Commitment): Promise<LatestBlockhash> {
@@ -125,7 +121,7 @@ export class Rpc {
             params: [block.block.number]
         }))
 
-        let results: (Receipt[] | null)[] = await this.batchCall(call, {
+        let results = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(nullable(array(Receipt)))
         })
 
@@ -157,7 +153,7 @@ export class Rpc {
             params: [block.block.number]
         }))
 
-        let results = await this.batchCall(call, {
+        let results = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(array(TraceFrame))
         })
 
@@ -193,13 +189,13 @@ export class Rpc {
             params: [block.block.number, tracers]
         }))
 
-        let replaysByBlock = await this.batchCall(call, {
+        let results = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(array(TraceTransactionReplay))
         })
 
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
-            let replays = replaysByBlock[i]
+            let replays = results[i]
             let txs = new Set(block.block.transactions.map(getTxHash))
 
             for (let rep of replays) {
@@ -217,11 +213,14 @@ export class Rpc {
         if (batch.length <= 1) return this.batchCall(batch, options)
 
         let result = await this.batchCall(batch, {...options, retryAttempts: 0}).catch(err => {
-            if (this.client.isConnectionError(err) || err instanceof RpcProtocolError) return
-            throw err
+            if (this.client.isConnectionError(err) || err instanceof RpcProtocolError) {
+                this.log.warn(err, 'will retry request with reduced batch')
+            } else {
+                throw err
+            }
         })
 
-        if (result) return result
+        if (result != null) return result
 
         let pack = await Promise.all([
             this.reduceBatchOnRetry(batch.slice(0, Math.ceil(batch.length / 2)), options),

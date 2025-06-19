@@ -18,6 +18,7 @@
   "dependencies": {
     "commander": "^11.1.0",
     "@subsquid/evm-rpc": "^0.0.0",
+    "@subsquid/evm-normalization": "^0.0.0",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-commander": "^1.4.0",

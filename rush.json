@@ -438,6 +438,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/evm-normalization",
+      "projectFolder": "evm/evm-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-processor",
       "projectFolder": "evm/evm-processor",
       "shouldPublish": true,

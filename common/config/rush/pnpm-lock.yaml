@@ -77,6 +77,9 @@ dependencies:
   '@rush-temp/evm-ingest':
     specifier: file:./projects/evm-ingest.tgz
     version: file:projects/evm-ingest.tgz
+  '@rush-temp/evm-normalization':
+    specifier: file:./projects/evm-normalization.tgz
+    version: file:projects/evm-normalization.tgz
   '@rush-temp/evm-processor':
     specifier: file:./projects/evm-processor.tgz
     version: file:projects/evm-processor.tgz
@@ -7525,6 +7528,15 @@ packages:
       typescript: 5.5.4
     dev: false
 
+  file:projects/evm-normalization.tgz:
+    resolution: {integrity: sha512-irdCl6bOXzofshr78OZp0GiH2y0i0a0os9EilaF7B9pY1HHI3M6GTu9FxPuPvuALsVZr/+R/8Zkhq3GVAOl9rw==, tarball: file:projects/evm-normalization.tgz}
+    name: '@rush-temp/evm-normalization'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.5.4
+    dev: false
+
   file:projects/evm-processor.tgz:
     resolution: {integrity: sha512-q7mNjRAMaqJzPyb0cBk3Xx+8EKJa9G+rgGzoS+XBQyJckaYmNHcf3vbEA4dKaELVqMvd/zichiKm1aLiuGwH7g==, tarball: file:projects/evm-processor.tgz}
     name: '@rush-temp/evm-processor'
@@ -7535,7 +7547,7 @@ packages:
     dev: false
 
   file:projects/evm-rpc.tgz:
-    resolution: {integrity: sha512-F6bmRaP0zWn9x0rlf/0+2DuWyyLUKqQoF9e4u3M8wu1E36w0OG4n/T8YBcpaFFM5+EBhNHjGj0pkVc17KdfuJA==, tarball: file:projects/evm-rpc.tgz}
+    resolution: {integrity: sha512-stz5VFyYQQOjV6AWyABz7kWP2dKY1tyho/QeuELLn9An6hkIQnmsHF3H7Lg0bVVsiL+dKkplkayL6oUqO+G4Yw==, tarball: file:projects/evm-rpc.tgz}
     name: '@rush-temp/evm-rpc'
     version: 0.0.0
     dependencies:
