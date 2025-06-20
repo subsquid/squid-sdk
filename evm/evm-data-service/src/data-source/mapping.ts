@@ -2,6 +2,7 @@ import {Block as RpcBlock} from '@subsquid/evm-rpc'
 import {mapRpcBlock} from '@subsquid/evm-normalization'
 import {withErrorContext} from '@subsquid/util-internal'
 import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
+import {toJSON} from '@subsquid/util-internal-json'
 import {promisify} from 'node:util'
 import * as zlib from 'node:zlib'
 
@@ -51,10 +52,11 @@ export class Mapping implements DataSource<Block> {
 
     private async mapRpcBlock(block: RpcBlock): Promise<Block> {
         let normalized = mapRpcBlock(block)
+        let jsonLine = JSON.stringify(toJSON(normalized)) + '\n'
+        let jsonLineGzip = await gzip(jsonLine, {
+            level: zlib.constants.Z_BEST_COMPRESSION
+        })
 
-        let json = JSON.stringify(normalized) + "\n"
-
-        let jsonLineGzip = await gzip(json)
         return {
             number: block.number,
             hash: block.block.hash,
