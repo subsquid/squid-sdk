@@ -30,10 +30,12 @@
     "@subsquid/util-internal-data-source": "^0.0.0",
     "@subsquid/util-internal-range": "^0.3.0",
     "@subsquid/util-internal-json": "^1.2.3",
-    "ethers": "^6.9.0"
+    "ethers": "^6.9.0",
+    "source-map-support": "^0.5.21"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
+    "@types/source-map-support": "^0.5.10",
     "typescript": "5.5.4"
   }
 }
