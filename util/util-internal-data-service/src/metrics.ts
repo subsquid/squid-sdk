@@ -11,7 +11,6 @@ export class Metrics {
     private hotBlocksStoredBlocksGauge: Gauge
     private blockLagHistogram: Histogram
     private blockProcessingTimeHistogram: Histogram
-    private blockIngestionTimestamp: Gauge
 
     constructor() {
         this.hotBlocksLastBlockGauge = new Gauge({
@@ -58,13 +57,6 @@ export class Metrics {
             buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
             registers: [this.registry]
         });
-  
-        this.blockIngestionTimestamp = new Gauge({
-            name: 'block_ingestion_timestamp',
-            help: 'Timestamp (in milliseconds since epoch) when the block was received by the ingestion service',
-            labelNames: ['dataset', 'network', 'blockHeight', 'blockHash'],
-            registers: [this.registry]
-        });
 
         collectDefaultMetrics({register: this.registry})
     }
@@ -100,16 +92,6 @@ export class Metrics {
         this.blockLagHistogram.observe(processingLag);
     }
 
-    recordBlockIngestion(block: Block, dataset: string, network: string) {
-        const now = Date.now();
-        this.blockIngestionTimestamp.labels({
-          dataset,
-          network,
-          blockHeight: block.number.toString(),
-          blockHash: block.hash
-        }).set(now);
-    }
-
     trackProcessingTime(startTime: number, dataset: string, network: string) {
         const duration = (Date.now() - startTime) / 1000;
         this.blockProcessingTimeHistogram.labels({
@@ -118,3 +100,64 @@ export class Metrics {
         }).observe(duration);
     }
 }
+
+class BlockTimestampCache {
+    private cache = new Map<string, number>();
+    private maxSize: number;
+    private ttlMs: number;
+  
+    constructor(maxSize = 1000, ttlMs = 30 * 60 * 1000) {
+      this.maxSize = maxSize;
+      this.ttlMs = ttlMs;
+    }
+  
+    private getKey(height: string): string {
+      return `${height}`;
+    }
+  
+    set(height: string, timestamp: number): void {
+      const key = this.getKey(height);
+      
+      if (this.cache.size >= this.maxSize) {
+        let oldestKey = '';
+        let oldestTime = Infinity;
+        
+        for (const [k, time] of this.cache.entries()) {
+          if (time < oldestTime) {
+            oldestTime = time;
+            oldestKey = k;
+          }
+        }
+        
+        if (oldestKey) {
+          this.cache.delete(oldestKey);
+        }
+      }
+      
+      this.cache.set(key, timestamp);
+      
+      setTimeout(() => {
+        this.cache.delete(key);
+      }, this.ttlMs);
+    }
+  
+    get(height: string): number | undefined {
+      const key = this.getKey(height);
+      return this.cache.get(key);
+    }
+  }
+  
+  export const blockTimestampCache = new BlockTimestampCache();
+  
+  export function recordBlockIngestion(block: Block) {
+    const now = Date.now();
+    blockTimestampCache.set(
+      block.number.toString(),
+      now
+    );
+  }
+  
+  export function getBlockIngestionTimestamp(height: string): number | undefined {
+    return blockTimestampCache.get(height);
+  }
+  

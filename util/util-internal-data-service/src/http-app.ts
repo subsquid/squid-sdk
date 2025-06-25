@@ -3,6 +3,7 @@ import {HttpApp} from '@subsquid/util-internal-http-server'
 import {NAT, object, option, STRING, ValidationFailure} from '@subsquid/util-internal-validation'
 import {DataService} from './data-service'
 import {InvalidBaseBlock} from './types'
+import { getBlockIngestionTimestamp } from './metrics'
 
 
 export function createHttpApp(service: DataService): HttpApp {
@@ -128,6 +129,24 @@ export function createHttpApp(service: DataService): HttpApp {
             }
         }
     })
+
+    app.add('/block-time/{height}', {
+        async GET(ctx) {
+            const { height } = ctx.params;
+        
+            if (!height) {
+                return ctx.send(400, 'Missing required parameters: height')
+            }
+            
+            const timestamp = getBlockIngestionTimestamp(height.toString());
+            
+            if (timestamp === undefined) {
+                return ctx.send(404, 'Timestamp not found for the specified block')
+            }
+        
+            return ctx.send(200, timestamp.toString())
+        }
+    });
 
     app.setMaxRequestBody(1024)
 
