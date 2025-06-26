@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Fri, 28 Mar 2025 11:16:14 GMT and should not be manually modified.
+This log was last generated on Thu, 26 Jun 2025 12:47:04 GMT and should not be manually modified.
+
+## 1.27.2
+Thu, 26 Jun 2025 12:47:04 GMT
+
+### Patches
+
+- fix name collision in debug frame schema builder
 
 ## 1.27.1
 Fri, 28 Mar 2025 11:16:14 GMT
