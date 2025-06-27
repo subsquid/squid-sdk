@@ -15,7 +15,7 @@ interface BlockWaiter {
 
 
 export class DataService {
-    readonly metrics = new Metrics()
+    readonly metrics: Metrics
 
     private listeners: BlockWaiter[] = []
     private stopped = false
@@ -30,6 +30,7 @@ export class DataService {
         private network: string,
         readonly log = createLogger('sqd:data-service')
     ) {
+        this.metrics = new Metrics(dataset, network)
         this.firstBlockIngestedFuture.promise().catch(() => {})
     }
 
@@ -261,7 +262,7 @@ export class DataService {
 
             this.triggerUpdate()
 
-            this.metrics.trackProcessingTime(startTime, this.dataset, this.network)
+            this.metrics.trackProcessingTime(startTime)
         }
     }
 
