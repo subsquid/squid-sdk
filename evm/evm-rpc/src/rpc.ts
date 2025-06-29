@@ -1,5 +1,6 @@
 import {createLogger} from '@subsquid/logger'
 import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
+import {RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {
     array,
     BYTES,
@@ -10,9 +11,27 @@ import {
     object,
     Validator
 } from '@subsquid/util-internal-validation'
-import {GetBlock, Receipt, TraceFrame, TraceTransactionReplay} from './rpc-data'
-import {Block, DataRequest} from './types'
+import {assertNotNull, groupBy} from '@subsquid/util-internal'
+import assert from 'assert'
+import {
+    GetBlock,
+    Receipt,
+    TraceFrame,
+    DebugStateDiffResult,
+    DebugFrameResult,
+    TraceReplayTraces,
+    getTraceTransactionReplayValidator
+} from './rpc-data'
+import {Block, DataRequest, Bytes, Bytes32} from './types'
 import {qty2Int, toQty, getTxHash} from './util'
+
+
+export function isEmpty(obj: object): boolean {
+    for (let _ in obj) {
+        return false
+    }
+    return true
+}
 
 
 export type Commitment = 'finalized' | 'latest'
@@ -104,12 +123,8 @@ export class Rpc {
             subtasks.push(this.addReceipts(blocks))
         }
 
-        if (req?.traces) {
-            subtasks.push(this.addTraces(blocks))
-        }
-
-        if (req?.stateDiffs) {
-            subtasks.push(this.addStateDiffs(blocks))
+        if (req?.traces || req?.stateDiffs) {
+            subtasks.push(this.addTraces(blocks, req))
         }
 
         await Promise.all(subtasks)
@@ -147,7 +162,38 @@ export class Rpc {
         }
     }
 
-    private async addTraces(blocks: Block[]) {
+    private async addTraces(blocks: Block[], req: DataRequest) {
+        let tasks = []
+        let replayTraces: TraceReplayTraces = {}
+
+        if (req.stateDiffs) {
+            if (req.useDebugApiForStateDiffs) {
+                tasks.push(this.addDebugStateDiffs(blocks, req))
+            } else {
+                replayTraces.stateDiff = true
+            }
+        }
+
+        if (req.traces) {
+            if (req.useTraceApi) {
+                if (isEmpty(replayTraces)) {
+                    tasks.push(this.addTraceBlockTraces(blocks))
+                } else {
+                    replayTraces.trace = true
+                }
+            } else {
+                tasks.push(this.addDebugFrames(blocks, req))
+            }
+        }
+
+        if (!isEmpty(replayTraces)) {
+            tasks.push(this.addTraceTxReplays(blocks, replayTraces))
+        }
+
+        await Promise.all(tasks)
+    }
+
+    private async addTraceBlockTraces(blocks: Block[]) {
         let call = blocks.map(block => ({
             method: 'trace_block',
             params: [block.block.number]
@@ -175,37 +221,156 @@ export class Rpc {
                 }
 
                 if (!block._isInvalid) {
-                    block.traces = frames
+                    block.traceReplays = []
+                    let byTx = groupBy(frames, f => f.transactionHash)
+                    for (let [transactionHash, txFrames] of byTx.entries()) {
+                        if (transactionHash) {
+                            block.traceReplays.push({
+                                transactionHash,
+                                trace: txFrames
+                            })
+                        }
+                    }
                 }
             }
         }
     }
 
-    private async addStateDiffs(blocks: Block[]) {
-        let tracers = ['stateDiff']
+    private async addDebugStateDiffs(blocks: Block[], req: DataRequest) {
+        let traceConfig = {
+            tracer: 'prestateTracer',
+            tracerConfig: {
+                onlyTopCall: false, // passing this option is incorrect, but required by Alchemy endpoints
+                diffMode: true,
+            },
+            timeout: req.debugTraceTimeout
+        }
+
+        let call = blocks.map(block => ({
+            method: 'debug_traceBlockByHash',
+            params: [block.hash, traceConfig]
+        }))
+
+        let results = await this.reduceBatchOnRetry(call, {
+            validateResult: getResultValidator(array(DebugStateDiffResult)),
+            validateError: captureNotFound
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let diffs = results[i]
+            if (diffs == null) {
+                block._isInvalid = true
+            } else if (block.block.transactions.length === diffs.length) {
+                block.debugStateDiffs = diffs
+            } else {
+                block.debugStateDiffs = this.matchDebugTrace(block, diffs)
+            }
+        }
+    }
+
+    private async addDebugFrames(blocks: Block[], req: DataRequest): Promise<void> {
+        let traceConfig = {
+            tracer: 'callTracer',
+            tracerConfig: {
+                onlyTopCall: false,
+                withLog: false,
+            },
+            timeout: req.debugTraceTimeout,
+        }
+
+        let call = blocks.map(block => ({
+            method: 'debug_traceBlockByHash',
+            params: [block.hash, traceConfig]
+        }))
+
+        let validateFrameResult = getResultValidator(array(DebugFrameResult))
+
+        let results = await this.batchCall(call, {
+            validateResult: result => {
+                if (Array.isArray(result)) {
+                    // Moonbeam quirk
+                    for (let i = 0; i < result.length; i++) {
+                        if (!('result' in result[i])) {
+                            result[i] = {result: result[i]}
+                        }
+                    }
+                }
+                return validateFrameResult(result)
+            },
+            validateError: captureNotFound
+        })
+
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let frames = results[i]
+            if (frames == null) {
+                block._isInvalid = true
+            } else if (block.block.transactions.length === frames.length) {
+                block.debugFrames = frames
+            } else {
+                block.debugFrames = this.matchDebugTrace(block, frames)
+            }
+        }
+    }
+
+    private matchDebugTrace<T extends {txHash?: Bytes | null}>(block: Block, trace: T[]): T[] {
+        let mapping = new Map(trace.map(t => [t.txHash, t]))
+        let out = new Array(block.block.transactions.length)
+        for (let i = 0; i < block.block.transactions.length; i++) {
+            let txHash = getTxHash(block.block.transactions[i])
+            let rec = assertNotNull(mapping.get(txHash))
+            out[i] = rec
+        }
+        return out
+    }
+
+    private async addTraceTxReplays(blocks: Block[], traces: TraceReplayTraces) {
+        let tracers: string[] = []
+
+        if (traces.trace) {
+            tracers.push('trace')
+        }
+
+        if (traces.stateDiff) {
+            tracers.push('stateDiff')
+        }
+
+        if (tracers.length == 0) return
 
         let call = blocks.map(block => ({
             method: 'trace_replayBlockTransactions',
             params: [block.block.number, tracers]
         }))
 
-        let results = await this.reduceBatchOnRetry(call, {
-            validateResult: getResultValidator(array(TraceTransactionReplay))
+        let replaysByBlock = await this.batchCall(call, {
+            validateResult: getResultValidator(
+                array(getTraceTransactionReplayValidator(traces))
+            )
         })
 
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
-            let replays = results[i]
+            let replays = replaysByBlock[i]
             let txs = new Set(block.block.transactions.map(getTxHash))
 
             for (let rep of replays) {
+                if (!rep.transactionHash) {
+                    let txHash: Bytes32 | null | undefined = undefined
+                    for (let frame of rep.trace || []) {
+                        assert(txHash == null || txHash === frame.transactionHash)
+                        txHash = txHash || frame.transactionHash
+                    }
+                    assert(txHash, "Can't match transaction replay with its transaction")
+                    rep.transactionHash = txHash
+                }
+
                 if (!txs.has(rep.transactionHash)) {
                     block._isInvalid = true
-                    break
                 }
             }
 
-            block.stateDiffs = replays
+            block.traceReplays = replays
         }
     }
 
@@ -250,4 +415,10 @@ function getResultValidator<V extends Validator>(validator: V): (result: unknown
             return result as any
         }
     }
+}
+
+
+function captureNotFound(info: RpcErrorInfo): null {
+    if (info.message.includes('not found')) return null
+    throw new RpcError(info)
 }

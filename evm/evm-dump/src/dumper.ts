@@ -71,13 +71,13 @@ export class EvmDumper extends Dumper<Block, Options> {
                     // trace_block isn't supported
                 }
                 if (this.options().withStatediffs) {
-                    assert(block.stateDiffs)
-                    let byTx = groupBy(block.stateDiffs, r => r.transactionHash)
-                    assert(transactions.length == byTx.size)
-                    for (let tx of transactions) {
-                        assert(typeof tx == 'object');
-                        (tx as any).traceReplay_ = assertNotNull(byTx.get(tx.hash))
-                    }
+                    // assert(block.stateDiffs)
+                    // let byTx = groupBy(block.stateDiffs, r => r.transactionHash)
+                    // assert(transactions.length == byTx.size)
+                    // for (let tx of transactions) {
+                    //     assert(typeof tx == 'object');
+                    //     (tx as any).traceReplay_ = assertNotNull(byTx.get(tx.hash))
+                    // }
                 }
                 return {
                     ...block.block,

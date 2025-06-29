@@ -1,4 +1,10 @@
-import {GetBlock, Receipt, TraceFrame, TraceTransactionReplay} from './rpc-data'
+import {
+    GetBlock,
+    Receipt,
+    TraceTransactionReplay,
+    DebugStateDiffResult,
+    DebugFrameResult
+} from './rpc-data'
 
 
 export type Qty = string
@@ -13,8 +19,9 @@ export interface Block {
     hash: Bytes32
     block: GetBlock
     receipts?: Receipt[]
-    traces?: TraceFrame[]
-    stateDiffs?: TraceTransactionReplay[]
+    traceReplays?: TraceTransactionReplay[]
+    debugStateDiffs?: DebugStateDiffResult[]
+    debugFrames?: DebugFrameResult[]
     _isInvalid?: boolean
 }
 
@@ -25,4 +32,6 @@ export interface DataRequest {
     traces?: boolean
     stateDiffs?: boolean
     useDebugApiForStateDiffs?: boolean
+    useTraceApi?: boolean
+    debugTraceTimeout?: boolean
 }

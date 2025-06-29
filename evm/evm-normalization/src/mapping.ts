@@ -1,5 +1,6 @@
 import * as rpc from '@subsquid/evm-rpc'
-import {qty2Int} from '@subsquid/evm-rpc'
+import {qty2Int, toQty, getTxHash, isEmpty, Bytes, Bytes20, Bytes32} from '@subsquid/evm-rpc'
+import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     Block,
@@ -9,13 +10,13 @@ import {
     EIP7702Authorization,
     Log,
     Trace,
-    TraceActionCreate,
-    TraceActionCall,
-    TraceActionReward,
-    TraceActionSelfdestruct,
+    TraceCreateAction,
+    TraceCallAction,
+    TraceRewardAction,
+    TraceSelfdestructAction,
     StateDiff,
-    TraceResultCreate,
-    TraceResultCall
+    TraceCreateResult,
+    TraceCallResult
 } from './data'
 
 
@@ -25,55 +26,271 @@ function getSigHash(input: string): string | undefined {
 }
 
 
-function traceDiffToStateDiff(diff: rpc.TraceDiff, transactionIndex: number, address: string, key: string): StateDiff | null {
-    if (diff === '=') {
-        return null
+function* traverseDebugFrame(frame: rpc.DebugFrame, traceAddress: number[]): Iterable<{
+    traceAddress: number[]
+    subtraces: number
+    frame: rpc.DebugFrame
+}> {
+    let subcalls = frame.calls || []
+    yield {traceAddress, subtraces: subcalls.length, frame}
+    for (let i = 0; i < subcalls.length; i++) {
+        yield* traverseDebugFrame(subcalls[i], [...traceAddress, i])
     }
-    let template: StateDiff = {
+}
+
+
+function* mapDebugFrame(
+    transactionIndex: number,
+    debugFrameResult: {result: rpc.DebugFrame}
+): Iterable<Trace> {
+    if (debugFrameResult.result.type == 'STOP') {
+        assert(!debugFrameResult.result.calls?.length)
+        return
+    }
+
+    for (let {traceAddress, subtraces, frame} of traverseDebugFrame(debugFrameResult.result, [])) {
+        let base = {
+            transactionIndex,
+            traceAddress,
+            subtraces,
+            error: frame.error ?? undefined,
+            revertReason: frame.revertReason ?? undefined,
+        }
+        let trace: Trace
+
+        switch(frame.type) {
+            case 'CREATE':
+            case 'CREATE2': {
+                trace = {
+                    ...base,
+                    type: 'create',
+                    action: {
+                        from: frame.from,
+                        value: assertNotNull(frame.value),
+                        gas: frame.gas,
+                        init: frame.input,
+                    },
+                }
+
+                let result: Partial<TraceCreateResult> = {}
+                if (frame.gasUsed) {
+                    result.gasUsed = frame.gasUsed
+                }
+                if (frame.output) {
+                    result.code = frame.output
+                }
+                if (frame.to) {
+                    result.address = frame.to
+                }
+                if (!isEmpty(result)) {
+                    assertNotNull(result.gasUsed)
+                    trace.result = result as TraceCreateResult
+                }
+                break
+            }
+            case 'CALL':
+            case 'CALLCODE':
+            case 'DELEGATECALL':
+            case 'STATICCALL':
+            case 'INVALID': {
+                trace = {
+                    ...base,
+                    type: 'call',
+                    action: {
+                        callType: frame.type.toLowerCase(),
+                        from: frame.from,
+                        to: assertNotNull(frame.to),
+                        value: assertNotNull(frame.value),
+                        gas: frame.gas,
+                        input: frame.input,
+                        sighash: getSigHash(frame.input)
+                    }
+                }
+
+                let result: Partial<TraceCallResult> = {}
+                if (frame.gasUsed) {
+                    result.gasUsed = frame.gasUsed
+                }
+                if (frame.output) {
+                    result.output = frame.output
+                }
+                if (!isEmpty(result)) {
+                    trace.result = result
+                }
+                break
+            }
+            case 'SELFDESTRUCT': {
+                trace = {
+                    ...base,
+                    type: 'selfdestruct',
+                    action: {
+                        address: assertNotNull(frame.to),
+                        refundAddress: frame.from,
+                        balance: assertNotNull(frame.value)
+                    }
+                }
+                break
+            }
+            default:
+                throw unexpectedCase(frame.type)
+        }
+    }
+}
+
+
+function* mapDebugStateDiff(
+    transactionIndex: number,
+    debugDiffResult: rpc.DebugStateDiffResult
+): Iterable<StateDiff> {
+    let {pre, post} = debugDiffResult.result
+    for (let address in pre) {
+        let prev = pre[address]
+        let next = post[address] || {}
+        yield* mapDebugStateMap(transactionIndex, address, prev, next)
+    }
+    for (let address in post) {
+        if (pre[address] == null) {
+            yield* mapDebugStateMap(transactionIndex, address, {}, post[address])
+        }
+    }
+}
+
+
+function* mapDebugStateMap(
+    transactionIndex: number,
+    address: Bytes20,
+    prev: rpc.DebugStateMap,
+    next: rpc.DebugStateMap
+): Iterable<StateDiff> {
+    if (next.code) {
+        yield makeDebugStateDiffRecord(transactionIndex, address, 'code', prev.code, next.code)
+    }
+    if (next.balance) {
+        yield makeDebugStateDiffRecord(
+            transactionIndex,
+            address,
+            'balance',
+            prev.balance,
+            next.balance
+        )
+    }
+    if (next.nonce) {
+        yield makeDebugStateDiffRecord(
+            transactionIndex,
+            address,
+            'nonce',
+            toQty(prev.nonce ?? 0),
+            toQty(next.nonce)
+        )
+    }
+    for (let key in prev.storage) {
+        yield makeDebugStateDiffRecord(transactionIndex, address, key, prev.storage[key], next.storage?.[key])
+    }
+    for (let key in next.storage) {
+        if (prev.storage?.[key] == null) {
+            yield makeDebugStateDiffRecord(transactionIndex, address, key, undefined, next.storage[key])
+        }
+    }
+}
+
+
+function makeDebugStateDiffRecord(
+    transactionIndex: number,
+    address: Bytes20,
+    key: Bytes32,
+    prev?: Bytes | null,
+    next?: Bytes
+): StateDiff {
+    let base = {
         transactionIndex,
         address,
-        key,
-        kind: '='
+        key
+    }
+
+    if (prev == null) {
+        return {
+            ...base,
+            kind: '+',
+            next: assertNotNull(next)
+        }
+    }
+    if (next == null) {
+        return {
+            ...base,
+            kind: '-',
+            prev: assertNotNull(prev)
+        }
+    }
+    return {
+        ...base,
+        kind: '*',
+        prev: assertNotNull(prev),
+        next: assertNotNull(next)
+    }
+}
+
+
+function makeStateDiffFromReplay(
+    transactionIndex: number,
+    address: rpc.Bytes20,
+    key: string,
+    diff: rpc.TraceDiff
+): StateDiff {
+    let base = {
+        transactionIndex,
+        address,
+        key
+    }
+
+    if (diff === '=') {
+        return {
+            ...base,
+            kind: '='
+        }
     }
     if ('+' in diff) {
-        template.kind = '+'
-        template.next = diff['+']
-    }
-    if ('-' in diff) {
-        template.kind = '-'
-        template.prev = diff['-']
+        return {
+            ...base,
+            kind: '+',
+            next: diff['+']
+        }
     }
     if ('*' in diff) {
-        template.kind = '*'
-        template.prev = diff['*'].from
-        template.next = diff['*'].to
-    }
-    return template
-}
-
-
-function mapDiffs(wrap: rpc.TraceTransactionReplay, idx: number): StateDiff[] {
-    if (wrap.stateDiff === undefined || wrap.stateDiff === null) {
-        return []
-    }
-    let res: StateDiff[] = []
-    for (let key in wrap.stateDiff) {
-        let val = wrap.stateDiff[key]
-        let diffs = []
-        for (let storage_addr in val.storage) {
-            diffs.push(traceDiffToStateDiff(val.storage[storage_addr], idx, key, storage_addr))
+        return {
+            ...base,
+            kind: '*',
+            prev: diff['*'].from,
+            next: diff['*'].to
         }
-        diffs.push(traceDiffToStateDiff(val['balance'], idx, key, 'balance'))
-        diffs.push(traceDiffToStateDiff(val['code'], idx, key, 'code'))
-        diffs.push(traceDiffToStateDiff(val['nonce'], idx, key, 'nonce'))
-
-        res = res.concat(diffs.filter(v => v !== null))
     }
-    return res
+    if ('-' in diff) {
+        return {
+            ...base,
+            kind: '-',
+            prev: diff['-']
+        }
+    }
+    throw unexpectedCase()
 }
 
 
-function mapAction(action: rpc.TraceActionCreate | rpc.TraceActionCall | rpc.TraceActionReward | rpc.TraceActionSelfdestruct): TraceActionCreate | TraceActionCall | TraceActionReward | TraceActionSelfdestruct {
+function* mapReplayStateDiff(
+    src: rpc.TraceTransactionReplay['stateDiff'],
+    transactionIndex: number
+): Iterable<StateDiff> {
+    for (let address in src) {
+        let diffs = src[address]
+        yield makeStateDiffFromReplay(transactionIndex, address, 'code', diffs.code)
+        yield makeStateDiffFromReplay(transactionIndex, address, 'balance', diffs.balance)
+        yield makeStateDiffFromReplay(transactionIndex, address, 'nonce', diffs.nonce)
+        for (let key in diffs.storage) {
+            yield makeStateDiffFromReplay(transactionIndex, address, key, diffs.storage[key])
+        }
+    }
+}
+
+
+function mapAction(action: rpc.TraceActionCreate | rpc.TraceActionCall | rpc.TraceActionReward | rpc.TraceActionSelfdestruct): TraceCreateAction | TraceCallAction | TraceRewardAction | TraceSelfdestructAction {
     if ('init' in action) {
         return {
             from: action.from,
@@ -109,7 +326,7 @@ function mapAction(action: rpc.TraceActionCreate | rpc.TraceActionCall | rpc.Tra
 }
 
 
-function mapResult(result: rpc.TraceResultCall | rpc.TraceResultCreate | undefined | null): TraceResultCall | TraceResultCreate | undefined {
+function mapResult(result: rpc.TraceResultCall | rpc.TraceResultCreate | undefined | null): TraceCallResult | TraceCreateResult | undefined {
     if (result === undefined || result === null) {
         return undefined
     }
@@ -281,9 +498,49 @@ export function mapRpcBlock(src: rpc.Block): Block {
         })
     })
 
-    let traces: Trace[] = src.traces ? src.traces.map(mapTrace) : []
+    let traces: Trace[] = []
+    let stateDiffs: StateDiff[] = []
 
-    let stateDiffs: StateDiff[] = src.stateDiffs ? src.stateDiffs.map(mapDiffs).flat() : []
+    if (src.traceReplays) {
+        let txIndex = new Map(src.block.transactions.map((tx, idx) => {
+            return [getTxHash(tx), idx]
+        }))
+        for (let rep of src.traceReplays) {
+            let transactionHash = assertNotNull(rep.transactionHash)
+            let transactionIndex = assertNotNull(txIndex.get(transactionHash))
+            if (rep.trace) {
+                for (let frame of rep.trace) {
+                    traces.push(mapTrace(frame))
+                }
+            }
+
+            if (rep.stateDiff) {
+                for (let diff of mapReplayStateDiff(rep.stateDiff, transactionIndex)) {
+                    if (diff.kind != '=') {
+                        stateDiffs.push(diff)
+                    }
+                }
+            }
+        }
+    }
+
+    if (src.debugFrames) {
+        assert(traces.length == 0)
+        for (let i = 0; i < src.debugFrames.length; i++) {
+            for (let trace of mapDebugFrame(i, src.debugFrames[i])) {
+                traces.push(trace)
+            }
+        }
+    }
+
+    if (src.debugStateDiffs) {
+        assert(stateDiffs.length == 0)
+        for (let i = 0; i < src.debugStateDiffs.length; i++) {
+            for (let diff of mapDebugStateDiff(i, src.debugStateDiffs[i])) {
+                stateDiffs.push(diff)
+            }
+        }
+    }
 
     return {
         header,

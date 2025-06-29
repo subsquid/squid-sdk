@@ -13,8 +13,11 @@ import {
     record,
     SMALL_QTY,
     STRING,
-    STRING_FLOAT
+    STRING_FLOAT,
+    Validator,
+    ref
 } from '@subsquid/util-internal-validation'
+import {Bytes} from './types'
 
 
 export const Access = object({
@@ -275,7 +278,7 @@ export const TraceDiff = oneOf({
 export type TraceDiff = GetSrcType<typeof TraceDiff>
 
 
-export const StateDiff = object({
+export const TraceStateDiff = object({
     balance: TraceDiff,
     code: TraceDiff,
     nonce: TraceDiff,
@@ -283,18 +286,86 @@ export const StateDiff = object({
 })
 
 
-export type StateDiff = GetSrcType<typeof StateDiff>
+export type TraceStateDiff = GetSrcType<typeof TraceStateDiff>
 
 
 export const TraceTransactionReplay = object({
     output: option(BYTES),
-    stateDiff: option(record(BYTES, StateDiff)),
+    stateDiff: option(record(BYTES, TraceStateDiff)),
     trace: option(array(TraceFrame)),
-    transactionHash: BYTES
+    transactionHash: option(BYTES)
 })
 
 
 export type TraceTransactionReplay = GetSrcType<typeof TraceTransactionReplay>
+
+
+export const DebugStateMap = object({
+    balance: option(QTY),
+    code: option(BYTES),
+    nonce: option(NAT),
+    storage: option(record(BYTES, BYTES))
+})
+
+
+export type DebugStateMap = GetSrcType<typeof DebugStateMap>
+
+
+export const DebugStateDiff = object({
+    pre: record(BYTES, DebugStateMap),
+    post: record(BYTES, DebugStateMap)
+})
+
+
+export type DebugStateDiff = GetSrcType<typeof DebugStateDiff>
+
+
+export const DebugStateDiffResult = object({
+    result: DebugStateDiff,
+    txHash: option(BYTES)
+})
+
+
+export type DebugStateDiffResult = GetSrcType<typeof DebugStateDiffResult>
+
+
+export const DebugFrame: Validator<DebugFrame> = object({
+    type: STRING,
+    from: BYTES,
+    to: option(BYTES),
+    input: BYTES,
+    output: option(BYTES),
+    error: option(STRING),
+    revertReason: option(STRING),
+    value: option(BYTES),
+    gas: BYTES,
+    gasUsed: option(BYTES),
+    calls: option(array(ref(() => DebugFrame)))
+})
+
+
+export interface DebugFrame {
+    type: string
+    from: Bytes
+    to?: Bytes | null
+    input: Bytes
+    output?: Bytes | null
+    error?: string | null
+    revertReason?: string | null
+    value?: Bytes | null
+    gas: Bytes
+    gasUsed?: Bytes | null
+    calls?: DebugFrame[] | null
+}
+
+
+export const DebugFrameResult = object({
+    result: DebugFrame,
+    txHash: option(BYTES)
+})
+
+
+export type DebugFrameResult = GetSrcType<typeof DebugFrameResult>
 
 
 export const GetBlock = object({
@@ -333,3 +404,36 @@ export const GetBlock = object({
 
 
 export type GetBlock = GetSrcType<typeof GetBlock>
+
+
+export interface TraceReplayTraces {
+    trace?: boolean
+    stateDiff?: boolean
+}
+
+
+export function getTraceTransactionReplayValidator(tracers: TraceReplayTraces): Validator<TraceTransactionReplay> {
+    return object({
+        transactionHash: option(BYTES),
+        ...project(tracers, {
+            trace: array(TraceFrame),
+            stateDiff: record(BYTES, TraceStateDiff)
+        })
+    }) as unknown as Validator<TraceTransactionReplay>
+}
+
+
+export function project<T extends object, F extends {[K in keyof T]?: boolean}>(
+    fields: F | undefined,
+    obj: T
+): Partial<T> {
+    if (fields == null) return {}
+    let result: Partial<T> = {}
+    let key: keyof T
+    for (key in obj) {
+        if (fields[key]) {
+            result[key] = obj[key]
+        }
+    }
+    return result
+}

@@ -105,7 +105,7 @@ export interface Log {
 }
 
 
-export interface TraceActionCreate {
+export interface TraceCreateAction {
     from: Bytes20,
     value: Qty,
     gas: Qty,
@@ -114,38 +114,38 @@ export interface TraceActionCreate {
 }
 
 
-export interface TraceResultCreate {
+export interface TraceCreateResult {
     gasUsed: Qty,
-    code: Bytes,
-    address: Bytes20
+    code?: Bytes,
+    address?: Bytes20
 }
 
 
-export interface TraceActionCall {
+export interface TraceCallAction {
     from: Bytes20,
     to: Bytes20,
     value: Qty,
     gas: Qty,
     input: Bytes,
     sighash?: Bytes,
-    callType: 'call' | 'callcode' | 'delegatecall' | 'staticcall'
+    callType: string
 }
 
 
-export interface TraceResultCall {
-    gasUsed: Qty,
-    output: Bytes
+export interface TraceCallResult {
+    gasUsed?: Qty,
+    output?: Bytes
 }
 
 
-export interface TraceActionReward {
+export interface TraceRewardAction {
     author: Bytes20,
     value: Qty,
     rewardType: 'block' | 'uncle' | 'emptyStep' | 'external'
 }
 
 
-export interface TraceActionSelfdestruct {
+export interface TraceSelfdestructAction {
     address: Bytes20
     refundAddress: Bytes20
     balance: Qty
@@ -159,19 +159,43 @@ export interface Trace {
     subtraces: number,
     error?: string,
     revertReason?: string,
-    action: TraceActionCreate | TraceActionCall | TraceActionReward | TraceActionSelfdestruct,
-    result?: TraceResultCreate | TraceResultCall
+    action: TraceCreateAction | TraceCallAction | TraceRewardAction | TraceSelfdestructAction,
+    result?: TraceCreateResult | TraceCallResult
 }
 
 
-export interface StateDiff {
+interface StateDiffBase {
     transactionIndex: number,
     address: Bytes20,
-    key: 'balance' | 'code' | 'nonce' | Bytes,
-    kind: '=' | '+' | '-' | '*',
-    prev?: Bytes,
-    next?: Bytes
+    key: 'balance' | 'code' | 'nonce' | Bytes32
 }
+
+
+export interface StateDiffNoChange extends StateDiffBase {
+    kind: '='
+}
+
+
+export interface StateDiffAdd extends StateDiffBase {
+    kind: '+'
+    next: Bytes
+}
+
+
+export interface StateDiffChange extends StateDiffBase {
+    kind: '*'
+    prev: Bytes
+    next: Bytes
+}
+
+
+export interface StateDiffDelete extends StateDiffBase {
+    kind: '-'
+    prev: Bytes
+}
+
+
+export type StateDiff = StateDiffNoChange | StateDiffAdd | StateDiffChange | StateDiffDelete
 
 
 export interface Block {
