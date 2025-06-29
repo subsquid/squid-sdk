@@ -8,7 +8,7 @@ import {
     FiniteRange
 } from '@subsquid/util-internal-range'
 import {Block, BlockHeader, FieldSelection} from './data/model'
-import { BlockHeader as BlockHeaderRpc } from '@subsquid/starknet-rpc'
+import { BlockHeaderResponse as BlockHeaderRpc } from '@subsquid/starknet-rpc'
 import {
     DataRequest,
     EventRequest,

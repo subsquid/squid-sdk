@@ -1,5 +1,5 @@
 import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
-import {Block} from '@subsquid/starknet-data'
+import {BlockWithTxHashes, Block} from '@subsquid/starknet-data'
 import {Simplify, wait} from '@subsquid/util-internal'
 import {RpcCall, RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {
@@ -12,7 +12,7 @@ import {RangeRequestList, SplitRequest} from '@subsquid/util-internal-range'
 import {Batch, coldIngest} from '@subsquid/util-internal-ingest-tools'
 import {DataRequest} from './base'
 
-export type BlockHeader = Simplify<Omit<Block, 'transactions'>>
+export type BlockHeaderResponse = Simplify<Omit<Block, 'transactions'>>
 
 export interface IngestOptions {
     stopOnHead?: boolean
@@ -44,14 +44,14 @@ export class Rpc {
         return this.call('starknet_blockNumber')
     }
 
-    getBlockHeader(height: number): Promise<BlockHeader> {
+    getBlockHeader(height: number): Promise<BlockHeaderResponse> {
         return this.call('starknet_getBlockWithTxHashes', [{block_number: height}], {
-            validateResult: getResultValidator(Block),
+            validateResult: getResultValidator(BlockWithTxHashes),
             validateError: captureBlockNotFound
         }).then(block => {
             const typedBlock = block as unknown as Block;
             const { transactions, ...blockHeader } = typedBlock;
-            return blockHeader as BlockHeader;
+            return blockHeader as BlockHeaderResponse;
         });
     }
 

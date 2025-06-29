@@ -1,4 +1,4 @@
-import {BlockHeader, Rpc} from '@subsquid/starknet-rpc'
+import {BlockHeaderResponse, Rpc} from '@subsquid/starknet-rpc'
 import {addErrorContext, wait} from '@subsquid/util-internal'
 import {getRequestAt, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
 import {PartialBlock} from '../data/data-partial'
@@ -18,7 +18,7 @@ export class RpcDataSource {
         return this.rpc.getFinalizedHeight()
     }
 
-    async getBlockHeader(height: number): Promise<BlockHeader | undefined> {
+    async getBlockHeader(height: number): Promise<BlockHeaderResponse | undefined> {
         let attempts = 10
         while (attempts) {
             let block = await this.rpc.getBlockHeader(height)

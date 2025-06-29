@@ -141,6 +141,23 @@ const Block = object({
 })
 type Block = GetSrcType<typeof Block>
 
+const BlockWithTxHashes = object({
+    status: STRING,
+    block_hash: Hash32,
+    parent_hash: Hash32,
+    block_number: INT,
+    new_root: Hash32,
+    timestamp: INT,
+    sequencer_address: FELT,
+    l1_gas_price: ResourcePrice,
+    l2_gas_price: ResourcePrice,
+    l1_data_gas_price: ResourcePrice,
+    l1_da_mode: STRING,
+    starknet_version: STRING,
+    transactions: array(Hash32)
+})
+type BlockWithTxHashes = GetSrcType<typeof BlockWithTxHashes>
+
 const EventPage = object({
     events: array(Event),
     continuation_token: option(STRING)
@@ -163,5 +180,6 @@ export {
     PackedTransaction,
     Event,
     Block,
+    BlockWithTxHashes,
     EventPage
 }
