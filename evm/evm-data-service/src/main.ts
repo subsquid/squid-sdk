@@ -26,8 +26,6 @@ runProgram(async () => {
     program.option('--no-diffs', "Force disable diffs")
     program.option('--receipts', 'Force enable receipts')
     program.option('--no-receipts', "Force disable receipts")
-    program.option('--dataset <string>', 'Dataset name (e.g. ethereum, polygon)', 'ethereum')
-    program.option('--network <string>', 'Network name (e.g. mainnet, testnet)', 'mainnet')
     program.parse()
 
     let args = program.opts() as {
@@ -75,8 +73,6 @@ runProgram(async () => {
     let service = await runDataService({
         source: dataSource,
         blockCacheSize: args.blockCacheSize,
-        dataset: args.dataset,
-        network: args.network,
         port: args.port
     })
 

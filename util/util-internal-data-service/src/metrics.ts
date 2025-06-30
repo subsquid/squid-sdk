@@ -12,49 +12,40 @@ export class Metrics {
     private blockLagHistogram: Histogram
     private blockProcessingTimeHistogram: Histogram
 
-    constructor(
-        private dataset: string = 'unknown',
-        private network: string = 'unknown'
-    ) {
+    constructor() {
         this.hotBlocksLastBlockGauge = new Gauge({
             name: 'sqd_hotblocks_last_block',
             help: 'Number of the last stored block',
-            labelNames: ['dataset', 'network'],
             registers: [this.registry],
         })
 
         this.hotBlocksLastBlockLagGauge = new Gauge({
             name: 'sqd_hotblocks_last_block_lag_ms',
             help: 'Lag of the last stored block in ms',
-            labelNames: ['dataset', 'network'],
             registers: [this.registry],
         })
 
         this.hotBlocksFirstBlockGauge = new Gauge({
             name: 'sqd_hotblocks_first_block',
             help: 'Number of the first stored block',
-            labelNames: ['dataset', 'network'],
             registers: [this.registry],
         })
 
         this.hotBlocksFinalizedBlockGauge = new Gauge({
             name: 'sqd_hotblocks_finalized_block',
             help: 'Number of the finalized stored block',
-            labelNames: ['dataset', 'network'],
             registers: [this.registry],
         })
 
         this.hotBlocksStoredBlocksGauge = new Gauge({
             name: 'sqd_hotblocks_stored_blocks',
             help: 'Amount of stored blocks',
-            labelNames: ['dataset', 'network'],
             registers: [this.registry],
         })
 
         this.blockLagHistogram = new Histogram({
             name: 'sqd_hotblocks_block_lag_ms',
             help: 'Time to process a block from creation to end of processing in ms',
-            labelNames: ['dataset', 'network'],
             buckets: [50, 100, 200, 300, 400, 500, 750, 1000, 2000],
             registers: [this.registry],
         })
@@ -62,7 +53,6 @@ export class Metrics {
         this.blockProcessingTimeHistogram = new Histogram({
             name: 'sqd_hotblocks_processing_time_ms',
             help: 'Time taken to process a block in milliseconds',
-            labelNames: ['dataset', 'network'],
             buckets: [1, 5, 10, 25, 50, 100, 200, 300, 400, 500, 750, 1000],
             registers: [this.registry]
         });
@@ -71,42 +61,39 @@ export class Metrics {
     }
 
     setLastBlock(value: number) {
-        this.hotBlocksLastBlockGauge.labels({dataset: this.dataset, network: this.network}).set(value)
+        this.hotBlocksLastBlockGauge.set(value)
     }
 
     setLastBlockTimestamp(value: number) {
         if (value === 0) {
-            this.hotBlocksLastBlockLagGauge.labels({dataset: this.dataset, network: this.network}).set(-1)
+            this.hotBlocksLastBlockLagGauge.set(-1)
         } else {
-            this.hotBlocksLastBlockLagGauge.labels({dataset: this.dataset, network: this.network}).set(Date.now() - value)
+            this.hotBlocksLastBlockLagGauge.set(Date.now() - value)
         }
     }
 
     setFirstBlock(value: number) {
-        this.hotBlocksFirstBlockGauge.labels({dataset: this.dataset, network: this.network}).set(value)
+        this.hotBlocksFirstBlockGauge.set(value)
     }
 
     setStoredBlocks(value: number) {
-        this.hotBlocksStoredBlocksGauge.labels({dataset: this.dataset, network: this.network}).set(value)
+        this.hotBlocksStoredBlocksGauge.set(value)
     }
 
     setFinalizedBlock(value: number) {
-        this.hotBlocksFinalizedBlockGauge.labels({dataset: this.dataset, network: this.network}).set(value)
+        this.hotBlocksFinalizedBlockGauge.set(value)
     }
 
     observeBlockLag(blockTimestamp: number) {
         if (blockTimestamp === 0) return;
 
         const processingLag = Date.now() - blockTimestamp;
-        this.blockLagHistogram.labels({dataset: this.dataset, network: this.network}).observe(processingLag);
+        this.blockLagHistogram.observe(processingLag);
     }
 
     trackProcessingTime(startTime: number) {
         const duration = Date.now() - startTime;
-        this.blockProcessingTimeHistogram.labels({
-          dataset: this.dataset,
-          network: this.network
-        }).observe(duration);
+        this.blockProcessingTimeHistogram.observe(duration);
     }
 }
 

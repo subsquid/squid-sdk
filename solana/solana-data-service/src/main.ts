@@ -74,8 +74,6 @@ runProgram(async () => {
     let service = await runDataService({
         source: dataSource,
         blockCacheSize: args.blockCacheSize,
-        dataset: 'solana-mainnet',
-        network: 'mainnet',
         port: args.port
     })
 
