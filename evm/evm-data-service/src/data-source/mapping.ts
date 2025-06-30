@@ -1,18 +1,16 @@
 import {Block as RpcBlock} from '@subsquid/evm-rpc'
-import {createLogger} from '@subsquid/logger'
+import {mapRpcBlock} from '@subsquid/evm-normalization'
 import {withErrorContext} from '@subsquid/util-internal'
 import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
+import {toJSON} from '@subsquid/util-internal-json'
 import {promisify} from 'node:util'
 import * as zlib from 'node:zlib'
-import {mapRpcBlock} from './evm-normalization'
 
 
 const gzip = promisify(zlib.gzip)
 
 
 export class Mapping implements DataSource<Block> {
-    private dataNormalizationLogger = createLogger('sqd:solana-normalization')
-
     constructor(
         private inner: DataSource<RpcBlock>
     ) {}
@@ -53,17 +51,12 @@ export class Mapping implements DataSource<Block> {
     }
 
     private async mapRpcBlock(block: RpcBlock): Promise<Block> {
-        let normalized = mapRpcBlock(
-            block,
-            this.dataNormalizationLogger.child({
-                blockNumber: block.number,
-                blockHash: block.hash
-            })
-        )
+        let normalized = mapRpcBlock(block)
+        let jsonLine = JSON.stringify(toJSON(normalized)) + '\n'
+        let jsonLineGzip = await gzip(jsonLine, {
+            level: zlib.constants.Z_BEST_COMPRESSION
+        })
 
-        let json = JSON.stringify(normalized) + "\n"
-
-        let jsonLineGzip = await gzip(json)
         return {
             number: block.number,
             hash: block.block.hash,
