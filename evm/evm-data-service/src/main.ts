@@ -37,8 +37,6 @@ runProgram(async () => {
         diffs?: boolean,
         receipts?: boolean
         ratelimit?: number
-        dataset: string
-        network: string
     }
 
     let dataSourceOptions: DataSourceOptions = {

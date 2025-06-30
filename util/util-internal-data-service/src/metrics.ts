@@ -66,22 +66,22 @@ export class Metrics {
 
     setLastBlockTimestamp(value: number) {
         if (value === 0) {
-            this.hotBlocksLastBlockLagGauge.set(-1)
+            this.hotBlocksLastBlockLagGauge.set({}, -1)
         } else {
-            this.hotBlocksLastBlockLagGauge.set(Date.now() - value)
+            this.hotBlocksLastBlockLagGauge.set({}, Date.now() - value)
         }
     }
 
     setFirstBlock(value: number) {
-        this.hotBlocksFirstBlockGauge.set(value)
+        this.hotBlocksFirstBlockGauge.set({}, value)
     }
 
     setStoredBlocks(value: number) {
-        this.hotBlocksStoredBlocksGauge.set(value)
+        this.hotBlocksStoredBlocksGauge.set({}, value)
     }
 
     setFinalizedBlock(value: number) {
-        this.hotBlocksFinalizedBlockGauge.set(value)
+        this.hotBlocksFinalizedBlockGauge.set({}, value)
     }
 
     observeBlockLag(blockTimestamp: number) {
