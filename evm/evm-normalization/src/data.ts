@@ -23,7 +23,7 @@ export interface BlockHeader {
     miner: Bytes20,
     nonce?: Bytes8,
     mixHash?: Bytes32,
-    size: bigint,
+    size: number,
     gasLimit: Qty,
     gasUsed: Qty,
     difficulty?: Qty,

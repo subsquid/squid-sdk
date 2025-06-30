@@ -464,7 +464,7 @@ export function mapRpcBlock(src: rpc.Block): Block {
         miner: src.block.miner,
         nonce: src.block.nonce ?? undefined,
         mixHash: src.block.mixHash ?? undefined,
-        size: BigInt(src.block.size),
+        size: qty2Int(src.block.size),
         gasLimit: src.block.gasLimit,
         gasUsed: src.block.gasUsed,
         difficulty: src.block.difficulty ?? undefined,
