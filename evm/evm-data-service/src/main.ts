@@ -18,13 +18,13 @@ runProgram(async () => {
     program.requiredOption('--http-rpc <url>', 'HTTP/Websocket RPC url', Url(['http:', 'https:', 'ws:', 'wss:']))
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
-    program.option('-r, --ratelimit <number>', 'Ratelimet', positiveInt)
-    program.option('--traces', 'Force enable traces');
-    program.option('--no-traces', "Force disable traces");
-    program.option('--diffs', 'Force enable diffs');
-    program.option('--no-diffs', "Force disable diffs");
-    program.option('--receipts', 'Force enable receipts');
-    program.option('--no-receipts', "Force disable receipts");
+    program.option('-r, --ratelimit <number>', 'Ratelimit', positiveInt)
+    program.option('--traces', 'Force enable traces')
+    program.option('--no-traces', "Force disable traces")
+    program.option('--diffs', 'Force enable diffs')
+    program.option('--no-diffs', "Force disable diffs")
+    program.option('--receipts', 'Force enable receipts')
+    program.option('--no-receipts', "Force disable receipts")
     program.parse()
 
     let args = program.opts() as {

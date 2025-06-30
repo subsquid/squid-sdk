@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/util-internal-data-service",
-      "comment": "",
-      "type": "none"
+      "comment": "Added metrics for tracking block processing times and SLO compliance",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/util-internal-data-service"

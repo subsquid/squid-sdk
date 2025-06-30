@@ -3,7 +3,7 @@ import {addErrorContext, createFuture, Future, last, removeArrayItem, wait} from
 import {BlockBatch, DataSource, isForkException} from '@subsquid/util-internal-data-source'
 import assert from 'assert'
 import {Chain} from './chain'
-import {Metrics} from './metrics'
+import {Metrics, recordBlockIngestion} from './metrics'
 import {Block, BlockHeader, BlockRef, DataResponse, InvalidBaseBlock} from './types'
 import {isChain} from './util'
 
@@ -220,8 +220,15 @@ export class DataService {
         })) {
             if (this.stopped) return
 
+            const startTime = Date.now();
+
             for (let block of batch.blocks) {
+                recordBlockIngestion(block)
                 this.chain.push(block)
+
+                if (block.timestamp) {
+                    this.metrics.observeBlockLag(block.timestamp);
+                }
             }
 
             if (batch.blocks.length > 0) {
@@ -251,6 +258,8 @@ export class DataService {
             }
 
             this.triggerUpdate()
+
+            this.metrics.trackProcessingTime(startTime)
         }
     }
 
