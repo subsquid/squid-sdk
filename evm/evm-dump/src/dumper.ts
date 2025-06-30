@@ -1,6 +1,6 @@
 import {Rpc, EvmRpcDataSource, GetBlock, Log, TraceTransactionReplay} from '@subsquid/evm-rpc'
 import {assertNotNull, def, groupBy} from '@subsquid/util-internal'
-import {Command, Dumper, DumperOptions, Range} from '@subsquid/util-internal-dump-cli'
+import {Command, Dumper, DumperOptions, Range, positiveInt} from '@subsquid/util-internal-dump-cli'
 import assert from 'assert'
 
 
@@ -11,17 +11,19 @@ type Block = GetBlock & {
 
 
 interface Options extends DumperOptions {
-    withReceipts: boolean
-    withTraces: boolean
-    withStatediffs: boolean
-    useTraceApi: boolean
-    useDebugApiForStatediffs: boolean
+    finalityConfirmation?: number
+    withReceipts?: boolean
+    withTraces?: boolean
+    withStatediffs?: boolean
+    useTraceApi?: boolean
+    useDebugApiForStatediffs?: boolean
 }
 
 
 export class EvmDumper extends Dumper<Block, Options> {
     protected setUpProgram(program: Command): void {
         program.description('Data archiving tool for EVM-based chains')
+        program.option('--finality-confirmation', 'Finality offset from the head of a chain', positiveInt)
         program.option('--with-receipts', 'Fetch transaction receipt data')
         program.option('--with-traces', 'Fetch EVM call traces')
         program.option('--with-statediffs', 'Fetch EVM state updates')
@@ -40,7 +42,7 @@ export class EvmDumper extends Dumper<Block, Options> {
     @def
     private dataSource(): EvmRpcDataSource {
         return new EvmRpcDataSource({
-            rpc: new Rpc(this.rpc()),
+            rpc: new Rpc(this.rpc(), this.options().finalityConfirmation),
             req: {
                 transactions: true,
                 receipts: this.options().withReceipts,

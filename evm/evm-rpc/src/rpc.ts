@@ -22,7 +22,7 @@ import {
     TraceReplayTraces,
     getTraceTransactionReplayValidator
 } from './rpc-data'
-import {Block, DataRequest, Bytes, Bytes32} from './types'
+import {Block, DataRequest, Qty, Bytes, Bytes32} from './types'
 import {qty2Int, toQty, getTxHash} from './util'
 
 
@@ -40,6 +40,7 @@ export type Commitment = 'finalized' | 'latest'
 export class Rpc {
     constructor(
         public readonly client: RpcClient,
+        public readonly finalityConfirmation?: number,
         public readonly log = createLogger('sqd:evm-rpc')
     ) {}
 
@@ -55,7 +56,19 @@ export class Rpc {
         return this.client.batchCall(batch, options)
     }
 
+    async getHeight(): Promise<number> {
+        let height: Qty = await this.call('eth_blockNumber')
+        return qty2Int(height)
+    }
+
     async getLatestBlockhash(commitment: Commitment): Promise<LatestBlockhash> {
+        let qtyOrCommitment: Qty | Commitment
+        if (commitment == 'finalized' && this.finalityConfirmation != null) {
+            let height = await this.getHeight()
+            qtyOrCommitment = toQty(Math.max(0, height - this.finalityConfirmation))
+        } else {
+            qtyOrCommitment = commitment
+        }
         let block = await this.call('eth_getBlockByNumber', [commitment, false], {
             validateResult: getResultValidator(GetBlock)
         })
