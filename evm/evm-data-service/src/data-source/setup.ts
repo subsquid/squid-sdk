@@ -10,10 +10,12 @@ const log = createLogger('sqd:evm-data-service/data-source')
 
 export interface DataSourceOptions {
     httpRpc: string,
-    ratelimit: number | undefined,
-    traces: boolean | undefined,
-    diffs: boolean | undefined,
-    receipts: boolean | undefined,
+    ratelimit?: number,
+    traces?: boolean,
+    diffs?: boolean,
+    receipts?: boolean,
+    useTraceApi?: boolean,
+    useDebugApiForStateDiffs?: boolean
 }
 
 
@@ -21,7 +23,6 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
     let httpRpcClient = new RpcClient({
         url: options.httpRpc,
         capacity: 50,
-        fixUnsafeIntegers: true,
         requestTimeout: 16000,
         // retryAttempts: 5,
         // retrySchedule: [500, 1000, 2000, 5000, 10000, 20000],
@@ -36,6 +37,8 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
             receipts: options.receipts,
             traces: options.traces,
             stateDiffs: options.diffs,
+            useTraceApi: options.useTraceApi,
+            useDebugApiForStateDiffs: options.useDebugApiForStateDiffs,
         }
     })
     return new Mapping(rpcSource)

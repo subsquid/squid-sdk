@@ -20,30 +20,33 @@ runProgram(async () => {
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
     program.option('-r, --ratelimit <number>', 'Ratelimit', positiveInt)
     program.option('--traces', 'Force enable traces')
-    program.option('--no-traces', "Force disable traces")
     program.option('--diffs', 'Force enable diffs')
-    program.option('--no-diffs', "Force disable diffs")
     program.option('--receipts', 'Force enable receipts')
-    program.option('--no-receipts', "Force disable receipts")
+    program.option('--use-trace-api', 'Use trace_* API for statediffs and call traces')
+    program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
     program.parse()
 
     let args = program.opts() as {
         httpRpc: string
         wsRpc?: string
         blockCacheSize: number
-        port: number,
-        traces?: boolean,
-        diffs?: boolean,
+        port: number
+        traces?: boolean
+        diffs?: boolean
         receipts?: boolean
         ratelimit?: number
+        useTraceApi?: boolean
+        useDebugApiForStatediffs?: boolean
     }
 
     let dataSourceOptions: DataSourceOptions = {
         httpRpc: args.httpRpc,
+        ratelimit: args.ratelimit,
         traces: args.traces,
         diffs: args.diffs,
         receipts: args.receipts,
-        ratelimit: args.ratelimit
+        useTraceApi: args.useTraceApi,
+        useDebugApiForStateDiffs: args.useDebugApiForStatediffs
     }
 
     let mainWorker = new WorkerClient(dataSourceOptions)

@@ -48,6 +48,8 @@ export class EvmDumper extends Dumper<Block, Options> {
                 receipts: this.options().withReceipts,
                 traces: this.options().withTraces,
                 stateDiffs: this.options().withStatediffs,
+                useDebugApiForStateDiffs: this.options().useDebugApiForStatediffs,
+                useTraceApi: this.options().useTraceApi,
             },
         })
     }
