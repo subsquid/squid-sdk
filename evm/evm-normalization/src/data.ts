@@ -124,7 +124,7 @@ export interface TraceCreateResult {
 export interface TraceCallAction {
     from: Bytes20,
     to: Bytes20,
-    value: Qty,
+    value?: Qty,
     gas: Qty,
     input: Bytes,
     sighash?: Bytes,

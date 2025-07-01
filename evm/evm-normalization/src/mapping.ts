@@ -100,7 +100,7 @@ function* mapDebugFrame(
                         callType: frame.type.toLowerCase(),
                         from: frame.from,
                         to: assertNotNull(frame.to),
-                        value: assertNotNull(frame.value),
+                        value: frame.value ?? undefined,
                         gas: frame.gas,
                         input: frame.input,
                         sighash: getSigHash(frame.input)
