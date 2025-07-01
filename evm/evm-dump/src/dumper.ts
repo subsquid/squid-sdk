@@ -1,13 +1,7 @@
-import {Rpc, EvmRpcDataSource, GetBlock, Log, TraceTransactionReplay} from '@subsquid/evm-rpc'
-import {assertNotNull, def, groupBy} from '@subsquid/util-internal'
+import {Rpc, EvmRpcDataSource} from '@subsquid/evm-rpc'
+import {RawBlock, toRawBlock} from '@subsquid/evm-normalization'
+import {def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, Range, positiveInt} from '@subsquid/util-internal-dump-cli'
-import assert from 'assert'
-
-
-type Block = GetBlock & {
-    logs_?: Log[]
-    unknownTraceReplays_?: TraceTransactionReplay[]
-}
 
 
 interface Options extends DumperOptions {
@@ -20,7 +14,7 @@ interface Options extends DumperOptions {
 }
 
 
-export class EvmDumper extends Dumper<Block, Options> {
+export class EvmDumper extends Dumper<RawBlock, Options> {
     protected setUpProgram(program: Command): void {
         program.description('Data archiving tool for EVM-based chains')
         program.option('--finality-confirmation', 'Finality offset from the head of a chain', positiveInt)
@@ -35,7 +29,7 @@ export class EvmDumper extends Dumper<Block, Options> {
         return 'sqd:evm-dump'
     }
 
-    protected getParentBlockHash(block: Block): string {
+    protected getParentBlockHash(block: RawBlock): string {
         return block.parentHash
     }
 
@@ -59,35 +53,9 @@ export class EvmDumper extends Dumper<Block, Options> {
         return head.number
     }
 
-    protected async* getBlocks(range: Range): AsyncIterable<Block[]> {
+    protected async* getBlocks(range: Range): AsyncIterable<RawBlock[]> {
         for await (let batch of this.dataSource().getFinalizedStream(range)) {
-            yield batch.blocks.map(block => {
-                let transactions = block.block.transactions
-                if (this.options().withReceipts) {
-                    assert(block.receipts)
-                    let byTx = groupBy(block.receipts, r => r.transactionHash)
-                    for (let tx of transactions) {
-                        assert(typeof tx == 'object');
-                        (tx as any).receipt_ = assertNotNull(byTx.get(tx.hash))
-                    }
-                }
-                if (this.options().withTraces) {
-                    // trace_block isn't supported
-                }
-                if (this.options().withStatediffs) {
-                    // assert(block.stateDiffs)
-                    // let byTx = groupBy(block.stateDiffs, r => r.transactionHash)
-                    // assert(transactions.length == byTx.size)
-                    // for (let tx of transactions) {
-                    //     assert(typeof tx == 'object');
-                    //     (tx as any).traceReplay_ = assertNotNull(byTx.get(tx.hash))
-                    // }
-                }
-                return {
-                    ...block.block,
-                    transactions,
-                }
-            })
+            yield batch.blocks.map(toRawBlock)
         }
     }
 }
