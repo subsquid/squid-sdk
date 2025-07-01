@@ -1,10 +1,10 @@
 
-kusama:
+root:
 	@node lib/main.js \
-		-e https://kusama-rpc.polkadot.io \
-		--first-block 2672251 \
-		--last-block 2672251 \
-		> blocks.temp.jsonl
+		-e https://root.rootnet.live/archive \
+		--first-block 0 \
+#		--last-block 21251653 \
+		> blocks.jsonl
 
 
-.PHONY: kusama
+.PHONY: root

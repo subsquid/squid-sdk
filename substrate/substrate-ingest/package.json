@@ -16,16 +16,21 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "prisma:generate": "yarn run -T prisma generate",
+    "prisma:pull": "yarn run -T prisma db pull",
+    "prisma:push": "yarn run -T prisma db push --skip-generate"
   },
   "dependencies": {
+    "@prisma/client": "^4.13.0",
     "@subsquid/rpc-client": "^4.12.0",
     "@subsquid/substrate-data": "^4.4.0",
     "@subsquid/substrate-data-raw": "^1.2.0",
     "@subsquid/substrate-runtime": "^2.0.1",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-ingest-cli": "^0.2.0",
-    "@subsquid/util-internal-json": "^1.2.3"
+    "@subsquid/util-internal-json": "^1.2.3",
+    "prisma": "^4.13.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
