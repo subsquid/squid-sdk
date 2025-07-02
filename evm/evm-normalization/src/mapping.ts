@@ -18,6 +18,7 @@ import {
     TraceCreateResult,
     TraceCallResult
 } from './data'
+import {RawBlock} from './raw'
 
 
 function getSigHash(input: string): string | undefined {
@@ -275,7 +276,7 @@ function makeStateDiffFromReplay(
 
 
 function* mapReplayStateDiff(
-    src: rpc.TraceTransactionReplay['stateDiff'],
+    src: Record<Bytes20, rpc.TraceStateDiff>,
     transactionIndex: number
 ): Iterable<StateDiff> {
     for (let address in src) {
@@ -449,36 +450,41 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
 }
 
 
-export function mapRpcBlock(src: rpc.Block): Block {
-    let header: BlockHeader = {
-        number: src.number,
+function mapBlockHeader(src: rpc.GetBlock): BlockHeader {
+    return {
+        number: qty2Int(src.number),
         hash: src.hash,
-        parentHash: src.block.parentHash,
-        timestamp: qty2Int(src.block.timestamp),
-        transactionsRoot: src.block.transactionsRoot,
-        receiptsRoot: src.block.receiptsRoot,
-        stateRoot: src.block.stateRoot,
-        logsBloom: src.block.logsBloom,
-        sha3Uncles: src.block.sha3Uncles,
-        extraData: src.block.extraData,
-        miner: src.block.miner,
-        nonce: src.block.nonce ?? undefined,
-        mixHash: src.block.mixHash ?? undefined,
-        size: qty2Int(src.block.size),
-        gasLimit: src.block.gasLimit,
-        gasUsed: src.block.gasUsed,
-        difficulty: src.block.difficulty ?? undefined,
-        totalDifficulty: src.block.totalDifficulty ?? undefined,
-        baseFeePerGas: src.block.baseFeePerGas ?? undefined,
-        uncles: src.block.uncles ?? undefined,
-        withdrawals: src.block.withdrawals ?? undefined,
-        withdrawalsRoot: src.block.withdrawalsRoot ?? undefined,
-        blobGasUsed: src.block.blobGasUsed ?? undefined,
-        excessBlobGas: src.block.excessBlobGas ?? undefined,
-        parentBeaconBlockRoot: src.block.parentBeaconBlockRoot ?? undefined,
-        requestsHash: src.block.requestsHash ?? undefined,
-        l1BlockNumber: src.block.l1BlockNumber ? qty2Int(src.block.l1BlockNumber) : undefined
+        parentHash: src.parentHash,
+        timestamp: qty2Int(src.timestamp),
+        transactionsRoot: src.transactionsRoot,
+        receiptsRoot: src.receiptsRoot,
+        stateRoot: src.stateRoot,
+        logsBloom: src.logsBloom,
+        sha3Uncles: src.sha3Uncles,
+        extraData: src.extraData,
+        miner: src.miner,
+        nonce: src.nonce ?? undefined,
+        mixHash: src.mixHash ?? undefined,
+        size: qty2Int(src.size),
+        gasLimit: src.gasLimit,
+        gasUsed: src.gasUsed,
+        difficulty: src.difficulty ?? undefined,
+        totalDifficulty: src.totalDifficulty ?? undefined,
+        baseFeePerGas: src.baseFeePerGas ?? undefined,
+        uncles: src.uncles ?? undefined,
+        withdrawals: src.withdrawals ?? undefined,
+        withdrawalsRoot: src.withdrawalsRoot ?? undefined,
+        blobGasUsed: src.blobGasUsed ?? undefined,
+        excessBlobGas: src.excessBlobGas ?? undefined,
+        parentBeaconBlockRoot: src.parentBeaconBlockRoot ?? undefined,
+        requestsHash: src.requestsHash ?? undefined,
+        l1BlockNumber: src.l1BlockNumber ? qty2Int(src.l1BlockNumber) : undefined
     }
+}
+
+
+export function mapRpcBlock(src: rpc.Block): Block {
+    let header = mapBlockHeader(src.block)
 
     let transactions = []
     for (let i = 0; i < src.block.transactions.length; i++) {
@@ -549,4 +555,65 @@ export function mapRpcBlock(src: rpc.Block): Block {
         traces,
         stateDiffs
     }
+}
+
+
+export function mapRawBlock(raw: RawBlock): Block {
+    let block: Block = {
+        header: mapBlockHeader(raw),
+        transactions: [],
+        logs: [],
+        traces: [],
+        stateDiffs: []
+    }
+
+    for (let tx of raw.transactions) {
+        let transactionIndex = qty2Int(tx.transactionIndex)
+        block.transactions.push(mapTransaction(tx, tx.receipt_))
+
+        if (tx.receipt_) {
+            for (let log of tx.receipt_.logs) {
+                block.logs.push(mapLog(log))
+            }
+        }
+
+        if (tx.traceReplay_) {
+            if (tx.traceReplay_.trace) {
+                for (let frame of tx.traceReplay_.trace) {
+                    block.traces.push(mapTrace(frame, transactionIndex))
+                }
+            }
+
+            if (tx.traceReplay_.stateDiff) {
+                for (let diff of mapReplayStateDiff(tx.traceReplay_.stateDiff, transactionIndex)) {
+                    if (diff.kind != '=') {
+                        block.stateDiffs.push(diff)
+                    }
+                }
+            }
+        }
+
+        if (tx.debugFrame_) {
+            assert(block.traces.length == 0)
+            for (let frame of mapDebugFrame(transactionIndex, tx.debugFrame_)) {
+                block.traces.push(frame)
+            }
+        }
+
+        if (tx.debugStateDiff_) {
+            assert(block.stateDiffs.length == 0)
+            for (let diff of mapDebugStateDiff(transactionIndex, tx.debugStateDiff_)) {
+                block.stateDiffs.push(diff)
+            }
+        }
+    }
+
+    if (raw.logs_) {
+        assert(block.logs.length == 0)
+        for (let log of raw.logs_) {
+            block.logs.push(mapLog(log))
+        }
+    }
+
+    return block
 }
