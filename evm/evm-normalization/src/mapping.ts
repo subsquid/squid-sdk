@@ -362,9 +362,9 @@ function extractRevertReason(result: rpc.TraceResultCall | rpc.TraceResultCreate
 }
 
 
-function mapTrace(src: rpc.TraceFrame): Trace {
+function mapTrace(src: rpc.TraceFrame, transactionIndex: number): Trace {
     return {
-        transactionIndex: src.transactionPosition,
+        transactionIndex,
         traceAddress: src.traceAddress,
         type: src.type == 'suicide' ? 'selfdestruct' : src.type,
         subtraces: src.subtraces,
@@ -510,7 +510,7 @@ export function mapRpcBlock(src: rpc.Block): Block {
             let transactionIndex = assertNotNull(txIndex.get(transactionHash))
             if (rep.trace) {
                 for (let frame of rep.trace) {
-                    traces.push(mapTrace(frame))
+                    traces.push(mapTrace(frame, transactionIndex))
                 }
             }
 

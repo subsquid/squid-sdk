@@ -211,16 +211,16 @@ export const TraceFrame = object({
         reward: TraceActionReward,
         selfdestruct: TraceActionSelfdestruct
     }),
-    blockHash: BYTES,
-    blockNumber: NAT,
+    blockHash: option(BYTES),
+    blockNumber: option(NAT),
     result: option(oneOf({
         create: TraceResultCreate,
         call: TraceResultCall
     })),
     subtraces: NAT,
     traceAddress: array(NAT),
-    transactionHash: nullable(BYTES),
-    transactionPosition: NAT,
+    transactionHash: option(BYTES),
+    transactionPosition: option(NAT),
     type: oneOf({
         create: constant('create'),
         call: constant('call'),
