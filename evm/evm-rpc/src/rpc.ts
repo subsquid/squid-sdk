@@ -287,7 +287,7 @@ export class Rpc {
             tracer: 'callTracer',
             tracerConfig: {
                 onlyTopCall: false,
-                withLog: false,
+                withLog: true,
             },
             timeout: req.debugTraceTimeout,
         }
