@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-normalization",
   "entries": [
     {
+      "version": "0.0.9",
+      "tag": "@subsquid/solana-normalization_v0.0.9",
+      "date": "Fri, 04 Jul 2025 16:25:30 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Another whitelisted program ID added"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.8",
       "tag": "@subsquid/solana-normalization_v0.0.8",
       "date": "Fri, 04 Jul 2025 13:20:21 GMT",

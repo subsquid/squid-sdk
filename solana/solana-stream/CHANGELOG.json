@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-stream",
   "entries": [
     {
+      "version": "0.2.7",
+      "tag": "@subsquid/solana-stream_v0.2.7",
+      "date": "Fri, 04 Jul 2025 16:25:30 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-normalization\" from `^0.0.8` to `0.0.9`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.6",
       "tag": "@subsquid/solana-stream_v0.2.6",
       "date": "Fri, 04 Jul 2025 13:20:21 GMT",
