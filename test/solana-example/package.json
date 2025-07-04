@@ -10,7 +10,7 @@
     "@subsquid/borsh": "^0.3.0",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/solana-objects": "^0.0.3",
-    "@subsquid/solana-stream": "^0.2.5",
+    "@subsquid/solana-stream": "^0.2.6",
     "@subsquid/typeorm-migration": "^1.3.0",
     "@subsquid/typeorm-store": "^1.5.1",
     "dotenv": "^16.3.1",
