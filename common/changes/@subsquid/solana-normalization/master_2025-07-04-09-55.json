@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "extend PROGRAMS_MISSING_INVOKE_LOG with one more system program",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-normalization"
+}
