@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-stream",
+      "comment": "make compatible with new normalization process",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-stream"
+}
