@@ -1,9 +1,8 @@
-import {Block, mapRpcBlock} from '@subsquid/solana-normalization'
 import {Reward, Transaction} from '@subsquid/solana-rpc-data'
-import {array, assertValidity, B58, GetSrcType, NAT, object} from '@subsquid/util-internal-validation'
+import {array, B58, GetSrcType, NAT, object} from '@subsquid/util-internal-validation'
 
 
-const GetBlock = object({
+export const GetBlock = object({
     blockHeight: NAT,
     blockTime: NAT,
     blockhash: B58,
@@ -14,7 +13,10 @@ const GetBlock = object({
 })
 
 
-const RawBlock = object({
+export type GetBlock = GetSrcType<typeof GetBlock>
+
+
+export const RawBlock = object({
     hash: B58,
     height: NAT,
     slot: NAT,
@@ -25,32 +27,17 @@ const RawBlock = object({
 export type RawBlock = GetSrcType<typeof RawBlock>
 
 
-export function mapRawBlock(raw: unknown, noVotes: boolean): Block {
-    assertValidity(RawBlock, raw)
-    let block = mapRpcBlock(raw)
-    if (noVotes) {
-        removeVotes(block)
-    }
-    return block
+export function isVoteTransaction(tx: Transaction): boolean {
+    if (tx.transaction.message.instructions.length != 1) return false
+    let ins = tx.transaction.message.instructions[0]
+    return tx.transaction.message.accountKeys[ins.programIdIndex] === 'Vote111111111111111111111111111111111111111'
 }
 
 
-function removeVotes(block: Block): void {
-    let removed = new Set<number>()
-
-    for (let i of block.instructions) {
-        if (i.programId == 'Vote111111111111111111111111111111111111111') {
-            removed.add(i.transactionIndex)
-        }
-    }
-
-    function kept(item: {transactionIndex: number}): boolean {
-        return !removed.has(item.transactionIndex)
-    }
-
-    block.transactions = block.transactions.filter(kept)
-    block.instructions = block.instructions.filter(kept)
-    block.logs = block.logs.filter(kept)
-    block.balances = block.balances.filter(kept)
-    block.tokenBalances = block.tokenBalances.filter(kept)
+export function removeVoteTransactions(block: GetBlock): void {
+    if (!block.transactions) return
+    block.transactions = block.transactions.filter((tx: Transaction, index) => {
+        tx._index = tx._index ?? index
+        return !isVoteTransaction(tx)
+    })
 }
