@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/solana-normalization",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Solana data model",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
