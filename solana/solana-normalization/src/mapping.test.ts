@@ -1,6 +1,5 @@
 import {GetBlock, removeVoteTransactions} from '@subsquid/solana-rpc-data'
 import {toJSON} from '@subsquid/util-internal-json'
-import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
 import assert, {fail} from 'assert'
 import * as fs from 'fs'
 import {it} from 'node:test'
@@ -13,30 +12,26 @@ const FIXTURES_DIR = Path.resolve(__dirname, '../fixtures')
 
 interface Fixture {
     name: string
-    block: GetBlock
-    result: any
+    readBlock(): GetBlock
+    readResult(): any
 }
 
 
 function* listFixtures(): Iterable<Fixture> {
     for (let name of fs.readdirSync(FIXTURES_DIR)) {
-        let block: GetBlock
-        let result: any
-        try {
-            block = JSON.parse(
-                fixUnsafeIntegers(fs.readFileSync(Path.join(FIXTURES_DIR, name, 'block.json'), 'utf-8'))
-            )
-            result = JSON.parse(
-                fs.readFileSync(Path.join(FIXTURES_DIR, name, 'result.json'), 'utf-8')
-            )
-        } catch(err: any) {
-            if (err.code === 'ENOENT' || err.code == 'ENOTDIR') {
-                continue
-            } else {
-                throw err
+        let blocksPath = Path.join(FIXTURES_DIR, name, 'block.json')
+        let resultPath = Path.join(FIXTURES_DIR, name, 'result.json')
+        if (fs.existsSync(blocksPath) && fs.existsSync(resultPath)) {
+            yield {
+                name,
+                readBlock(): GetBlock {
+                    return JSON.parse(fs.readFileSync(blocksPath, 'utf-8'))
+                },
+                readResult(): any {
+                    return JSON.parse(fs.readFileSync(resultPath, 'utf-8'))
+                }
             }
         }
-        yield {name, block, result}
     }
 }
 
@@ -52,17 +47,21 @@ const failingJournal: Journal = {
 
 
 for (let fix of listFixtures()) {
-    removeVoteTransactions(fix.block)
     it(fix.name, () => {
-        let result = mapRpcBlock(0, fix.block, failingJournal)
-        let resultJson = normalizeJson(result)
+        let block = fix.readBlock()
+        let expected = fix.readResult()
+
+        removeVoteTransactions(block)
+
+        let actual = mapRpcBlock(0, block, failingJournal)
+        actual = normalizeJson(actual)
         try {
-            assert.deepStrictEqual(resultJson, fix.result)
+            assert.deepStrictEqual(actual, expected)
         } catch(err: any) {
             // diff, that comes from deepStrictEqual is not useful for large objects
             fs.writeFileSync(
                 Path.join(FIXTURES_DIR, fix.name, 'result.temp.json'),
-                JSON.stringify(resultJson, null, 2)
+                JSON.stringify(actual, null, 2)
             )
             fail('result is different from a reference')
         }
