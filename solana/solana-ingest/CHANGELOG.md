@@ -1,6 +1,16 @@
 # Change Log - @subsquid/solana-ingest
 
-This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+This log was last generated on Fri, 04 Jul 2025 13:20:21 GMT and should not be manually modified.
+
+## 0.1.2
+Fri, 04 Jul 2025 13:20:21 GMT
+
+_Version update only_
+
+## 0.1.1
+Fri, 04 Jul 2025 09:59:08 GMT
+
+_Version update only_
 
 ## 0.1.0
 Mon, 09 Jun 2025 12:15:37 GMT
