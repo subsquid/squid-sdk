@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-normalization
 
-This log was last generated on Fri, 04 Jul 2025 09:59:08 GMT and should not be manually modified.
+This log was last generated on Fri, 04 Jul 2025 13:20:21 GMT and should not be manually modified.
+
+## 0.0.8
+Fri, 04 Jul 2025 13:20:21 GMT
+
+### Patches
+
+- adding an extra program ID to the whitelist for the invoke message check
 
 ## 0.0.7
 Fri, 04 Jul 2025 09:59:08 GMT
