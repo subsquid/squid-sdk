@@ -4,19 +4,12 @@ import {PartialBlock} from '../data/partial'
 import {DataRequest} from '../data/request'
 import {filterBlockItems} from './filter'
 import {projectFields} from './project'
-import {addErrorContext} from '@subsquid/util-internal'
+import {createLogger} from '@subsquid/logger'
 
-const failingJournal = {
-    warn: function(props: any, msg: string): void {
-        throw addErrorContext(new Error(msg), props)
-    },
-    error: function(props: any, msg: string): void {
-        throw addErrorContext(new Error(msg), props)
-    }
-}
+const logger = createLogger('sqd:solana-normalization')
 
-export function mapBlock(src: rpc.Block, req: DataRequest): PartialBlock {
-    let block = mapRpcBlock(src, failingJournal)
+export function mapBlock(src: rpc.Block, req: DataRequest, ): PartialBlock {
+    let block = mapRpcBlock(src, logger)
     filterBlockItems(block, req)
     return projectFields(block, req.fields || {})
 }
