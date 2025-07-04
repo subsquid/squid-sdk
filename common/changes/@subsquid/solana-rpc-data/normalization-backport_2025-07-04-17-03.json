@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-rpc-data",
+      "comment": "add `_index` field to transaction schema",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-rpc-data"
+}
