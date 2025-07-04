@@ -20,10 +20,12 @@ import {
     DebugStateDiffResult,
     DebugFrameResult,
     TraceReplayTraces,
-    getTraceTransactionReplayValidator
+    getTraceTransactionReplayValidator,
+    Transaction
 } from './rpc-data'
 import {Block, DataRequest, Qty, Bytes, Bytes32} from './types'
 import {qty2Int, toQty, getTxHash} from './util'
+import {transactionRoot} from './verification'
 
 
 export function isEmpty(obj: object): boolean {
@@ -41,6 +43,7 @@ export class Rpc {
     constructor(
         public readonly client: RpcClient,
         public readonly finalityConfirmation?: number,
+        public readonly validateTransactionsRoot?: boolean,
         public readonly log = createLogger('sqd:evm-rpc')
     ) {}
 
@@ -110,7 +113,7 @@ export class Rpc {
             params: [toQty(height), withTransactions]
         }))
 
-        let blocks = await this.reduceBatchOnRetry(call, {
+        let results = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: info => {
                 // Avalanche
@@ -119,14 +122,25 @@ export class Rpc {
             }
         })
 
-        return blocks.map(block => {
-            if (block == null) return block
-            return {
-                number: qty2Int(block.number),
-                hash: block.hash,
-                block
+        let blocks = new Array(results.length)
+        for (let i = 0; i < results.length; i++) {
+            let block = results[i]
+            if (block == null) {
+                blocks[i] = null
+            } else {
+                if (withTransactions && this.validateTransactionsRoot) {
+                    let txRoot = await transactionRoot(block.transactions as Transaction[])
+                    assert(txRoot == block.transactionsRoot)
+                }
+                blocks[i] = {
+                    number: qty2Int(block.number),
+                    hash: block.hash,
+                    block
+                }
             }
-        })
+        }
+
+        return blocks
     }
 
     private async addRequestedData(blocks: Block[], req?: DataRequest) {

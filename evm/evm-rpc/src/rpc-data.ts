@@ -65,7 +65,21 @@ export const Transaction = object({
     accessList: option(array(Access)),
     maxFeePerBlobGas: option(QTY),
     blobVersionedHashes: option(array(BYTES)),
-    authorizationList: option(array(EIP7702Authorization))
+    authorizationList: option(array(EIP7702Authorization)),
+    requestId: option(BYTES),
+    ticketId: option(BYTES),
+    refundTo: option(BYTES),
+    maxRefund: option(QTY),
+    submissionFeeRefund: option(QTY),
+    l1BaseFee: option(QTY),
+    depositValue: option(QTY),
+    retryTo: option(BYTES),
+    retryValue: option(QTY),
+    beneficiary: option(BYTES),
+    maxSubmissionFee: option(QTY),
+    retryData: option(BYTES),
+    sourceHash: option(BYTES),
+    mint: option(QTY)
 })
 
 
