@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "Another whitelisted program ID added",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-normalization"
+}
