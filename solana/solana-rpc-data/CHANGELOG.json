@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-rpc-data",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/solana-rpc-data_v0.2.0",
+      "date": "Fri, 04 Jul 2025 17:08:54 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `_index` field to transaction schema"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/solana-rpc-data_v0.1.0",
       "date": "Mon, 09 Jun 2025 12:15:37 GMT",

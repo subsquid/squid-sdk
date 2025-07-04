@@ -1,6 +1,11 @@
 # Change Log - @subsquid/solana-rpc
 
-This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+This log was last generated on Fri, 04 Jul 2025 17:08:54 GMT and should not be manually modified.
+
+## 0.1.2
+Fri, 04 Jul 2025 17:08:54 GMT
+
+_Version update only_
 
 ## 0.1.1
 Mon, 09 Jun 2025 12:15:37 GMT

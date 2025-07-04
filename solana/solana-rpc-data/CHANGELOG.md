@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-rpc-data
 
-This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+This log was last generated on Fri, 04 Jul 2025 17:08:54 GMT and should not be manually modified.
+
+## 0.2.0
+Fri, 04 Jul 2025 17:08:54 GMT
+
+### Minor changes
+
+- add `_index` field to transaction schema
 
 ## 0.1.0
 Mon, 09 Jun 2025 12:15:37 GMT

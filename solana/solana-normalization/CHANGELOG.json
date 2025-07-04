@@ -2,6 +2,23 @@
   "name": "@subsquid/solana-normalization",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/solana-normalization_v0.1.0",
+      "date": "Fri, 04 Jul 2025 17:08:54 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "rework block normalization process"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^0.1.0` to `0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.9",
       "tag": "@subsquid/solana-normalization_v0.0.9",
       "date": "Fri, 04 Jul 2025 16:25:30 GMT",
