@@ -125,9 +125,9 @@ function* mapDebugFrame(
                     ...base,
                     type: 'selfdestruct',
                     action: {
-                        address: assertNotNull(frame.to),
+                        address: frame.to ?? undefined,
                         refundAddress: frame.from,
-                        balance: assertNotNull(frame.value)
+                        balance: frame.value ?? undefined
                     }
                 }
                 break
@@ -594,14 +594,14 @@ export function mapRawBlock(raw: RawBlock): Block {
         }
 
         if (tx.debugFrame_) {
-            assert(block.traces.length == 0)
+            assert(!tx.traceReplay_?.trace)
             for (let frame of mapDebugFrame(transactionIndex, tx.debugFrame_)) {
                 block.traces.push(frame)
             }
         }
 
         if (tx.debugStateDiff_) {
-            assert(block.stateDiffs.length == 0)
+            assert(!tx.traceReplay_?.stateDiff)
             for (let diff of mapDebugStateDiff(transactionIndex, tx.debugStateDiff_)) {
                 block.stateDiffs.push(diff)
             }
