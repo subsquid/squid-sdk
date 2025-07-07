@@ -19,6 +19,7 @@ runProgram(async () => {
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
     program.option('-r, --ratelimit <number>', 'Ratelimit', positiveInt)
+    program.option('--finality-confirmation', 'Finality offset from the head of a chain', positiveInt)
     program.option('--traces', 'Force enable traces')
     program.option('--diffs', 'Force enable diffs')
     program.option('--receipts', 'Force enable receipts')
@@ -33,6 +34,7 @@ runProgram(async () => {
         wsRpc?: string
         blockCacheSize: number
         port: number
+        finalityConfirmation?: number
         traces?: boolean
         diffs?: boolean
         receipts?: boolean
@@ -46,6 +48,7 @@ runProgram(async () => {
     let dataSourceOptions: DataSourceOptions = {
         httpRpc: args.httpRpc,
         ratelimit: args.ratelimit,
+        finalityConfirmation: args.finalityConfirmation,
         traces: args.traces,
         diffs: args.diffs,
         receipts: args.receipts,

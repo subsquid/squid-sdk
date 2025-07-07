@@ -11,6 +11,7 @@ const log = createLogger('sqd:evm-data-service/data-source')
 export interface DataSourceOptions {
     httpRpc: string,
     ratelimit?: number,
+    finalityConfirmation?: number,
     traces?: boolean,
     diffs?: boolean,
     receipts?: boolean,
@@ -33,6 +34,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
     })
     let httpRpc = new Rpc({
         client: httpRpcClient,
+        finalityConfirmation: options.finalityConfirmation,
         verifyBlockHash: options.verifyBlockHash,
         verifyTransactionsRoot: options.verifyTxRoot
     })
