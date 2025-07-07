@@ -13,6 +13,7 @@ interface Options extends DumperOptions {
     useDebugApiForStatediffs?: boolean
     verifyBlockHash?: boolean
     verifyTxRoot?: boolean
+    verifyLogsBloom?: boolean
 }
 
 
@@ -27,6 +28,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
         program.option('--verify-block-hash', 'Verify block header against block hash')
         program.option('--verify-tx-root', 'Verify block transactions against transactions root')
+        program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
     }
 
     protected getLoggingNamespace(): string {
@@ -45,6 +47,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 finalityConfirmation: this.options().finalityConfirmation,
                 verifyBlockHash: this.options().verifyBlockHash,
                 verifyTransactionsRoot: this.options().verifyTxRoot,
+                verifyLogsBloom: this.options().verifyLogsBloom
             }),
             req: {
                 transactions: true,

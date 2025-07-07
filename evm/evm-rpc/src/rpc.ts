@@ -25,7 +25,7 @@ import {
 } from './rpc-data'
 import {Block, DataRequest, Qty, Bytes, Bytes32} from './types'
 import {qty2Int, toQty, getTxHash} from './util'
-import {blockHash, transactionRoot} from './verification'
+import {blockHash, logsBloom, transactionRoot} from './verification'
 
 
 export function isEmpty(obj: object): boolean {
@@ -44,6 +44,7 @@ export interface RpcOptions {
     finalityConfirmation?: number
     verifyTransactionsRoot?: boolean
     verifyBlockHash?: boolean
+    verifyLogsBloom?: boolean
 }
 
 
@@ -52,6 +53,7 @@ export class Rpc {
     private finalityConfirmation?: number
     private verifyBlockHash?: boolean
     private verifyTransactionsRoot?: boolean
+    private verifyLogsBloom?: boolean
     private log: Logger
 
     constructor(options: RpcOptions) {
@@ -59,6 +61,7 @@ export class Rpc {
         this.finalityConfirmation = options.finalityConfirmation
         this.verifyBlockHash = options.verifyBlockHash
         this.verifyTransactionsRoot = options.verifyTransactionsRoot
+        this.verifyLogsBloom = options.verifyLogsBloom
         this.log = createLogger('sqd:evm-rpc')
     }
 
@@ -191,14 +194,20 @@ export class Rpc {
             if (receipts == null) {
                 block._isInvalid = true
                 continue
-            } 
+            }
 
             block.receipts = receipts
 
+            let logs = []
             for (let receipt of receipts) {
+                logs.push(...receipt.logs)
                 if (receipt.blockHash !== block.block.hash) {
                     block._isInvalid = true
                 }
+            }
+
+            if (this.verifyLogsBloom) {
+                assert(block.block.logsBloom == logsBloom(logs))
             }
 
             if (block.block.transactions.length !== receipts.length) {

@@ -3,7 +3,7 @@ import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {createMPT} from '@ethereumjs/mpt'
 import {RLP} from '@ethereumjs/rlp'
 import {keccak256} from 'ethereum-cryptography/keccak'
-import {Transaction, Access, EIP7702Authorization, GetBlock} from './rpc-data'
+import {Transaction, Access, EIP7702Authorization, GetBlock, Log} from './rpc-data'
 
 
 export function blockHash(block: GetBlock) {
@@ -252,4 +252,30 @@ export async function transactionRoot(transactions: Transaction[]) {
     }
 
     return toHex(trie.root())
+}
+
+
+function addToBloom(bloom: Uint8Array, entry: Uint8Array) {
+    let hash = keccak256(entry)
+    for (let idx of [0, 2, 4]) {
+        let bitToSet = ((hash[idx] << 8) | hash[idx + 1]) & 0x07FF
+        let bitIndex = 0x07FF - bitToSet
+        let byteIndex = Math.floor(bitIndex / 8)
+        let bitValue = 1 << (7 - (bitIndex % 8))
+        bloom[byteIndex] = bloom[byteIndex] | bitValue
+    }
+}
+
+
+export function logsBloom(logs: Log[]) {
+    let bloom = new Uint8Array(256)
+
+    for (let log of logs) {
+        addToBloom(bloom, decodeHex(log.address))
+        for (let topic of log.topics) {
+            addToBloom(bloom, decodeHex(topic))
+        }
+    }
+
+    return toHex(bloom)
 }
