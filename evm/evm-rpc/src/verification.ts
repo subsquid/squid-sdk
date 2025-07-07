@@ -2,7 +2,58 @@ import {decodeHex, toHex} from '@subsquid/util-internal-hex'
 import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {createMPT} from '@ethereumjs/mpt'
 import {RLP} from '@ethereumjs/rlp'
-import {Transaction, Access, EIP7702Authorization} from './rpc-data'
+import {keccak256} from 'ethereum-cryptography/keccak'
+import {Transaction, Access, EIP7702Authorization, GetBlock} from './rpc-data'
+
+
+export function blockHash(block: GetBlock) {
+    let fields = [
+        decodeHex(block.parentHash),
+        decodeHex(block.sha3Uncles),
+        decodeHex(block.miner),
+        decodeHex(block.stateRoot),
+        decodeHex(block.transactionsRoot),
+        decodeHex(block.receiptsRoot),
+        decodeHex(block.logsBloom),
+        BigInt(assertNotNull(block.difficulty)),
+        BigInt(block.number),
+        BigInt(block.gasLimit),
+        BigInt(block.gasUsed),
+        BigInt(block.timestamp),
+        decodeHex(block.extraData),
+        decodeHex(assertNotNull(block.mixHash)),
+        decodeHex(assertNotNull(block.nonce))
+    ]
+
+    // https://eips.ethereum.org/EIPS/eip-1559#block-hash-changing
+    if (block.baseFeePerGas) {
+        fields.push(BigInt(block.baseFeePerGas))
+    }
+
+    // https://eips.ethereum.org/EIPS/eip-4895#new-field-in-the-execution-payload-header-withdrawals-root
+    if (block.withdrawalsRoot) {
+        fields.push(decodeHex(block.withdrawalsRoot))
+    }
+
+    // https://eips.ethereum.org/EIPS/eip-4844#header-extension
+    if (block.blobGasUsed && block.excessBlobGas) {
+        fields.push(BigInt(block.blobGasUsed))
+        fields.push(BigInt(block.excessBlobGas))
+    }
+
+    // https://eips.ethereum.org/EIPS/eip-4788#block-structure-and-validity
+    if (block.parentBeaconBlockRoot) {
+        fields.push(decodeHex(block.parentBeaconBlockRoot))
+    }
+
+    // https://eips.ethereum.org/EIPS/eip-7685
+    if (block.requestsHash) {
+        fields.push(decodeHex(block.requestsHash))
+    }
+
+    let encoded = RLP.encode(fields)
+    return toHex(keccak256(encoded))
+}
 
 
 function decodeAccessList(accessList: Access[]) {

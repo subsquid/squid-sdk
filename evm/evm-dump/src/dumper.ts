@@ -11,7 +11,8 @@ interface Options extends DumperOptions {
     withStatediffs?: boolean
     useTraceApi?: boolean
     useDebugApiForStatediffs?: boolean
-    validateTxRoot?: boolean
+    verifyBlockHash?: boolean
+    verifyTxRoot?: boolean
 }
 
 
@@ -24,7 +25,8 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.option('--with-statediffs', 'Fetch EVM state updates')
         program.option('--use-trace-api', 'Use trace_* API for statediffs and call traces')
         program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
-        program.option('--validate-tx-root', 'Validate block transactions against transactions root')
+        program.option('--verify-block-hash', 'Verify block header against block hash')
+        program.option('--verify-tx-root', 'Verify block transactions against transactions root')
     }
 
     protected getLoggingNamespace(): string {
@@ -38,7 +40,12 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
     @def
     private dataSource(): EvmRpcDataSource {
         return new EvmRpcDataSource({
-            rpc: new Rpc(this.rpc(), this.options().finalityConfirmation, this.options().validateTxRoot),
+            rpc: new Rpc({
+                client: this.rpc(),
+                finalityConfirmation: this.options().finalityConfirmation,
+                verifyBlockHash: this.options().verifyBlockHash,
+                verifyTransactionsRoot: this.options().verifyTxRoot,
+            }),
             req: {
                 transactions: true,
                 receipts: this.options().withReceipts,

@@ -23,7 +23,8 @@
     "@subsquid/util-internal-range": "^0.3.0",
     "@subsquid/util-internal-validation": "^0.7.0",
     "@ethereumjs/rlp": "10.0.0",
-    "@ethereumjs/mpt": "10.0.0"
+    "@ethereumjs/mpt": "10.0.0",
+    "ethereum-cryptography": "3.2.0"
   },
   "peerDependencies": {
     "@subsquid/rpc-client": "^4.11.0"

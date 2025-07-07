@@ -16,7 +16,8 @@ export interface DataSourceOptions {
     receipts?: boolean,
     useTraceApi?: boolean,
     useDebugApiForStateDiffs?: boolean
-    validateTxRoot?: boolean
+    verifyBlockHash?: boolean
+    verifyTxRoot?: boolean
 }
 
 
@@ -30,7 +31,11 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         rateLimit: options.ratelimit,
         log
     })
-    let httpRpc = new Rpc(httpRpcClient, undefined, options.validateTxRoot)
+    let httpRpc = new Rpc({
+        client: httpRpcClient,
+        verifyBlockHash: options.verifyBlockHash,
+        verifyTransactionsRoot: options.verifyTxRoot
+    })
     let rpcSource = new EvmRpcDataSource({
         rpc: httpRpc,
         req: {

@@ -24,7 +24,8 @@ runProgram(async () => {
     program.option('--receipts', 'Force enable receipts')
     program.option('--use-trace-api', 'Use trace_* API for statediffs and call traces')
     program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
-    program.option('--validate-tx-root', 'Validate block transactions against transactions root')
+    program.option('--verify-block-hash', 'Verify block header against block hash')
+    program.option('--verify-tx-root', 'Verify block transactions against transactions root')
     program.parse()
 
     let args = program.opts() as {
@@ -38,7 +39,8 @@ runProgram(async () => {
         ratelimit?: number
         useTraceApi?: boolean
         useDebugApiForStatediffs?: boolean
-        validateTxRoot?: boolean
+        verifyBlockHash?: boolean
+        verifyTxRoot?: boolean
     }
 
     let dataSourceOptions: DataSourceOptions = {
@@ -49,7 +51,8 @@ runProgram(async () => {
         receipts: args.receipts,
         useTraceApi: args.useTraceApi,
         useDebugApiForStateDiffs: args.useDebugApiForStatediffs,
-        validateTxRoot: args.validateTxRoot
+        verifyBlockHash: args.verifyBlockHash,
+        verifyTxRoot: args.verifyTxRoot
     }
 
     let mainWorker = new WorkerClient(dataSourceOptions)

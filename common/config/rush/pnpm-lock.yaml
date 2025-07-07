@@ -446,6 +446,9 @@ dependencies:
   dotenv:
     specifier: ^16.3.1
     version: 16.3.1
+  ethereum-cryptography:
+    specifier: 3.2.0
+    version: 3.2.0
   ethers:
     specifier: ^6.9.0
     version: 6.9.0
@@ -1346,7 +1349,7 @@ packages:
     dependencies:
       '@coral-xyz/anchor-errors': 0.30.1
       '@coral-xyz/borsh': 0.30.1(@solana/web3.js@1.95.3)
-      '@noble/hashes': 1.5.0
+      '@noble/hashes': 1.8.0
       '@solana/web3.js': 1.95.3
       bn.js: 5.2.1
       bs58: 4.0.1
@@ -1838,13 +1841,6 @@ packages:
     resolution: {integrity: sha512-p+4cb332SFCrReJkCYe8Xzm0OWi4Jji5jVdIZRL/PmacmDkFNw6MrrV+gGpiPxLHbV+zKFRywUWbaseT+tZRXg==}
     dependencies:
       '@noble/hashes': 1.4.0
-    dev: false
-
-  /@noble/curves@1.6.0:
-    resolution: {integrity: sha512-TlaHRXDehJuRNR9TfZDNQ45mMEd5dwUwmicsafcIX4SsNiqnCHKjE/1alYPd/lDRVhxdhUAlv8uEhMCI5zjIJQ==}
-    engines: {node: ^14.21.3 || >=16}
-    dependencies:
-      '@noble/hashes': 1.5.0
     dev: false
 
   /@noble/curves@1.9.0:
@@ -2728,8 +2724,8 @@ packages:
     resolution: {integrity: sha512-O6rPUN0w2fkNqx/Z3QJMB9L225Ex10PRDH8bTaIUPZXMPV0QP8ZpPvjQnXK+upUczlRgzHzd6SjKIha1p+I6og==}
     dependencies:
       '@babel/runtime': 7.25.6
-      '@noble/curves': 1.6.0
-      '@noble/hashes': 1.5.0
+      '@noble/curves': 1.9.0
+      '@noble/hashes': 1.8.0
       '@solana/buffer-layout': 4.0.1
       agentkeepalive: 4.5.0
       bigint-buffer: 1.1.5
@@ -2765,7 +2761,7 @@ packages:
   /@solanafm/kinobi-lite@0.12.4:
     resolution: {integrity: sha512-EJjgdFKOw23H6ULPd32wFiFX3O8mPALg6X2d5wSLjxOnJRHnlmVfGLNnTW8bZbLXAsZM8Ja9V+x5B9UQscftjQ==}
     dependencies:
-      '@noble/hashes': 1.5.0
+      '@noble/hashes': 1.8.0
     dev: false
 
   /@sqltools/formatter@1.2.5:
@@ -7132,8 +7128,8 @@ packages:
   /webauthn-p256@0.0.5:
     resolution: {integrity: sha512-drMGNWKdaixZNobeORVIqq7k5DsRC9FnG201K2QjeOoQLmtSDaSsVZdkg6n5jUALJKcAG++zBPJXmv6hy0nWFg==}
     dependencies:
-      '@noble/curves': 1.6.0
-      '@noble/hashes': 1.5.0
+      '@noble/curves': 1.9.0
+      '@noble/hashes': 1.8.0
     dev: false
 
   /webidl-conversions@3.0.1:
@@ -7679,7 +7675,7 @@ packages:
     dev: false
 
   file:projects/evm-rpc.tgz(supports-color@8.1.1):
-    resolution: {integrity: sha512-qVvjinJN0AFCPxcfgGgSrqA+XMahsDtsna99d+S70pFQtlmmk+COcg+f/lRu0sxNnjmNkfvfBOGyvpJfBqkzrg==, tarball: file:projects/evm-rpc.tgz}
+    resolution: {integrity: sha512-2uKmlg8mysezQ+tj6osOgjy8VjWY+MTmaQVE0e2ZP0RJX7hHOb3hMAPA7zw7lvLOY30OnajvpW72Pf4LD/XgQw==, tarball: file:projects/evm-rpc.tgz}
     id: file:projects/evm-rpc.tgz
     name: '@rush-temp/evm-rpc'
     version: 0.0.0
@@ -7687,6 +7683,7 @@ packages:
       '@ethereumjs/mpt': 10.0.0(supports-color@8.1.1)
       '@ethereumjs/rlp': 10.0.0
       '@types/node': 20.19.0
+      ethereum-cryptography: 3.2.0
       typescript: 5.5.4
     transitivePeerDependencies:
       - supports-color

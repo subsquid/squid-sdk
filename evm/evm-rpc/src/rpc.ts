@@ -1,4 +1,4 @@
-import {createLogger} from '@subsquid/logger'
+import {Logger, createLogger} from '@subsquid/logger'
 import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {
@@ -25,7 +25,7 @@ import {
 } from './rpc-data'
 import {Block, DataRequest, Qty, Bytes, Bytes32} from './types'
 import {qty2Int, toQty, getTxHash} from './util'
-import {transactionRoot} from './verification'
+import {blockHash, transactionRoot} from './verification'
 
 
 export function isEmpty(obj: object): boolean {
@@ -39,13 +39,28 @@ export function isEmpty(obj: object): boolean {
 export type Commitment = 'finalized' | 'latest'
 
 
+export interface RpcOptions {
+    client: RpcClient,
+    finalityConfirmation?: number
+    verifyTransactionsRoot?: boolean
+    verifyBlockHash?: boolean
+}
+
+
 export class Rpc {
-    constructor(
-        public readonly client: RpcClient,
-        public readonly finalityConfirmation?: number,
-        public readonly validateTransactionsRoot?: boolean,
-        public readonly log = createLogger('sqd:evm-rpc')
-    ) {}
+    private client: RpcClient
+    private finalityConfirmation?: number
+    private verifyBlockHash?: boolean
+    private verifyTransactionsRoot?: boolean
+    private log: Logger
+
+    constructor(options: RpcOptions) {
+        this.client = options.client
+        this.finalityConfirmation = options.finalityConfirmation
+        this.verifyBlockHash = options.verifyBlockHash
+        this.verifyTransactionsRoot = options.verifyTransactionsRoot
+        this.log = createLogger('sqd:evm-rpc')
+    }
 
     getConcurrency(): number {
         return this.client.getConcurrency()
@@ -128,7 +143,10 @@ export class Rpc {
             if (block == null) {
                 blocks[i] = null
             } else {
-                if (withTransactions && this.validateTransactionsRoot) {
+                if (this.verifyBlockHash) {
+                    assert(block.hash == blockHash(block))
+                }
+                if (this.verifyTransactionsRoot && withTransactions) {
                     let txRoot = await transactionRoot(block.transactions as Transaction[])
                     assert(txRoot == block.transactionsRoot)
                 }
