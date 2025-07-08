@@ -15,7 +15,7 @@ const PROGRAMS_MISSING_INVOKE_LOG = new Set([
     'KeccakSecp256k11111111111111111111111111111',
     'NativeLoader1111111111111111111111111111111',
     'ZkTokenProof1111111111111111111111111111111',
-    'Secp256r1SigVerify1111111111111111111111111'
+    'Secp256r1SigVerify1111111111111111111111111',
 ])
 
 
@@ -131,6 +131,12 @@ export class InstructionTreeTraversal {
         }
 
         if (PROGRAMS_MISSING_INVOKE_LOG.has(programId)) {
+        } else if (
+            this.tx.couldFailBeforeInvokeMessage &&
+            this.tx.erroredInstruction == this.instructionIndex &&
+            this.pos + 1 == this.instructions.length
+        ) {
+            // instruction processing has not reached 'invoke message' logging point
         } else if (this.messages.ended) {
             this.warn('unexpected end of message log', this.pos)
         } else {
@@ -197,12 +203,11 @@ export class InstructionTreeTraversal {
             if (PROGRAMS_MISSING_INVOKE_LOG.has(ins.programId)) {
                 // all good, it is expected to not have 'invoke' message
             } else if (
-                this.tx.exceededCallDepth &&
+                this.tx.couldFailBeforeInvokeMessage &&
                 this.tx.erroredInstruction == this.instructionIndex &&
                 this.ended
             ) {
-                // we've reached the max stack depth,
-                // there will be no invoke message either
+                // instruction processing has not reached 'invoke message' logging point
             } else {
                 this.warn('missing invoke message for inner instruction', pos)
             }

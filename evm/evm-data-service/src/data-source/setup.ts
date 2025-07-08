@@ -10,10 +10,16 @@ const log = createLogger('sqd:evm-data-service/data-source')
 
 export interface DataSourceOptions {
     httpRpc: string,
-    ratelimit: number | undefined,
-    traces: boolean | undefined,
-    diffs: boolean | undefined,
-    receipts: boolean | undefined,
+    ratelimit?: number,
+    finalityConfirmation?: number,
+    traces?: boolean,
+    diffs?: boolean,
+    receipts?: boolean,
+    useTraceApi?: boolean,
+    useDebugApiForStateDiffs?: boolean
+    verifyBlockHash?: boolean
+    verifyTxRoot?: boolean
+    verifyLogsBloom?: boolean
 }
 
 
@@ -21,14 +27,19 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
     let httpRpcClient = new RpcClient({
         url: options.httpRpc,
         capacity: 50,
-        fixUnsafeIntegers: true,
         requestTimeout: 16000,
         // retryAttempts: 5,
         // retrySchedule: [500, 1000, 2000, 5000, 10000, 20000],
         rateLimit: options.ratelimit,
         log
     })
-    let httpRpc = new Rpc(httpRpcClient);
+    let httpRpc = new Rpc({
+        client: httpRpcClient,
+        finalityConfirmation: options.finalityConfirmation,
+        verifyBlockHash: options.verifyBlockHash,
+        verifyTransactionsRoot: options.verifyTxRoot,
+        verifyLogsBloom: options.verifyLogsBloom
+    })
     let rpcSource = new EvmRpcDataSource({
         rpc: httpRpc,
         req: {
@@ -36,6 +47,8 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
             receipts: options.receipts,
             traces: options.traces,
             stateDiffs: options.diffs,
+            useTraceApi: options.useTraceApi,
+            useDebugApiForStateDiffs: options.useDebugApiForStateDiffs,
         }
     })
     return new Mapping(rpcSource)

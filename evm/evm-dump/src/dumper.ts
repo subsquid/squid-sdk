@@ -1,13 +1,7 @@
-import {Rpc, EvmRpcDataSource, GetBlock, Log, TraceTransactionReplay} from '@subsquid/evm-rpc'
-import {assertNotNull, def, groupBy} from '@subsquid/util-internal'
+import {Rpc, EvmRpcDataSource} from '@subsquid/evm-rpc'
+import {RawBlock, toRawBlock} from '@subsquid/evm-normalization'
+import {def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, Range, positiveInt} from '@subsquid/util-internal-dump-cli'
-import assert from 'assert'
-
-
-type Block = GetBlock & {
-    logs_?: Log[]
-    unknownTraceReplays_?: TraceTransactionReplay[]
-}
 
 
 interface Options extends DumperOptions {
@@ -17,10 +11,13 @@ interface Options extends DumperOptions {
     withStatediffs?: boolean
     useTraceApi?: boolean
     useDebugApiForStatediffs?: boolean
+    verifyBlockHash?: boolean
+    verifyTxRoot?: boolean
+    verifyLogsBloom?: boolean
 }
 
 
-export class EvmDumper extends Dumper<Block, Options> {
+export class EvmDumper extends Dumper<RawBlock, Options> {
     protected setUpProgram(program: Command): void {
         program.description('Data archiving tool for EVM-based chains')
         program.option('--finality-confirmation', 'Finality offset from the head of a chain', positiveInt)
@@ -29,25 +26,36 @@ export class EvmDumper extends Dumper<Block, Options> {
         program.option('--with-statediffs', 'Fetch EVM state updates')
         program.option('--use-trace-api', 'Use trace_* API for statediffs and call traces')
         program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
+        program.option('--verify-block-hash', 'Verify block header against block hash')
+        program.option('--verify-tx-root', 'Verify block transactions against transactions root')
+        program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
     }
 
     protected getLoggingNamespace(): string {
         return 'sqd:evm-dump'
     }
 
-    protected getParentBlockHash(block: Block): string {
+    protected getParentBlockHash(block: RawBlock): string {
         return block.parentHash
     }
 
     @def
     private dataSource(): EvmRpcDataSource {
         return new EvmRpcDataSource({
-            rpc: new Rpc(this.rpc(), this.options().finalityConfirmation),
+            rpc: new Rpc({
+                client: this.rpc(),
+                finalityConfirmation: this.options().finalityConfirmation,
+                verifyBlockHash: this.options().verifyBlockHash,
+                verifyTransactionsRoot: this.options().verifyTxRoot,
+                verifyLogsBloom: this.options().verifyLogsBloom
+            }),
             req: {
                 transactions: true,
                 receipts: this.options().withReceipts,
                 traces: this.options().withTraces,
                 stateDiffs: this.options().withStatediffs,
+                useDebugApiForStateDiffs: this.options().useDebugApiForStatediffs,
+                useTraceApi: this.options().useTraceApi,
             },
         })
     }
@@ -57,35 +65,9 @@ export class EvmDumper extends Dumper<Block, Options> {
         return head.number
     }
 
-    protected async* getBlocks(range: Range): AsyncIterable<Block[]> {
+    protected async* getBlocks(range: Range): AsyncIterable<RawBlock[]> {
         for await (let batch of this.dataSource().getFinalizedStream(range)) {
-            yield batch.blocks.map(block => {
-                let transactions = block.block.transactions
-                if (this.options().withReceipts) {
-                    assert(block.receipts)
-                    let byTx = groupBy(block.receipts, r => r.transactionHash)
-                    for (let tx of transactions) {
-                        assert(typeof tx == 'object');
-                        (tx as any).receipt_ = assertNotNull(byTx.get(tx.hash))
-                    }
-                }
-                if (this.options().withTraces) {
-                    // trace_block isn't supported
-                }
-                if (this.options().withStatediffs) {
-                    // assert(block.stateDiffs)
-                    // let byTx = groupBy(block.stateDiffs, r => r.transactionHash)
-                    // assert(transactions.length == byTx.size)
-                    // for (let tx of transactions) {
-                    //     assert(typeof tx == 'object');
-                    //     (tx as any).traceReplay_ = assertNotNull(byTx.get(tx.hash))
-                    // }
-                }
-                return {
-                    ...block.block,
-                    transactions,
-                }
-            })
+            yield batch.blocks.map(toRawBlock)
         }
     }
 }

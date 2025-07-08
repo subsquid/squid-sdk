@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@subsquid/evm-rpc": "^0.0.0",
+    "@subsquid/evm-normalization": "^0.0.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-dump-cli": "^1.0.0"
   },

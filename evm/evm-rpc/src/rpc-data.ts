@@ -65,7 +65,21 @@ export const Transaction = object({
     accessList: option(array(Access)),
     maxFeePerBlobGas: option(QTY),
     blobVersionedHashes: option(array(BYTES)),
-    authorizationList: option(array(EIP7702Authorization))
+    authorizationList: option(array(EIP7702Authorization)),
+    requestId: option(BYTES),
+    ticketId: option(BYTES),
+    refundTo: option(BYTES),
+    maxRefund: option(QTY),
+    submissionFeeRefund: option(QTY),
+    l1BaseFee: option(QTY),
+    depositValue: option(QTY),
+    retryTo: option(BYTES),
+    retryValue: option(QTY),
+    beneficiary: option(BYTES),
+    maxSubmissionFee: option(QTY),
+    retryData: option(BYTES),
+    sourceHash: option(BYTES),
+    mint: option(QTY)
 })
 
 
@@ -211,16 +225,16 @@ export const TraceFrame = object({
         reward: TraceActionReward,
         selfdestruct: TraceActionSelfdestruct
     }),
-    blockHash: BYTES,
-    blockNumber: NAT,
+    blockHash: option(BYTES),
+    blockNumber: option(NAT),
     result: option(oneOf({
         create: TraceResultCreate,
         call: TraceResultCall
     })),
     subtraces: NAT,
     traceAddress: array(NAT),
-    transactionHash: nullable(BYTES),
-    transactionPosition: NAT,
+    transactionHash: option(BYTES),
+    transactionPosition: option(NAT),
     type: oneOf({
         create: constant('create'),
         call: constant('call'),

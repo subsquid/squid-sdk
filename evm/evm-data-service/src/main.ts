@@ -19,31 +19,46 @@ runProgram(async () => {
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
     program.option('-r, --ratelimit <number>', 'Ratelimit', positiveInt)
+    program.option('--finality-confirmation', 'Finality offset from the head of a chain', positiveInt)
     program.option('--traces', 'Force enable traces')
-    program.option('--no-traces', "Force disable traces")
     program.option('--diffs', 'Force enable diffs')
-    program.option('--no-diffs', "Force disable diffs")
     program.option('--receipts', 'Force enable receipts')
-    program.option('--no-receipts', "Force disable receipts")
+    program.option('--use-trace-api', 'Use trace_* API for statediffs and call traces')
+    program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
+    program.option('--verify-block-hash', 'Verify block header against block hash')
+    program.option('--verify-tx-root', 'Verify block transactions against transactions root')
+    program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
     program.parse()
 
     let args = program.opts() as {
         httpRpc: string
         wsRpc?: string
         blockCacheSize: number
-        port: number,
-        traces?: boolean,
-        diffs?: boolean,
+        port: number
+        finalityConfirmation?: number
+        traces?: boolean
+        diffs?: boolean
         receipts?: boolean
         ratelimit?: number
+        useTraceApi?: boolean
+        useDebugApiForStatediffs?: boolean
+        verifyBlockHash?: boolean
+        verifyTxRoot?: boolean
+        verifyLogsBloom?: boolean
     }
 
     let dataSourceOptions: DataSourceOptions = {
         httpRpc: args.httpRpc,
+        ratelimit: args.ratelimit,
+        finalityConfirmation: args.finalityConfirmation,
         traces: args.traces,
         diffs: args.diffs,
         receipts: args.receipts,
-        ratelimit: args.ratelimit
+        useTraceApi: args.useTraceApi,
+        useDebugApiForStateDiffs: args.useDebugApiForStatediffs,
+        verifyBlockHash: args.verifyBlockHash,
+        verifyTxRoot: args.verifyTxRoot,
+        verifyLogsBloom: args.verifyLogsBloom
     }
 
     let mainWorker = new WorkerClient(dataSourceOptions)

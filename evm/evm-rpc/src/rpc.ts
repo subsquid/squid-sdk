@@ -1,4 +1,4 @@
-import {createLogger} from '@subsquid/logger'
+import {Logger, createLogger} from '@subsquid/logger'
 import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {
@@ -20,10 +20,12 @@ import {
     DebugStateDiffResult,
     DebugFrameResult,
     TraceReplayTraces,
-    getTraceTransactionReplayValidator
+    getTraceTransactionReplayValidator,
+    Transaction
 } from './rpc-data'
 import {Block, DataRequest, Qty, Bytes, Bytes32} from './types'
 import {qty2Int, toQty, getTxHash} from './util'
+import {blockHash, logsBloom, transactionRoot} from './verification'
 
 
 export function isEmpty(obj: object): boolean {
@@ -37,12 +39,31 @@ export function isEmpty(obj: object): boolean {
 export type Commitment = 'finalized' | 'latest'
 
 
+export interface RpcOptions {
+    client: RpcClient,
+    finalityConfirmation?: number
+    verifyTransactionsRoot?: boolean
+    verifyBlockHash?: boolean
+    verifyLogsBloom?: boolean
+}
+
+
 export class Rpc {
-    constructor(
-        public readonly client: RpcClient,
-        public readonly finalityConfirmation?: number,
-        public readonly log = createLogger('sqd:evm-rpc')
-    ) {}
+    private client: RpcClient
+    private finalityConfirmation?: number
+    private verifyBlockHash?: boolean
+    private verifyTransactionsRoot?: boolean
+    private verifyLogsBloom?: boolean
+    private log: Logger
+
+    constructor(options: RpcOptions) {
+        this.client = options.client
+        this.finalityConfirmation = options.finalityConfirmation
+        this.verifyBlockHash = options.verifyBlockHash
+        this.verifyTransactionsRoot = options.verifyTransactionsRoot
+        this.verifyLogsBloom = options.verifyLogsBloom
+        this.log = createLogger('sqd:evm-rpc')
+    }
 
     getConcurrency(): number {
         return this.client.getConcurrency()
@@ -110,7 +131,7 @@ export class Rpc {
             params: [toQty(height), withTransactions]
         }))
 
-        let blocks = await this.reduceBatchOnRetry(call, {
+        let results = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: info => {
                 // Avalanche
@@ -119,14 +140,28 @@ export class Rpc {
             }
         })
 
-        return blocks.map(block => {
-            if (block == null) return block
-            return {
-                number: qty2Int(block.number),
-                hash: block.hash,
-                block
+        let blocks = new Array(results.length)
+        for (let i = 0; i < results.length; i++) {
+            let block = results[i]
+            if (block == null) {
+                blocks[i] = null
+            } else {
+                if (this.verifyBlockHash) {
+                    assert(block.hash == blockHash(block))
+                }
+                if (this.verifyTransactionsRoot && withTransactions) {
+                    let txRoot = await transactionRoot(block.transactions as Transaction[])
+                    assert(txRoot == block.transactionsRoot)
+                }
+                blocks[i] = {
+                    number: qty2Int(block.number),
+                    hash: block.hash,
+                    block
+                }
             }
-        })
+        }
+
+        return blocks
     }
 
     private async addRequestedData(blocks: Block[], req?: DataRequest) {
@@ -159,14 +194,20 @@ export class Rpc {
             if (receipts == null) {
                 block._isInvalid = true
                 continue
-            } 
+            }
 
             block.receipts = receipts
 
+            let logs = []
             for (let receipt of receipts) {
+                logs.push(...receipt.logs)
                 if (receipt.blockHash !== block.block.hash) {
                     block._isInvalid = true
                 }
+            }
+
+            if (this.verifyLogsBloom) {
+                assert(block.block.logsBloom == logsBloom(logs))
             }
 
             if (block.block.transactions.length !== receipts.length) {
@@ -287,7 +328,7 @@ export class Rpc {
             tracer: 'callTracer',
             tracerConfig: {
                 onlyTopCall: false,
-                withLog: false,
+                withLog: true,
             },
             timeout: req.debugTraceTimeout,
         }

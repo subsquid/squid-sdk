@@ -11,7 +11,7 @@ export interface Journal {
 
 export class TransactionContext {
     public readonly erroredInstruction: number
-    public readonly exceededCallDepth: boolean
+    public readonly couldFailBeforeInvokeMessage: boolean
 
     private accounts: Base58Bytes[]
 
@@ -39,13 +39,24 @@ export class TransactionContext {
                 this.erroredInstruction = tx.transaction.message.instructions.length
                 this.warn({transactionError: err}, 'got InstructionError of unrecognized shape')
             }
-            this.exceededCallDepth = type === 'CallDepth'
+            switch(type) {
+                case 'AccountNotExecutable':
+                case 'CallDepth':
+                case 'MissingAccount':
+                case 'NotEnoughAccountKeys':
+                case 'ReentrancyNotAllowed':
+                case 'UnsupportedProgramId':
+                    this.couldFailBeforeInvokeMessage = true
+                    break
+                default:
+                    this.couldFailBeforeInvokeMessage = false
+            }
         } else if (err != null && !this.tx.meta.logMessages?.length && !this.tx.meta.innerInstructions?.length) {
             this.erroredInstruction = -1
-            this.exceededCallDepth = false
+            this.couldFailBeforeInvokeMessage = false
         } else {
             this.erroredInstruction = tx.transaction.message.instructions.length
-            this.exceededCallDepth = false
+            this.couldFailBeforeInvokeMessage = false
         }
     }
 

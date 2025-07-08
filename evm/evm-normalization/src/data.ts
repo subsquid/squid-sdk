@@ -23,7 +23,7 @@ export interface BlockHeader {
     miner: Bytes20,
     nonce?: Bytes8,
     mixHash?: Bytes32,
-    size: bigint,
+    size: number,
     gasLimit: Qty,
     gasUsed: Qty,
     difficulty?: Qty,
@@ -124,7 +124,7 @@ export interface TraceCreateResult {
 export interface TraceCallAction {
     from: Bytes20,
     to: Bytes20,
-    value: Qty,
+    value?: Qty,
     gas: Qty,
     input: Bytes,
     sighash?: Bytes,
@@ -146,9 +146,9 @@ export interface TraceRewardAction {
 
 
 export interface TraceSelfdestructAction {
-    address: Bytes20
+    address?: Bytes20
     refundAddress: Bytes20
-    balance: Qty
+    balance?: Qty
 }
 
 
