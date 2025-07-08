@@ -3,7 +3,8 @@ import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {createMPT} from '@ethereumjs/mpt'
 import {RLP} from '@ethereumjs/rlp'
 import {keccak256} from 'ethereum-cryptography/keccak'
-import {Transaction, Access, EIP7702Authorization, GetBlock, Log} from './rpc-data'
+import {Transaction, Access, EIP7702Authorization, GetBlock, Log, Receipt} from './rpc-data'
+import {qty2Int} from './util'
 
 
 export function blockHash(block: GetBlock) {
@@ -248,6 +249,49 @@ export async function transactionRoot(transactions: Transaction[]) {
             throw unexpectedCase(tx.type)
         }
 
+        await trie.put(key, value)
+    }
+
+    return toHex(trie.root())
+}
+
+
+function decodeLogs(logs: Log[]) {
+    return logs.map(log => [
+        decodeHex(log.address),
+        log.topics.map(topic => decodeHex(topic)),
+        decodeHex(log.data)
+    ])
+}
+
+
+export async function receiptsRoot(receipts: Receipt[]) {
+    let trie = await createMPT()
+
+    for (let idx = 0; idx < receipts.length; idx++) {
+        let receipt = receipts[idx]
+        let key = RLP.encode(idx)
+        let type = receipt.type == '0x0' ? Buffer.alloc(0) : RLP.encode(qty2Int(receipt.type))
+        let payload: Uint8Array
+        if (receipt.type == '0x7e') {
+            // https://github.com/ethereum-optimism/specs/blob/main/specs/protocol/deposits.md#deposit-receipt
+            payload = RLP.encode([
+                qty2Int(receipt.status),
+                BigInt(receipt.cumulativeGasUsed),
+                decodeHex(logsBloom(receipt.logs)),
+                decodeLogs(receipt['logs']),
+                BigInt(assertNotNull(receipt.depositNonce)),
+                Number('depositReceiptVersion' in receipt),
+            ])
+        } else {
+            payload = RLP.encode([
+                qty2Int(receipt.status),
+                BigInt(receipt.cumulativeGasUsed),
+                decodeHex(logsBloom(receipt.logs)),
+                decodeLogs(receipt['logs']),
+            ])
+        }
+        let value = Buffer.concat([type, Buffer.from(payload)])
         await trie.put(key, value)
     }
 

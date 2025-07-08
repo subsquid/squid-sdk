@@ -19,6 +19,7 @@ export interface DataSourceOptions {
     useDebugApiForStateDiffs?: boolean
     verifyBlockHash?: boolean
     verifyTxRoot?: boolean
+    verifyReceiptsRoot?: boolean
     verifyLogsBloom?: boolean
 }
 
@@ -37,7 +38,8 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         client: httpRpcClient,
         finalityConfirmation: options.finalityConfirmation,
         verifyBlockHash: options.verifyBlockHash,
-        verifyTransactionsRoot: options.verifyTxRoot,
+        verifyTxRoot: options.verifyTxRoot,
+        verifyReceiptsRoot: options.verifyReceiptsRoot,
         verifyLogsBloom: options.verifyLogsBloom
     })
     let rpcSource = new EvmRpcDataSource({

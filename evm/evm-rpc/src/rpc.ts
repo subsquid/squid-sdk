@@ -25,7 +25,7 @@ import {
 } from './rpc-data'
 import {Block, DataRequest, Qty, Bytes, Bytes32} from './types'
 import {qty2Int, toQty, getTxHash} from './util'
-import {blockHash, logsBloom, transactionRoot} from './verification'
+import {blockHash, logsBloom, receiptsRoot, transactionRoot as transactionsRoot} from './verification'
 
 
 export function isEmpty(obj: object): boolean {
@@ -42,7 +42,8 @@ export type Commitment = 'finalized' | 'latest'
 export interface RpcOptions {
     client: RpcClient,
     finalityConfirmation?: number
-    verifyTransactionsRoot?: boolean
+    verifyTxRoot?: boolean
+    verifyReceiptsRoot?: boolean
     verifyBlockHash?: boolean
     verifyLogsBloom?: boolean
 }
@@ -52,7 +53,8 @@ export class Rpc {
     private client: RpcClient
     private finalityConfirmation?: number
     private verifyBlockHash?: boolean
-    private verifyTransactionsRoot?: boolean
+    private verifyTxRoot?: boolean
+    private verifyReceiptsRoot?: boolean
     private verifyLogsBloom?: boolean
     private log: Logger
 
@@ -60,7 +62,7 @@ export class Rpc {
         this.client = options.client
         this.finalityConfirmation = options.finalityConfirmation
         this.verifyBlockHash = options.verifyBlockHash
-        this.verifyTransactionsRoot = options.verifyTransactionsRoot
+        this.verifyTxRoot = options.verifyTxRoot
         this.verifyLogsBloom = options.verifyLogsBloom
         this.log = createLogger('sqd:evm-rpc')
     }
@@ -149,10 +151,12 @@ export class Rpc {
                 if (this.verifyBlockHash) {
                     assert(block.hash == blockHash(block))
                 }
-                if (this.verifyTransactionsRoot && withTransactions) {
-                    let txRoot = await transactionRoot(block.transactions as Transaction[])
+
+                if (this.verifyTxRoot && withTransactions) {
+                    let txRoot = await transactionsRoot(block.transactions as Transaction[])
                     assert(txRoot == block.transactionsRoot)
                 }
+
                 blocks[i] = {
                     number: qty2Int(block.number),
                     hash: block.hash,
@@ -208,6 +212,11 @@ export class Rpc {
 
             if (this.verifyLogsBloom) {
                 assert(block.block.logsBloom == logsBloom(logs))
+            }
+
+            if (this.verifyReceiptsRoot) {
+                let root = await receiptsRoot(receipts)
+                assert(block.block.receiptsRoot == root)
             }
 
             if (block.block.transactions.length !== receipts.length) {

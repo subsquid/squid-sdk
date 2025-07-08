@@ -134,7 +134,9 @@ export const Receipt = object({
     l1BlobBaseFee: option(QTY),
     l1BlobBaseFeeScalar: option(SMALL_QTY),
     l1GasPrice: option(QTY),
-    l1GasUsed: option(QTY)
+    l1GasUsed: option(QTY),
+    depositNonce: option(QTY),
+    depositReceiptVersion: option(QTY)
 })
 
 
