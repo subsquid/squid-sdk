@@ -24,6 +24,8 @@
     "@subsquid/util-internal-validation": "^0.7.0",
     "@ethereumjs/rlp": "10.0.0",
     "@ethereumjs/mpt": "10.0.0",
+    "@ethereumjs/util": "10.0.0",
+    "secp256k1": "5.0.1",
     "ethereum-cryptography": "3.2.0"
   },
   "peerDependencies": {
@@ -32,6 +34,7 @@
   "devDependencies": {
     "@subsquid/rpc-client": "^4.11.0",
     "@types/node": "^20.10.0",
+    "@types/secp256k1": "4.0.6",
     "typescript": "5.5.4"
   }
 }

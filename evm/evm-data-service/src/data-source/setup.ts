@@ -18,6 +18,7 @@ export interface DataSourceOptions {
     useTraceApi?: boolean,
     useDebugApiForStateDiffs?: boolean
     verifyBlockHash?: boolean
+    verifyTxSender?: boolean
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
     verifyLogsBloom?: boolean
@@ -39,6 +40,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         finalityConfirmation: options.finalityConfirmation,
         verifyBlockHash: options.verifyBlockHash,
         verifyTxRoot: options.verifyTxRoot,
+        verifyTxSender: options.verifyTxSender,
         verifyReceiptsRoot: options.verifyReceiptsRoot,
         verifyLogsBloom: options.verifyLogsBloom
     })

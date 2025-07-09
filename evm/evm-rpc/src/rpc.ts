@@ -25,7 +25,7 @@ import {
 } from './rpc-data'
 import {Block, DataRequest, Qty, Bytes, Bytes32} from './types'
 import {qty2Int, toQty, getTxHash} from './util'
-import {blockHash, logsBloom, receiptsRoot, transactionRoot as transactionsRoot} from './verification'
+import {blockHash, logsBloom, receiptsRoot, recoverTxSender, transactionsRoot} from './verification'
 
 
 export function isEmpty(obj: object): boolean {
@@ -42,9 +42,10 @@ export type Commitment = 'finalized' | 'latest'
 export interface RpcOptions {
     client: RpcClient,
     finalityConfirmation?: number
+    verifyBlockHash?: boolean
+    verifyTxSender?: boolean
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
-    verifyBlockHash?: boolean
     verifyLogsBloom?: boolean
 }
 
@@ -53,6 +54,7 @@ export class Rpc {
     private client: RpcClient
     private finalityConfirmation?: number
     private verifyBlockHash?: boolean
+    private verifyTxSender?: boolean
     private verifyTxRoot?: boolean
     private verifyReceiptsRoot?: boolean
     private verifyLogsBloom?: boolean
@@ -62,7 +64,9 @@ export class Rpc {
         this.client = options.client
         this.finalityConfirmation = options.finalityConfirmation
         this.verifyBlockHash = options.verifyBlockHash
+        this.verifyTxSender = options.verifyTxSender
         this.verifyTxRoot = options.verifyTxRoot
+        this.verifyReceiptsRoot = options.verifyReceiptsRoot
         this.verifyLogsBloom = options.verifyLogsBloom
         this.log = createLogger('sqd:evm-rpc')
     }
@@ -155,6 +159,16 @@ export class Rpc {
                 if (this.verifyTxRoot && withTransactions) {
                     let txRoot = await transactionsRoot(block.transactions as Transaction[])
                     assert(txRoot == block.transactionsRoot)
+                }
+
+                if (this.verifyTxSender && withTransactions) {
+                    for (let tx of block.transactions) {
+                        let transaction: Transaction = tx as Transaction
+                        let sender = recoverTxSender(transaction)
+                        if (sender != null) {
+                            assert(sender == transaction.from)
+                        }
+                    }
                 }
 
                 blocks[i] = {

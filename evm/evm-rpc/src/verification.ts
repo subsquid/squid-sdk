@@ -2,7 +2,9 @@ import {decodeHex, toHex} from '@subsquid/util-internal-hex'
 import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {createMPT} from '@ethereumjs/mpt'
 import {RLP} from '@ethereumjs/rlp'
+import {bigIntToUnpaddedBytes, concatBytes, setLengthLeft} from '@ethereumjs/util'
 import {keccak256} from 'ethereum-cryptography/keccak'
+import secp256k1 from 'secp256k1'
 import {Transaction, Access, EIP7702Authorization, GetBlock, Log, Receipt} from './rpc-data'
 import {qty2Int} from './util'
 
@@ -77,7 +79,7 @@ function decodeAuthorizationList(authorizationList: EIP7702Authorization[]) {
 }
 
 
-export async function transactionRoot(transactions: Transaction[]) {
+export async function transactionsRoot(transactions: Transaction[]) {
     let trie = await createMPT()
 
     for (let idx = 0; idx < transactions.length; idx++) {
@@ -278,8 +280,8 @@ export async function receiptsRoot(receipts: Receipt[]) {
             payload = RLP.encode([
                 qty2Int(receipt.status),
                 BigInt(receipt.cumulativeGasUsed),
-                decodeHex(logsBloom(receipt.logs)),
-                decodeLogs(receipt['logs']),
+                decodeHex(receipt.logsBloom),
+                decodeLogs(receipt.logs),
                 BigInt(assertNotNull(receipt.depositNonce)),
                 Number('depositReceiptVersion' in receipt),
             ])
@@ -287,8 +289,8 @@ export async function receiptsRoot(receipts: Receipt[]) {
             payload = RLP.encode([
                 qty2Int(receipt.status),
                 BigInt(receipt.cumulativeGasUsed),
-                decodeHex(logsBloom(receipt.logs)),
-                decodeLogs(receipt['logs']),
+                decodeHex(receipt.logsBloom),
+                decodeLogs(receipt.logs),
             ])
         }
         let value = Buffer.concat([type, Buffer.from(payload)])
@@ -322,4 +324,128 @@ export function logsBloom(logs: Log[]) {
     }
 
     return toHex(bloom)
+}
+
+
+function serializeTransaction(tx: Transaction): Uint8Array | undefined {
+    if (tx.type == '0x0') {
+        let fields = [
+            BigInt(tx.nonce),
+            BigInt(tx.gasPrice),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(tx.value),
+            decodeHex(tx.input),
+        ]
+
+        if (tx.chainId) {
+            fields.push(BigInt(tx.chainId), 0n, 0n)
+        }
+
+        return RLP.encode(fields)
+    } else if (tx.type == '0x1') {
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId)),
+            BigInt(tx.nonce),
+            BigInt(tx.gasPrice),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(tx.value),
+            decodeHex(tx.input),
+            decodeAccessList(tx.accessList ?? []),
+        ])
+        return Buffer.concat([Buffer.from([0x01]), Buffer.from(payload)])
+    } else if (tx.type == '0x2') {
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId)),
+            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.maxPriorityFeePerGas)),
+            BigInt(assertNotNull(tx.maxFeePerGas)),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(tx.value),
+            decodeHex(tx.input),
+            decodeAccessList(tx.accessList ?? []),
+        ])
+        return Buffer.concat([Buffer.from([0x02]), Buffer.from(payload)])
+    } else if (tx.type == '0x3') {
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId)),
+            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.maxPriorityFeePerGas)),
+            BigInt(assertNotNull(tx.maxFeePerGas)),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(tx.value),
+            decodeHex(tx.input),
+            decodeAccessList(tx.accessList ?? []),
+            BigInt(assertNotNull(tx.maxFeePerBlobGas)),
+            assertNotNull(tx.blobVersionedHashes).map(decodeHex),
+        ])
+        return Buffer.concat([Buffer.from([0x03]), Buffer.from(payload)])
+    } else if (tx.type == '0x4') {
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId)),
+            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.maxPriorityFeePerGas)),
+            BigInt(assertNotNull(tx.maxFeePerGas)),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(tx.value),
+            decodeHex(tx.input),
+            decodeAccessList(tx.accessList ?? []),
+            decodeAuthorizationList(tx.authorizationList ?? []),
+        ])
+        return Buffer.concat([Buffer.from([0x04]), Buffer.from(payload)])
+    } else if (tx['type'] == '0x64') {
+        // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L338
+        return
+    } else if (tx['type'] == '0x65') {
+        // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L43
+        return
+    } else if (tx['type'] == '0x66') {
+        // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L104
+        return
+    } else if (tx['type'] == '0x68') {
+        // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L161
+        return
+    } else if (tx['type'] == '0x69') {
+        // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L232
+        return
+    } else if (tx['type'] == '0x6a') {
+        // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L387
+        return
+    } else if (tx['type'] == '0x7e') {
+        // https://github.com/ethereum-optimism/optimism/blob/9ff3ebb3983be52c3ca189423ae7b4aec94e0fde/specs/deposits.md#the-deposited-transaction-type
+        return
+    } else {
+        throw unexpectedCase(tx.type)
+    }
+}
+
+
+function calculateSigRecovery(tx: Transaction) {
+    if (tx.v == '0x0' || tx.v == '0x1') {
+        return qty2Int(tx.v)
+    } else {
+        if (tx.chainId == null) {
+            return qty2Int(tx.v) - 27
+        } else {
+            return qty2Int(tx.v) - (qty2Int(tx.chainId) * 2 + 35)
+        }
+    }
+}
+
+
+export function recoverTxSender(tx: Transaction): string | undefined {
+    let message = serializeTransaction(tx)
+    if (message == null) return
+    let messageHash = keccak256(message)
+    let signature = concatBytes(
+        setLengthLeft(bigIntToUnpaddedBytes(BigInt(tx.r)), 32),
+        setLengthLeft(bigIntToUnpaddedBytes(BigInt(tx.s)), 32)
+    )
+    let recovery = calculateSigRecovery(tx)
+    let pubKey = secp256k1.ecdsaRecover(signature, recovery, messageHash, false)
+    return toHex(keccak256(pubKey.slice(1)).subarray(-20))
 }
