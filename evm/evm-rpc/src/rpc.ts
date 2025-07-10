@@ -29,14 +29,6 @@ import {qty2Int, toQty, getTxHash} from './util'
 import {blockHash, logsBloom, receiptsRoot, recoverTxSender, transactionsRoot} from './verification'
 
 
-export function isEmpty(obj: object): boolean {
-    for (let _ in obj) {
-        return false
-    }
-    return true
-}
-
-
 export type Commitment = 'finalized' | 'latest'
 
 
@@ -60,6 +52,7 @@ export class Rpc {
     private verifyReceiptsRoot?: boolean
     private verifyLogsBloom?: boolean
     private log: Logger
+    private receiptsMethod?: GetReceiptsMethod
 
     constructor(options: RpcOptions) {
         this.client = options.client
@@ -204,7 +197,7 @@ export class Rpc {
     private async addLogs(blocks: Block[]) {
         if (blocks.length == 0) return
 
-        let logs = await this.call('eth_getLogs', [{
+        let results = await this.call('eth_getLogs', [{
             fromBlock: blocks[0].block.number,
             toBlock: last(blocks).block.number
         }], {
@@ -219,7 +212,7 @@ export class Rpc {
             }
         })
 
-        let logsByBlock = groupBy(logs, log => log.blockHash)
+        let logsByBlock = groupBy(results, log => log.blockHash)
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let logs = logsByBlock.get(block.hash) || []
@@ -232,7 +225,29 @@ export class Rpc {
         }
     }
 
+    private async getReceiptsMethod() {
+        if (this.receiptsMethod) return this.receiptsMethod
+
+        let eth = await this.client.call('eth_getBlockReceipts', ['latest']).then(
+            res => Array.isArray(res),
+            () => false
+        )
+        if (eth) return this.receiptsMethod = 'eth_getBlockReceipts'
+
+        return this.receiptsMethod = 'eth_getTransactionReceipt'
+    }
+
     private async addReceipts(blocks: Block[]) {
+        let method = await this.getReceiptsMethod()
+        switch(method) {
+            case 'eth_getBlockReceipts':
+                return this.addReceiptsByBlock(blocks)
+            default:
+                return this.addReceiptsByTx(blocks)
+        }
+    }
+
+    private async addReceiptsByBlock(blocks: Block[]) {
         let call = blocks.map(block => ({
             method: 'eth_getBlockReceipts',
             params: [block.block.number]
@@ -272,6 +287,48 @@ export class Rpc {
             if (block.block.transactions.length !== receipts.length) {
                 block._isInvalid = true
             }
+        }
+    }
+
+    private async addReceiptsByTx(blocks: Block[]) {
+        let call = []
+        for (let block of blocks) {
+            for (let tx of block.block.transactions) {
+                call.push({
+                    method: 'eth_getTransactionReceipt',
+                    params: [getTxHash(tx)]
+                })
+            }
+        }
+
+        let results = await this.batchCall(call, {
+            validateResult: getResultValidator(nullable(Receipt))
+        })
+
+        let receiptsByBlock = groupBy(
+            results.filter(r => r != null) as Receipt[],
+            r => r.blockHash
+        )
+
+        for (let block of blocks) {
+            let receipts = receiptsByBlock.get(block.hash) || []
+
+            if (receipts.length !== block.block.transactions.length) {
+                block._isInvalid = true
+                continue
+            }
+
+            if (this.verifyLogsBloom) {
+                let logs = receipts.flatMap(r => r.logs)
+                assert(block.block.logsBloom == logsBloom(logs))
+            }
+
+            if (this.verifyReceiptsRoot) {
+                let root = await receiptsRoot(receipts)
+                assert(block.block.receiptsRoot == root)
+            }
+
+            block.receipts = receipts
         }
     }
 
@@ -519,6 +576,9 @@ const LatestBlockhash = object({
 export type LatestBlockhash = GetSrcType<typeof LatestBlockhash>
 
 
+type GetReceiptsMethod = 'eth_getTransactionReceipt' | 'eth_getBlockReceipts'
+
+
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
     return function(result: unknown) {
         let err = validator.validate(result)
@@ -534,4 +594,12 @@ function getResultValidator<V extends Validator>(validator: V): (result: unknown
 function captureNotFound(info: RpcErrorInfo): null {
     if (info.message.includes('not found')) return null
     throw new RpcError(info)
+}
+
+
+export function isEmpty(obj: object): boolean {
+    for (let _ in obj) {
+        return false
+    }
+    return true
 }
