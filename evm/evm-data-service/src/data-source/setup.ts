@@ -48,6 +48,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         rpc: httpRpc,
         req: {
             transactions: true,
+            logs: !options.receipts,
             receipts: options.receipts,
             traces: options.traces,
             stateDiffs: options.diffs,

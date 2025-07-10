@@ -484,28 +484,41 @@ function mapBlockHeader(src: rpc.GetBlock): BlockHeader {
 
 
 export function mapRpcBlock(src: rpc.Block): Block {
-    let header = mapBlockHeader(src.block)
+    let block: Block = {
+        header: mapBlockHeader(src.block),
+        transactions: [],
+        logs: [],
+        traces: [],
+        stateDiffs: []
+    }
 
-    let transactions = []
     for (let i = 0; i < src.block.transactions.length; i++) {
-        let tx = src.block.transactions[i] as unknown as rpc.Transaction
+        let tx = src.block.transactions[i] as rpc.Transaction
         assert(typeof tx !== 'string')
         let receipt = src.receipts?.[i]
         if (receipt) {
             assert(tx.hash == receipt.transactionHash)
         }
-        transactions.push(mapTransaction(tx, receipt))
+        block.transactions.push(mapTransaction(tx, receipt))
     }
 
-    let logs: Log[] = []
-    src.receipts?.forEach(receipt => {
-        receipt.logs.forEach(log => {
-            logs.push(mapLog(log))
-        })
-    })
+    if (src.logs) {
+        for (let i = 0; i < src.logs.length; i++) {
+            let log = src.logs[i]
+            block.logs.push(mapLog(log))
+        }
+    }
 
-    let traces: Trace[] = []
-    let stateDiffs: StateDiff[] = []
+    if (src.receipts) {
+        assert(block.logs.length == 0)
+        for (let i = 0; i < src.receipts.length; i++) {
+            let receipt = src.receipts[i]
+            for (let j = 0; j < receipt.logs.length; j++) {
+                let log = receipt.logs[j]
+                block.logs.push(mapLog(log))
+            }
+        }
+    }
 
     if (src.traceReplays) {
         let txIndex = new Map(src.block.transactions.map((tx, idx) => {
@@ -516,14 +529,14 @@ export function mapRpcBlock(src: rpc.Block): Block {
             let transactionIndex = assertNotNull(txIndex.get(transactionHash))
             if (rep.trace) {
                 for (let frame of rep.trace) {
-                    traces.push(mapTrace(frame, transactionIndex))
+                    block.traces.push(mapTrace(frame, transactionIndex))
                 }
             }
 
             if (rep.stateDiff) {
                 for (let diff of mapReplayStateDiff(rep.stateDiff, transactionIndex)) {
                     if (diff.kind != '=') {
-                        stateDiffs.push(diff)
+                        block.stateDiffs.push(diff)
                     }
                 }
             }
@@ -531,30 +544,24 @@ export function mapRpcBlock(src: rpc.Block): Block {
     }
 
     if (src.debugFrames) {
-        assert(traces.length == 0)
+        assert(block.traces.length == 0)
         for (let i = 0; i < src.debugFrames.length; i++) {
             for (let trace of mapDebugFrame(i, src.debugFrames[i])) {
-                traces.push(trace)
+                block.traces.push(trace)
             }
         }
     }
 
     if (src.debugStateDiffs) {
-        assert(stateDiffs.length == 0)
+        assert(block.stateDiffs.length == 0)
         for (let i = 0; i < src.debugStateDiffs.length; i++) {
             for (let diff of mapDebugStateDiff(i, src.debugStateDiffs[i])) {
-                stateDiffs.push(diff)
+                block.stateDiffs.push(diff)
             }
         }
     }
 
-    return {
-        header,
-        transactions,
-        logs,
-        traces,
-        stateDiffs
-    }
+    return block
 }
 
 

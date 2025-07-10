@@ -1,5 +1,6 @@
 import {
     GetBlock,
+    Log,
     Receipt,
     TraceTransactionReplay,
     DebugStateDiffResult,
@@ -18,6 +19,7 @@ export interface Block {
     number: number
     hash: Bytes32
     block: GetBlock
+    logs?: Log[]
     receipts?: Receipt[]
     traceReplays?: TraceTransactionReplay[]
     debugStateDiffs?: DebugStateDiffResult[]
@@ -28,6 +30,7 @@ export interface Block {
 
 export interface DataRequest {
     transactions?: boolean
+    logs?: boolean
     receipts?: boolean
     traces?: boolean
     stateDiffs?: boolean

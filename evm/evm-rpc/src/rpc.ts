@@ -11,7 +11,7 @@ import {
     object,
     Validator
 } from '@subsquid/util-internal-validation'
-import {assertNotNull, groupBy} from '@subsquid/util-internal'
+import {assertNotNull, groupBy, last} from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     GetBlock,
@@ -21,7 +21,8 @@ import {
     DebugFrameResult,
     TraceReplayTraces,
     getTraceTransactionReplayValidator,
-    Transaction
+    Transaction,
+    Log
 } from './rpc-data'
 import {Block, DataRequest, Qty, Bytes, Bytes32} from './types'
 import {qty2Int, toQty, getTxHash} from './util'
@@ -185,6 +186,10 @@ export class Rpc {
     private async addRequestedData(blocks: Block[], req?: DataRequest) {
         let subtasks = []
 
+        if (req?.logs) {
+            subtasks.push(this.addLogs(blocks))
+        }
+
         if (req?.receipts) {
             subtasks.push(this.addReceipts(blocks))
         }
@@ -194,6 +199,37 @@ export class Rpc {
         }
 
         await Promise.all(subtasks)
+    }
+
+    private async addLogs(blocks: Block[]) {
+        if (blocks.length == 0) return
+
+        let logs = await this.call('eth_getLogs', [{
+            fromBlock: blocks[0].block.number,
+            toBlock: last(blocks).block.number
+        }], {
+            validateResult: getResultValidator(array(Log)),
+            validateError: info => {
+                if (info.message.includes('after last accepted block')) {
+                    // Regular EVM networks simply return an empty array in case
+                    // of out of range request, but Avalanche returns an error.
+                    return []
+                }
+                throw new RpcError(info)
+            }
+        })
+
+        let logsByBlock = groupBy(logs, log => log.blockHash)
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let logs = logsByBlock.get(block.hash) || []
+
+            if (this.verifyLogsBloom) {
+                assert(block.block.logsBloom == logsBloom(logs))
+            }
+
+            block.logs = logs
+        }
     }
 
     private async addReceipts(blocks: Block[]) {

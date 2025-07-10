@@ -57,6 +57,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
             }),
             req: {
                 transactions: true,
+                logs: !this.options().withReceipts,
                 receipts: this.options().withReceipts,
                 traces: this.options().withTraces,
                 stateDiffs: this.options().withStatediffs,

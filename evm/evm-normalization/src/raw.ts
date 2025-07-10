@@ -36,6 +36,11 @@ export function toRawBlock(block: Block): RawBlock {
     assert(typeof rawBlock.transactions != 'string')
     let transactions = rawBlock.transactions as RawTransaction[]
 
+    if (block.logs) {
+        assert(block.receipts == null)
+        rawBlock.logs_ = block.logs
+    }
+
     if (block.receipts) {
         let byTx = new Map(block.receipts.map(receipt => [receipt.transactionHash, receipt]))
         for (let i = 0; i < transactions.length; i++) {
