@@ -273,7 +273,7 @@ export class Rpc {
     private async addTraceBlockTraces(blocks: Block[]) {
         let call = blocks.map(block => ({
             method: 'trace_block',
-            params: [block.block.number]
+            params: [block.block.hash]
         }))
 
         let results = await this.reduceBatchOnRetry(call, {
@@ -417,7 +417,7 @@ export class Rpc {
 
         let call = blocks.map(block => ({
             method: 'trace_replayBlockTransactions',
-            params: [block.block.number, tracers]
+            params: [block.block.hash, tracers]
         }))
 
         let replaysByBlock = await this.batchCall(call, {
