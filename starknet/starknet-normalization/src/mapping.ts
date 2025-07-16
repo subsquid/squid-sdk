@@ -21,7 +21,7 @@ export function mapRpcBlock(src: rpc.Block): Block {
                 return mapRpcTransaction(i, tx, events)
             } catch(err: any) {
                 throw addErrorContext(err, {
-                    blockTransaction: tx.transaction.transaction_hash
+                    blockTransaction: tx.receipt.transaction_hash
                 })
             }
         }) ?? []
@@ -45,7 +45,7 @@ function mapRpcTransaction(
     // Create transaction object with all possible fields
     const transaction: Transaction = {
         transactionIndex,
-        transactionHash: tx.transaction_hash,
+        transactionHash: receipt.transaction_hash,
         contractAddress: tx.contract_address ?? undefined,
         entryPointSelector: tx.entry_point_selector ?? undefined,
         calldata: tx.calldata ?? undefined,
@@ -62,10 +62,10 @@ function mapRpcTransaction(
         resourceBounds: tx.resource_bounds ? {
             l1GasMaxAmount: BigInt(tx.resource_bounds.l1_gas.max_amount),
             l1GasMaxPricePerUnit: BigInt(tx.resource_bounds.l1_gas.max_price_per_unit),
-            l1DataGasMaxAmount: BigInt(tx.resource_bounds.l1_data_gas.max_amount),
-            l1DataGasMaxPricePerUnit: BigInt(tx.resource_bounds.l1_data_gas.max_price_per_unit),
+            l1DataGasMaxAmount: BigInt(tx.resource_bounds.l1_data_gas?.max_amount ?? 0),
+            l1DataGasMaxPricePerUnit: BigInt(tx.resource_bounds.l1_data_gas?.max_price_per_unit ?? 0),
             l2GasMaxAmount: BigInt(tx.resource_bounds.l2_gas.max_amount),
-            l2GasMaxPricePerUnit: BigInt(tx.resource_bounds.l2_gas.max_price_per_unit)
+            l2GasMaxPricePerUnit: BigInt(tx.resource_bounds.l2_gas.max_price_per_unit),
         } : undefined,
         tip: tx.tip ?? undefined,
         paymasterData: tx.paymaster_data ?? undefined,

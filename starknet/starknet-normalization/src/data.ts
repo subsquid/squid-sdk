@@ -14,8 +14,8 @@ export interface BlockHeader {
 export interface ResourceBounds {
     l1GasMaxAmount: bigint
     l1GasMaxPricePerUnit: bigint
-    l1DataGasMaxAmount: bigint
-    l1DataGasMaxPricePerUnit: bigint
+    l1DataGasMaxAmount: bigint | undefined
+    l1DataGasMaxPricePerUnit: bigint | undefined
     l2GasMaxAmount: bigint
     l2GasMaxPricePerUnit: bigint
 }
