@@ -1,5 +1,5 @@
 import * as rpc from '@subsquid/evm-rpc'
-import {qty2Int, toQty, getTxHash, isEmpty, Bytes, Bytes20, Bytes32} from '@subsquid/evm-rpc'
+import {qty2Int, toQty, getTxHash, Bytes, Bytes20, Bytes32} from '@subsquid/evm-rpc'
 import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {
@@ -19,12 +19,6 @@ import {
     TraceCallResult
 } from './data'
 import {RawBlock} from './raw'
-
-
-function getSigHash(input: string): string | undefined {
-    if (input.length < 10) return undefined
-    return input.substring(0, 10)
-}
 
 
 function* traverseDebugFrame(frame: rpc.DebugFrame, traceAddress: number[]): Iterable<{
@@ -104,7 +98,6 @@ function* mapDebugFrame(
                         value: frame.value ?? undefined,
                         gas: frame.gas,
                         input: frame.input,
-                        sighash: getSigHash(frame.input)
                     }
                 }
 
@@ -135,6 +128,7 @@ function* mapDebugFrame(
             default:
                 throw unexpectedCase(frame.type)
         }
+        yield trace
     }
 }
 
@@ -308,8 +302,7 @@ function mapAction(action: rpc.TraceActionCreate | rpc.TraceActionCall | rpc.Tra
             value: action.value,
             gas: action.gas,
             input: action.input,
-            callType: action.callType,
-            sighash: getSigHash(action.input)
+            callType: action.callType
         }
     }
     if ('rewardType' in action) {
@@ -418,7 +411,6 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         from: src.from,
         to: src.to ?? undefined,
         input: src.input,
-        sighash: getSigHash(src.input),
         value: src.value,
         type: qty2Int(src.type),
         gas: src.gas,
@@ -601,7 +593,7 @@ export function mapRawBlock(raw: RawBlock): Block {
         }
 
         if (tx.debugFrame_) {
-            assert(!tx.traceReplay_?.trace)
+            assert(!tx.traceReplay_?.trace?.length)
             for (let frame of mapDebugFrame(transactionIndex, tx.debugFrame_)) {
                 block.traces.push(frame)
             }
@@ -623,4 +615,12 @@ export function mapRawBlock(raw: RawBlock): Block {
     }
 
     return block
+}
+
+
+function isEmpty(obj: object): boolean {
+    for (let _ in obj) {
+        return false
+    }
+    return true
 }

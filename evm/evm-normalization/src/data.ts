@@ -63,7 +63,6 @@ export interface Transaction {
     from: Bytes20,
     to?: Bytes20,
     input: Bytes,
-    sighash?: Bytes,
     value: Qty,
     type: number,
     gas: Qty,
@@ -127,7 +126,6 @@ export interface TraceCallAction {
     value?: Qty,
     gas: Qty,
     input: Bytes,
-    sighash?: Bytes,
     callType: string
 }
 
