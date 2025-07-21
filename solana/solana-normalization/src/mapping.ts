@@ -144,7 +144,7 @@ class ItemMapping {
 function mapTransaction(transactionIndex: number, src: rpc.Transaction): Transaction {
     return {
         transactionIndex,
-        version: src.version,
+        version: src.version ?? 'legacy',
         accountKeys: src.transaction.message.accountKeys,
         addressTableLookups: src.transaction.message.addressTableLookups ?? [],
         numReadonlySignedAccounts: src.transaction.message.header.numReadonlySignedAccounts,

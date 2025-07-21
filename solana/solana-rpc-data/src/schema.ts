@@ -116,10 +116,10 @@ export const Transaction = object({
         message: TransactionMessage,
         signatures: array(B58)
     }),
-    version: oneOf({
+    version: option(oneOf({
         legacy: constant('legacy'),
         versionNumber: NAT
-    }),
+    })),
     /**
      * Represents original transaction position in a block.
      * Might be set, when some block transactions where filtered out
