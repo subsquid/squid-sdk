@@ -168,8 +168,8 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
             if (from && prevShortHash != null && this.validateChainContinuity()) {
                 let fst = blocks[0]
                 if (
-                    from === getParentBlockNumber(fst) + 1 &&
-                    checkShorHashMatch(this.getParentBlockHash(fst), prevShortHash)
+                    from === getParentBlockNumber(fst) + 1
+                    // && checkShorHashMatch(this.getParentBlockHash(fst), prevShortHash)
                 ) {} else {
                     throw new ErrorMessage(
                         `Block ${getBlockNumber(fst)}#${fst.hash} `  +

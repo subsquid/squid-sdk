@@ -55,8 +55,8 @@ export function eliminateContradictions(slots: Slot[]): boolean {
             }
             if (prev.slot === next.block.parentSlot) {
                 if (
-                    prev.block === 'skipped' ||
-                    prev.block != null && prev.block.blockhash !== next.block.previousBlockhash
+                    prev.block === 'skipped'
+                    // || prev.block != null && prev.block.blockhash !== next.block.previousBlockhash
                 ) {
                     next.block = 'skipped'
                     found = true

@@ -24,12 +24,12 @@ export class TransactionContext {
             this.accounts = tx.transaction.message.accountKeys
         } else {
             this.accounts = tx.transaction.message.accountKeys.concat(
-                tx.meta.loadedAddresses?.writable ?? [],
-                tx.meta.loadedAddresses?.readonly ?? []
+                tx.meta?.loadedAddresses?.writable ?? [],
+                tx.meta?.loadedAddresses?.readonly ?? []
             )
         }
 
-        let err = this.tx.meta.err
+        let err = this.tx.meta?.err
         if (isInstructionError(err)) {
             let pos = err.InstructionError[0]
             let type = err.InstructionError[1]
@@ -51,7 +51,7 @@ export class TransactionContext {
                 default:
                     this.couldFailBeforeInvokeMessage = false
             }
-        } else if (err != null && !this.tx.meta.logMessages?.length && !this.tx.meta.innerInstructions?.length) {
+        } else if (err != null && !this.tx.meta?.logMessages?.length && !this.tx.meta?.innerInstructions?.length) {
             this.erroredInstruction = -1
             this.couldFailBeforeInvokeMessage = false
         } else {
@@ -61,7 +61,7 @@ export class TransactionContext {
     }
 
     get isCommitted(): boolean {
-        return this.tx.meta.err == null
+        return this.tx.meta?.err == null
     }
 
     get transactionHash(): string {

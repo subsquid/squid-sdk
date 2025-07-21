@@ -111,7 +111,7 @@ export type TransactionMeta = GetSrcType<typeof TransactionMeta>
 
 
 export const Transaction = object({
-    meta: TransactionMeta,
+    meta: option(TransactionMeta),
     transaction: object({
         message: TransactionMessage,
         signatures: array(B58)

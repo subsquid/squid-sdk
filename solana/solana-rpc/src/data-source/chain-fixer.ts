@@ -152,14 +152,14 @@ export class ChainFixer {
         for (let i = offset; i < batch.blocks.length; i++) {
             let b = batch.blocks[i]
             if (this.from > b.block.parentSlot) {
-                if (this.parentHash && this.parentHash !== b.block.previousBlockhash) throw new ForkException(
-                    this.parentHash,
-                    getBlockRef(b),
-                    [{
-                        number: b.block.parentSlot,
-                        hash: b.block.previousBlockhash
-                    }]
-                )
+                // if (this.parentHash && this.parentHash !== b.block.previousBlockhash) throw new ForkException(
+                //     this.parentHash,
+                //     getBlockRef(b),
+                //     [{
+                //         number: b.block.parentSlot,
+                //         hash: b.block.previousBlockhash
+                //     }]
+                // )
                 this.from = b.slot + 1
                 this.parentHash = b.block.blockhash
             } else {

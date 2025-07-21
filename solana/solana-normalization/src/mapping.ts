@@ -82,7 +82,7 @@ class ItemMapping {
 
         let ctx = new TransactionContext(transactionIndex, src, this.journal)
 
-        let messages = new MessageStream(src.meta.logMessages ?? [])
+        let messages = new MessageStream(src.meta?.logMessages ?? [])
 
         let insCheckPoint = this.instructions.length
         let logCheckPoint = this.logs.length
@@ -123,7 +123,7 @@ class ItemMapping {
         for (let i = 0; i < ctx.tx.transaction.message.instructions.length; i++) {
             let ins = ctx.tx.transaction.message.instructions[i]
 
-            let inner = ctx.tx.meta.innerInstructions?.flatMap(pack => {
+            let inner = ctx.tx.meta?.innerInstructions?.flatMap(pack => {
                 return pack.index === i ? pack.instructions : []
             })
 
@@ -152,10 +152,10 @@ function mapTransaction(transactionIndex: number, src: rpc.Transaction): Transac
         numRequiredSignatures: src.transaction.message.header.numRequiredSignatures,
         recentBlockhash: src.transaction.message.recentBlockhash,
         signatures: src.transaction.signatures,
-        err: src.meta.err,
-        computeUnitsConsumed: BigInt(src.meta.computeUnitsConsumed ?? 0),
-        fee: BigInt(src.meta.fee),
-        loadedAddresses: src.meta.loadedAddresses ?? {readonly: [], writable: []},
+        err: src.meta?.err,
+        computeUnitsConsumed: BigInt(src.meta?.computeUnitsConsumed ?? 0),
+        fee: BigInt(src.meta?.fee ?? 0),
+        loadedAddresses: src.meta?.loadedAddresses ?? {readonly: [], writable: []},
         hasDroppedLogMessages: false
     }
 }
@@ -164,8 +164,8 @@ function mapTransaction(transactionIndex: number, src: rpc.Transaction): Transac
 function mapBalances(ctx: TransactionContext): Balance[] {
     let balances: Balance[] = []
 
-    let pre = ctx.tx.meta.preBalances
-    let post = ctx.tx.meta.postBalances
+    let pre = ctx.tx.meta?.preBalances ?? []
+    let post = ctx.tx.meta?.postBalances ?? []
 
     assert(pre.length == post.length)
 
@@ -196,11 +196,11 @@ function mapTokenBalances(ctx: TransactionContext): TokenBalance[] {
     let balances: TokenBalance[] = []
 
     let preBalances = new Map(
-        ctx.tx.meta.preTokenBalances?.map(b => [ctx.getAccount(b.accountIndex), b])
+        ctx.tx.meta?.preTokenBalances?.map(b => [ctx.getAccount(b.accountIndex), b])
     )
 
     let postBalances = new Map(
-        ctx.tx.meta.postTokenBalances?.map(b => [ctx.getAccount(b.accountIndex), b])
+        ctx.tx.meta?.postTokenBalances?.map(b => [ctx.getAccount(b.accountIndex), b])
     )
 
     for (let [account, post] of postBalances.entries()) {
