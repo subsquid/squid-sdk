@@ -14,16 +14,26 @@ RUN rm common/config/rush/build-cache.json
 RUN node common/scripts/install-run-rush.js build
 
 
-FROM builder AS solana-hotblocks-service-builder
-RUN node common/scripts/install-run-rush.js deploy --project @subsquid/solana-data-service
+FROM builder AS evm-dump-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/evm-dump
+
+
+FROM node AS evm-dump
+COPY --from=evm-dump-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/evm/evm-dump/bin/run.js"]
+
+
+FROM builder AS evm-ingest-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/evm-ingest
+
+
+FROM node AS evm-ingest
+COPY --from=evm-ingest-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/solana/evm-ingest/bin/run.js"]
 
 
 FROM builder AS evm-hotblocks-service-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/evm-data-service
-
-FROM node AS solana-hotblocks-service
-COPY --from=solana-hotblocks-service-builder /squid/common/deploy /squid
-ENTRYPOINT ["node", "/squid/solana/solana-data-service/lib/main.js"]
 
 
 FROM node AS evm-hotblocks-service
@@ -47,6 +57,15 @@ RUN node common/scripts/install-run-rush.js deploy --project @subsquid/solana-in
 FROM node AS solana-ingest
 COPY --from=solana-ingest-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/solana/solana-ingest/bin/run.js"]
+
+
+FROM builder AS solana-hotblocks-service-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/solana-data-service
+
+
+FROM node AS solana-hotblocks-service
+COPY --from=solana-hotblocks-service-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/solana/solana-data-service/lib/main.js"]
 
 
 FROM builder AS substrate-dump-builder
