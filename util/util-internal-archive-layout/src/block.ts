@@ -60,7 +60,7 @@ export function checkShorHashMatch(a: string, b: string): boolean {
         short = b
         long = a
     }
-    return long.startsWith(short) || long.endsWith(short)
+    return long.slice(2).startsWith(short) || long.endsWith(short)
 }
 
 

@@ -29,7 +29,7 @@ RUN node common/scripts/install-run-rush.js deploy --project @subsquid/evm-inges
 
 FROM node AS evm-ingest
 COPY --from=evm-ingest-builder /squid/common/deploy /squid
-ENTRYPOINT ["node", "/squid/solana/evm-ingest/bin/run.js"]
+ENTRYPOINT ["node", "/squid/evm/evm-ingest/bin/run.js"]
 
 
 FROM builder AS evm-hotblocks-service-builder
