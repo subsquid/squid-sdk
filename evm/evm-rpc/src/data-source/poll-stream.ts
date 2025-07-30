@@ -8,7 +8,6 @@ export interface PollStreamOptions {
     from: number
     req?: DataRequest
     strideSize?: number
-    maxConfirmationAttempts?: number
     confirmationPauseMs?: number
 }
 

@@ -26,7 +26,6 @@ export interface IngestOptions {
     range: Range
     strideSize: number
     strideConcurrency: number
-    maxConfirmationAttempts: number
 }
 
 
@@ -42,7 +41,6 @@ export function ingest(args: IngestOptions): AsyncIterable<IngestBatch> {
         req,
         strideConcurrency,
         strideSize,
-        maxConfirmationAttempts
     } = args
 
     let finalizedHeadTracker = new Throttler(
@@ -59,7 +57,6 @@ export function ingest(args: IngestOptions): AsyncIterable<IngestBatch> {
         req,
         from: args.range.from,
         strideSize,
-        maxConfirmationAttempts
     })
 
     interface Job {

@@ -1,4 +1,4 @@
-import {FiniteRange} from '@subsquid/util-internal-range'
+import {FiniteRange, rangeToArray} from '@subsquid/util-internal-range'
 import {Rpc} from '../rpc'
 import {Block, DataRequest} from '../types'
 
@@ -9,9 +9,6 @@ export async function getBlocks(
     range: FiniteRange,
 ): Promise<Block[]>
 {
-    let numbers: number[] = []
-    for (let i = range.from; i <= range.to; i++) {
-        numbers.push(i)
-    }
+    let numbers = rangeToArray(range)
     return rpc.getBlockBatch(numbers, req)
 }

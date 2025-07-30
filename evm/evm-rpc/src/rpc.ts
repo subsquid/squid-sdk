@@ -301,7 +301,7 @@ export class Rpc {
             }
         }
 
-        let results = await this.batchCall(call, {
+        let results = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(nullable(Receipt))
         })
 
@@ -456,7 +456,7 @@ export class Rpc {
 
         let validateFrameResult = getResultValidator(array(DebugFrameResult))
 
-        let results = await this.batchCall(call, {
+        let results = await this.reduceBatchOnRetry(call, {
             validateResult: result => {
                 if (Array.isArray(result)) {
                     // Moonbeam quirk
@@ -513,7 +513,7 @@ export class Rpc {
             params: [block.block.hash, tracers]
         }))
 
-        let replaysByBlock = await this.batchCall(call, {
+        let replaysByBlock = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(
                 array(getTraceTransactionReplayValidator(traces))
             )
