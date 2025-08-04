@@ -48,7 +48,8 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
             this.log().debug(`Cache cleanup: removed ${keysToRemove.length} oldest block timestamps`);
         }
 
-        this.timestampCache.set(block.height, this.getBlockTimestamp(block));
+        const blockHeight = getBlockNumber(block);
+        this.timestampCache.set(blockHeight, this.getBlockTimestamp(block));
     }
 
     protected abstract getBlocks(range: Range): AsyncIterable<B[]>
@@ -210,8 +211,8 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
                 this.addToCache(block);
             }
 
-            this.prometheus().setLatestBlockMetrics(lastBlock.height, mintedTimestamp)
-            this.log().debug(`Received block ${lastBlock.height} with minted timestamp ${mintedTimestamp}`)
+            this.prometheus().setLatestBlockMetrics(getBlockNumber(lastBlock), mintedTimestamp)
+            this.log().debug(`Received block ${getBlockNumber(lastBlock)} with minted timestamp ${mintedTimestamp}`)
             this.log().debug(`Cache size: ${this.timestampCache.size}`)
 
             yield blocks
@@ -250,7 +251,7 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
                     for (let block of bb) {
                         process.stdout.write(JSON.stringify(block) + '\n')
                     }
-                    const lastBlockHeight = last(bb).height;
+                    const lastBlockHeight = getBlockNumber(last(bb));
                     prometheus.setLastWrittenBlock(lastBlockHeight);
                     const processedTimestamp = this.getBlockTimestamp(last(bb));
                     prometheus.setProcessedBlockMetrics(processedTimestamp);
@@ -265,7 +266,7 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
                     range: this.range(),
                     chunkSize: chunkSize * 1024 * 1024,
                     onSuccessWrite: ctx => {
-                        const blockHeight = ctx.blockRange.to.height;
+                        const blockHeight = ctx.blockRange.to.number;
                         prometheus.setLastWrittenBlock(blockHeight);
 
                         const cachedTimestamp = this.timestampCache.get(blockHeight);
