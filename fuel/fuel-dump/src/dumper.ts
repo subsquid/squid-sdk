@@ -28,6 +28,13 @@ export class FuelDumper extends Dumper<BlockData, Options> {
         return block.block.header.prevRoot
     }
 
+    protected getBlockTimestamp(block: BlockData): number {
+        const TAI64_UNIX_OFFSET = BigInt("4611686018427387914");
+        const taiTimestamp = BigInt(block.block.header.time);
+        const unixTimeMs = taiTimestamp - TAI64_UNIX_OFFSET;
+        return Number(unixTimeMs);
+    }
+
     protected validateChainContinuity(): boolean {
         return false
     }
