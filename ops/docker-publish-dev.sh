@@ -1,24 +1,13 @@
 #!/bin/bash
 
-release=$1
-tag=$2
-custom_tag=$3
-images=("${@:4}")
+custom_tag=$1
+images=("${@:2}")
 
 function publish() {
     pkg_path=$1
     img="$(basename "$pkg_path")"
-    pkg_name="$(node ops/pkg-name.js "$pkg_path")"
-    pkg_version="$(node ops/pkg-version.js "$pkg_path")" || exit 1
-    major=$(echo "$pkg_version" | cut -d '.' -f1) || exit 1
 
-    git tag -a "${pkg_name}_v${pkg_version}" -m "${pkg_name} v${pkg_version}" --force
-
-    tags="-t subsquid/$img:$pkg_version -t subsquid/$img:$major -t subsquid/$img:$tag -t subsquid/$img:$release"
-    
-    if [ -n "$custom_tag" ]; then
-        tags="-t subsquid/$img:$custom_tag"
-    fi
+    tags="-t subsquid/$img:$custom_tag"
 
     docker buildx build . --platform "linux/amd64,linux/arm64" \
         --push \
