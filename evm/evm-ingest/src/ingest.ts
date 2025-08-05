@@ -37,4 +37,12 @@ export class EvmIngest extends Ingest {
             })
         }
     }
+
+    protected getBlockHeight(block: any): number {
+        return Number(block.number) || 0
+    }
+
+    protected getBlockTimestamp(block: any): number {
+        return Number(block.timestamp) || 0
+    }
 }

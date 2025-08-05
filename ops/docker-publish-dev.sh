@@ -26,6 +26,8 @@ all_images=(
     "substrate/substrate-metadata-service"
     "fuel/fuel-dump"
     "fuel/fuel-ingest"
+    "evm/evm-dump"
+    "evm/evm-ingest"
 )
 
 if [ ${#images[@]} -eq 0 ]; then
