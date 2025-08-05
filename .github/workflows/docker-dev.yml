@@ -47,4 +47,4 @@ jobs:
             CUSTOM_TAG="${{ steps.commit_sha.outputs.sha }}"
           fi
           IFS=' ' read -r -a image_array <<< "${{ inputs.images }}"
-          ./ops/docker-publish-dev.sh "dev" "dev" "$CUSTOM_TAG" "${image_array[@]}" 
+          ./ops/docker-publish-dev.sh "$CUSTOM_TAG" "${image_array[@]}" 
