@@ -22,7 +22,7 @@ interface Options extends DumperOptions {
 export class EvmDumper extends Dumper<RawBlock, Options> {
     protected setUpProgram(program: Command): void {
         program.description('Data archiving tool for EVM-based chains')
-        program.option('--finality-confirmation', 'Finality offset from the head of a chain', positiveInt)
+        program.option('--finality-confirmation <number>', 'Finality offset from the head of a chain', positiveInt)
         program.option('--with-receipts', 'Fetch transaction receipt data')
         program.option('--with-traces', 'Fetch EVM call traces')
         program.option('--with-statediffs', 'Fetch EVM state updates')
