@@ -43,6 +43,10 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         return block.parentHash
     }
 
+    protected getBlockTimestamp(block: RawBlock): number {
+        return Number(block.timestamp) || 0
+    }
+
     @def
     private dataSource(): EvmRpcDataSource {
         return new EvmRpcDataSource({
