@@ -526,6 +526,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/solana-spray",
+      "projectFolder": "solana/solana-spray",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/solana-stream",
       "projectFolder": "solana/solana-stream",
       "shouldPublish": true,

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-validation",
+      "comment": "tagged union: make the tag to be the first field, not the last",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-validation"
+}
