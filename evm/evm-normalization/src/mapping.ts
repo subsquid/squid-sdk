@@ -538,7 +538,9 @@ export function mapRpcBlock(src: rpc.Block): Block {
     if (src.debugFrames) {
         assert(block.traces.length == 0)
         for (let i = 0; i < src.debugFrames.length; i++) {
-            for (let trace of mapDebugFrame(i, src.debugFrames[i])) {
+            let frame = src.debugFrames[i]
+            if (frame == null) continue
+            for (let trace of mapDebugFrame(i, frame)) {
                 block.traces.push(trace)
             }
         }
@@ -547,7 +549,9 @@ export function mapRpcBlock(src: rpc.Block): Block {
     if (src.debugStateDiffs) {
         assert(block.stateDiffs.length == 0)
         for (let i = 0; i < src.debugStateDiffs.length; i++) {
-            for (let diff of mapDebugStateDiff(i, src.debugStateDiffs[i])) {
+            let diffs = src.debugStateDiffs[i]
+            if (diffs == null) continue
+            for (let diff of mapDebugStateDiff(i, diffs)) {
                 block.stateDiffs.push(diff)
             }
         }

@@ -58,20 +58,24 @@ export function toRawBlock(block: Block): RawBlock {
     }
 
     if (block.debugFrames) {
-        assert(block.debugFrames.length == transactions.length)
-        let byTx = new Map(block.debugFrames.map((frame, idx) => [idx, frame]))
         for (let i = 0; i < transactions.length; i++) {
             let tx = transactions[i]
-            tx.debugFrame_ = assertNotNull(byTx.get(i))
+            let frame = block.debugFrames[i]
+            if (frame?.txHash) {
+                assert(frame.txHash == tx.hash)
+            }
+            tx.debugFrame_ = frame
         }
     }
     
     if (block.debugStateDiffs) {
-        assert(block.debugStateDiffs.length == transactions.length)
-        let byTx = new Map(block.debugStateDiffs.map((diffs, idx) => [idx, diffs]))
         for (let i = 0; i < transactions.length; i++) {
             let tx = transactions[i]
-            tx.debugStateDiff_ = assertNotNull(byTx.get(i))
+            let diffs = block.debugStateDiffs[i]
+            if (diffs?.txHash) {
+                assert(diffs.txHash == tx.hash)
+            }
+            tx.debugStateDiff_ = diffs
         }
     }
 
