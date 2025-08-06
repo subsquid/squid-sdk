@@ -12,6 +12,17 @@ type DataNotificationSchema = ReturnType<typeof getDataNotificationSchema>
 type DataNotification = GetCastType<DataNotificationSchema>
 
 
+export interface SubscribeRequest<F = {}> {
+    query: Query<F>
+    /**
+     * Max size of the data message queue.
+     *
+     * Oldest excess messages are dropped.
+     */
+    maxQueueSize?: number
+}
+
+
 export class SprayClient {
     private rpc: RpcClient
 
@@ -23,11 +34,11 @@ export class SprayClient {
         })
     }
 
-    async *subscribe<F extends FieldSelection = {}>(query: Query<F>): AsyncIterable<Block<F>[]> {
-        let fields = getEffectiveFieldSelection(query.fields)
+    async *subscribe<F extends FieldSelection = {}>(req: SubscribeRequest<F>): AsyncIterable<Block<F>[]> {
+        let fields = getEffectiveFieldSelection(req.query.fields)
         let schema = getDataNotificationSchema(fields)
-        let q = prepareQuery({...query, fields})
-        let maxQueueSize = 50_000
+        let query = prepareQuery({...req.query, fields})
+        let maxQueueSize = req.maxQueueSize ?? 50_000
 
         let queue = new AsyncQueue<DataNotification[] | Error>(2)
 
@@ -45,7 +56,7 @@ export class SprayClient {
 
         let handle = this.rpc.subscribe({
             method: 'spraySubscribe',
-            params: [q],
+            params: [query],
             notification: 'sprayNotification',
             unsubscribe: 'sprayUnsubscribe',
             onMessage(msg) {
