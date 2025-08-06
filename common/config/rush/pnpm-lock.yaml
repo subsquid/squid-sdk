@@ -182,6 +182,9 @@ dependencies:
   '@rush-temp/solana-rpc-data':
     specifier: file:./projects/solana-rpc-data.tgz
     version: file:projects/solana-rpc-data.tgz
+  '@rush-temp/solana-spray':
+    specifier: file:./projects/solana-spray.tgz
+    version: file:projects/solana-spray.tgz
   '@rush-temp/solana-typegen':
     specifier: file:./projects/solana-typegen.tgz
     version: file:projects/solana-typegen.tgz
@@ -3132,7 +3135,7 @@ packages:
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
     dependencies:
       '@types/minimatch': 5.1.2
-      '@types/node': 18.19.0
+      '@types/node': 20.19.6
     dev: false
 
   /@types/glob@8.1.0:
@@ -6725,7 +6728,7 @@ packages:
       graphql: ^15.5.0
     dependencies:
       '@types/glob': 7.2.0
-      '@types/node': 18.19.0
+      '@types/node': 20.19.6
       '@types/semver': 7.5.6
       class-validator: 0.14.2
       glob: 7.2.0
@@ -8103,6 +8106,15 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/node': 20.19.6
+      typescript: 5.5.4
+    dev: false
+
+  file:projects/solana-spray.tgz:
+    resolution: {integrity: sha512-5yTRuNpmaGUYixnWDF3py/tm5bEP9FcQylCbLVgIAz6wig3r7USOeVuy29EdgJHDtQ6DFSd6AlL05gHB6rYzug==, tarball: file:projects/solana-spray.tgz}
+    name: '@rush-temp/solana-spray'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
       typescript: 5.5.4
     dev: false
 
