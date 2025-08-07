@@ -310,15 +310,12 @@ function createPortalStream<Q extends PortalQuery = PortalQuery, R extends Porta
 ): PortalStream<R> {
     let {headPollInterval, request, ...bufferOptions} = options
 
-    let abortStream = new AbortController()
-
     let buffer = new PortalStreamBuffer<R>(bufferOptions)
 
     let {fromBlock = 0, toBlock, parentBlockHash} = query
-    let abortSignal = abortStream.signal
 
     const ingest = async () => {
-        if (abortSignal.aborted) return
+        if (buffer.signal.aborted) return
         if (toBlock != null && fromBlock > toBlock) return
 
         let res = await requestStream(
@@ -329,7 +326,7 @@ function createPortalStream<Q extends PortalQuery = PortalQuery, R extends Porta
             },
             {
                 ...request,
-                abort: abortSignal,
+                abort: buffer.signal,
             }
         )
 
@@ -339,7 +336,7 @@ function createPortalStream<Q extends PortalQuery = PortalQuery, R extends Porta
         if (!('stream' in res)) {
             await buffer.put({blocks: [], bytes: 0, finalizedHead})
             buffer.flush()
-            await wait(headPollInterval, abortSignal)
+            await wait(headPollInterval, buffer.signal)
             return ingest()
         }
 
@@ -369,7 +366,7 @@ function createPortalStream<Q extends PortalQuery = PortalQuery, R extends Porta
 
             buffer.flush()
         } catch (err) {
-            if (abortSignal.aborted || isStreamAbortedError(err)) {
+            if (buffer.signal.aborted || isStreamAbortedError(err)) {
                 // ignore
             } else {
                 throw err
@@ -405,6 +402,12 @@ class PortalStreamBuffer<B> {
     private maxBytes: number
     private maxIdleTime: number
     private maxWaitTime: number
+
+    private abortController = new AbortController()
+
+    get signal() {
+        return this.abortController.signal
+    }
 
     constructor(options: {maxWaitTime: number; maxBytes: number; maxIdleTime: number; minBytes: number}) {
         this.maxWaitTime = options.maxWaitTime
@@ -547,25 +550,8 @@ class PortalStreamBuffer<B> {
         this.readyFuture.resolve()
         this.putFuture.resolve()
         this.takeFuture.resolve()
+        this.abortController.abort()
     }
-}
-
-function withAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-        if (signal.aborted) {
-            reject(signal.reason || new Error('Aborted'))
-        }
-
-        signal.addEventListener('abort', abort, {once: true})
-
-        function abort() {
-            reject(signal.reason || new Error('Aborted'))
-        }
-
-        promise.then(resolve, reject).finally(() => {
-            signal.removeEventListener('abort', abort)
-        })
-    })
 }
 
 class LineSplitStream implements ReadableWritablePair<string[], string> {
