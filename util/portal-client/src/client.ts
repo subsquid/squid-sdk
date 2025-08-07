@@ -9,6 +9,10 @@ import {
     withErrorContext,
 } from '@subsquid/util-internal'
 import {Readable} from 'stream'
+import {evm, PortalBlock, PortalQuery, solana, substrate} from './query'
+import {Simplify} from './query/common'
+
+export type * from './query'
 
 const USER_AGENT = `@subsquid/portal-client (https://sqd.ai)`
 
@@ -77,29 +81,28 @@ export interface PortalStreamOptions {
 export type PortalStreamData<B> = {
     blocks: B[]
     finalizedHead?: BlockRef
-    bytes: number
+    meta: {
+        bytes: number
+    }
 }
 
 export interface PortalStream<B> extends AsyncIterable<PortalStreamData<B>> {}
 
-export type PortalQuery = {
-    type: string
-    fromBlock?: number
-    toBlock?: number
-    parentBlockHash?: string
-    [key: string]: unknown
-}
+export type GetBlock<Q extends evm.Query | solana.Query | substrate.Query> = Q['type'] extends 'evm'
+    ? evm.Block<Q['fields']>
+    : Q['type'] extends 'solana'
+    ? solana.Block<Q['fields']>
+    : Q['type'] extends 'substrate'
+    ? substrate.Block<Q['fields']>
+    : PortalBlock
 
 export type BlockRef = {
     hash: string
     number: number
 }
 
-export type PortalBlock = {
-    header: {
-        number: number
-        hash?: string
-    }
+export function createQuery<Q extends evm.Query | solana.Query | substrate.Query>(query: Q): Simplify<Q & PortalQuery> {
+    return query
 }
 
 export class PortalClient {
@@ -152,7 +155,7 @@ export class PortalClient {
         return height
     }
 
-    getFinalizedQuery<Q extends PortalQuery = PortalQuery, R extends PortalBlock = PortalBlock>(
+    getFinalizedQuery<Q extends evm.Query | solana.Query | substrate.Query, R extends GetBlock<Q> = GetBlock<Q>>(
         query: Q,
         options?: PortalRequestOptions
     ): Promise<R[]> {
@@ -200,7 +203,7 @@ export class PortalClient {
             })
     }
 
-    getFinalizedStream<Q extends PortalQuery = PortalQuery, R extends PortalBlock = PortalBlock>(
+    getFinalizedStream<Q extends evm.Query | solana.Query | substrate.Query, R extends GetBlock<Q> = GetBlock<Q>>(
         query: Q,
         options?: PortalStreamOptions
     ): PortalStream<R> {
@@ -209,7 +212,7 @@ export class PortalClient {
         )
     }
 
-    getStream<Q extends PortalQuery = PortalQuery, R extends PortalBlock = PortalBlock>(
+    getStream<Q extends evm.Query | solana.Query | substrate.Query, R extends GetBlock<Q> = GetBlock<Q>>(
         query: Q,
         options?: PortalStreamOptions
     ): PortalStream<R> {
@@ -334,7 +337,7 @@ function createPortalStream<Q extends PortalQuery = PortalQuery, R extends Porta
 
         // we are on head
         if (!('stream' in res)) {
-            await buffer.put({blocks: [], bytes: 0, finalizedHead})
+            await buffer.put({blocks: [], meta: {bytes: 0}, finalizedHead})
             buffer.flush()
             await wait(headPollInterval, buffer.signal)
             return ingest()
@@ -361,7 +364,7 @@ function createPortalStream<Q extends PortalQuery = PortalQuery, R extends Porta
                     parentBlockHash = block.header.hash
                 }
 
-                await buffer.put({blocks, bytes, finalizedHead})
+                await buffer.put({blocks, finalizedHead, meta: {bytes}})
             }
 
             buffer.flush()
@@ -459,20 +462,20 @@ class PortalStreamBuffer<B> {
         }
 
         if (this.buffer == null) {
-            this.buffer = {blocks: [], bytes: 0}
+            this.buffer = {blocks: [], meta: {bytes: 0}}
         }
 
-        this.buffer.bytes += data.bytes
         this.buffer.blocks.push(...data.blocks)
         this.buffer.finalizedHead = data.finalizedHead
+        this.buffer.meta.bytes += data.meta.bytes
 
         this.putFuture.resolve()
 
-        if (this.buffer.bytes >= this.minBytes) {
+        if (this.buffer.meta.bytes >= this.minBytes) {
             this.readyFuture.resolve()
         }
 
-        if (this.buffer.bytes >= this.maxBytes) {
+        if (this.buffer.meta.bytes >= this.maxBytes) {
             await this.takeFuture.promise()
         }
 

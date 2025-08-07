@@ -1,6 +1,6 @@
-import {BlockRef, isForkException, PortalClient, PortalQuery} from './client'
+import {BlockRef, createQuery, isForkException, PortalClient, PortalQuery, solana} from './client'
 
-const baseQuery: PortalQuery = {
+const evmQuery = createQuery({
     type: 'evm',
     fromBlock: 23_000_000,
     fields: {
@@ -34,9 +34,9 @@ const baseQuery: PortalQuery = {
             topic0: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'],
         },
     ],
-}
+})
 
-const solanaQuery: PortalQuery = {
+const solanaQuery = createQuery({
     type: 'solana',
     fromBlock: 358_000_000,
     fields: {
@@ -59,7 +59,7 @@ const solanaQuery: PortalQuery = {
             innerInstructions: true,
         },
     ],
-}
+})
 
 async function main() {
     let portal = new PortalClient({
@@ -86,26 +86,35 @@ async function main() {
                 if (finalizedHead != null) {
                     const unfinalizedIndex = hotHeads.findIndex((head) => head.number > finalizedHead.number)
                     if (unfinalizedIndex < 0) {
-                        coldHead = hotHeads[hotHeads.length - 1]
+                        coldHead = hotHeads[hotHeads.length - 1] ?? coldHead
                         hotHeads = []
                     } else if (unfinalizedIndex > 0) {
-                        coldHead = hotHeads[unfinalizedIndex - 1]
+                        coldHead = hotHeads[unfinalizedIndex - 1] ?? coldHead
                         hotHeads = hotHeads.slice(unfinalizedIndex)
                     }
                 }
                 if (blocks.length == 0) continue
 
-                for (let block of blocks) {
-                    const blockRef = {
-                        number: block.header.number,
-                        hash: block.header.hash!,
-                    }
+                let unfinalizedIndex = 0
+                for (; unfinalizedIndex < blocks.length; unfinalizedIndex++) {
+                    if (blocks[unfinalizedIndex].header.number > finalizedHead!.number) break
+                }
+                const finalizedBlock = blocks[unfinalizedIndex - 1]
+                coldHead =
+                    unfinalizedIndex === blocks.length
+                        ? finalizedHead ?? coldHead
+                        : finalizedBlock
+                        ? {
+                              number: finalizedBlock.header.number,
+                              hash: finalizedBlock.header.hash,
+                          }
+                        : coldHead
 
-                    if (finalizedHead != null && block.header.number <= finalizedHead.number) {
-                        coldHead = blockRef
-                    } else {
-                        hotHeads.push(blockRef)
-                    }
+                for (; unfinalizedIndex < blocks.length; unfinalizedIndex++) {
+                    hotHeads.push({
+                        number: blocks[unfinalizedIndex].header.number,
+                        hash: blocks[unfinalizedIndex].header.hash,
+                    })
                 }
 
                 let head = hotHeads[hotHeads.length - 1] ?? coldHead
@@ -129,25 +138,22 @@ async function main() {
     }
 }
 
-function formatRef(ref: BlockRef) {
-    return `${ref.number}#${ref.hash.slice(2, 8)}`
-}
-
 function findFork(chainA: BlockRef[], chainB: BlockRef[]) {
-    let forkPoint = -1
-    for (let i = 0; i < chainA.length; i++) {
+    let i = 0
+    let j = 0
+    for (; i < chainA.length; i++) {
         const blockA = chainA[i]
-        for (let j = 0; j < chainB.length; j++) {
+        for (; j < chainB.length; j++) {
             let blockB = chainB[j]
             if (blockB.number > blockA.number) break
-            if (blockB.number < blockA.number) continue
-            if (blockB.number === blockA.number && blockB.hash !== blockA.hash) {
-                return forkPoint
-            }
+            if (blockB.number === blockA.number && blockB.hash !== blockA.hash) return i - 1
         }
-        forkPoint = i
     }
-    return forkPoint
+    return i - 1
+}
+
+function formatRef(ref: BlockRef) {
+    return `${ref.number}#${ref.hash.slice(2, 8)}`
 }
 
 main()
