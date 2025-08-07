@@ -417,20 +417,18 @@ class PortalStreamBuffer<B> {
     }
 
     async take(): Promise<PortalStreamData<B> | undefined> {
-        if (this.state === 'failed') {
-            throw this.error
-        }
-
         if (this.state === 'pending') {
             this.waitTimeout = setTimeout(() => this._ready(), this.maxWaitTime)
         }
 
         await Promise.all([this.readyFuture.promise(), this.putFuture.promise()])
 
+        if (this.state === 'failed') {
+            throw this.error
+        }
+
         let result = this.buffer
         this.buffer = undefined
-
-        this.takeFuture.resolve()
 
         if (this.state === 'closed') {
             return result
@@ -439,6 +437,8 @@ class PortalStreamBuffer<B> {
         if (result == null) {
             throw new Error('Buffer is empty')
         }
+
+        this.takeFuture.resolve()
 
         this.readyFuture = createFuture()
         this.putFuture = createFuture()

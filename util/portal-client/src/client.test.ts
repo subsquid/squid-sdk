@@ -36,9 +36,34 @@ const baseQuery: PortalQuery = {
     ],
 }
 
+const solanaQuery: PortalQuery = {
+    type: 'solana',
+    fromBlock: 358_000_000,
+    fields: {
+        block: {number: true, timestamp: true, hash: true, parentHash: true},
+        transaction: {signatures: true, err: true, transactionIndex: true},
+        instruction: {
+            programId: true,
+            accounts: true,
+            data: true,
+            isCommitted: true,
+            transactionIndex: true,
+            instructionAddress: true,
+        },
+    },
+    instructions: [
+        {
+            programId: ['whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc'],
+            d8: ['0xf8c69e91e17587c8'],
+            isCommitted: true,
+            innerInstructions: true,
+        },
+    ],
+}
+
 async function main() {
     let portal = new PortalClient({
-        url: 'https://portal.sqd.dev/datasets/ethereum-mainnet',
+        url: 'https://portal.sqd.dev/datasets/solana-mainnet',
         http: {
             retryAttempts: Infinity,
         },
@@ -48,7 +73,7 @@ async function main() {
     let coldHead: BlockRef | undefined = undefined
     let hotHeads: BlockRef[] = []
     while (true) {
-        const query = {...baseQuery}
+        const query = {...solanaQuery}
 
         const head = hotHeads[hotHeads.length - 1] ?? coldHead
         if (head != null) {
