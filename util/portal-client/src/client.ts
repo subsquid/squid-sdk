@@ -106,8 +106,6 @@ export function createQuery<Q extends evm.Query | solana.Query | substrate.Query
 }
 
 export class PortalClient {
-    static readonly completed = Symbol('PortalClient.completed')
-
     private url: URL
     private client: HttpClient
     private headPollInterval: number

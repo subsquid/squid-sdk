@@ -125,6 +125,7 @@ async function main() {
                 console.log(`  \u001b[2mcold head: ${coldHead ? formatRef(coldHead) : 'N/A'}\u001b[0m`)
                 console.log(`  \u001b[2mhot heads: ${hotHeads.map((h) => formatRef(h)).join(', ') || 'N/A'}\u001b[0m`)
             }
+            break
         } catch (e) {
             if (!isForkException(e)) throw e
 
