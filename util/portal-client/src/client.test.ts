@@ -1,4 +1,4 @@
-import {BlockRef, createQuery, isForkException, PortalClient, PortalQuery, solana} from './client'
+import {BlockRef, createQuery, isForkException, PortalClient} from './client'
 
 const portalUrls = {
     evm: 'https://portal.sqd.dev/datasets/ethereum-mainnet',
@@ -113,9 +113,10 @@ async function main() {
                         hotHeads = finalizeIndex < 0 ? [] : hotHeads.slice(finalizeIndex)
                     }
 
-                    hotHeads.push(
-                        ...blocks.slice(unfinalizedIndex).map((b) => ({number: b.header.number, hash: b.header.hash}))
-                    )
+                    // process unfinalized blocks
+                    for (let i = unfinalizedIndex; i < blocks.length; i++) {
+                        hotHeads.push({number: blocks[i].header.number, hash: blocks[i].header.hash})
+                    }
                 }
 
                 let head = hotHeads[hotHeads.length - 1] ?? coldHead
@@ -131,8 +132,8 @@ async function main() {
             let rollbackIndex = findRollbackIndex(chain, e.lastBlocks)
             if (rollbackIndex === -1) throw new Error('Unable to process fork')
 
-            const forkBlock = chain[rollbackIndex]
-            console.log(`detected fork at block ${forkBlock.number} (${e.head.number - forkBlock.number} depth)`)
+            const rollbackHead = chain[rollbackIndex]
+            console.log(`detected fork at block ${rollbackHead.number} (${e.head.number - rollbackHead.number} depth)`)
 
             hotHeads = chain.slice(1, rollbackIndex + 1)
         }
