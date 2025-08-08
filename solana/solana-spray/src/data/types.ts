@@ -2,23 +2,12 @@ import * as data from './data'
 import type {GetFields, Select, Selector, Simplify} from './type-util'
 
 
-type BlockHeaderRequiredFields = 'slot'
-type TransactionRequiredFields = 'transactionIndex'
-type InstructionRequiredFields = 'transactionIndex' | 'instructionAddress'
-type LogRequiredFields = 'transactionIndex' | 'logIndex' | 'instructionAddress'
-type BalanceRequiredFields = 'transactionIndex' | 'account'
-type TokenBalanceRequiredFields = 'transactionIndex' | 'account'
-type RewardRequiredFields = 'pubkey'
-
-
 export interface FieldSelection {
-    block?: Selector<Exclude<keyof data.BlockHeader, BlockHeaderRequiredFields>>
-    transaction?: Selector<Exclude<keyof data.Transaction, TransactionRequiredFields>>
-    instruction?: Selector<Exclude<keyof data.Instruction, InstructionRequiredFields>>
-    log?: Selector<Exclude<keyof data.LogMessage, LogRequiredFields>>
-    balance?: Selector<Exclude<keyof data.Balance, BalanceRequiredFields>>
-    tokenBalance?: Selector<Exclude<keyof data.TokenBalance, TokenBalanceRequiredFields>>
-    reward?: Selector<Exclude<keyof data.Reward, RewardRequiredFields>>
+    block?: Selector<keyof data.BlockHeader>
+    transaction?: Selector<keyof data.Transaction>
+    instruction?: Selector<keyof data.Instruction>
+    balance?: Selector<keyof data.Balance>
+    tokenBalance?: Selector<keyof data.TokenBalance>
 }
 
 
@@ -34,21 +23,19 @@ export const DEFAULT_FIELDS = {
         err: true
     },
     instruction: {
+        instructionAddress: true,
         programId: true,
         accounts: true,
         data: true,
         isCommitted: true
     },
-    log: {
-        programId: true,
-        kind: true,
-        message: true
-    },
     balance: {
+        account: true,
         pre: true,
         post: true
     },
     tokenBalance: {
+        account: true,
         preMint: true,
         preDecimals: true,
         preOwner: true,
@@ -57,28 +44,21 @@ export const DEFAULT_FIELDS = {
         postDecimals: true,
         postOwner: true,
         postAmount: true
-    },
-    reward: {
-        lamports: true,
-        rewardType: true
     }
 } as const
 
 
 type Item<
     Data,
-    RequiredFields extends keyof Data,
     F extends FieldSelection,
     K extends keyof FieldSelection
 > = Simplify<
-    Pick<Data, RequiredFields> &
     Select<Data, GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, K>>
 >
 
 
 export type BlockHeader<F extends FieldSelection = {}> = Item<
     data.BlockHeader,
-    BlockHeaderRequiredFields,
     F,
     'block'
 >
@@ -86,7 +66,6 @@ export type BlockHeader<F extends FieldSelection = {}> = Item<
 
 export type Transaction<F extends FieldSelection = {}> = Item<
     data.Transaction,
-    TransactionRequiredFields,
     F,
     'transaction'
 >
@@ -94,23 +73,13 @@ export type Transaction<F extends FieldSelection = {}> = Item<
 
 export type Instruction<F extends FieldSelection = {}> = Item<
     data.Instruction,
-    InstructionRequiredFields,
     F,
     'instruction'
 >
 
 
-export type LogMessage<F extends FieldSelection = {}> = Item<
-    data.LogMessage,
-    LogRequiredFields,
-    F,
-    'log'
->
-
-
 export type Balance<F extends FieldSelection = {}> = Item<
     data.Balance,
-    BalanceRequiredFields,
     F,
     'balance'
 >
@@ -118,27 +87,26 @@ export type Balance<F extends FieldSelection = {}> = Item<
 
 export type TokenBalance<F extends FieldSelection = {}> = Item<
     data.TokenBalance,
-    TokenBalanceRequiredFields,
     F,
     'tokenBalance'
 >
 
 
-export type Reward<F extends FieldSelection = {}> = Item<
-    data.Reward,
-    RewardRequiredFields,
-    F,
-    'reward'
->
+export type DataMessage<F extends FieldSelection = {}> = BlockMessage<F> | TransactionMessage<F>
 
 
-export interface Block<F extends FieldSelection = {}> {
+export type BlockMessage<F extends FieldSelection = {}> = {
+    type: 'block'
     slot: number
-    header?: BlockHeader<F>
-    transactions: Transaction<F>[]
-    instructions: Instruction<F>[]
-    logs: LogMessage<F>[]
-    balances: Balance<F>[]
-    tokenBalances: TokenBalance<F>[]
-    rewards: Reward<F>[]
+} & BlockHeader<F>
+
+
+export interface TransactionMessage<F extends FieldSelection = {}> {
+    type: 'transaction'
+    slot: number
+    transactionIndex: number
+    transaction?: Transaction<F>
+    instructions?: Instruction<F>[]
+    balances?: Balance<F>[]
+    tokenBalances?: TokenBalance<F>[]
 }

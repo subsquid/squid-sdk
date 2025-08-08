@@ -74,20 +74,6 @@ export const getDataNotificationSchema = (fields: FieldSelection) => {
         })
     })
 
-    let LogMessage = object({
-        logIndex: NAT,
-        instructionAddress: array(NAT),
-        ...project(fields.log, {
-            programId: B58,
-            kind: oneOf({
-                log: constant('log'),
-                data: constant('data'),
-                other: constant('other')
-            }),
-            message: STRING
-        })
-    })
-
     let Balance = object({
         account: B58,
         ...project(fields.balance, {
@@ -112,16 +98,6 @@ export const getDataNotificationSchema = (fields: FieldSelection) => {
         })
     })
 
-    let Reward = object({
-        pubkey: B58,
-        ...project(fields.reward, {
-            lamports: BIG_NAT,
-            postBalance: BIG_NAT,
-            rewardType: option(STRING),
-            commission: option(NAT)
-        })
-    })
-
     let TransactionNotification = object({
         slot: NAT,
         transactionIndex: NAT,
@@ -129,7 +105,6 @@ export const getDataNotificationSchema = (fields: FieldSelection) => {
         instructions: option(array(Instruction)),
         balances: option(array(Balance)),
         tokenBalances: option(array(TokenBalance)),
-        logs: option(array(LogMessage))
     })
 
     let BlockNotification = object({

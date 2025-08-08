@@ -1,21 +1,16 @@
 import {RpcClient} from '@subsquid/rpc-client'
-import {AsyncQueue, ensureError, last, maybeLast, unexpectedCase} from '@subsquid/util-internal'
-import {cast, GetCastType} from '@subsquid/util-internal-validation'
+import {AsyncQueue, ensureError} from '@subsquid/util-internal'
+import {cast} from '@subsquid/util-internal-validation'
 import {getDataNotificationSchema} from './data/notification-schema'
-import {PartialBlock} from './data/partial'
-import {Block, FieldSelection} from './data/types'
+import {DataMessage, FieldSelection} from './data/types'
 import {getEffectiveFieldSelection} from './data/util'
 import {Query} from './query'
-
-
-type DataNotificationSchema = ReturnType<typeof getDataNotificationSchema>
-type DataNotification = GetCastType<DataNotificationSchema>
 
 
 export interface SubscribeRequest<F = {}> {
     query: Query<F>
     /**
-     * Max size of the data message queue.
+     * Max size of data messages queue.
      *
      * Oldest excess messages are dropped.
      */
@@ -34,13 +29,13 @@ export class SprayClient {
         })
     }
 
-    async *subscribe<F extends FieldSelection = {}>(req: SubscribeRequest<F>): AsyncIterable<Block<F>[]> {
+    async *subscribe<F extends FieldSelection = {}>(req: SubscribeRequest<F>): AsyncIterable<DataMessage<F>[]> {
         let fields = getEffectiveFieldSelection(req.query.fields)
         let schema = getDataNotificationSchema(fields)
         let query = prepareQuery({...req.query, fields})
         let maxQueueSize = req.maxQueueSize ?? 50_000
 
-        let queue = new AsyncQueue<DataNotification[] | Error>(2)
+        let queue = new AsyncQueue<DataMessage<F>[] | Error>(2)
 
         let timer = new Timer(10_000, () => handle.reset())
 
@@ -67,18 +62,38 @@ export class SprayClient {
                     return
                 }
 
-                let data: DataNotification
+                let data
                 try {
                     data = cast(schema, msg)
                 } catch(err: any) {
                     return bail(err)
                 }
 
+                let item: any
+                switch(data.type) {
+                    case 'block':
+                        item = {
+                            type: 'block',
+                            slot: data.slot
+                        }
+                        if (data.header) {
+                            let {parentNumber, ...hdr} = data.header
+                            item.parentSlot = parentNumber
+                            Object.assign(item, hdr)
+                        }
+                        break
+                    case 'transaction':
+                        item = data
+                        break
+                    default:
+                        return
+                }
+
                 if (batch) {
                     batch.splice(0, Math.max(0, batch.length - maxQueueSize + 1))
-                    batch.push(data)
+                    batch.push(item)
                 } else if (!queue.isClosed()) {
-                    queue.forcePut([data])
+                    queue.forcePut([item])
                 }
             },
             onError(err) {
@@ -92,87 +107,10 @@ export class SprayClient {
             if (batch instanceof Error) {
                 throw batch
             } else {
-                yield assembleBlockBatch(batch) as Block<F>[]
+                yield batch
             }
         }
     }
-}
-
-
-function assembleBlockBatch(messages: DataNotification[]): PartialBlock[] {
-    let batch: PartialBlock[] = []
-
-    for (let msg of messages) {
-        let block: PartialBlock
-        if (maybeLast(batch)?.slot === msg.slot) {
-            block = last(batch)
-        } else {
-            block = {
-                slot: msg.slot,
-                transactions: [],
-                instructions: [],
-                balances: [],
-                tokenBalances: [],
-                logs: [],
-                rewards: [],
-            }
-            batch.push(block)
-        }
-
-        switch(msg.type) {
-            case 'block':
-                block.header = {slot: msg.slot}
-                if (msg.header) {
-                    let {parentNumber, ...rest} = msg.header
-                    if (parentNumber != null) {
-                        block.header.parentSlot = parentNumber
-                    }
-                    Object.assign(block.header, rest)
-                }
-                break
-            case 'transaction':
-                if (msg.transaction) {
-                    block.transactions.push({
-                        transactionIndex: msg.transactionIndex,
-                        ...msg.transaction
-                    })
-                }
-                if (msg.instructions) {
-                    for (let ins of msg.instructions) {
-                        block.instructions.push({
-                            transactionIndex: msg.transactionIndex,
-                            ...ins
-                        })
-                    }
-                }
-                if (msg.balances) {
-                    for (let item of msg.balances) {
-                        block.balances.push({
-                            transactionIndex: msg.transactionIndex,
-                            ...item
-                        })
-                    }
-                }
-                if (msg.tokenBalances) {
-                    for (let item of msg.tokenBalances) {
-                        block.tokenBalances.push({
-                            transactionIndex: msg.transactionIndex,
-                            ...item
-                        })
-                    }
-                }
-                break
-            default:
-                throw unexpectedCase()
-        }
-    }
-
-    for (let block of batch) {
-        block.transactions.sort((a, b) => a.transactionIndex! - b.transactionIndex!)
-        block.instructions.sort((a, b) => a.transactionIndex! - b.transactionIndex!)
-    }
-
-    return batch
 }
 
 
@@ -203,9 +141,9 @@ function prepareFields(fields: FieldSelection): any {
             ...restBlock
         }),
         transaction: removeFalseValues(fields.transaction),
-        instruction: removeFalseValues({...fields.instruction, instructionAddress: true}),
-        balance: removeFalseValues({...fields.balance, account: true}),
-        tokenBalance: removeFalseValues({...fields.tokenBalance, account: true})
+        instruction: removeFalseValues(fields.instruction),
+        balance: removeFalseValues(fields.balance),
+        tokenBalance: removeFalseValues(fields.tokenBalance)
     })
 }
 

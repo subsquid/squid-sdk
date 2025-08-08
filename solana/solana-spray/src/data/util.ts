@@ -10,10 +10,8 @@ export function getEffectiveFieldSelection(fields: FieldSelection | undefined): 
         block: merge(DEFAULT_FIELDS.block, fields?.block),
         transaction: merge(DEFAULT_FIELDS.transaction, fields?.transaction),
         instruction: merge(DEFAULT_FIELDS.instruction, fields?.instruction),
-        log: merge(DEFAULT_FIELDS.log, fields?.log),
         balance: merge(DEFAULT_FIELDS.balance, fields?.balance),
         tokenBalance: merge(DEFAULT_FIELDS.tokenBalance, fields?.tokenBalance),
-        reward: merge(DEFAULT_FIELDS.reward, fields?.reward)
     }
 }
 
