@@ -84,14 +84,18 @@ async function main() {
     while (true) {
         const currentQuery = {...query}
 
-        const head = hotHeads[hotHeads.length - 1] ?? coldHead
+        let head = hotHeads[hotHeads.length - 1] ?? coldHead
         if (head != null && head.number > currentQuery.fromBlock) {
             currentQuery.fromBlock = head.number + 1
             currentQuery.parentBlockHash = head.hash
         }
 
         try {
-            for await (let {blocks, finalizedHead} of portal.getStream(currentQuery)) {
+            for await (let {blocks, finalizedHead} of portal.getStream(query)) {
+                if (head && blocks.length > 0 && head.number >= blocks[0].header.number) {
+                    throw new Error('Data is not continuous')
+                }
+
                 let unfinalizedIndex = 0
                 if (finalizedHead) {
                     unfinalizedIndex = blocks.findIndex((b) => b.header.number > finalizedHead?.number)
@@ -119,7 +123,7 @@ async function main() {
                     }
                 }
 
-                let head = hotHeads[hotHeads.length - 1] ?? coldHead
+                head = hotHeads[hotHeads.length - 1] ?? coldHead
                 let portalHead = Math.max(head.number, finalizedHead?.number ?? -1)
                 console.log(`progress: ${head.number} / ${portalHead}` + `, blocks: ${blocks.length}`)
                 console.log(`  \u001b[2mcold head: ${coldHead ? formatRef(coldHead) : 'N/A'}\u001b[0m`)

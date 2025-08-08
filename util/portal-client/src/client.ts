@@ -563,7 +563,6 @@ async function* splitLines(chunks: AsyncIterable<Uint8Array>) {
     if (lastLine) yield [lastLine]
 }
 
-
 class LineSplitter {
     private decoder = new TextDecoder('utf8')
     private line = ''
