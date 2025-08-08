@@ -131,7 +131,7 @@ export type RewardFields = {
     commission?: number
 }
 
-export type BlockHeaderFieldSelection = Simplify<Selector<keyof BlockHeaderFields> & {number: true}>
+export type BlockHeaderFieldSelection = Simplify<Selector<keyof BlockHeaderFields> & {number: true; hash: true}>
 export type BlockHeader<F extends BlockHeaderFieldSelection = Trues<BlockHeaderFieldSelection>> = Select<
     BlockHeaderFields,
     F

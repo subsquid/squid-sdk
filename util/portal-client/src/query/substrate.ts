@@ -106,7 +106,7 @@ export type EventFields = {
     _gearProgramId?: Hex
 }
 
-export type BlockHeaderFieldSelection = Simplify<Selector<keyof BlockHeaderFields> & {number: true}>
+export type BlockHeaderFieldSelection = Simplify<Selector<keyof BlockHeaderFields> & {number: true; hash: true}>
 export type BlockHeader<T extends BlockHeaderFieldSelection = Trues<BlockHeaderFieldSelection>> = Select<
     BlockHeaderFields,
     T

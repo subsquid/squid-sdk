@@ -335,7 +335,9 @@ function createPortalStream<Q extends PortalQuery = PortalQuery, R extends Porta
         if (!('stream' in res)) {
             await buffer.put({blocks: [], meta: {bytes: 0}, finalizedHead})
             buffer.flush()
-            await wait(headPollInterval, buffer.signal)
+            if (headPollInterval > 0) {
+                await wait(headPollInterval, buffer.signal)
+            }
             return ingest()
         }
 

@@ -54,6 +54,6 @@ export type PortalQuery = {
 export type PortalBlock = {
     header: {
         number: number
-        hash?: string
+        hash: string
     }
 }

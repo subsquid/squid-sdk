@@ -68,7 +68,7 @@ const queries = {
 }
 
 async function main() {
-    const queryType = 'solana'
+    const queryType = 'evm'
     const query = queries[queryType]
 
     let portal = new PortalClient({
@@ -138,9 +138,10 @@ async function main() {
             if (rollbackIndex === -1) throw new Error('Unable to process fork')
 
             const rollbackHead = chain[rollbackIndex]
-            console.log(`detected fork at block ${rollbackHead.number} (${e.head.number - rollbackHead.number} depth)`)
+            console.warn(`detected fork at block ${rollbackHead.number} (${e.head.number - rollbackHead.number} depth)`)
 
             hotHeads = chain.slice(1, rollbackIndex + 1)
+            head = hotHeads[hotHeads.length - 1] ?? coldHead
         }
     }
 }
