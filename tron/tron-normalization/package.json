@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/tron-normalization",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Tron data model",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/tron-data": "^0.0.3"
+    "@subsquid/tron-data": "^0.0.4"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",

@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@subsquid/logger": "^1.4.0",
-    "@subsquid/rpc-client": "^4.12.0",
+    "@subsquid/rpc-client": "^4.13.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-commander": "^1.4.0",
     "@subsquid/util-internal-hex": "^1.2.2",

@@ -1,7 +1,7 @@
 {
   "name": "@subsquid/tron-ingest",
   "description": "Data fetcher for tron based chains",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -19,8 +19,8 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/tron-data": "^0.0.3",
-    "@subsquid/tron-normalization": "^0.0.3",
+    "@subsquid/tron-data": "^0.0.4",
+    "@subsquid/tron-normalization": "^0.0.4",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-json": "^1.2.3",
     "@subsquid/util-internal-ingest-cli": "^0.2.0"
