@@ -128,9 +128,7 @@ export function annotateAsyncError(getCtx: (...args: any[]) => any): (proto: any
 
 
 export function wait(ms: number, abortSignal?: AbortSignal): Promise<void> {
-    if (ms === 0) {
-        return Promise.resolve()
-    } else if (abortSignal) {
+    if (abortSignal) {
         return new Promise((resolve, reject) => {
             if (abortSignal.aborted) return reject(new Error('aborted'))
 

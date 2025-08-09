@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "fix abort signal listeners leak",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}
