@@ -1,6 +1,11 @@
 # Change Log - @subsquid/solana-normalization
 
-This log was last generated on Fri, 04 Jul 2025 17:08:54 GMT and should not be manually modified.
+This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+
+## 0.1.1
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
 
 ## 0.1.0
 Fri, 04 Jul 2025 17:08:54 GMT

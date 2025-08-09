@@ -1,6 +1,11 @@
 # Change Log - @subsquid/tron-ingest
 
-This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+
+## 0.1.1
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
 
 ## 0.1.0
 Mon, 09 Jun 2025 12:15:37 GMT

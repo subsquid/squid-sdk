@@ -2,6 +2,23 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "4.13.0",
+      "tag": "@subsquid/rpc-client_v4.13.0",
+      "date": "Sat, 09 Aug 2025 06:10:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "introduce `SubscriptionHandle.reset()`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.6.0` to `1.6.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.12.0",
       "tag": "@subsquid/rpc-client_v4.12.0",
       "date": "Mon, 09 Jun 2025 12:15:37 GMT",
