@@ -125,6 +125,9 @@ dependencies:
   '@rush-temp/polkavm-erc20':
     specifier: file:./projects/polkavm-erc20.tgz
     version: file:projects/polkavm-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2)
+  '@rush-temp/portal-client':
+    specifier: file:./projects/portal-client.tgz
+    version: file:projects/portal-client.tgz
   '@rush-temp/raw-archive-validator':
     specifier: file:./projects/raw-archive-validator.tgz
     version: file:projects/raw-archive-validator.tgz
@@ -491,9 +494,6 @@ dependencies:
   typeorm:
     specifier: ^0.3.17
     version: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
-  typescript:
-    specifier: ~5.5.4
-    version: 5.5.4
   upath:
     specifier: ^2.0.1
     version: 2.0.1
@@ -7490,6 +7490,15 @@ packages:
       - supports-color
       - ts-node
       - typeorm-aurora-data-api-driver
+    dev: false
+
+  file:projects/portal-client.tgz:
+    resolution: {integrity: sha512-y1L5OtbP8rCmhZFlnK7dzfZPpx5XYdZYMiOPjqN/Nrj4xQrnlmbMfJeqBO3eRewQfcneXNh31byqD6Oo8tqOug==, tarball: file:projects/portal-client.tgz}
+    name: '@rush-temp/portal-client'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.5.4
     dev: false
 
   file:projects/raw-archive-validator.tgz:

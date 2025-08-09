@@ -281,14 +281,7 @@ export class HttpClient {
             if (timer != null) {
                 clearTimeout(timer)
             }
-            if (req.signal && res?.stream) {
-                // FIXME: is `close` always emitted?
-                (res.body as NodeJS.ReadableStream).on('close', () => {
-                    req.signal!.removeEventListener('abort', abort)
-                })
-            } else {
-                req.signal?.removeEventListener('abort', abort)
-            }
+            req.signal?.removeEventListener('abort', abort)
         }
     }
 

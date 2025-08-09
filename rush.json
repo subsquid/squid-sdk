@@ -736,6 +736,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/portal-client",
+      "projectFolder": "util/portal-client",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/logger",
       "projectFolder": "util/logger",
       "shouldPublish": true,
