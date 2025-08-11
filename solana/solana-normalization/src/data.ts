@@ -3,7 +3,7 @@ import type {Base58Bytes} from '@subsquid/solana-rpc-data'
 
 export interface BlockHeader {
     hash: Base58Bytes
-    height: number
+    height?: number
     slot: number
     parentSlot: number
     parentHash: Base58Bytes
