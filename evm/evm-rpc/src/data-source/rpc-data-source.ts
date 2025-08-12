@@ -1,4 +1,3 @@
-import {last} from '@subsquid/util-internal'
 import {BlockRef, BlockStream, DataSource, ForkException, StreamRequest} from '@subsquid/util-internal-data-source'
 import {Range} from '@subsquid/util-internal-range'
 import {Commitment, Rpc} from '../rpc'
@@ -12,7 +11,6 @@ export interface EvmRpcDataSourceOptions {
     req: DataRequest
     strideSize?: number
     strideConcurrency?: number
-    maxConfirmationAttempts?: number
 }
 
 
@@ -21,14 +19,12 @@ export class EvmRpcDataSource implements DataSource<Block> {
     public readonly req: DataRequest
     private strideSize: number
     private strideConcurrency: number
-    private maxConfirmationAttempts: number
 
     constructor(options: EvmRpcDataSourceOptions) {
         this.rpc = options.rpc
         this.req = options.req
         this.strideSize = Math.max(1, options.strideSize ?? 5)
         this.strideConcurrency = Math.max(1, Math.min(options.strideConcurrency ?? 5, this.rpc.getConcurrency()))
-        this.maxConfirmationAttempts = options.maxConfirmationAttempts ?? 10
     }
 
     async getFinalizedHead(): Promise<BlockRef> {
@@ -81,7 +77,7 @@ export class EvmRpcDataSource implements DataSource<Block> {
         parentHash?: string
     ): AsyncIterable<IngestBatch>
     {
-        for await (let batch of this.fillGaps(stream, from, 0)) {
+        for await (let batch of stream) {
             for (let i = 0; i < batch.blocks.length; i++) {
                 let block = batch.blocks[i]
                 if (parentHash === block.block.parentHash || parentHash == null) {
@@ -116,55 +112,6 @@ export class EvmRpcDataSource implements DataSource<Block> {
         }
     }
 
-    private async *fillGaps(
-        stream: AsyncIterable<IngestBatch>,
-        from: number,
-        depth: number
-    ): AsyncIterable<IngestBatch>
-    {
-        if (depth > 10) {
-            throw new Error('rpc endpoint is too behind from upstream block source')
-        }
-
-        for await (let batch of stream) {
-            let offset = 0
-            let i = 0
-
-            while (i < batch.blocks.length) {
-                let block = batch.blocks[i]
-                if (block.number - 1 < from || block.number == 0) {
-                    from = block.number + 1
-                    i += 1
-                } else {
-                    if (offset < i) {
-                        yield {
-                            blocks: batch.blocks.slice(offset, i),
-                            finalized: batch.finalized
-                        }
-                    }
-
-                    offset = i
-                    let missing = this.ingest(
-                        batch.finalized ? 'finalized' : 'latest',
-                        {from, to: block.number - 1}
-                    )
-
-                    for await (let missingBatch of this.fillGaps(missing, from, depth + 1)) {
-                        from = last(missingBatch.blocks).number + 1
-                        yield missingBatch
-                    }
-                }
-            }
-
-            if (offset < i) {
-                yield {
-                    blocks: batch.blocks.slice(offset, i),
-                    finalized: batch.finalized
-                }
-            }
-        }
-    }
-
     private ingest(commitment: Commitment, range: Range): AsyncIterable<IngestBatch> {
         return ingest({
             rpc: this.rpc,
@@ -173,7 +120,6 @@ export class EvmRpcDataSource implements DataSource<Block> {
             range,
             strideSize: this.strideSize,
             strideConcurrency: this.strideConcurrency,
-            maxConfirmationAttempts: this.maxConfirmationAttempts
         })
     }
 }

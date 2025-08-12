@@ -188,6 +188,8 @@ export class ChainFixer {
 
 
 function removeOverlaps(batch: IngestBatch): void {
+    if (batch.blocks.length == 0) return
+
     let blocks = batch.blocks
     let i = 0
     let j = 1

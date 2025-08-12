@@ -26,7 +26,7 @@ import {
 } from './rpc-data'
 import {Block, DataRequest, Qty, Bytes, Bytes32} from './types'
 import {qty2Int, toQty, getTxHash} from './util'
-import {blockHash, logsBloom, receiptsRoot, recoverTxSender, transactionsRoot} from './verification'
+import {ChainUtils} from './chain-utils'
 
 
 export type Commitment = 'finalized' | 'latest'
@@ -53,6 +53,7 @@ export class Rpc {
     private verifyLogsBloom?: boolean
     private log: Logger
     private receiptsMethod?: GetReceiptsMethod
+    private chainUtils?: ChainUtils
 
     constructor(options: RpcOptions) {
         this.client = options.client
@@ -140,6 +141,7 @@ export class Rpc {
             }
         })
 
+        let utils = await this.getChainUtils()
         let blocks = new Array(results.length)
         for (let i = 0; i < results.length; i++) {
             let block = results[i]
@@ -147,18 +149,19 @@ export class Rpc {
                 blocks[i] = null
             } else {
                 if (this.verifyBlockHash) {
-                    assert(block.hash == blockHash(block))
+                    assert(block.hash == utils.calculateBlockHash(block))
                 }
 
                 if (this.verifyTxRoot && withTransactions) {
-                    let txRoot = await transactionsRoot(block.transactions as Transaction[])
-                    assert(txRoot == block.transactionsRoot)
+                    let transactions = block.transactions as Transaction[]
+                    let txRoot = await utils.calculateTransactionsRoot(transactions)
+                    assert(block.transactionsRoot == txRoot)
                 }
 
                 if (this.verifyTxSender && withTransactions) {
                     for (let tx of block.transactions) {
-                        let transaction: Transaction = tx as Transaction
-                        let sender = recoverTxSender(transaction)
+                        let transaction = tx as Transaction
+                        let sender = utils.recoverTxSender(transaction)
                         if (sender != null) {
                             assert(sender == transaction.from)
                         }
@@ -212,13 +215,14 @@ export class Rpc {
             }
         })
 
+        let utils = await this.getChainUtils()
         let logsByBlock = groupBy(results, log => log.blockHash)
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let logs = logsByBlock.get(block.hash) || []
 
             if (this.verifyLogsBloom) {
-                assert(block.block.logsBloom == logsBloom(logs))
+                assert(block.block.logsBloom == utils.calculateLogsBloom(block.block, logs))
             }
 
             block.logs = logs
@@ -257,6 +261,7 @@ export class Rpc {
             validateResult: getResultValidator(nullable(array(Receipt)))
         })
 
+        let utils = await this.getChainUtils()
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let receipts = results[i]
@@ -276,11 +281,11 @@ export class Rpc {
             }
 
             if (this.verifyLogsBloom) {
-                assert(block.block.logsBloom == logsBloom(logs))
+                assert(block.block.logsBloom == utils.calculateLogsBloom(block.block, logs))
             }
 
             if (this.verifyReceiptsRoot) {
-                let root = await receiptsRoot(receipts)
+                let root = await utils.calculateReceiptsRoot(receipts)
                 assert(block.block.receiptsRoot == root)
             }
 
@@ -301,7 +306,7 @@ export class Rpc {
             }
         }
 
-        let results = await this.batchCall(call, {
+        let results = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(nullable(Receipt))
         })
 
@@ -310,6 +315,7 @@ export class Rpc {
             r => r.blockHash
         )
 
+        let utils = await this.getChainUtils()
         for (let block of blocks) {
             let receipts = receiptsByBlock.get(block.hash) || []
 
@@ -320,11 +326,11 @@ export class Rpc {
 
             if (this.verifyLogsBloom) {
                 let logs = receipts.flatMap(r => r.logs)
-                assert(block.block.logsBloom == logsBloom(logs))
+                assert(block.block.logsBloom == utils.calculateLogsBloom(block.block, logs))
             }
 
             if (this.verifyReceiptsRoot) {
-                let root = await receiptsRoot(receipts)
+                let root = await utils.calculateReceiptsRoot(receipts)
                 assert(block.block.receiptsRoot == root)
             }
 
@@ -426,6 +432,7 @@ export class Rpc {
             validateError: captureNotFound
         })
 
+        let utils = await this.getChainUtils()
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let diffs = results[i]
@@ -434,7 +441,7 @@ export class Rpc {
             } else if (block.block.transactions.length === diffs.length) {
                 block.debugStateDiffs = diffs
             } else {
-                block.debugStateDiffs = this.matchDebugTrace(block, diffs)
+                block.debugStateDiffs = this.matchDebugTrace('debug state diff', block, diffs, utils)
             }
         }
     }
@@ -456,7 +463,7 @@ export class Rpc {
 
         let validateFrameResult = getResultValidator(array(DebugFrameResult))
 
-        let results = await this.batchCall(call, {
+        let results = await this.reduceBatchOnRetry(call, {
             validateResult: result => {
                 if (Array.isArray(result)) {
                     // Moonbeam quirk
@@ -471,6 +478,7 @@ export class Rpc {
             validateError: captureNotFound
         })
 
+        let utils = await this.getChainUtils()
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let frames = results[i]
@@ -479,18 +487,28 @@ export class Rpc {
             } else if (block.block.transactions.length === frames.length) {
                 block.debugFrames = frames
             } else {
-                block.debugFrames = this.matchDebugTrace(block, frames)
+                block.debugFrames = this.matchDebugTrace('debug call frame', block, frames, utils)
             }
         }
     }
 
-    private matchDebugTrace<T extends {txHash?: Bytes | null}>(block: Block, trace: T[]): T[] {
+    private matchDebugTrace<T extends {txHash?: Bytes | null}>(
+        type: string,
+        block: Block,
+        trace: T[],
+        utils: ChainUtils
+    ): (T | undefined)[] {
         let mapping = new Map(trace.map(t => [t.txHash, t]))
         let out = new Array(block.block.transactions.length)
         for (let i = 0; i < block.block.transactions.length; i++) {
             let txHash = getTxHash(block.block.transactions[i])
-            let rec = assertNotNull(mapping.get(txHash))
-            out[i] = rec
+            let rec = mapping.get(txHash)
+            if (rec) {
+                out[i] = rec
+            } else {
+                if (utils.isPolygonMainnet) continue
+                throw new Error(`no ${type} for transaction`)
+            }
         }
         return out
     }
@@ -513,7 +531,7 @@ export class Rpc {
             params: [block.block.hash, tracers]
         }))
 
-        let replaysByBlock = await this.batchCall(call, {
+        let replaysByBlock = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(
                 array(getTraceTransactionReplayValidator(traces))
             )
@@ -563,6 +581,12 @@ export class Rpc {
         ])
 
         return pack.flat()
+    }
+
+    private async getChainUtils(): Promise<ChainUtils> {
+        if (this.chainUtils) return this.chainUtils
+        let chainId: Qty = await this.call('eth_chainId')
+        return this.chainUtils = new ChainUtils(chainId)
     }
 }
 

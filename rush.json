@@ -290,7 +290,7 @@
      * your PR branch, and in this situation "rush change" will also automatically invoke "git fetch"
      * to retrieve the latest activity for the remote master branch.
      */
-     "url": "https://github.com/subsquid/squid"
+     "url": "https://github.com/subsquid/squid-sdk"
 
     /**
      * The default branch name. This tells "rush change" which remote branch to compare against.
@@ -558,6 +558,12 @@
     {
       "packageName": "@subsquid/solana-rpc-data",
       "projectFolder": "solana/solana-rpc-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-spray",
+      "projectFolder": "solana/solana-spray",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

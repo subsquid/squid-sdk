@@ -22,8 +22,8 @@ export interface Block {
     logs?: Log[]
     receipts?: Receipt[]
     traceReplays?: TraceTransactionReplay[]
-    debugStateDiffs?: DebugStateDiffResult[]
-    debugFrames?: DebugFrameResult[]
+    debugStateDiffs?: (DebugStateDiffResult | undefined)[]
+    debugFrames?: (DebugFrameResult | undefined)[]
     _isInvalid?: boolean
 }
 

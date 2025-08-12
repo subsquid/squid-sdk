@@ -49,6 +49,11 @@ export class SolanaDumper extends Dumper<Block, Options> {
         return block.block.previousBlockhash
     }
 
+    protected getBlockTimestamp(block: Block): number {
+        return Number(block.block.blockTime) || 0
+    }
+
+
     @def
     private dataSource(): SolanaRpcDataSource {
         let options = this.options()

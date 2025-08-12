@@ -1,21 +1,16 @@
-import type {Base58Bytes} from '@subsquid/solana-rpc-data'
+export type Base58Bytes = string;
 
 
 export interface BlockHeader {
     hash: Base58Bytes
-    height?: number
-    slot: number
     parentSlot: number
     parentHash: Base58Bytes
+    height: number
     timestamp: number
 }
 
 
 export interface Transaction {
-    /**
-     * Transaction position in block
-     */
-    transactionIndex: number
     version: 'legacy' | number
     // transaction message
     accountKeys: Base58Bytes[]
@@ -45,7 +40,6 @@ export interface AddressTableLookup {
 
 
 export interface Instruction {
-    transactionIndex: number
     instructionAddress: number[]
     programId: Base58Bytes
     accounts: Base58Bytes[]
@@ -61,18 +55,7 @@ export interface Instruction {
 }
 
 
-export interface LogMessage {
-    transactionIndex: number
-    logIndex: number
-    instructionAddress: number[]
-    programId: Base58Bytes
-    kind: 'log' | 'data' | 'other'
-    message: string
-}
-
-
 export interface Balance {
-    transactionIndex: number
     account: Base58Bytes
     pre: bigint
     post: bigint
@@ -83,7 +66,6 @@ export type TokenBalance = PreTokenBalance | PostTokenBalance | PrePostTokenBala
 
 
 export interface PreTokenBalance {
-    transactionIndex: number
     account: Base58Bytes
 
     preProgramId?: Base58Bytes
@@ -101,7 +83,6 @@ export interface PreTokenBalance {
 
 
 export interface PostTokenBalance {
-    transactionIndex: number
     account: Base58Bytes
 
     preProgramId?: undefined
@@ -119,7 +100,6 @@ export interface PostTokenBalance {
 
 
 export interface PrePostTokenBalance {
-    transactionIndex: number
     account: Base58Bytes
     preProgramId?: Base58Bytes
     preMint: Base58Bytes
@@ -131,24 +111,4 @@ export interface PrePostTokenBalance {
     postDecimals: number
     postOwner?: Base58Bytes
     postAmount: bigint
-}
-
-
-export interface Reward {
-    pubkey: Base58Bytes
-    lamports: bigint
-    postBalance: bigint
-    rewardType?: string
-    commission?: number
-}
-
-
-export interface Block {
-    header: BlockHeader
-    transactions: Transaction[]
-    instructions: Instruction[]
-    logs: LogMessage[]
-    balances: Balance[]
-    tokenBalances: TokenBalance[]
-    rewards: Reward[]
 }

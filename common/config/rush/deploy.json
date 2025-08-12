@@ -21,6 +21,8 @@
     "@subsquid/fuel-dump",
     "@subsquid/fuel-ingest",
     "@subsquid/evm-data-service",
+    "@subsquid/evm-dump",
+    "@subsquid/evm-ingest",
     "@subsquid/solana-data-service",
     "@subsquid/solana-dump",
     "@subsquid/solana-ingest",

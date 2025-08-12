@@ -13,7 +13,7 @@ export {Journal}
 export function mapRpcBlock(slot: number, src: rpc.GetBlock, journal: Journal): Block {
     let header: BlockHeader = {
         hash: src.blockhash,
-        height: assertNotNull(src.blockHeight, '.blockHeight is not available'),
+        height: src.blockHeight ?? undefined,
         slot,
         parentSlot: src.parentSlot,
         parentHash: src.previousBlockhash,
