@@ -2,6 +2,35 @@
   "name": "@subsquid/tron-dump",
   "entries": [
     {
+      "version": "0.1.1",
+      "tag": "@subsquid/tron-dump_v0.1.1",
+      "date": "Sat, 09 Aug 2025 06:10:24 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/tron-data\" from `^0.0.3` to `0.0.4`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/tron-dump_v0.1.0",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add block timestamp extraction method for TRON dumper with Unix timestamp support"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^1.0.0` to `1.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.4",
       "tag": "@subsquid/tron-dump_v0.0.4",
       "date": "Thu, 06 Mar 2025 10:46:22 GMT",

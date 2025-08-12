@@ -2,6 +2,48 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.27.3",
+      "tag": "@subsquid/evm-processor_v1.27.3",
+      "date": "Sat, 09 Aug 2025 06:10:24 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.6.0` to `1.6.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.12.0` to `4.13.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.7.0` to `0.8.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.27.2",
+      "tag": "@subsquid/evm-processor_v1.27.2",
+      "date": "Thu, 26 Jun 2025 12:47:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix name collision in debug frame schema builder"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.27.1",
+      "tag": "@subsquid/evm-processor_v1.27.1",
+      "date": "Fri, 28 Mar 2025 11:16:14 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "use zero address as a default value for suicide trace refund address"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.27.0",
       "tag": "@subsquid/evm-processor_v1.27.0",
       "date": "Fri, 03 Jan 2025 11:41:05 GMT",

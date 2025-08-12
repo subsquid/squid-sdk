@@ -1,6 +1,19 @@
 # Change Log - @subsquid/solana-typegen
 
-This log was last generated on Wed, 12 Mar 2025 09:11:46 GMT and should not be manually modified.
+This log was last generated on Fri, 04 Jul 2025 17:08:54 GMT and should not be manually modified.
+
+## 0.6.1
+Fri, 04 Jul 2025 17:08:54 GMT
+
+_Version update only_
+
+## 0.6.0
+Tue, 18 Mar 2025 11:56:44 GMT
+
+### Minor changes
+
+- add generic types support
+- reduce usage of `ref` codec
 
 ## 0.5.1
 Wed, 12 Mar 2025 09:11:46 GMT

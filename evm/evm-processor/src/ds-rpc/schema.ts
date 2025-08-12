@@ -96,6 +96,7 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
     let Frame: Validator<DebugFrame, unknown>
 
     let base = {
+        type: STRING,
         calls: option(array(ref(() => Frame))),
         ...project(fields, {
             error: option(STRING),
@@ -154,29 +155,31 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
         })
     })
 
-    let tagField = 'type'
+    let Stop = object({
+        ...base,
+    })
 
-    function getVariant(object: any) {
-        if (typeof object != 'object' || !object) return new ValidationFailure(object, `{value} is not an object`)
-        let tag = cast(STRING, object[tagField]).toUpperCase()
-        object[tagField] = tag
+    function getVariant(value: any) {
+        if (typeof value != 'object' || !value) return new ValidationFailure(value, `{value} is not an object`)
+        let tag = cast(STRING, value.type).toUpperCase()
+        value.type = tag
         switch (tag) {
             case 'CALL':
             case 'CALLCODE':
             case 'STATICCALL':
             case 'DELEGATECALL':
             case 'INVALID':
-                return Call
+                return Call as Validator<DebugFrame, unknown>
             case 'CREATE':
             case 'CREATE2':
-                return Create
+                return Create as Validator<DebugFrame, unknown>
             case 'SELFDESTRUCT':
-                return Suicide
+                return Suicide as Validator<DebugFrame, unknown>
             case 'STOP':
-                return object({})
+                return Stop as Validator<DebugFrame, unknown>
         }
         let failure = new ValidationFailure(tag, `got {value}, but expected one of ["CALL","CALLCODE","STATICCALL","DELEGATECALL","INVALID","CREATE","CREATE2","SELFDESTRUCT","STOP"]`)
-        failure.path.push(tagField)
+        failure.path.push('type')
         return failure
     }
 
@@ -184,10 +187,7 @@ function getDebugFrameValidator(fields: FieldSelection['trace']) {
         cast(value: any) {
             let variant = getVariant(value)
             if (variant instanceof ValidationFailure) return variant
-            let result = variant.cast(value)
-            if (result instanceof ValidationFailure) return result
-            result[tagField] = value[tagField]
-            return result
+            return variant.cast(value)
         },
         validate(value) {
             let variant = getVariant(value)

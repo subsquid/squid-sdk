@@ -1,7 +1,7 @@
 import {AddressTableLookup} from '@subsquid/solana-rpc-data'
 import {weakMemo} from '@subsquid/util-internal'
 import {
-    ANY_OBJECT,
+    ANY,
     array,
     B58,
     BIG_NAT,
@@ -45,7 +45,7 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             numRequiredSignatures: NAT,
             recentBlockhash: B58,
             signatures: array(B58),
-            err: nullable(ANY_OBJECT),
+            err: ANY,
             computeUnitsConsumed: BIG_NAT,
             fee: BIG_NAT,
             loadedAddresses: option(object({

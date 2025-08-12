@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-dump
 
-This log was last generated on Mon, 07 Oct 2024 08:48:33 GMT and should not be manually modified.
+This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+
+## 0.6.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- Add block timestamp extraction method for substrate dumper with mocked timestamp implementation
 
 ## 0.5.1
 Mon, 07 Oct 2024 08:48:33 GMT

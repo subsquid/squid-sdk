@@ -1,7 +1,7 @@
 import {Logger} from '@subsquid/logger'
 import {listen, ListeningServer} from '@subsquid/util-internal-http-server'
-import {KeyValueCache, PluginDefinition} from 'apollo-server-core'
-import {ApolloServer} from 'apollo-server-express'
+import {KeyValueCache, PluginDefinition} from '@subsquid/apollo-server-core'
+import {ApolloServer} from '@subsquid/apollo-server-express'
 import express from 'express'
 import fs from 'fs'
 import {ExecutionArgs, GraphQLSchema} from 'graphql'
@@ -34,6 +34,7 @@ export interface ServerOptions {
     subscriptionPollInterval?: number
     subscriptionConnection?: Pool
     subscriptionMaxResponseNodes?: number
+    validationMaxErrors?: number
     cache?: KeyValueCache
 }
 
@@ -44,6 +45,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
         subscriptionPollInterval,
         maxResponseNodes,
         subscriptionMaxResponseNodes,
+        validationMaxErrors,
         log,
     } = options
 
@@ -85,6 +87,7 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
             subscriptions: options.subscriptions,
             log: options.log,
             graphiqlConsole: options.graphiqlConsole,
+            validationMaxErrors,
             maxRequestSizeBytes: options.maxRequestSizeBytes,
             maxRootFields: options.maxRootFields,
             cache: options.cache,
@@ -105,13 +108,14 @@ export interface ApolloOptions {
     graphiqlConsole?: boolean
     log?: Logger
     maxRequestSizeBytes?: number
+    validationMaxErrors?: number
     maxRootFields?: number
     cache?: KeyValueCache
 }
 
 
 export async function runApollo(options: ApolloOptions): Promise<ListeningServer> {
-    const {disposals, context, schema, log, maxRootFields} = options
+    const {disposals, context, schema, log, maxRootFields, validationMaxErrors} = options
 
     let maxRequestSizeBytes = options.maxRequestSizeBytes ?? 256 * 1024
     let app: express.Application = express()
@@ -119,7 +123,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
 
     let execute = (args: ExecutionArgs) => openreaderExecute(args, {
         maxRootFields: maxRootFields
-        })
+    })
 
     if (options.subscriptions) {
         let wsServer = new WebSocketServer({
@@ -150,6 +154,10 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
         cache: options.cache,
         stopOnTerminationSignals: false,
         allowBatchedHttpRequests: false,
+        dangerouslyDisableValidation: false,
+        validateOptions: {
+            maxErrors: validationMaxErrors
+        },
         executor: async req => {
             return execute({
                 schema,
@@ -157,7 +165,7 @@ export async function runApollo(options: ApolloOptions): Promise<ListeningServer
                 rootValue: {},
                 contextValue: req.context,
                 variableValues: req.request.variables,
-                operationName: req.operationName
+                operationName: req.operationName,
             })
         },
         plugins: [

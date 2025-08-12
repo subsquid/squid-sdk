@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.4.0",
+      "tag": "@subsquid/substrate-data_v4.4.0",
+      "date": "Tue, 18 Mar 2025 10:45:46 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `Revive` pallet extension"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.3.0",
       "tag": "@subsquid/substrate-data_v4.3.0",
       "date": "Wed, 12 Mar 2025 20:55:26 GMT",

@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/evm-typegen",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "description": "CLI for generating typescript types and decode implementations for evm logs",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -19,7 +19,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.6.0",
+    "@subsquid/http-client": "^1.6.1",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-code-printer": "^1.2.2",

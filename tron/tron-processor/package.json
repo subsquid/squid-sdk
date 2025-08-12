@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/tron-processor",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Data fetcher and mappings executor for tron chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,13 +16,13 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.6.0",
+    "@subsquid/http-client": "^1.6.1",
     "@subsquid/logger": "^1.4.0",
-    "@subsquid/tron-data": "^0.0.3",
-    "@subsquid/tron-normalization": "^0.0.3",
+    "@subsquid/tron-data": "^0.0.4",
+    "@subsquid/tron-normalization": "^0.0.4",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-range": "^0.3.0",
-    "@subsquid/util-internal-validation": "^0.7.0",
+    "@subsquid/util-internal-validation": "^0.8.0",
     "@subsquid/util-internal-archive-client": "^0.1.2",
     "@subsquid/util-internal-ingest-tools": "^1.1.4",
     "@subsquid/util-internal-processor-tools": "^4.2.1"

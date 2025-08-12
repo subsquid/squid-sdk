@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/fuel-dump",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "Data archiving tool for Fuel",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -19,10 +19,10 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/fuel-data": "^1.1.3",
-    "@subsquid/http-client": "^1.6.0",
+    "@subsquid/fuel-data": "^1.1.5",
+    "@subsquid/http-client": "^1.6.1",
     "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-dump-cli": "^1.0.0"
+    "@subsquid/util-internal-dump-cli": "^1.1.1"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",

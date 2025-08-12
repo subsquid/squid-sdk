@@ -33,3 +33,31 @@ Subsquid is an OpenSource project, contributions are welcomed, encouraged and wi
 
 Please consult [CONTRIBUTING.md](CONTRIBUTING.md) for hacking instructions
 and make sure to read our [code of conduct](CODE_OF_CONDUCT.md).
+
+### Change Management
+
+This project uses [Rush](https://rushjs.io/) for monorepo management. When making changes to packages, you need to document them using the rush change system:
+
+1. **After making your changes and committing them**, run:
+   ```bash
+   rush change -b origin/master
+   ```
+
+2. **Follow the interactive prompts** to:
+   - Select the type of change (major, minor, patch, or none)
+   - Provide a clear description of what changed
+   - The description should explain the feature/fix from a user's perspective
+
+3. **Change types**:
+   - `major`: Breaking changes that require users to update their code
+   - `minor`: New features that are backward compatible
+   - `patch`: Bug fixes and small improvements
+   - `none`: Internal changes that don't affect the public API
+
+4. **Best practices**:
+   - Write clear, concise descriptions
+   - Focus on what changed from the user's perspective
+   - Include relevant technical details when necessary
+   - Use present tense ("Add feature X" not "Added feature X")
+
+The change files are automatically generated in `common/changes/@subsquid/[package-name]/` and will be used to generate changelogs during the release process.

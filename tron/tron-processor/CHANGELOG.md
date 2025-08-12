@@ -1,6 +1,11 @@
 # Change Log - @subsquid/tron-processor
 
-This log was last generated on Thu, 06 Mar 2025 10:46:22 GMT and should not be manually modified.
+This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+
+## 0.0.5
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
 
 ## 0.0.4
 Thu, 06 Mar 2025 10:46:22 GMT

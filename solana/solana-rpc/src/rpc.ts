@@ -22,12 +22,13 @@ export type BlockInfo = Simplify<Omit<GetBlock, 'transactions' | 'rewards'>>
 export class Rpc {
     constructor(
         private client: RpcClient,
-        private priority: number = 0
+        private priority: number = 0,
+        private maxConfirmationAttempts: number = 10
     ) {
     }
 
     withPriority(priority: number): Rpc {
-        return new Rpc(this.client, priority)
+        return new Rpc(this.client, priority, this.maxConfirmationAttempts)
     }
 
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
@@ -84,14 +85,14 @@ export class Rpc {
     }
 
     async getFinalizedBlockInfo(slot: number): Promise<BlockInfo> {
-        let attempts = 10
+        let attempts = this.maxConfirmationAttempts
         while (attempts) {
             let block = await this.getBlockInfo('finalized', slot)
             if (block) return block
             await wait(100)
             attempts -= 1
         }
-        throw new Error(`Failed to getBlock with finalized commitment at slot ${slot} 10 times in a row`)
+        throw new Error(`Failed to getBlock with finalized commitment at slot ${slot} ${this.maxConfirmationAttempts} times in a row`)
     }
 
     async getFinalizedBlockHeight(slot: number): Promise<number> {

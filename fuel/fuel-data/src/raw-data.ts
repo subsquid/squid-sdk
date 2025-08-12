@@ -77,7 +77,7 @@ export const TransactionInput = taggedUnion('__typename', {
         amount: BIG_NAT,
         assetId: BYTES,
         txPointer: STRING,
-        witnessIndex: INT,
+        witnessIndex: STRING_NAT,
         predicateGasUsed: BIG_NAT,
         predicate: BYTES,
         predicateData: BYTES,

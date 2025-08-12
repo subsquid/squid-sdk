@@ -270,6 +270,8 @@ export class Event {
     #evmLogTopics?: Bytes[]
     #contractAddress?: Bytes
     #gearProgramId?: Bytes
+    #reviveContract?: Bytes
+    #reviveTopics?: Bytes[]
 
     constructor(
         block: BlockHeader,
@@ -366,6 +368,38 @@ export class Event {
 
     set _gearProgramId(value: Bytes | undefined) {
         this.#gearProgramId = value
+    }
+
+    get _reviveContract(): Bytes | undefined {
+        return this.#reviveContract
+    }
+
+    set _reviveContract(value: Bytes | undefined) {
+        this.#reviveContract = value
+    }
+
+    get _reviveTopics(): Bytes[] | undefined {
+        return this.#reviveTopics
+    }
+
+    set _reviveTopics(value: Bytes[] | undefined) {
+        this.#reviveTopics = value
+    }
+
+    get _reviveTopic0(): Bytes | undefined {
+        return this._reviveTopics?.[0]
+    }
+
+    get _reviveTopic1(): Bytes | undefined {
+        return this._reviveTopics?.[1]
+    }
+
+    get _reviveTopic2(): Bytes | undefined {
+        return this._reviveTopics?.[2]
+    }
+
+    get _reviveTopic3(): Bytes | undefined {
+        return this._reviveTopics?.[3]
     }
 }
 

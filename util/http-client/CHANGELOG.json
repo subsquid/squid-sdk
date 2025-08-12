@@ -2,6 +2,18 @@
   "name": "@subsquid/http-client",
   "entries": [
     {
+      "version": "1.6.1",
+      "tag": "@subsquid/http-client_v1.6.1",
+      "date": "Sat, 09 Aug 2025 06:10:24 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix abort signal listeners leak"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.6.0",
       "tag": "@subsquid/http-client_v1.6.0",
       "date": "Fri, 20 Dec 2024 16:52:59 GMT",

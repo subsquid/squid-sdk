@@ -1,4 +1,4 @@
-import {Codec, struct, bool, u8, tuple, ref, option, array, unit, sum, u16, i8, i16, u32, i32, f32, u64, i64, f64, u128, i128, binary, string, address, fixedArray} from '@subsquid/borsh'
+import {Codec, address, array, binary, bool, f32, f64, fixedArray, i128, i16, i32, i64, i8, option, ref, string, struct, sum, tuple, u128, u16, u32, u64, u8, unit} from '@subsquid/borsh'
 
 /**
  * Bar struct type
@@ -25,7 +25,7 @@ export type FooEnum_Unnamed = [
 export const FooEnum_Unnamed = tuple([
     bool,
     u8,
-    ref(() => BarStruct),
+    BarStruct,
 ])
 
 export type FooEnum_UnnamedSingle = [
@@ -33,7 +33,7 @@ export type FooEnum_UnnamedSingle = [
 ]
 
 export const FooEnum_UnnamedSingle = tuple([
-    ref(() => BarStruct),
+    BarStruct,
 ])
 
 export type FooEnum_Named = {
@@ -51,7 +51,7 @@ export const FooEnum_Named = struct({
      */
     boolField: bool,
     u8Field: u8,
-    nested: ref(() => BarStruct),
+    nested: BarStruct,
 })
 
 export type FooEnum_Struct = [
@@ -59,7 +59,7 @@ export type FooEnum_Struct = [
 ]
 
 export const FooEnum_Struct = tuple([
-    ref(() => BarStruct),
+    BarStruct,
 ])
 
 export type FooEnum_OptionStruct = [
@@ -67,7 +67,7 @@ export type FooEnum_OptionStruct = [
 ]
 
 export const FooEnum_OptionStruct = tuple([
-    option(ref(() => BarStruct)),
+    option(BarStruct),
 ])
 
 export type FooEnum_VecStruct = [
@@ -75,7 +75,7 @@ export type FooEnum_VecStruct = [
 ]
 
 export const FooEnum_VecStruct = tuple([
-    array(ref(() => BarStruct)),
+    array(BarStruct),
 ])
 
 export type FooEnum_NoFields = undefined
@@ -161,10 +161,26 @@ export interface FooStruct {
 export const FooStruct: Codec<FooStruct> = struct({
     field1: u8,
     field2: u16,
-    nested: ref(() => BarStruct),
-    vecNested: array(ref(() => BarStruct)),
-    optionNested: option(ref(() => BarStruct)),
-    enumField: ref(() => FooEnum),
+    nested: BarStruct,
+    vecNested: array(BarStruct),
+    optionNested: option(BarStruct),
+    enumField: FooEnum,
+})
+
+export interface ExternalMyStruct {
+    someField: number
+}
+
+export const ExternalMyStruct: Codec<ExternalMyStruct> = struct({
+    someField: u8,
+})
+
+export interface IdlSomeOtherModuleMyStruct {
+    someU8: number
+}
+
+export const IdlSomeOtherModuleMyStruct: Codec<IdlSomeOtherModuleMyStruct> = struct({
+    someU8: u8,
 })
 
 export interface SomeEvent {
@@ -175,8 +191,8 @@ export interface SomeEvent {
 
 export const SomeEvent: Codec<SomeEvent> = struct({
     boolField: bool,
-    externalMyStruct: ref(() => ExternalMyStruct),
-    otherModuleMyStruct: ref(() => IdlSomeOtherModuleMyStruct),
+    externalMyStruct: ExternalMyStruct,
+    otherModuleMyStruct: IdlSomeOtherModuleMyStruct,
 })
 
 export interface SomeRetStruct {
@@ -187,12 +203,20 @@ export const SomeRetStruct: Codec<SomeRetStruct> = struct({
     someField: u8,
 })
 
+export interface ZcStruct {
+    someField: number
+}
+
+export const ZcStruct: Codec<ZcStruct> = struct({
+    someField: u16,
+})
+
 export interface SomeZcAccount {
     field: ZcStruct
 }
 
 export const SomeZcAccount: Codec<SomeZcAccount> = struct({
-    field: ref(() => ZcStruct),
+    field: ZcStruct,
 })
 
 /**
@@ -248,15 +272,15 @@ export const State: Codec<State> = struct({
     stringField: string,
     pubkeyField: address,
     vecField: array(u64),
-    vecStructField: array(ref(() => FooStruct)),
+    vecStructField: array(FooStruct),
     optionField: option(bool),
-    optionStructField: option(ref(() => FooStruct)),
-    structField: ref(() => FooStruct),
+    optionStructField: option(FooStruct),
+    structField: FooStruct,
     arrayField: fixedArray(bool, 3),
-    enumField1: ref(() => FooEnum),
-    enumField2: ref(() => FooEnum),
-    enumField3: ref(() => FooEnum),
-    enumField4: ref(() => FooEnum),
+    enumField1: FooEnum,
+    enumField2: FooEnum,
+    enumField3: FooEnum,
+    enumField4: FooEnum,
 })
 
 export interface State2 {
@@ -269,26 +293,26 @@ export const State2: Codec<State2> = struct({
     boxField: bool,
 })
 
-export interface ZcStruct {
-    someField: number
+export interface RecursiveStruct {
+    recursiveField: RecursiveStruct
 }
 
-export const ZcStruct: Codec<ZcStruct> = struct({
-    someField: u16,
+export const RecursiveStruct: Codec<RecursiveStruct> = struct({
+    recursiveField: ref(() => RecursiveStruct),
 })
 
-export interface ExternalMyStruct {
-    someField: number
+export interface CycleStructB {
+    recursiveField: CycleStructA
 }
 
-export const ExternalMyStruct: Codec<ExternalMyStruct> = struct({
-    someField: u8,
+export const CycleStructB: Codec<CycleStructB> = struct({
+    recursiveField: ref(() => CycleStructA),
 })
 
-export interface IdlSomeOtherModuleMyStruct {
-    someU8: number
+export interface CycleStructA {
+    recursiveField: CycleStructB
 }
 
-export const IdlSomeOtherModuleMyStruct: Codec<IdlSomeOtherModuleMyStruct> = struct({
-    someU8: u8,
+export const CycleStructA: Codec<CycleStructA> = struct({
+    recursiveField: CycleStructB,
 })

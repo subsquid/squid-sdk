@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Wed, 12 Mar 2025 20:55:26 GMT and should not be manually modified.
+This log was last generated on Tue, 18 Mar 2025 10:45:46 GMT and should not be manually modified.
+
+## 4.4.0
+Tue, 18 Mar 2025 10:45:46 GMT
+
+### Minor changes
+
+- add `Revive` pallet extension
 
 ## 4.3.0
 Wed, 12 Mar 2025 20:55:26 GMT
