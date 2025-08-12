@@ -341,6 +341,18 @@ dependencies:
   '@subsquid/graphiql-console':
     specifier: ^0.3.0
     version: 0.3.0
+  '@subsquid/http-client':
+    specifier: ^1.6.1
+    version: 1.6.1
+  '@subsquid/starknet-data':
+    specifier: ^0.0.2
+    version: 0.0.2
+  '@subsquid/starknet-normalization':
+    specifier: ^0.0.2
+    version: 0.0.2
+  '@subsquid/util-internal-validation':
+    specifier: ^0.8.0
+    version: 0.8.0(@subsquid/logger@1.4.0)
   '@substrate/calc':
     specifier: ^0.2.8
     version: 0.2.8
@@ -2611,6 +2623,91 @@ packages:
 
   /@subsquid/graphiql-console@0.3.0:
     resolution: {integrity: sha512-C89mus6IXnNi0xMQrZqUFBZwLj8tbuq9lye8Gq/lHmmERAUpi6UsWEyLdJLx2mneZzF3JtY8eNiiZ16jmjtvfw==}
+    dev: false
+
+  /@subsquid/http-client@1.6.1:
+    resolution: {integrity: sha512-jzHUxNopsEfHQilS0v/T9oSKTRcooT7ezSG1/sRILAMtYR4b11VUkrxVCFWCUDEwahfDDPw1g/Cw68rMnRqkzg==}
+    dependencies:
+      '@subsquid/logger': 1.4.0
+      '@subsquid/util-internal': 3.2.0
+      node-fetch: 3.3.2
+    dev: false
+
+  /@subsquid/logger@1.4.0:
+    resolution: {integrity: sha512-Yep4hzpLfmm4pJMXuTnd3n7Hlo18Dce8vwKZduGE9n/p56cHq4BTbAuaXLK50vYKWx7Lyt2obVbJ4otVMWkyYg==}
+    dependencies:
+      '@subsquid/util-internal-hex': 1.2.2
+      '@subsquid/util-internal-json': 1.2.3
+      supports-color: 8.1.1
+    dev: false
+
+  /@subsquid/starknet-data@0.0.2:
+    resolution: {integrity: sha512-kBcfBFVVTdcSyhNM42dCXuLfisPYQf7v0pMRi6JE5FibbtxmA47UF411bcJx5E/Tq7ASmXSN1lDYSZm18REnYg==}
+    dependencies:
+      '@subsquid/logger': 1.4.0
+      '@subsquid/util-internal-validation': 0.8.0(@subsquid/logger@1.4.0)
+    dev: false
+
+  /@subsquid/starknet-normalization@0.0.2:
+    resolution: {integrity: sha512-4ocAWQosSJ+Zoprx78s7pyHNog7HFHZ/LK5fS9CtqtOJ8GprGfuYdIy2KDqR2RHXpDqtP5p/5Y2fUEPfzwzjqA==}
+    dependencies:
+      '@subsquid/logger': 1.4.0
+      '@subsquid/starknet-data': 0.0.2
+      '@subsquid/util-internal': 3.2.0
+      '@subsquid/util-internal-ingest-tools': 1.1.4
+      '@subsquid/util-internal-range': 0.3.0
+      '@subsquid/util-internal-validation': 0.8.0(@subsquid/logger@1.4.0)
+    transitivePeerDependencies:
+      - '@subsquid/util-internal-archive-client'
+    dev: false
+
+  /@subsquid/util-internal-binary-heap@1.0.0:
+    resolution: {integrity: sha512-88auuc8yNFmCZugmJSTYzS7WM/nN2obKGQCgrl8Jty5rJUFbqazGSi8icqftKhv6MPtUMJ3PSTRLiTFXAUGnAA==}
+    dev: false
+
+  /@subsquid/util-internal-hex@1.2.2:
+    resolution: {integrity: sha512-E43HVqf23jP5hvtWF9GsiN8luANjnJ1daR2SVTwaIUAYU/uNjv1Bi6tHz2uexlflBhyxAgBDmHgunXZ45wQTIw==}
+    dev: false
+
+  /@subsquid/util-internal-ingest-tools@1.1.4:
+    resolution: {integrity: sha512-2xWyqfg0mITsNdsYuGi3++UTy/D04N69KovyW5Rd71zCDSEedV0ePX5hQl/IT/o+H/u++HcXPggwJMVl09g6kQ==}
+    peerDependencies:
+      '@subsquid/util-internal-archive-client': ^0.1.2
+    peerDependenciesMeta:
+      '@subsquid/util-internal-archive-client':
+        optional: true
+    dependencies:
+      '@subsquid/logger': 1.4.0
+      '@subsquid/util-internal': 3.2.0
+      '@subsquid/util-internal-range': 0.3.0
+    dev: false
+
+  /@subsquid/util-internal-json@1.2.3:
+    resolution: {integrity: sha512-H5qW5kG20IzVMpb7GhPbVRxGuACEf1DPIXE1+LNXYxt8t/GX4zQREQWHRvCB3lck+RORLJD3WJbQUtxN5UYB3Q==}
+    dependencies:
+      '@subsquid/util-internal-hex': 1.2.2
+    dev: false
+
+  /@subsquid/util-internal-range@0.3.0:
+    resolution: {integrity: sha512-5/oDNW0TS66o4vWRzYSYXEfNnFRZsAzoi4pZNdPn7n1l+xV7ZTa0Y57XA6cP5hrWCaIYav4z1zECPngLDV/qeQ==}
+    dependencies:
+      '@subsquid/util-internal': 3.2.0
+      '@subsquid/util-internal-binary-heap': 1.0.0
+    dev: false
+
+  /@subsquid/util-internal-validation@0.8.0(@subsquid/logger@1.4.0):
+    resolution: {integrity: sha512-qrQ1L871pAtVy0LJ+JLTZk6x4QyHZqgMGCrlSJvXw3VZLBXDBDycTcKlZ96p5VcQRp6xFnYmVSPy9dl9SPXZHQ==}
+    peerDependencies:
+      '@subsquid/logger': ^1.4.0
+    peerDependenciesMeta:
+      '@subsquid/logger':
+        optional: true
+    dependencies:
+      '@subsquid/logger': 1.4.0
+    dev: false
+
+  /@subsquid/util-internal@3.2.0:
+    resolution: {integrity: sha512-foNCjOmZaP8MKMa9sNe2GXTjFSDM9UqA0I0C0/ZvCxM1lCmG3mxZb70f8Wyi7TePXC/eV8eARbIqFyz0GjQmzA==}
     dev: false
 
   /@substrate/calc@0.2.8:
@@ -7604,12 +7701,19 @@ packages:
     dev: false
 
   file:projects/starknet-stream.tgz:
-    resolution: {integrity: sha512-G77z2Oh8DBg0B+CoBStgy/PgRJ4dOEbDQHiaxSadjnEv1zaVNkeWIlRjOCYmO5vzZBqpzajo0AxC5gXHKDZQ/A==, tarball: file:projects/starknet-stream.tgz}
+    resolution: {integrity: sha512-q8fS1ff4HP5B0AKsRhEW0IieN9g23uPNb9r3e02bajfzhX7MsUDHqtv7E/5pcw2mJxBKbz1VRGdICladWvhAhw==, tarball: file:projects/starknet-stream.tgz}
     name: '@rush-temp/starknet-stream'
     version: 0.0.0
     dependencies:
+      '@subsquid/http-client': 1.6.1
+      '@subsquid/starknet-data': 0.0.2
+      '@subsquid/starknet-normalization': 0.0.2
+      '@subsquid/util-internal-validation': 0.8.0(@subsquid/logger@1.4.0)
       '@types/node': 18.19.80
       typescript: 5.5.4
+    transitivePeerDependencies:
+      - '@subsquid/logger'
+      - '@subsquid/util-internal-archive-client'
     dev: false
 
   file:projects/substrate-data-raw.tgz:
