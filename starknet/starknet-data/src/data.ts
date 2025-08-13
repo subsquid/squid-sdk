@@ -149,7 +149,7 @@ const BlockWithTxHashes = object({
     timestamp: INT,
     sequencer_address: FELT,
     l1_gas_price: ResourcePrice,
-    l2_gas_price: ResourcePrice,
+    l2_gas_price: option(ResourcePrice),
     l1_data_gas_price: ResourcePrice,
     l1_da_mode: STRING,
     starknet_version: STRING,
