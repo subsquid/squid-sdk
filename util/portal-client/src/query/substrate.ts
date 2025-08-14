@@ -1,4 +1,31 @@
-import type {Select, Selector, Trues, Hex, Simplify, PortalBlock, PortalQuery} from './common'
+import {
+    array,
+    NAT,
+    BYTES,
+    object,
+    Validator,
+    STRING,
+    option,
+    nullable,
+    BOOLEAN,
+    oneOf,
+    constant,
+    withDefault,
+    ANY_OBJECT,
+    BIG_NAT,
+    ANY,
+} from '@subsquid/util-internal-validation'
+import {
+    type Select,
+    type Selector,
+    type Trues,
+    type Hex,
+    type Simplify,
+    type PortalQuery,
+    project,
+    type Selected,
+    ObjectValidatorShape,
+} from './common'
 
 /**
  * @example 'Balances.Transfer'
@@ -41,8 +68,8 @@ export type BlockHeaderFields = {
     validator?: Hex
 }
 
-export type ExtrinsicSignatureFields = {
-    address: unknown
+export type ExtrinsicSignature = {
+    address: Hex
     signature: unknown
     signedExtensions: unknown
 }
@@ -53,7 +80,7 @@ export type ExtrinsicFields = {
      */
     index: number
     version: number
-    signature?: ExtrinsicSignatureFields
+    signature?: ExtrinsicSignature
     fee?: bigint
     tip?: bigint
     error?: unknown
@@ -78,8 +105,6 @@ export type CallFields = {
      */
     error?: unknown
     success?: boolean
-    _ethereumTransactTo?: Hex
-    _ethereumTransactSighash?: Hex
 }
 
 export type EventFields = {
@@ -100,13 +125,9 @@ export type EventFields = {
      * Requesting it may cause internal error.
      */
     topics: Hex[]
-    _evmLogAddress?: Hex
-    _evmLogTopics?: Hex[]
-    _contractAddress?: Hex
-    _gearProgramId?: Hex
 }
 
-export type BlockHeaderFieldSelection = Simplify<Selector<keyof BlockHeaderFields> & {number: true; hash: true}>
+export type BlockHeaderFieldSelection = Selector<keyof BlockHeaderFields, 'number' | 'hash'>
 export type BlockHeader<T extends BlockHeaderFieldSelection = Trues<BlockHeaderFieldSelection>> = Select<
     BlockHeaderFields,
     T
@@ -119,7 +140,7 @@ export type CallFieldSelection = Selector<keyof CallFields>
 export type Call<T extends CallFieldSelection = Trues<CallFieldSelection>> = Select<CallFields, T>
 
 export type EventFieldSelection = Selector<keyof EventFields>
-export type Event<T extends EventFieldSelection = Trues<CallFieldSelection>> = Select<EventFields, T>
+export type Event<T extends EventFieldSelection = Trues<EventFieldSelection>> = Select<EventFields, T>
 
 export type FieldSelection = {
     block?: BlockHeaderFieldSelection
@@ -179,16 +200,89 @@ export type DataRequest = {
     gearUserMessagesSent?: GearUserMessageSentRequest[]
 }
 
-export type Query = Simplify<
+export type Query<F extends FieldSelection = FieldSelection> = Simplify<
     PortalQuery & {
         type: 'substrate'
-        fields: FieldSelection
+        fields: F
     } & DataRequest
 >
 
 export type Block<F extends FieldSelection> = Simplify<{
-    header: BlockHeader<F['block'] & {}>
-    events?: Event<F['event'] & {}>[]
-    calls?: Call<F['call'] & {}>[]
-    extrinsics?: Extrinsic<F['extrinsic'] & {}>[]
+    header: BlockHeader<Selected<F, 'block'>>
+    events: Event<Selected<F, 'event'>>[]
+    calls: Call<Selected<F, 'call'>>[]
+    extrinsics: Extrinsic<Selected<F, 'extrinsic'>>[]
 }>
+
+export function getBlockSchema<F extends FieldSelection>(fields: F): Validator<Block<F>, unknown> {
+    const header = object(project(BlockHeaderShape, {...fields.block, number: true, hash: true}))
+    const extrinsic = object(project(ExtrinsicShape, fields.extrinsic))
+    const call = object(project(CallShape, fields.call))
+
+    const event = object(project(EventShape, fields.event))
+
+    return object({
+        header,
+        events: withDefault([], array(event)),
+        calls: withDefault([], array(call)),
+        extrinsics: withDefault([], array(extrinsic)),
+    }) as Validator<Block<F>, unknown>
+}
+
+const BlockHeaderShape: ObjectValidatorShape<BlockHeaderFields> = {
+    number: NAT,
+    hash: BYTES,
+    parentHash: BYTES,
+    stateRoot: BYTES,
+    extrinsicsRoot: BYTES,
+    digest: object({
+        logs: array(BYTES),
+    }),
+    specName: STRING,
+    specVersion: NAT,
+    implName: STRING,
+    implVersion: NAT,
+    timestamp: NAT,
+    validator: BYTES,
+}
+
+const ExtrinsicSignature: Validator<ExtrinsicSignature, unknown> = object({
+    address: BYTES,
+    signature: ANY_OBJECT,
+    signedExtensions: ANY_OBJECT,
+})
+
+const ExtrinsicShape: ObjectValidatorShape<ExtrinsicFields> = {
+    index: NAT,
+    version: NAT,
+    signature: option(ExtrinsicSignature),
+    fee: BIG_NAT,
+    tip: BIG_NAT,
+    error: nullable(STRING),
+    success: BOOLEAN,
+    hash: BYTES,
+}
+
+const CallShape: ObjectValidatorShape<CallFields> = {
+    extrinsicIndex: NAT,
+    address: array(NAT),
+    name: STRING,
+    args: ANY,
+    origin: ANY,
+    error: ANY,
+    success: option(BOOLEAN),
+}
+
+const EventShape: ObjectValidatorShape<EventFields> = {
+    index: NAT,
+    name: STRING,
+    args: ANY,
+    phase: oneOf({
+        Initialization: constant('Initialization'),
+        ApplyExtrinsic: constant('ApplyExtrinsic'),
+        Finalization: constant('Finalization'),
+    }),
+    extrinsicIndex: NAT,
+    callAddress: array(NAT),
+    topics: array(BYTES),
+}

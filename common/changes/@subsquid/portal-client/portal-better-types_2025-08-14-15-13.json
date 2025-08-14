@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "implement validation and casting, improve types",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}
