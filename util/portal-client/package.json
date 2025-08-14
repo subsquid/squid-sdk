@@ -12,13 +12,16 @@
     "lib",
     "src",
     "!src/*.test.*",
-    "!lib/*.test.*"
+    "!lib/*.test.*",
+    "!src/*.example.*",
+    "!lib/*.example.*"
   ],
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^3.2.0"
+    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/util-internal-validation": "^0.8.0"
   },
   "peerDependencies": {
     "@subsquid/http-client": "^1.6.1"
