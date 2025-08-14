@@ -17,9 +17,11 @@
   },
   "dependencies": {
     "@subsquid/http-client": "^1.6.1",
+    "@subsquid/rpc-client": "^4.11.0",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/starknet-normalization": "^0.0.2",
     "@subsquid/starknet-data": "^0.0.2",
+    "@subsquid/starknet-rpc": "^0.0.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-archive-client": "^0.1.2",
     "@subsquid/util-internal-ingest-tools": "^1.1.4",

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/starknet-data",
+      "comment": "Updated block model to represent block with receipts",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/starknet-data"
+}

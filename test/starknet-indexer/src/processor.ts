@@ -1,6 +1,6 @@
 import { run} from '@subsquid/batch-processor'
 import { augmentBlock } from '@subsquid/starknet-objects'
-import { DataSourceBuilder } from '@subsquid/starknet-stream'
+import { DataSourceBuilder, StarknetRpcClient } from '@subsquid/starknet-stream'
 import { TypeormDatabase } from '@subsquid/typeorm-store'
 import { createLogger } from '@subsquid/logger'
 import { Transfer } from './model'
@@ -9,6 +9,9 @@ let logger = createLogger('sqd:indexer')
 
 const dataSource = new DataSourceBuilder()
     .setGateway('https://v2.archive.subsquid.io/network/starknet-mainnet')
+    .setRpc(process.env.STARKNET_NODE == null ? undefined : {
+        client: new StarknetRpcClient({url: process.env.STARKNET_NODE})
+    })
     .setBlockRange({from: 600_000, to: 610_000})
     .setFields({
         block: {

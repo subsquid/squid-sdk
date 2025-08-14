@@ -1,4 +1,4 @@
-import { GetSrcType, object, STRING, INT, array, nullable } from '@subsquid/util-internal-validation'
+import { GetSrcType, object, STRING, ANY_INT, INT, array, option, QTY } from '@subsquid/util-internal-validation'
 
 const FELT = STRING
 type FELT = GetSrcType<typeof FELT>
@@ -16,13 +16,14 @@ const ResourcePrice = object({
 type ResourcePrice = GetSrcType<typeof ResourcePrice>
 
 const ResourceBounds = object({
-    max_amount: Qty,
-    max_price_per_unit: Qty
+    max_amount: QTY,
+    max_price_per_unit: QTY
 })
 type ResourceBounds = GetSrcType<typeof ResourceBounds>
 
 const ResourceBoundsMap = object({
     l1_gas: ResourceBounds,
+    l1_data_gas: option(ResourceBounds),
     l2_gas: ResourceBounds
 })
 type ResourceBoundsMap = GetSrcType<typeof ResourceBoundsMap>
@@ -47,60 +48,70 @@ const EventContent = object({
 })
 type EventContent = GetSrcType<typeof EventContent>
 
+const DataAvailability = object({
+    l1_gas: INT,
+    l1_data_gas: INT,
+})
+type DataAvailability = GetSrcType<typeof DataAvailability>
+
 const ExecutionResources = object({
+    data_availability: DataAvailability,
     steps: INT,
-    memory_holes: INT,
-    range_check_builtin_applications: INT,
-    pedersen_builtin_applications: INT,
-    poseidon_builtin_applications: INT,
-    ec_op_builtin_applications: INT,
-    ecdsa_builtin_applications: INT,
-    bitwise_builtin_applications: INT,
-    keccak_builtin_applications: INT,
-    segment_arena_builtin: INT
+    memory_holes: option(INT),
+    range_check_builtin_applications: option(INT),
+    pedersen_builtin_applications: option(INT),
+    poseidon_builtin_applications: option(INT),
+    ec_op_builtin_applications: option(INT),
+    ecdsa_builtin_applications: option(INT),
+    bitwise_builtin_applications: option(INT),
+    keccak_builtin_applications: option(INT),
+    segment_arena_builtin: option(INT)
 })
 type ExecutionResources = GetSrcType<typeof ExecutionResources>
 
 const Transaction = object({
-    transaction_hash: Hash32,
-    contract_address: nullable(FELT),
-    entry_point_selector: nullable(FELT),
-    calldata: nullable(array(FELT)),
-    max_fee: nullable(FELT),
+    contract_address: option(FELT),
+    entry_point_selector: option(FELT),
+    calldata: option(array(FELT)),
+    max_fee: option(FELT),
     version: STRING,
-    signature: nullable(array(FELT)),
-    nonce: nullable(FELT),
+    signature: option(array(FELT)),
+    nonce: option(FELT),
     type: STRING,
-    sender_address: nullable(FELT),
-    class_hash: nullable(Hash32),
-    compiled_class_hash: nullable(Hash32),
-    contract_address_salt: nullable(FELT),
-    constructor_calldata: nullable(array(STRING)),
-    resource_bounds: nullable(ResourceBoundsMap),
-    tip: nullable(FELT),
-    paymaster_data: nullable(array(FELT)),
-    account_deployment_data: nullable(array(FELT)),
-    nonce_data_availability_mode: nullable(STRING),
-    fee_data_availability_mode: nullable(STRING)
+    sender_address: option(FELT),
+    class_hash: option(Hash32),
+    compiled_class_hash: option(Hash32),
+    contract_address_salt: option(FELT),
+    constructor_calldata: option(array(STRING)),
+    resource_bounds: option(ResourceBoundsMap),
+    tip: option(FELT),
+    paymaster_data: option(array(FELT)),
+    account_deployment_data: option(array(FELT)),
+    nonce_data_availability_mode: option(STRING),
+    fee_data_availability_mode: option(STRING)
 })
 type Transaction = GetSrcType<typeof Transaction>
 
 const Receipt = object({
     transaction_hash: Hash32,
     actual_fee: ActualFee,
-    execution_status: STRING,
+    execution_status: option(STRING),
     finality_status: STRING,
-    block_hash: Hash32,
-    block_number: INT,
     messages_sent: array(MessageToL1),
-    revert_reason: nullable(STRING),
+    revert_reason: option(STRING),
     events: array(EventContent),
     execution_resources: ExecutionResources,
     type: STRING,
-    contract_address: nullable(FELT),
-    message_hash: nullable(Hash32)
+    contract_address: option(FELT),
+    message_hash: option(Hash32)
 })
 type Receipt = GetSrcType<typeof Receipt>
+
+const PackedTransaction = object({
+    transaction: Transaction,
+    receipt: Receipt
+})
+type PackedTransaction = GetSrcType<typeof PackedTransaction>
 
 const Event = object({
     block_number: INT,
@@ -113,23 +124,42 @@ const Event = object({
 type Event = GetSrcType<typeof Event>
 
 const Block = object({
-    block_number: INT,
+    status: STRING,
     block_hash: Hash32,
     parent_hash: Hash32,
-    status: STRING,
+    block_number: INT,
     new_root: Hash32,
     timestamp: INT,
     sequencer_address: FELT,
-    transactions: array(Transaction),
+    l1_gas_price: option(ResourcePrice),
+    l2_gas_price: option(ResourcePrice),
+    l1_data_gas_price: option(ResourcePrice),
+    l1_da_mode: STRING,
     starknet_version: STRING,
-    l1_gas_price: ResourcePrice,
-    events: nullable(array(Event))
+    transactions: array(PackedTransaction)
 })
 type Block = GetSrcType<typeof Block>
 
+const BlockWithTxHashes = object({
+    status: STRING,
+    block_hash: Hash32,
+    parent_hash: Hash32,
+    block_number: INT,
+    new_root: Hash32,
+    timestamp: INT,
+    sequencer_address: FELT,
+    l1_gas_price: ResourcePrice,
+    l2_gas_price: option(ResourcePrice),
+    l1_data_gas_price: ResourcePrice,
+    l1_da_mode: STRING,
+    starknet_version: STRING,
+    transactions: array(Hash32)
+})
+type BlockWithTxHashes = GetSrcType<typeof BlockWithTxHashes>
+
 const EventPage = object({
     events: array(Event),
-    continuation_token: nullable(STRING)
+    continuation_token: option(STRING)
 })
 type EventPage = GetSrcType<typeof EventPage>
 
@@ -146,7 +176,9 @@ export {
     ExecutionResources,
     Transaction,
     Receipt,
+    PackedTransaction,
     Event,
     Block,
+    BlockWithTxHashes,
     EventPage
 }
