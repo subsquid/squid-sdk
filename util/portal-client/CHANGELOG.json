@@ -2,6 +2,18 @@
   "name": "@subsquid/portal-client",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/portal-client_v0.1.0",
+      "date": "Thu, 14 Aug 2025 15:16:33 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "implement validation and casting, improve types"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/portal-client_v0.0.0",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",
