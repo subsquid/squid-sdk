@@ -89,13 +89,15 @@ export class InstructionTreeTraversal {
             this.call(1)
             this.finishLogLess()
         } else {
-            this.assert(
-                this.instructions.length === 1,
-                'failed instructions should not have inner calls',
-                0
-            )
-            this.push(1)
+            if (this.instructions.length === 1) {
+                this.push(1)
+            } else {
+                this.warn('failed instructions should not have inner calls', 0)
+                this.call(1)
+                this.finishLogLess()
+            }
         }
+
         this.assert(this.ended, 'not all inner instructions where consumed', 0)
     }
 
