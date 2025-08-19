@@ -393,7 +393,7 @@ function mapAccess(src: rpc.Access): Access {
 
 function mapEIP7702Authorization(src: rpc.EIP7702Authorization): EIP7702Authorization {
     return {
-        chainId: qty2Int(src.chainId),
+        chainId: src.chainId,
         address: src.address,
         nonce: qty2Int(src.nonce),
         yParity: qty2Int(src.yParity),

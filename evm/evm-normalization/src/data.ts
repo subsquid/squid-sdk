@@ -47,7 +47,7 @@ export interface Access {
 
 
 export interface EIP7702Authorization {
-    chainId: number,
+    chainId: Qty,
     address: Bytes20,
     nonce: number,
     yParity: number,

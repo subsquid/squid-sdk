@@ -30,7 +30,7 @@ export type Access = GetSrcType<typeof Access>
 
 
 export const EIP7702Authorization = object({
-    chainId: SMALL_QTY,
+    chainId: QTY,
     address: BYTES,
     nonce: SMALL_QTY,
     yParity: SMALL_QTY,
