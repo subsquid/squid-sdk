@@ -25,7 +25,7 @@ For step-by-step instructions, follow one of the [Quickstart guides](https://doc
 
 ## Developer community
 
-Our developers are active on [Telegram](https://t.me/HydraDevs) and [Discord](https://discord.gg/subsquid). Feel free to join and ask any question!
+Our developers are active on [Telegram](https://t.me/HydraDevs). Feel free to join and ask any question!
 
 ## Contributing
 
