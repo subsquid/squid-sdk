@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/starknet-stream",
+      "comment": "Add RPC interface support, update transaction fields",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/starknet-stream"
+}

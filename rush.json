@@ -1014,6 +1014,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/starknet-rpc",
+      "projectFolder": "starknet/starknet-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "starknet-indexer",
       "projectFolder": "test/starknet-indexer",
       "shouldPublish": false
