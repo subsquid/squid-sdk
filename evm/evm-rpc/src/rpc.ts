@@ -91,7 +91,7 @@ export class Rpc {
         } else {
             qtyOrCommitment = commitment
         }
-        let block = await this.call('eth_getBlockByNumber', [commitment, false], {
+        let block = await this.call('eth_getBlockByNumber', [qtyOrCommitment, false], {
             validateResult: getResultValidator(GetBlock)
         })
         return {
