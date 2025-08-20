@@ -46,7 +46,7 @@ export class Metrics {
         this.blockLagHistogram = new Histogram({
             name: 'sqd_hotblocks_block_lag_ms',
             help: 'Time to process a block from creation to end of processing in ms',
-            buckets: [100, 200, 500, 1000, 2000, 5000, 10000, 15000, 20000, 30000],
+            buckets: [100, 200, 500, 1000, 2000, 5000, 10000, 15000, 20000, 30000, 60000, 300000, 600000, 1200000, 3600000],
             registers: [this.registry],
         })
 
