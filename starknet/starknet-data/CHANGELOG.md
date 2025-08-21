@@ -1,6 +1,13 @@
 # Change Log - @subsquid/starknet-data
 
-This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+This log was last generated on Thu, 21 Aug 2025 10:51:03 GMT and should not be manually modified.
+
+## 0.1.0
+Thu, 21 Aug 2025 10:51:03 GMT
+
+### Minor changes
+
+- Updated block model to represent block with receipts
 
 ## 0.0.2
 Sat, 09 Aug 2025 06:10:24 GMT

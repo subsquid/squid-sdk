@@ -2,6 +2,24 @@
   "name": "@subsquid/starknet-objects",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/starknet-objects_v0.0.3",
+      "date": "Thu, 21 Aug 2025 10:51:03 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-normalization\" from `^0.0.2` to `0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-stream\" from `^0.0.2` to `1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-stream\" from `^0.0.2` to `1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/starknet-objects_v0.0.2",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",

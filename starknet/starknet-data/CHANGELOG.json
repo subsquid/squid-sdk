@@ -2,6 +2,18 @@
   "name": "@subsquid/starknet-data",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/starknet-data_v0.1.0",
+      "date": "Thu, 21 Aug 2025 10:51:03 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Updated block model to represent block with receipts"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/starknet-data_v0.0.2",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",

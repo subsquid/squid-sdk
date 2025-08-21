@@ -2,6 +2,23 @@
   "name": "@subsquid/starknet-normalization",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/starknet-normalization_v0.1.0",
+      "date": "Thu, 21 Aug 2025 10:51:03 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Extend transaction model to represent full transaction with receipt, Add RPC block mapping"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-data\" from `^0.0.2` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/starknet-normalization_v0.0.2",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",
