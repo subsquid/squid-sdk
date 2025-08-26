@@ -5,7 +5,12 @@ images=("${@:2}")
 
 function publish() {
     pkg_path=$1
-    img="$(basename "$pkg_path")"
+    if [ -n "$2" ]
+    then
+       img=$2
+    else
+       img="$(basename "$pkg_path")"
+    fi
 
     tags="-t subsquid/$img:$custom_tag"
 
@@ -19,6 +24,7 @@ function publish() {
 all_images=(
     "solana/solana-dump"
     "solana/solana-ingest"
+    "solana/solana-data-service"
     "tron/tron-dump"
     "tron/tron-ingest"
     "substrate/substrate-dump"
@@ -28,6 +34,7 @@ all_images=(
     "fuel/fuel-ingest"
     "evm/evm-dump"
     "evm/evm-ingest"
+    "evm/evm-data-service"
 )
 
 if [ ${#images[@]} -eq 0 ]; then
@@ -36,7 +43,13 @@ fi
 
 for image in "${images[@]}"; do
     echo "Publishing $image..."
-    publish "$image" || exit 1
+    if [ "$image" = "solana/solana-data-service" ]; then
+        publish "$image" "solana-hotblocks-service" || exit 1
+    elif [ "$image" = "evm/evm-data-service" ]; then
+        publish "$image" "evm-hotblocks-service" || exit 1
+    else
+        publish "$image" || exit 1
+    fi
 done
 
 #git push origin "HEAD:release/${release}" --follow-tags --verbose
