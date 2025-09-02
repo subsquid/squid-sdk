@@ -10,7 +10,10 @@ const log = createLogger('sqd:evm-data-service/data-source')
 
 export interface DataSourceOptions {
     httpRpc: string,
-    ratelimit?: number,
+    httpRpcMaxBatchCallSize?: number
+    httpRpcStrideSize?: number
+    httpRpcStrideConcurrency?: number
+    httpRpcRateLimit?: number,
     finalityConfirmation?: number,
     traces?: boolean,
     diffs?: boolean,
@@ -28,11 +31,11 @@ export interface DataSourceOptions {
 export function createDataSource(options: DataSourceOptions): DataSource<Block> {
     let httpRpcClient = new RpcClient({
         url: options.httpRpc,
-        capacity: 50,
-        requestTimeout: 16000,
-        // retryAttempts: 5,
-        // retrySchedule: [500, 1000, 2000, 5000, 10000, 20000],
-        rateLimit: options.ratelimit,
+        maxBatchCallSize: options.httpRpcMaxBatchCallSize,
+        capacity: Number.MAX_SAFE_INTEGER,
+        rateLimit: options.httpRpcRateLimit,
+        requestTimeout: 10000,
+        retryAttempts: 5,
         log
     })
     let httpRpc = new Rpc({
@@ -54,7 +57,9 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
             stateDiffs: options.diffs,
             useTraceApi: options.useTraceApi,
             useDebugApiForStateDiffs: options.useDebugApiForStateDiffs,
-        }
+        },
+        strideSize: options.httpRpcStrideSize,
+        strideConcurrency: options.httpRpcStrideConcurrency
     })
     return new Mapping(rpcSource)
 }
