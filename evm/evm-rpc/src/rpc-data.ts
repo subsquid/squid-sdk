@@ -49,7 +49,7 @@ export const Transaction = object({
     transactionIndex: SMALL_QTY,
     chainId: option(SMALL_QTY),
     from: BYTES,
-    to: nullable(BYTES),
+    to: option(BYTES),
     gas: QTY,
     gasPrice: QTY,
     input: BYTES,
