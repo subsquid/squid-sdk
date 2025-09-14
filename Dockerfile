@@ -3,10 +3,11 @@ FROM ${node} AS node
 
 
 FROM node AS builder
-RUN apk add g++ make python3 py3-setuptools
+RUN apk add g++ make python3 py3-setuptools openssl libc6-compat
 WORKDIR /squid
 ADD . .
 RUN node common/scripts/install-run-rush.js install
+# RUN cd substrate/substrate-ingest && npx prisma generate
 RUN rm common/config/rush/build-cache.json
 RUN node common/scripts/install-run-rush.js build
 

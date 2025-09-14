@@ -16,7 +16,7 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc",
+    "build": "prisma generate && rm -rf lib && tsc",
     "prisma:generate": "yarn run -T prisma generate",
     "prisma:pull": "yarn run -T prisma db pull",
     "prisma:push": "yarn run -T prisma db push --skip-generate"
