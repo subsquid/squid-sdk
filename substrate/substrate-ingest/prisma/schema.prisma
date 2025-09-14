@@ -1,0 +1,86 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../prisma"
+  binaryTargets   = ["native", "linux-musl"]
+  previewFeatures = ["filterJson"]
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Block {
+  id             String      @id @default(auto()) @map("_id") @db.ObjectId
+  blockId        String      @unique
+  height         Int         @unique
+  hash           String
+  parentHash     String
+  specId         String
+  timestamp      DateTime
+  validator      String?
+  stateRoot      String
+  extrinsicsRoot String
+  Call           Call[]
+  Event          Event[]
+  Extrinsic      Extrinsic[]
+
+  @@index([id, blockId, height])
+  @@map("block")
+}
+
+model Call {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  callId      String      @unique
+  block       Block       @relation(fields: [blockId], references: [blockId])
+  blockId     String
+  args        Json?
+  extrinsicId String
+  success     Boolean
+  name        String
+  Extrinsic   Extrinsic[]
+
+  @@index([id, callId])
+  @@map("call")
+}
+
+model Event {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  eventId     String  @unique
+  block       Block   @relation(fields: [blockId], references: [blockId])
+  blockId     String
+  extrinsicId String?
+  args        Json?
+  phase       String?
+  name        String
+
+  @@index([id, eventId])
+  @@map("event")
+}
+
+model Extrinsic {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  version     Int
+  hash        String
+  block       Block   @relation(fields: [blockId], references: [blockId])
+  blockId     String
+  call        Call    @relation(fields: [callId], references: [callId])
+  callId      String
+  signature   Json?
+  error       Json?
+  extrinsicId String   @unique
+  success     Boolean
+  tip         String?
+  fee         String?
+
+  @@index([id, extrinsicId])
+  @@map("extrinsic")
+}
+
+model BlockTracker {
+  id             String      @id @default(auto()) @map("_id") @db.ObjectId
+  blockScanned   Int       @unique
+
+  @@index([id, blockScanned])
+  @@map("block-tracker")
+}
