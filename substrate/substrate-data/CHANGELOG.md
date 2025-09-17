@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Tue, 18 Mar 2025 10:45:46 GMT and should not be manually modified.
+This log was last generated on Wed, 17 Sep 2025 03:17:50 GMT and should not be manually modified.
+
+## 4.4.1
+Wed, 17 Sep 2025 03:17:50 GMT
+
+### Patches
+
+- handle EIP7702 transaction
 
 ## 4.4.0
 Tue, 18 Mar 2025 10:45:46 GMT
