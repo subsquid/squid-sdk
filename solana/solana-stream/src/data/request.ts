@@ -51,6 +51,7 @@ export interface InstructionRequestWhere {
     d3?: Discriminator[]
     d4?: Discriminator[]
     d8?: Discriminator[]
+    discriminator?: Discriminator[]
     a0?: Base58Bytes[]
     a1?: Base58Bytes[]
     a2?: Base58Bytes[]
