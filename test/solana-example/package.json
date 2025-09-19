@@ -15,7 +15,8 @@
     "@subsquid/typeorm-store": "^1.5.1",
     "dotenv": "^16.3.1",
     "pg": "^8.11.3",
-    "typeorm": "^0.3.17"
+    "typeorm": "^0.3.17",
+    "reflect-metadata": "~0.2.2"
   },
   "devDependencies": {
     "@subsquid/solana-typegen": "^0.6.1",

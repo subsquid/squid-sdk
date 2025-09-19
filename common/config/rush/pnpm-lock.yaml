@@ -487,7 +487,7 @@ dependencies:
     version: 2.19.0
   typeorm:
     specifier: ^0.3.17
-    version: 0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2)
+    version: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2)
   upath:
     specifier: ^2.0.1
     version: 2.0.1
@@ -5805,6 +5805,10 @@ packages:
       redis-errors: 1.2.0
     dev: false
 
+  /reflect-metadata@0.2.2:
+    resolution: {integrity: sha512-urBwgfrvVP/eAyXx4hluJivBKzuEbSQs9rKWCrCkbSxNv8mxPcUZKeuoF3Uy4mJl3Lwprp6yy5/39VWigZ4K6Q==}
+    dev: false
+
   /regexp.prototype.flags@1.5.4:
     resolution: {integrity: sha512-dYqgNSZbDwkaJ2ceRd9ojCGjBq+mOm9LmtXnAnEGyHhN/5R7iDW2TRw3h+o/jCFxus3P2LfWIIiwowAjANm7IA==}
     engines: {node: '>= 0.4'}
@@ -6372,7 +6376,7 @@ packages:
       is-typedarray: 1.0.0
     dev: false
 
-  /typeorm@0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2):
+  /typeorm@0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2):
     resolution: {integrity: sha512-pNV1bn+1n8qEe8tUNsNdD8ejuPcMAg47u2lUGnbsajiNUr3p2Js1XLKQjBMH0yMRMDfdX8T+fIRejFmIwy9x4A==}
     engines: {node: '>=16.13.0'}
     hasBin: true
@@ -6438,6 +6442,7 @@ packages:
       dotenv: 16.6.1
       glob: 10.4.5
       pg: 8.16.3
+      reflect-metadata: 0.2.2
       sha.js: 2.4.12
       sql-highlight: 6.1.0
       ts-node: 10.9.2(@types/node@18.19.127)(typescript@5.5.4)
@@ -6943,7 +6948,7 @@ packages:
       dotenv: 16.6.1
       ethers: 6.15.0
       pg: 8.16.3
-      typeorm: 0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typeorm: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -6978,7 +6983,7 @@ packages:
       dotenv: 16.6.1
       pg: 8.16.3
       ts-node: 10.9.2(@types/node@18.19.127)(typescript@5.5.4)
-      typeorm: 0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typeorm: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -7082,7 +7087,7 @@ packages:
       dotenv: 16.6.1
       ethers: 6.15.0
       pg: 8.16.3
-      typeorm: 0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typeorm: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -7313,7 +7318,7 @@ packages:
       mocha: 10.8.2
       pg: 8.16.3
       type-graphql: 1.2.0-rc.1(class-validator@0.14.2)(graphql@15.10.1)
-      typeorm: 0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typeorm: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2)
       typescript: 5.5.4
       ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
@@ -7481,7 +7486,7 @@ packages:
       '@types/node': 18.19.127
       dotenv: 16.6.1
       pg: 8.16.3
-      typeorm: 0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typeorm: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -7513,7 +7518,7 @@ packages:
       '@types/node': 18.19.127
       dotenv: 16.6.1
       pg: 8.16.3
-      typeorm: 0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typeorm: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -7546,7 +7551,7 @@ packages:
     dev: false
 
   file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-xVzll419TsqiqdgRKvoGMh450Oatx4ornsoboUat59bJjcdqP6NISMHQHBVW48Ax/T4nFBrUVEedXh88Fo6v4A==, tarball: file:projects/solana-example.tgz}
+    resolution: {integrity: sha512-zAeBrfR5VOUFLiQv0WDGQJb4tQPrb/boE2IdiAjiZmpFm9V+B0ks3vdrvxz6HlCsxMRANJgch6NuJUi2Db7YbQ==, tarball: file:projects/solana-example.tgz}
     id: file:projects/solana-example.tgz
     name: '@rush-temp/solana-example'
     version: 0.0.0
@@ -7554,7 +7559,8 @@ packages:
       '@types/node': 18.19.127
       dotenv: 16.6.1
       pg: 8.16.3
-      typeorm: 0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      reflect-metadata: 0.2.2
+      typeorm: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -7569,7 +7575,6 @@ packages:
       - pg-native
       - pg-query-stream
       - redis
-      - reflect-metadata
       - sql.js
       - sqlite3
       - supports-color
@@ -7623,7 +7628,7 @@ packages:
     dev: false
 
   file:projects/solana-stream.tgz:
-    resolution: {integrity: sha512-jGfJXBe9JROlHrEazF3qfU8igGlJwi7e7DmShpa58dm2nzt5CpVuLQxMAshadvr2Ay1KwN8+aWo5mW0zTDXRqg==, tarball: file:projects/solana-stream.tgz}
+    resolution: {integrity: sha512-EmWPLmgVKT43DkHdeP756ohaEGZF3NspBJTRvfAhK16LacJZA9WH0TifjYxn27KjxK6cWvUqbSMgg0QjAL2FXA==, tarball: file:projects/solana-stream.tgz}
     name: '@rush-temp/solana-stream'
     version: 0.0.0
     dependencies:
@@ -7774,7 +7779,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz:
-    resolution: {integrity: sha512-Mx47IfMQ8ITlh9zPcyIEtp/ExfMlouc4RdpZFneaLhMXK/3BbHXITGtP+NqQ3NZ10W9j/RQo8ykS/Pt321PuKg==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-hIDCBZLEig0HKWa5RvyIF2UFJO1khudC1f/9UZt3Y349AaMHby76ViNe5yhS/hT4nrpc1FnVJ8zEXjVxFDYR2g==, tarball: file:projects/substrate-processor.tgz}
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
     dependencies:
@@ -7861,7 +7866,7 @@ packages:
       '@types/node': 18.19.127
       dotenv: 16.6.1
       pg: 8.16.3
-      typeorm: 0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typeorm: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -7901,7 +7906,7 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.127
-      typeorm: 0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typeorm: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -7934,7 +7939,7 @@ packages:
       '@types/node': 18.19.127
       commander: 11.1.0
       dotenv: 16.6.1
-      typeorm: 0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typeorm: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'
@@ -7970,7 +7975,7 @@ packages:
       expect: 29.7.0
       mocha: 10.8.2
       pg: 8.16.3
-      typeorm: 0.3.27(pg@8.16.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typeorm: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(supports-color@8.1.1)(ts-node@10.9.2)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@google-cloud/spanner'

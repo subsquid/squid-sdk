@@ -88,7 +88,7 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
 
                 let blocks = batch.map((b) => {
                     try {
-                        return mapBlock(b, req.request.fields || {})
+                        return mapBlock(b, req.request.fields || {}, true)
                     } catch (err: any) {
                         throw addErrorContext(err, {
                             blockHeight: b.header.number,

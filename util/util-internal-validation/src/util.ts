@@ -12,5 +12,5 @@ export type Simplify<T> = {
 
 export function print(val: unknown): string {
     if (val === undefined) return 'undefined'
-    return JSON.stringify(val)
+    return JSON.stringify(val, (_, v) => typeof v === 'bigint' ? v.toString() : v)
 }

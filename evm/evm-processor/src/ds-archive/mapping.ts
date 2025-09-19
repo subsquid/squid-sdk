@@ -1,5 +1,5 @@
 import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
-import {cast} from '@subsquid/util-internal-validation'
+import {cast, type GetCastType} from '@subsquid/util-internal-validation'
 import {FieldSelection} from '../interfaces/data'
 import {
     Block,
@@ -20,10 +20,10 @@ import {
 import {setUpRelations} from '../mapping/relations'
 import {getBlockValidator} from './schema'
 
-export function mapBlock(rawBlock: unknown, fields: FieldSelection): Block {
+export function mapBlock(rawBlock: unknown, fields: FieldSelection, forPortal?: boolean): Block {
     let validator = getBlockValidator(fields)
 
-    let src = cast(validator, rawBlock)
+    let src = forPortal ? rawBlock as GetCastType<typeof validator> : cast(validator, rawBlock)
 
     let {number, hash, parentHash, ...hdr} = src.header
     if (hdr.timestamp) {

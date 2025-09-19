@@ -1,12 +1,11 @@
-import {assertNotNull, last} from '@subsquid/util-internal'
+import {last} from '@subsquid/util-internal'
 import {applyRangeBound, mapRangeRequestList, RangeRequestList} from '@subsquid/util-internal-range'
-import {array, cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
 import {DataRequest} from '../data/request'
-import {getDataSchema} from './schema'
-import {PortalClient, PortalStreamOptions, isForkException as isPortalForkException} from '@subsquid/portal-client'
+import {PortalClient, PortalStreamOptions, isForkException as isPortalForkException, solana} from '@subsquid/portal-client'
 import {BlockRef, DataSource, ForkException, DataSourceStreamOptions, DataSourceStream} from '@subsquid/util-internal-data-source'
 import {Block, BlockHeader, FieldSelection} from '../data/model'
+import {getDataSchema} from './schema'
 
 export class PortalDataSource<F extends FieldSelection = {}, B extends Block<F> = Block<F>> implements DataSource<B> {
     constructor(private client: PortalClient, private requests: RangeRequestList<DataRequest>, private opts?: {squidId?: string}) {}
@@ -100,7 +99,7 @@ export class PortalDataSource<F extends FieldSelection = {}, B extends Block<F> 
             }
         })
 
-        let getStream = (q: any, o?: PortalStreamOptions) => finalized ? this.client.getFinalizedStream(q, o) : this.client.getStream(q, o)
+        let getStream = (q: solana.Query, o?: PortalStreamOptions) => finalized ? this.client.getFinalizedStream(q, o) : this.client.getStream(q, o)
 
         try {
             let parentBlockNumber = (opts?.range?.from ?? 0) - 1
@@ -110,7 +109,7 @@ export class PortalDataSource<F extends FieldSelection = {}, B extends Block<F> 
                 // if ranges have gaps, we need to ensure continuaty
                 if (parentBlockHash != null && parentBlockNumber + 1 < req.range.from) {
                     let endBlock = req.range.from - 1
-                    let q = {
+                    let q: solana.Query = {
                         type: 'solana',
                         fromBlock: parentBlockNumber,
                         toBlock: endBlock,
@@ -138,6 +137,7 @@ export class PortalDataSource<F extends FieldSelection = {}, B extends Block<F> 
                 let stream = getStream(
                     {
                         ...req.request,
+                        type: 'solana',
                         fromBlock: req.range.from,
                         toBlock: req.range.to,
                         parentBlockHash: parentBlockHash,
@@ -147,31 +147,16 @@ export class PortalDataSource<F extends FieldSelection = {}, B extends Block<F> 
                     },
                 )
 
-                let fields = assertNotNull(req?.request.fields)
-                let schema = array(getDataSchema(fields))
+                let schema = getDataSchema(req.request.fields)
 
-                let lastBlock: BlockRef | undefined
                 for await (let batch of stream) {
-                    let blocks = cast(schema, batch.blocks).map((b) => {
-                        let {header, ...items} = b
-                        return {
-                            header,
-                            transactions: items.transactions || [],
-                            instructions: items.instructions || [],
-                            logs: items.logs || [],
-                            balances: items.balances || [],
-                            tokenBalances: items.tokenBalances || [],
-                            rewards: items.rewards || [],
-                        }
-                    })
-
                     yield {
-                        blocks: blocks as B[],
+                        blocks: batch.blocks as B[],
                         finalizedHead: batch.finalizedHead,
                     }
 
-                    if (blocks.length > 0) {
-                        let lastBlock = last(blocks).header
+                    if (batch.blocks.length > 0) {
+                        let lastBlock = last(batch.blocks).header
                         parentBlockNumber = lastBlock.number
                         parentBlockHash = lastBlock.hash
                     }
