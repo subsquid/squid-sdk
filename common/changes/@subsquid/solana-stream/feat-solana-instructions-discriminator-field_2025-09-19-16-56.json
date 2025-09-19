@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-stream",
+      "comment": "Added the arbitrary length discriminator field",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-stream"
+}
