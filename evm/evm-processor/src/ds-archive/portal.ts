@@ -68,7 +68,7 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
             range: {from: height, to: height},
             request: {includeAllBlocks: true},
         })
-        let blocks = await this.client.getFinalizedQuery(query)
+        let blocks = await this.client.getFinalizedQuery(query as any)
         assert(blocks.length == 1)
         return blocks[0].header.hash!
     }
@@ -82,7 +82,7 @@ export class EvmPortal implements DataSource<Block, DataRequest> {
             let endBlock = req.range.to || Infinity
             let query = makeQuery(req)
 
-            for await (let {blocks: batch, finalizedHead} of this.client.getFinalizedStream(query)) {
+            for await (let {blocks: batch, finalizedHead} of this.client.getFinalizedStream(query as any)) {
                 assert(batch.length > 0, 'boundary blocks are expected to be included')
                 lastBlock = last(batch).header.number
 
