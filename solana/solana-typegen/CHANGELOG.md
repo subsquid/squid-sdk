@@ -1,6 +1,31 @@
 # Change Log - @subsquid/solana-typegen
 
-This log was last generated on Wed, 15 Jan 2025 18:59:13 GMT and should not be manually modified.
+This log was last generated on Fri, 04 Jul 2025 17:08:54 GMT and should not be manually modified.
+
+## 0.6.1
+Fri, 04 Jul 2025 17:08:54 GMT
+
+_Version update only_
+
+## 0.6.0
+Tue, 18 Mar 2025 11:56:44 GMT
+
+### Minor changes
+
+- add generic types support
+- reduce usage of `ref` codec
+
+## 0.5.1
+Wed, 12 Mar 2025 09:11:46 GMT
+
+_Version update only_
+
+## 0.5.0
+Thu, 06 Mar 2025 10:46:22 GMT
+
+### Minor changes
+
+- add support for Shank tuple types
 
 ## 0.4.0
 Wed, 15 Jan 2025 18:59:13 GMT

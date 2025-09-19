@@ -16,10 +16,24 @@ const Transaction = struct({
 })
 
 
+const EIP7702Transaction = struct({
+    destination: TransactionAction,
+    data: bytes()
+})
+
+
 const TransactionV2 = closedEnum({
     Legacy: Transaction,
     EIP2930: Transaction,
     EIP1559: Transaction
+})
+
+
+const TransactionV3 = closedEnum({
+    Legacy: Transaction,
+    EIP2930: Transaction,
+    EIP1559: Transaction,
+    EIP7702: EIP7702Transaction
 })
 
 
@@ -28,8 +42,13 @@ const EthereumTransactLegacy = struct({
 })
 
 
-const EthereumTransactLatest = struct({
+const EthereumTransactV2 = struct({
     transaction: TransactionV2
+})
+
+
+const EthereumTransactV3 = struct({
+    transaction: TransactionV3
 })
 
 
@@ -46,17 +65,27 @@ const EvmLogLatest = struct({
 
 export function setEthereumTransact(runtime: Runtime, call: Call): void {
     if (call.name != 'Ethereum.transact') return
-    let tx
+    let action, data
     if (isCall(runtime, EthereumTransactLegacy, call)) {
-        tx = call.args.transaction
-    } else if (isCall(runtime, EthereumTransactLatest, call)) {
-        tx = call.args.transaction.value
+        action = call.args.transaction.action
+        data = call.args.transaction.input
+    } else if (isCall(runtime, EthereumTransactV2, call)) {
+        action = call.args.transaction.value.action
+        data = call.args.transaction.value.input
+    } else if (isCall(runtime, EthereumTransactV3, call)) {
+        if (call.args.transaction.__kind == 'EIP7702') {
+            action = call.args.transaction.value.destination
+            data = call.args.transaction.value.data
+        } else {
+            action = call.args.transaction.value.action
+            data = call.args.transaction.value.input
+        }
     } else {
         throw new UnexpectedCallType('Ethereum.transact')
     }
-    call._ethereumTransactSighash = tx.input.slice(0, 10)
-    if (tx.action.__kind == 'Call') {
-        call._ethereumTransactTo = tx.action.value
+    call._ethereumTransactSighash = data.slice(0, 10)
+    if (action.__kind == 'Call') {
+        call._ethereumTransactTo = action.value
     }
 }
 

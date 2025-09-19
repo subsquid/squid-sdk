@@ -2,6 +2,53 @@
   "name": "@subsquid/tron-ingest",
   "entries": [
     {
+      "version": "0.1.1",
+      "tag": "@subsquid/tron-ingest_v0.1.1",
+      "date": "Sat, 09 Aug 2025 06:10:24 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/tron-data\" from `^0.0.3` to `0.0.4`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/tron-normalization\" from `^0.0.3` to `0.0.4`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/tron-ingest_v0.1.0",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add block height and timestamp extraction methods for TRON ingestion with Unix timestamp support"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-cli\" from `^0.1.1` to `0.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.3",
+      "tag": "@subsquid/tron-ingest_v0.0.3",
+      "date": "Thu, 06 Mar 2025 10:46:22 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/tron-data\" from `^0.0.2` to `0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/tron-normalization\" from `^0.0.2` to `0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/tron-ingest_v0.0.2",
       "date": "Tue, 03 Dec 2024 11:47:42 GMT",

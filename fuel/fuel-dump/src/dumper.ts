@@ -24,8 +24,15 @@ export class FuelDumper extends Dumper<BlockData, Options> {
         return 'sqd:fuel-dump'
     }
 
-    protected getParentBlockHash(block: BlockData): string {
+    protected getPrevBlockHash(block: BlockData): string {
         return block.block.header.prevRoot
+    }
+
+    protected getBlockTimestamp(block: BlockData): number {
+        const TAI64_UNIX_OFFSET = BigInt("4611686018427387914");
+        const taiTimestamp = BigInt(block.block.header.time);
+        const unixTimeMs = taiTimestamp - TAI64_UNIX_OFFSET;
+        return Number(unixTimeMs);
     }
 
     protected validateChainContinuity(): boolean {
@@ -64,7 +71,7 @@ export class FuelDumper extends Dumper<BlockData, Options> {
         }
     }
 
-    protected getLastFinalizedBlockNumber(): Promise<number> {
+    protected getFinalizedHeight(): Promise<number> {
         return this.getDataSource().getFinalizedHeight()
     }
 }

@@ -6,8 +6,8 @@
     "test": "./test.sh"
   },
   "devDependencies": {
-    "@subsquid/http-client": "^1.6.0",
-    "@subsquid/rpc-client": "^4.11.0",
+    "@subsquid/http-client": "^1.6.1",
+    "@subsquid/rpc-client": "^4.13.0",
     "@subsquid/scale-codec": "^4.0.1",
     "@subsquid/substrate-metadata-explorer": "^3.2.0",
     "@subsquid/substrate-runtime": "^2.0.1",
@@ -20,6 +20,6 @@
     "@types/pg": "^8.10.9",
     "expect": "^29.7.0",
     "pg": "^8.11.3",
-    "typescript": "5.5.4"
+    "typescript": "~5.5.4"
   }
 }

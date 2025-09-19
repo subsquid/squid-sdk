@@ -1,6 +1,6 @@
-import {unit, struct, bool, u8, i8, u16, i16, u32, i32, f32, u64, i64, f64, u128, i128, binary, string, address, array, option, fixedArray} from '@subsquid/borsh'
+import {address, array, binary, bool, f32, f64, fixedArray, i128, i16, i32, i64, i8, option, string, struct, u128, u16, u32, u64, u8, unit} from '@subsquid/borsh'
 import {instruction} from '../abi.support'
-import {FooStruct, FooEnum} from './types'
+import {FooEnum, FooStruct} from './types'
 
 export type CauseError = undefined
 

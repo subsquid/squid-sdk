@@ -5,7 +5,6 @@ import {Instruction, LogMessage} from './data'
 import {Message, parseLogMessage} from './log-parser'
 import {TransactionContext} from './transaction-context'
 
-
 const PROGRAMS_MISSING_INVOKE_LOG = new Set([
     'AddressLookupTab1e1111111111111111111111111',
     'BPFLoader1111111111111111111111111111111111',
@@ -14,21 +13,18 @@ const PROGRAMS_MISSING_INVOKE_LOG = new Set([
     'Ed25519SigVerify111111111111111111111111111',
     'KeccakSecp256k11111111111111111111111111111',
     'NativeLoader1111111111111111111111111111111',
-    'ZkTokenProof1111111111111111111111111111111'
+    'ZkTokenProof1111111111111111111111111111111',
+    'Secp256r1SigVerify1111111111111111111111111',
 ])
-
 
 export class ParsingError {
     instructionIndex?: number
     innerInstructionIndex?: number
+    programId?: string
     logMessageIndex?: number
 
-    constructor(
-        public msg: string
-    ) {
-    }
+    constructor(public msg: string) {}
 }
-
 
 export class MessageStream {
     private messages: Message[]
@@ -66,7 +62,6 @@ export class MessageStream {
     }
 }
 
-
 export class InstructionTreeTraversal {
     private lastAddress: number[]
     private instructions: rpc.Instruction[]
@@ -87,22 +82,16 @@ export class InstructionTreeTraversal {
             this.call(1)
             this.finishLogLess()
         } else {
-            this.assert(
-                this.instructions.length === 1,
-                'failed instructions should not have inner calls'
-            )
+            this.assert(this.instructions.length === 1, 'failed instructions should not have inner calls', 0)
             this.push(1)
         }
+        this.assert(this.ended, 'not all inner instructions where consumed', 0)
     }
 
     private call(stackHeight: number): void {
         let ins = this.current
 
-        this.assert(
-            ins.stackHeight == null || ins.stackHeight === stackHeight,
-            'stack height mismatch',
-            this.pos
-        )
+        this.assert(ins.stackHeight == null || ins.stackHeight === stackHeight, 'stack height mismatch', this.pos)
 
         let programId = this.tx.getAccount(ins.programIdIndex)
 
@@ -127,16 +116,20 @@ export class InstructionTreeTraversal {
         }
 
         if (PROGRAMS_MISSING_INVOKE_LOG.has(programId)) {
-            this.push(stackHeight).hasDroppedLogMessages = true
-            this.dropNonInvokeMessages()
-            return
+        } else if (
+            this.tx.couldFailBeforeInvokeMessage &&
+            this.tx.erroredInstruction == this.instructionIndex &&
+            this.pos + 1 == this.instructions.length
+        ) {
+            // instruction processing has not reached 'invoke message' logging point
+        } else if (this.messages.ended) {
+            this.warn('unexpected end of message log', this.pos)
+        } else {
+            this.warn('missing invoke message', this.pos, this.messages.position)
         }
 
-        if (this.messages.ended) {
-            throw this.error('unexpected end of message log', this.pos)
-        }
-
-        throw this.error('missing invoke message', this.pos, this.messages.position)
+        this.push(stackHeight).hasDroppedLogMessages = true
+        this.dropNonInvokeMessages()
     }
 
     private invoke(stackHeight: number): void {
@@ -158,7 +151,8 @@ export class InstructionTreeTraversal {
         assert(result.kind === 'invoke-result')
         this.assert(
             result.programId === ins.programId,
-            'invoke result message and instruction program ids don\'t match'
+            "invoke result message and instruction program ids don't match",
+            pos
         )
         ins.error = result.error
         this.messages.advance()
@@ -194,17 +188,13 @@ export class InstructionTreeTraversal {
             if (PROGRAMS_MISSING_INVOKE_LOG.has(ins.programId)) {
                 // all good, it is expected to not have 'invoke' message
             } else if (
-                this.tx.exceededCallDepth &&
+                this.tx.couldFailBeforeInvokeMessage &&
                 this.tx.erroredInstruction == this.instructionIndex &&
                 this.ended
             ) {
-                // we've reached the max stack depth,
-                // there will be no invoke message either
+                // instruction processing has not reached 'invoke message' logging point
             } else {
-                this.tx.error({
-                    instruction: this.instructionIndex,
-                    innerInstruction: pos - 1
-                }, 'missing invoke message for inner instruction')
+                this.warn('missing invoke message for inner instruction', pos)
             }
         }
     }
@@ -212,7 +202,7 @@ export class InstructionTreeTraversal {
     private takeInstructionMessages(ins: Instruction, pos: number): void {
         while (this.messages.unfinished) {
             let msg = this.messages.current
-            switch(msg.kind) {
+            switch (msg.kind) {
                 case 'log':
                 case 'data':
                 case 'other':
@@ -222,7 +212,7 @@ export class InstructionTreeTraversal {
                         instructionAddress: ins.instructionAddress,
                         programId: ins.programId,
                         kind: msg.kind,
-                        message: msg.message
+                        message: msg.message,
                     })
                     this.messages.advance()
                     break
@@ -231,11 +221,7 @@ export class InstructionTreeTraversal {
                         ins.computeUnitsConsumed = msg.consumed
                         this.messages.advance()
                     } else {
-                        throw this.error(
-                            'unexpected programId in compute unit message',
-                            pos,
-                            this.messages.position
-                        )
+                        throw this.error('unexpected programId in compute unit message', pos, this.messages.position)
                     }
                     break
                 case 'invoke':
@@ -253,7 +239,7 @@ export class InstructionTreeTraversal {
     private dropNonInvokeMessages(): void {
         while (this.messages.unfinished) {
             let msg = this.messages.current
-            switch(msg.kind) {
+            switch (msg.kind) {
                 case 'log':
                 case 'data':
                 case 'cu':
@@ -289,20 +275,26 @@ export class InstructionTreeTraversal {
         return !this.unfinished
     }
 
-    private assert(ok: any, msg: string, pos?: number, messagePos?: number): void {
+    private assert(ok: any, msg: string, pos: number, messagePos?: number): void {
         if (!ok) throw this.error(msg, pos, messagePos)
     }
 
-    private error(msg: string, pos?: number, messagePos?: number): ParsingError {
+    private error(msg: string, pos: number, messagePos?: number): ParsingError {
         let err = new ParsingError(msg)
         err.instructionIndex = this.instructionIndex
         if (pos) {
             err.innerInstructionIndex = pos - 1
         }
+        err.programId = this.tx.getAccount(this.instructions[pos].programIdIndex)
         if (messagePos != null) {
             err.logMessageIndex = messagePos
         }
         return err
+    }
+
+    private warn(msg: string, pos: number, messagePos?: number): void {
+        let {msg: message, ...props} = this.error(msg, pos, messagePos)
+        this.tx.warn(props, message)
     }
 
     private push(stackHeight: number): Instruction {
@@ -331,10 +323,10 @@ export class InstructionTreeTraversal {
             transactionIndex: this.tx.transactionIndex,
             instructionAddress: address,
             programId: this.tx.getAccount(ins.programIdIndex),
-            accounts: ins.accounts.map(a => this.tx.getAccount(a)),
+            accounts: ins.accounts.map((a) => this.tx.getAccount(a)),
             data: ins.data,
             isCommitted: this.tx.isCommitted,
-            hasDroppedLogMessages: false
+            hasDroppedLogMessages: false,
         }
 
         this.output.push(mapped)

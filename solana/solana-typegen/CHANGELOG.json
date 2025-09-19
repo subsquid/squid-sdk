@@ -2,6 +2,62 @@
   "name": "@subsquid/solana-typegen",
   "entries": [
     {
+      "version": "0.6.1",
+      "tag": "@subsquid/solana-typegen_v0.6.1",
+      "date": "Fri, 04 Jul 2025 17:08:54 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-stream\" from `^0.2.7` to `0.3.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.6.0",
+      "tag": "@subsquid/solana-typegen_v0.6.0",
+      "date": "Tue, 18 Mar 2025 11:56:44 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add generic types support"
+          },
+          {
+            "comment": "reduce usage of `ref` codec"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/borsh\" from `^0.2.0` to `0.3.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.5.1",
+      "tag": "@subsquid/solana-typegen_v0.5.1",
+      "date": "Wed, 12 Mar 2025 09:11:46 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-stream\" from `^0.1.4` to `0.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.5.0",
+      "tag": "@subsquid/solana-typegen_v0.5.0",
+      "date": "Thu, 06 Mar 2025 10:46:22 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add support for Shank tuple types"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.4.0",
       "tag": "@subsquid/solana-typegen_v0.4.0",
       "date": "Wed, 15 Jan 2025 18:59:13 GMT",

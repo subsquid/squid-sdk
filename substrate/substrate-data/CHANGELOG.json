@@ -2,6 +2,42 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.4.1",
+      "tag": "@subsquid/substrate-data_v4.4.1",
+      "date": "Wed, 17 Sep 2025 03:17:50 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "handle EIP7702 transaction"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.4.0",
+      "tag": "@subsquid/substrate-data_v4.4.0",
+      "date": "Tue, 18 Mar 2025 10:45:46 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `Revive` pallet extension"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.3.0",
+      "tag": "@subsquid/substrate-data_v4.3.0",
+      "date": "Wed, 12 Mar 2025 20:55:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to skip blocks during parsing"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.2.1",
       "tag": "@subsquid/substrate-data_v4.2.1",
       "date": "Mon, 07 Oct 2024 15:13:33 GMT",

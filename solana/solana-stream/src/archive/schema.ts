@@ -2,7 +2,6 @@ import {AddressTableLookup} from '@subsquid/solana-rpc-data'
 import {weakMemo} from '@subsquid/util-internal'
 import {
     ANY,
-    ANY_OBJECT,
     array,
     B58,
     BIG_NAT,

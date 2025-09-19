@@ -14,9 +14,9 @@ import {assertIsValid, IsInvalid} from '@subsquid/util-internal-ingest-tools'
 import {DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
 import {mergeFields} from './selection'
 
-function getFields(fields: FieldSelection | undefined): FieldSelection {
+function getFields(fields: FieldSelection | undefined) {
     return {
-        block: mergeFields(DEFAULT_FIELDS.block, fields?.block, {
+        block: {...DEFAULT_FIELDS.block, ...fields?.block, ...{
             number: true,
             hash: true,
             parentHash: true,
@@ -24,19 +24,19 @@ function getFields(fields: FieldSelection | undefined): FieldSelection {
             specVersion: true,
             implName: true,
             implVersion: true,
-        }),
-        event: mergeFields(DEFAULT_FIELDS.event, fields?.event, {
+        }},
+        event: {...DEFAULT_FIELDS.event, ...fields?.event, ...{
             index: true,
             extrinsicIndex: true,
             callAddress: true,
-        }),
-        call: mergeFields(DEFAULT_FIELDS.call, fields?.call, {
-            extrinsicIndex: true,
+        }},
+        call: {...DEFAULT_FIELDS.call, ...fields?.call, ...{
+                extrinsicIndex: true,
             address: true,
-        }),
-        extrinsic: mergeFields(DEFAULT_FIELDS.extrinsic, fields?.extrinsic, {
+        }},
+        extrinsic: {...DEFAULT_FIELDS.extrinsic, ...fields?.extrinsic, ...{
             index: true,
-        }),
+        }},
     }
 }
 
@@ -44,11 +44,11 @@ function makeQuery(req: RangeRequest<DataRequest>) {
     let {fields, ...request} = req.request
 
     return {
-        type: 'substrate',
+        ...request,
+        type: 'substrate' as const,
         fromBlock: req.range.from,
         toBlock: req.range.to,
         fields: getFields(fields),
-        ...request,
     }
 }
 
@@ -98,7 +98,7 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
             let endBlock = req.range.to || Infinity
             let query = makeQuery(req)
 
-            for await (let {blocks: batch, finalizedHead} of this.client.getFinalizedStream<any, ArchiveBlock>(query)) {
+            for await (let {blocks: batch, finalizedHead} of this.client.getFinalizedStream(query)) {
                 assert(batch.length > 0, 'boundary blocks are expected to be included')
                 lastBlock = last(batch).header.number
 
@@ -108,7 +108,7 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
 
                 let blocks = batch.map((b) => {
                     try {
-                        return this.mapBlock(b)
+                        return this.mapBlock(b as ArchiveBlock)
                     } catch (err: any) {
                         throw addErrorContext(err, {
                             blockHeight: b.header.number,

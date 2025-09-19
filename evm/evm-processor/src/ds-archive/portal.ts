@@ -34,7 +34,7 @@ const ALWAYS_SELECTED_FIELDS = {
     },
 } as const
 
-function getFields(fields?: FieldSelection): FieldSelection {
+function getFields(fields?: FieldSelection) {
     return {
         block: {...fields?.block, ...ALWAYS_SELECTED_FIELDS.block},
         transaction: {...fields?.transaction, ...ALWAYS_SELECTED_FIELDS.transaction},
@@ -48,11 +48,11 @@ function makeQuery(req: RangeRequest<DataRequest>) {
     let {fields, ...request} = req.request
 
     return {
-        type: 'evm',
+        ...request,
+        type: 'evm' as const,
         fromBlock: req.range.from,
         toBlock: req.range.to,
         fields: getFields(fields),
-        ...request,
     }
 }
 

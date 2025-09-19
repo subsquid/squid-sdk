@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-validation",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "JSON data validation framework",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -27,6 +27,6 @@
   "devDependencies": {
     "@subsquid/logger": "^1.4.0",
     "@types/node": "^18.18.14",
-    "typescript": "5.5.4"
+    "typescript": "~5.5.4"
   }
 }

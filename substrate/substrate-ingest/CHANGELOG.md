@@ -1,6 +1,20 @@
 # Change Log - @subsquid/substrate-ingest
 
-This log was last generated on Mon, 07 Oct 2024 08:48:33 GMT and should not be manually modified.
+This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+
+## 3.8.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- Add block height and timestamp extraction methods for Substrate ingestion with mocked timestamp implementation
+
+## 3.7.0
+Wed, 12 Mar 2025 20:55:26 GMT
+
+### Minor changes
+
+- add `--skip-blocks` arg to skip problematic blocks
 
 ## 3.6.5
 Mon, 07 Oct 2024 08:48:33 GMT

@@ -2,6 +2,45 @@
   "name": "@subsquid/solana-rpc-data",
   "entries": [
     {
+      "version": "0.2.1",
+      "tag": "@subsquid/solana-rpc-data_v0.2.1",
+      "date": "Sat, 09 Aug 2025 06:10:24 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.7.0` to `0.8.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.7.0` to `0.8.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.2.0",
+      "tag": "@subsquid/solana-rpc-data_v0.2.0",
+      "date": "Fri, 04 Jul 2025 17:08:54 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `_index` field to transaction schema"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/solana-rpc-data_v0.1.0",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add block timestamp extraction method for Solana blocks with Unix timestamp support"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/solana-rpc-data_v0.0.3",
       "date": "Tue, 03 Dec 2024 11:47:42 GMT",

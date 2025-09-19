@@ -29,7 +29,8 @@ import {
     EventRequest,
     EvmLogRequest,
     GearMessageQueuedRequest,
-    GearUserMessageSentRequest
+    GearUserMessageSentRequest,
+    ReviveContractEmittedRequest
 } from './interfaces/data-request'
 import {getFieldSelectionValidator} from './selection'
 import {SubstratePortal} from './ds-portal'
@@ -408,6 +409,13 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         return this
     }
 
+    addReviveContractEmitted(options: ReviveContractEmittedRequest & BlockRange): this {
+        this.assertNotRunning()
+        let {range, ...req} = options
+        this.add({reviveContractEmitted: [req]}, range)
+        return this
+    }
+
     /**
      * Sets types bundle.
      *
@@ -574,7 +582,8 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
                 ethereumTransactions: concat(a.ethereumTransactions, b.ethereumTransactions),
                 contractsEvents: concat(a.contractsEvents, b.contractsEvents),
                 gearMessagesQueued: concat(a.gearMessagesQueued, b.gearMessagesQueued),
-                gearUserMessagesSent: concat(a.gearUserMessagesSent, b.gearUserMessagesSent)
+                gearUserMessagesSent: concat(a.gearUserMessagesSent, b.gearUserMessagesSent),
+                reviveContractEmitted: concat(a.reviveContractEmitted, b.reviveContractEmitted)
             }
         })
 

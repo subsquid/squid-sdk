@@ -1,6 +1,18 @@
 name: docker
 on:
   workflow_dispatch: # manually run
+    inputs:
+      release:
+        description: 'Release name'
+        required: true
+        default: 'arrowsquid'
+      tag:
+        description: 'Tag name'
+        required: true
+        default: 'latest'
+      images:
+        description: 'Space-separated list of images to publish (leave empty for all)'
+        required: false
 
 env:
   CI: true
@@ -28,6 +40,10 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: release/${{ inputs.release }}
 
       - name: Build and Publish
-        run: ./ops/docker-publish.sh arrowsquid latest
+        run: |
+          IFS=' ' read -r -a image_array <<< "${{ inputs.images }}"
+          ./ops/docker-publish.sh "${{ inputs.release }}" "${{ inputs.tag }}" "" "${image_array[@]}"

@@ -2,16 +2,14 @@ import * as rpc from '@subsquid/solana-rpc-data'
 import {Base58Bytes} from '@subsquid/solana-rpc-data'
 import assert from 'assert'
 
-
 export interface Journal {
     warn(props: any, msg: string): void
     error(props: any, msg: string): void
 }
 
-
 export class TransactionContext {
     public readonly erroredInstruction: number
-    public readonly exceededCallDepth: boolean
+    public readonly couldFailBeforeInvokeMessage: boolean
 
     private accounts: Base58Bytes[]
 
@@ -30,7 +28,7 @@ export class TransactionContext {
         }
 
         let err = this.tx.meta.err
-        if (isIntructionError(err)) {
+        if (isInstructionError(err)) {
             let pos = err.InstructionError[0]
             let type = err.InstructionError[1]
             if (Number.isSafeInteger(pos)) {
@@ -39,13 +37,24 @@ export class TransactionContext {
                 this.erroredInstruction = tx.transaction.message.instructions.length
                 this.warn({transactionError: err}, 'got InstructionError of unrecognized shape')
             }
-            this.exceededCallDepth = type === 'CallDepth'
+            switch (type) {
+                case 'AccountNotExecutable':
+                case 'CallDepth':
+                case 'MissingAccount':
+                case 'NotEnoughAccountKeys':
+                case 'ReentrancyNotAllowed':
+                case 'UnsupportedProgramId':
+                    this.couldFailBeforeInvokeMessage = true
+                    break
+                default:
+                    this.couldFailBeforeInvokeMessage = false
+            }
         } else if (err != null && !this.tx.meta.logMessages?.length && !this.tx.meta.innerInstructions?.length) {
             this.erroredInstruction = -1
-            this.exceededCallDepth = false
+            this.couldFailBeforeInvokeMessage = false
         } else {
             this.erroredInstruction = tx.transaction.message.instructions.length
-            this.exceededCallDepth = false
+            this.couldFailBeforeInvokeMessage = false
         }
     }
 
@@ -63,23 +72,28 @@ export class TransactionContext {
     }
 
     warn(props: any, msg: string): void {
-        this.journal.warn({
-            transactionHash: this.transactionHash,
-            transactionIndex: this.transactionIndex,
-            ...props
-        }, msg)
+        this.journal.warn(
+            {
+                transactionHash: this.transactionHash,
+                transactionIndex: this.transactionIndex,
+                ...props,
+            },
+            msg
+        )
     }
 
     error(props: any, msg: string): void {
-        this.journal.error({
-            transactionHash: this.transactionHash,
-            transactionIndex: this.transactionIndex,
-            ...props
-        }, msg)
+        this.journal.error(
+            {
+                transactionHash: this.transactionHash,
+                transactionIndex: this.transactionIndex,
+                ...props,
+            },
+            msg
+        )
     }
 }
 
-
-function isIntructionError(err: unknown): err is {InstructionError: [number, string]} {
+function isInstructionError(err: unknown): err is {InstructionError: [number, string]} {
     return typeof err == 'object' && err != null && 'InstructionError' in err
 }

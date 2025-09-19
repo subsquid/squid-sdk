@@ -490,12 +490,6 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/solana-data-service",
-      "projectFolder": "solana/solana-data-service",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/solana-dump",
       "projectFolder": "solana/solana-dump",
       "shouldPublish": true,
@@ -796,12 +790,6 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/util-internal-data-service",
-      "projectFolder": "util/util-internal-data-service",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
       "packageName": "@subsquid/util-internal-data-source",
       "projectFolder": "util/util-internal-data-source",
       "shouldPublish": true,
@@ -816,12 +804,6 @@
     {
       "packageName": "@subsquid/util-internal-fs",
       "projectFolder": "util/util-internal-fs",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/util-internal-geyser-client",
-      "projectFolder": "util/util-internal-geyser-client",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -900,12 +882,6 @@
     {
       "packageName": "@subsquid/util-internal-validation",
       "projectFolder": "util/util-internal-validation",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/util-internal-worker-thread",
-      "projectFolder": "util/util-internal-worker-thread",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

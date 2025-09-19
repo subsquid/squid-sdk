@@ -2,6 +2,103 @@
   "name": "@subsquid/solana-normalization",
   "entries": [
     {
+      "version": "0.1.1",
+      "tag": "@subsquid/solana-normalization_v0.1.1",
+      "date": "Sat, 09 Aug 2025 06:10:24 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^0.2.0` to `0.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.7.0` to `0.8.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/solana-normalization_v0.1.0",
+      "date": "Fri, 04 Jul 2025 17:08:54 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "rework block normalization process"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^0.1.0` to `0.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.9",
+      "tag": "@subsquid/solana-normalization_v0.0.9",
+      "date": "Fri, 04 Jul 2025 16:25:30 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Another whitelisted program ID added"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.8",
+      "tag": "@subsquid/solana-normalization_v0.0.8",
+      "date": "Fri, 04 Jul 2025 13:20:21 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "adding an extra program ID to the whitelist for the invoke message check"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.7",
+      "tag": "@subsquid/solana-normalization_v0.0.7",
+      "date": "Fri, 04 Jul 2025 09:59:08 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "extend PROGRAMS_MISSING_INVOKE_LOG with one more system program"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.6",
+      "tag": "@subsquid/solana-normalization_v0.0.6",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "extend PROGRAMS_MISSING_INVOKE_LOG set"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^0.0.3` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.5",
+      "tag": "@subsquid/solana-normalization_v0.0.5",
+      "date": "Sun, 16 Mar 2025 07:51:27 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "check if tx error is an object before looking into its keys"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.4",
       "tag": "@subsquid/solana-normalization_v0.0.4",
       "date": "Mon, 10 Feb 2025 07:46:03 GMT",

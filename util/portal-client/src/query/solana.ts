@@ -1,10 +1,38 @@
-import type {Select, Selector, Trues, Base58, Base64, Simplify, PortalBlock, PortalQuery} from './common'
+import {
+    ANY,
+    ANY_OBJECT,
+    array,
+    B58,
+    BIG_NAT,
+    BOOLEAN,
+    constant,
+    NAT,
+    nullable,
+    object,
+    oneOf,
+    option,
+    STRING,
+    Validator,
+    withDefault,
+} from '@subsquid/util-internal-validation'
+import {
+    type Select,
+    type Selector,
+    type Trues,
+    type Base58,
+    type Hex,
+    type Simplify,
+    type PortalQuery,
+    project,
+    type ObjectValidatorShape,
+    type Selected,
+} from './common'
 
 export type BlockHeaderFields = {
     hash: Base58
     number: number
     height: number
-    parentSlot: number
+    parentNumber: number
     parentHash: Base58
     timestamp: number
 }
@@ -27,7 +55,7 @@ export type TransactionFields = {
     err: null | object
     computeUnitsConsumed: bigint
     fee: bigint
-    loadedAddresses: {
+    loadedAddresses?: {
         readonly: Base58[]
         writable: Base58[]
     }
@@ -48,7 +76,7 @@ export type InstructionFields = {
     data: Base58
     // execution result extracted from logs
     computeUnitsConsumed?: bigint
-    error?: string
+    error?: unknown
     /**
      * `true` when transaction completed successfully, `false` otherwise
      */
@@ -62,7 +90,7 @@ export type LogMessageFields = {
     instructionAddress: number[]
     programId: Base58
     kind: 'log' | 'data' | 'other'
-    message: Base64
+    message: string
 }
 
 export type BalanceFields = {
@@ -131,7 +159,7 @@ export type RewardFields = {
     commission?: number
 }
 
-export type BlockHeaderFieldSelection = Simplify<Selector<keyof BlockHeaderFields> & {number: true}>
+export type BlockHeaderFieldSelection = Selector<keyof BlockHeaderFields, 'number' | 'hash'>
 export type BlockHeader<F extends BlockHeaderFieldSelection = Trues<BlockHeaderFieldSelection>> = Select<
     BlockHeaderFields,
     F
@@ -197,13 +225,13 @@ export type TransactionRequest = {
 /**
  * Hex encoded prefix of instruction data
  */
-export type Discriminator = string & {}
+export type Discriminator = Hex
 
 export type InstructionRequest = {
     programId?: Base58[]
+    d0?: Discriminator[]
     d1?: Discriminator[]
     d2?: Discriminator[]
-    d3?: Discriminator[]
     d4?: Discriminator[]
     d8?: Discriminator[]
     a0?: Base58[]
@@ -258,19 +286,152 @@ export type RewardRequest = {
     pubkey?: Base58[]
 }
 
-export type Query = Simplify<
+export type Query<F extends FieldSelection = FieldSelection> = Simplify<
     PortalQuery & {
         type: 'solana'
-        fields: FieldSelection
+        fields: F
     } & DataRequest
 >
 
 export type Block<F extends FieldSelection> = Simplify<{
-    header: BlockHeader<F['block'] & {}>
-    transactions?: Transaction<F['transaction'] & {}>[]
-    instructions?: Instruction<F['instruction'] & {}>[]
-    logs?: LogMessage<F['log'] & {}>[]
-    balances?: Balance<F['balance'] & {}>[]
-    tokenBalances?: TokenBalance<F['tokenBalance'] & {}>[]
-    rewards?: Reward<F['reward'] & {}>[]
+    header: BlockHeader<Selected<F, 'block'>>
+    transactions: Transaction<Selected<F, 'transaction'>>[]
+    instructions: Instruction<Selected<F, 'instruction'>>[]
+    logs: LogMessage<Selected<F, 'log'>>[]
+    balances: Balance<Selected<F, 'balance'>>[]
+    tokenBalances: TokenBalance<Selected<F, 'tokenBalance'>>[]
+    rewards: Reward<Selected<F, 'reward'>>[]
 }>
+
+export function getBlockSchema<F extends FieldSelection>(fields: F): Validator<Block<F>, unknown> {
+    let header = object(project(BlockHeaderShape, {...fields.block, number: true, hash: true}))
+
+    let transaction = object(project(TransactionShape, fields.transaction))
+
+    let instruction = object(project(InstructionShape, fields.instruction))
+
+    let balance = object(project(BalanceShape, fields.balance))
+
+    let tokenBalance = oneOf({
+        pre: object(project(PreTokenBalanceShape, fields.tokenBalance)),
+        post: object(project(PostTokenBalanceShape, fields.tokenBalance)),
+        prePost: object(project(PrePostTokenBalanceShape, fields.tokenBalance)),
+    })
+
+    let logMessage = object(project(LogMessageShape, fields.log))
+
+    let reward = object(project(RewardShape, fields.reward))
+
+    return object({
+        header,
+        transactions: withDefault([], array(transaction)),
+        instructions: withDefault([], array(instruction)),
+        logs: withDefault([], array(logMessage)),
+        balances: withDefault([], array(balance)),
+        tokenBalances: withDefault([], array(tokenBalance)),
+        rewards: withDefault([], array(reward)),
+    }) as Validator<Block<F>, unknown>
+}
+
+const BlockHeaderShape: ObjectValidatorShape<BlockHeaderFields> = {
+    hash: B58,
+    number: NAT,
+    height: NAT,
+    parentNumber: NAT,
+    parentHash: B58,
+    timestamp: NAT,
+}
+
+const AddressTableLookup: Validator<AddressTableLookup> = object({
+    accountKey: B58,
+    readonlyIndexes: array(NAT),
+    writableIndexes: array(NAT),
+})
+
+const TransactionShape: ObjectValidatorShape<TransactionFields> = {
+    transactionIndex: NAT,
+    version: oneOf({legacy: constant('legacy'), versionNumber: NAT}),
+    accountKeys: array(B58),
+    addressTableLookups: array(AddressTableLookup),
+    numReadonlySignedAccounts: NAT,
+    numReadonlyUnsignedAccounts: NAT,
+    numRequiredSignatures: NAT,
+    recentBlockhash: B58,
+    signatures: array(B58),
+    err: nullable(ANY_OBJECT),
+    computeUnitsConsumed: BIG_NAT,
+    fee: BIG_NAT,
+    loadedAddresses: option(object({readonly: array(B58), writable: array(B58)})),
+    hasDroppedLogMessages: BOOLEAN,
+}
+
+const InstructionShape: ObjectValidatorShape<InstructionFields> = {
+    transactionIndex: NAT,
+    instructionAddress: array(NAT),
+    programId: B58,
+    accounts: array(B58),
+    data: B58,
+    computeUnitsConsumed: option(BIG_NAT),
+    error: ANY,
+    isCommitted: BOOLEAN,
+    hasDroppedLogMessages: BOOLEAN,
+}
+
+const LogMessageShape: ObjectValidatorShape<LogMessageFields> = {
+    transactionIndex: NAT,
+    logIndex: NAT,
+    instructionAddress: array(NAT),
+    programId: B58,
+    kind: oneOf({log: constant('log'), data: constant('data'), other: constant('other')}),
+    message: STRING,
+}
+
+const BalanceShape: ObjectValidatorShape<BalanceFields> = {
+    transactionIndex: NAT,
+    account: B58,
+    pre: BIG_NAT,
+    post: BIG_NAT,
+}
+
+const PreTokenBalanceShape: ObjectValidatorShape<PreTokenBalanceFields> = {
+    transactionIndex: NAT,
+    account: B58,
+    preProgramId: option(B58),
+    preMint: B58,
+    preDecimals: NAT,
+    preOwner: option(B58),
+    preAmount: BIG_NAT,
+}
+
+const PostTokenBalanceShape: ObjectValidatorShape<PostTokenBalanceFields> = {
+    transactionIndex: NAT,
+    account: B58,
+    postProgramId: option(B58),
+    postMint: B58,
+    postDecimals: NAT,
+    postOwner: option(B58),
+    postAmount: BIG_NAT,
+}
+
+const PrePostTokenBalanceShape: ObjectValidatorShape<PrePostTokenBalanceFields> = {
+    transactionIndex: NAT,
+    account: B58,
+    preProgramId: option(B58),
+    preMint: B58,
+    preDecimals: NAT,
+    preOwner: option(B58),
+    preAmount: BIG_NAT,
+    postProgramId: option(B58),
+    postMint: B58,
+    postDecimals: NAT,
+    postOwner: option(B58),
+    postAmount: BIG_NAT,
+}
+
+const RewardShape: ObjectValidatorShape<RewardFields> = {
+    pubkey: B58,
+    lamports: BIG_NAT,
+    postBalance: BIG_NAT,
+    rewardType: option(STRING),
+    commission: option(NAT),
+}

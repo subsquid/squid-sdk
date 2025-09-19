@@ -2,6 +2,18 @@
   "name": "@subsquid/openreader",
   "entries": [
     {
+      "version": "5.3.0",
+      "tag": "@subsquid/openreader_v5.3.0",
+      "date": "Mon, 05 May 2025 11:31:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Allows to specify --validation-max-errors option to abort validation and exit with an error message \"Too many validation errors, error limit reached. Validation aborted\"."
+          }
+        ]
+      }
+    },
+    {
       "version": "5.2.0",
       "tag": "@subsquid/openreader_v5.2.0",
       "date": "Thu, 03 Oct 2024 16:36:15 GMT",

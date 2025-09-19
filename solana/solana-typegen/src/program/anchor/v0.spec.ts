@@ -11,7 +11,7 @@ import {
     Error,
     TypeDefGeneric,
 } from '../description'
-import {TypeKind, Field, Type, GenericArg, GenericArgKind, Variant} from '../types'
+import {TypeKind, Field, Type, GenericArg, GenericArgKind, Variant, EnumType, GenericType} from '../types'
 import {toHex} from '@subsquid/util-internal-hex'
 
 // ref https://github.com/coral-xyz/anchor/blob/c96846fce27b1eccd30c810546cd9daf4be2cbbf/ts/packages/anchor/src/idl.ts
@@ -238,6 +238,7 @@ export type IdlType =
     | IdlTypeCOption
     | IdlTypeVec
     | IdlTypeArray
+    | IdlTypeTuple
     | IdlTypeHashMap
     | IdlTypeHashSet
     | IdlTypeDefined
@@ -258,6 +259,10 @@ export type IdlTypeVec = {
 
 export type IdlTypeArray = {
     array: [idlType: IdlType, size: IdlArrayLen]
+}
+
+export type IdlTypeTuple = {
+    tuple: IdlType[]
 }
 
 export type IdlTypeHashMap = {
@@ -308,7 +313,7 @@ export function build(idl: Idl): Program {
                     type: fromType(a.type),
                 }
             }),
-            discriminator: toHex(Buffer.from(i.discriminator)),
+            discriminator: toHex(new Uint8Array(i.discriminator)),
         }
     })
 
@@ -326,14 +331,14 @@ export function build(idl: Idl): Program {
             idl.accounts?.map((a): Account => {
                 return {
                     name: a.name,
-                    discriminator: toHex(Buffer.from(a.discriminator)),
+                    discriminator: toHex(new Uint8Array(a.discriminator)),
                 }
             }) ?? [],
         events:
             idl.events?.map((e): Event => {
                 return {
                     name: e.name,
-                    discriminator: toHex(Buffer.from(e.discriminator)),
+                    discriminator: toHex(new Uint8Array(e.discriminator)),
                 }
             }) ?? [],
         constants:
@@ -392,18 +397,21 @@ function fromType(type: IdlType): Type {
                 throw unexpectedCase(type)
         }
     } else if ('array' in type) {
-        if (typeof type.array[1] !== 'number') {
-            throw new Error(`Generic array lengths are not supported`)
-        }
+        let len = type.array[1]
         return {
             kind: TypeKind.FixedArray,
             type: fromType(type.array[0]),
-            len: type.array[1],
+            len: typeof len === 'number' ? len : fromType(len) as GenericType,
         }
     } else if ('vec' in type) {
         return {
             kind: TypeKind.Array,
             type: fromType(type.vec),
+        }
+    } else if ('tuple' in type) {
+        return {
+            kind: TypeKind.Tuple,
+            tuple: type.tuple.map((t) => fromType(t as IdlType)),
         }
     } else if ('hashMap' in type) {
         return {
@@ -420,17 +428,7 @@ function fromType(type: IdlType): Type {
         return {
             kind: TypeKind.Defined,
             name: type.defined.name,
-            generics: type.defined.generics?.map((g): GenericArg => {
-                return g.kind === 'const'
-                    ? {
-                          kind: GenericArgKind.Const,
-                          value: g.value,
-                      }
-                    : {
-                          kind: GenericArgKind.Type,
-                          type: fromType(g.type),
-                      }
-            }),
+            generics: type.defined.generics?.map((g) => fromGenericArg(g)),
         }
     } else if ('option' in type) {
         return {
@@ -444,8 +442,8 @@ function fromType(type: IdlType): Type {
                 type: fromType(type.coption),
             }
         }
-        let discriminatorType = type.prefix === 'u16' ? 2 : type.prefix === 'u32' ? 4 : type.prefix === 'u64' ? 8 : 0
-        if (discriminatorType === 0) throw unexpectedCase(type.prefix)
+        let discriminatorType = type.prefix === 'u16' ? 2 : type.prefix === 'u32' ? 4 : type.prefix === 'u64' ? 8 : null
+        if (discriminatorType == null) throw unexpectedCase(type.prefix)
         return {
             kind: TypeKind.Enum,
             discriminatorType: discriminatorType,
@@ -459,7 +457,10 @@ function fromType(type: IdlType): Type {
             ],
         }
     } else if ('generic' in type) {
-        throw new Error(`Generic types are not supported`)
+        return {
+            kind: TypeKind.Generic,
+            name: type.generic,
+        }
     } else {
         throw unexpectedCase(JSON.stringify(type))
     }
@@ -476,25 +477,14 @@ function fromTypeDef(typeDef: IdlTypeDef): TypeDef {
                     variants: typeDef.type.variants.map((v, i) => fromEnumVariant(v, i)),
                     discriminatorType: 1,
                 },
-                generics: typeDef.generics?.map((g): TypeDefGeneric => {
-                    return g.kind === 'const'
-                        ? {
-                              kind: GenericArgKind.Const,
-                              name: g.name,
-                              type: fromType(g.type as IdlType),
-                          }
-                        : {
-                              kind: GenericArgKind.Type,
-                              name: g.name,
-                          }
-                }),
+                generics: typeDef.generics?.map((g) => fromTypeDefGeneric(g)),
             }
         case 'struct':
             return {
                 name: typeDef.name,
                 docs: typeDef.docs,
-                type: typeDef.type.fields?.length
-                    ? typeDef.type.fields?.every((f) => typeof f === 'object' && 'type' in f)
+                type: !!typeDef.type.fields?.length
+                    ? !!typeDef.type.fields?.every((f) => typeof f === 'object' && 'type' in f)
                         ? {
                               kind: TypeKind.Struct,
                               fields: typeDef.type.fields.map((f): Field => {
@@ -513,18 +503,14 @@ function fromTypeDef(typeDef: IdlTypeDef): TypeDef {
                           kind: TypeKind.Primitive,
                           primitive: 'unit',
                       },
-                generics: typeDef.generics?.map((g): TypeDefGeneric => {
-                    return g.kind === 'const'
-                        ? {
-                              kind: GenericArgKind.Const,
-                              name: g.name,
-                              type: fromType(g.type as IdlType),
-                          }
-                        : {
-                              kind: GenericArgKind.Type,
-                              name: g.name,
-                          }
-                }),
+                generics: typeDef.generics?.map((g): TypeDefGeneric => fromTypeDefGeneric(g)),
+            }
+        case 'type':
+            return {
+                name: typeDef.name,
+                docs: typeDef.docs,
+                type: fromType(typeDef.type.alias),
+                generics: typeDef.generics?.map((g): TypeDefGeneric => fromTypeDefGeneric(g)),
             }
         default:
             throw unexpectedCase(JSON.stringify(typeDef))
@@ -535,8 +521,8 @@ function fromEnumVariant(variant: IdlEnumVariant, index: number): Variant {
     return {
         name: variant.name,
         discriminator: index,
-        type: variant.fields?.length
-            ? variant.fields?.every((f) => typeof f === 'object' && 'type' in f)
+        type: !!variant.fields?.length
+            ? !!variant.fields?.every((f) => typeof f === 'object' && 'type' in f)
                 ? {
                       kind: TypeKind.Struct,
                       fields: variant.fields.map((f): Field => {
@@ -556,5 +542,40 @@ function fromEnumVariant(variant: IdlEnumVariant, index: number): Variant {
                   kind: TypeKind.Primitive,
                   primitive: 'unit',
               },
+    }
+}
+
+function fromTypeDefGeneric(generic: IdlTypeDefGeneric): TypeDefGeneric {
+    switch (generic.kind) {
+        case 'type':
+            return {
+                kind: GenericArgKind.Type,
+                name: generic.name,
+            }
+        case 'const':
+            return {
+                kind: GenericArgKind.Const,
+                name: generic.name,
+                type: fromType(generic.type as IdlType),
+            }
+        default:
+            throw unexpectedCase(JSON.stringify(generic))
+    }
+}
+
+function fromGenericArg(arg: IdlGenericArg): GenericArg {
+    switch (arg.kind) {
+        case 'type':
+            return {
+                kind: GenericArgKind.Type,
+                type: fromType(arg.type),
+            }
+        case 'const':
+            return {
+                kind: GenericArgKind.Const,
+                value: arg.value,
+            }
+        default:
+            throw unexpectedCase(JSON.stringify(arg))
     }
 }

@@ -18,7 +18,7 @@ export interface Subscription<T> {
 
 
 export interface SubscriptionHandle {
-    readonly isOpen: boolean
+    readonly isActive: boolean
     readonly isClosed: boolean
     close(): void
     reset(): void
@@ -90,7 +90,7 @@ class Handle implements SubscriptionHandle {
         this.subscribe()
     }
 
-    get isOpen(): boolean {
+    get isActive(): boolean {
         return !this.closed
     }
 
@@ -127,7 +127,7 @@ class Handle implements SubscriptionHandle {
             validateResult: (result, req) => this.validateSubscriptionResult(result, req)
         }).then(id => {
             this.id = id
-            if (this.isOpen) {
+            if (this.isActive) {
                 this.active.set(this.getSubKey(), this)
             } else {
                 this.unsubscribe()

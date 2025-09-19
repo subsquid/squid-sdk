@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Thu, 27 Jun 2024 09:24:39 GMT and should not be manually modified.
+This log was last generated on Thu, 24 Apr 2025 15:09:16 GMT and should not be manually modified.
+
+## 4.4.0
+Thu, 24 Apr 2025 15:09:16 GMT
+
+### Minor changes
+
+- concurently fetch multicall pages
 
 ## 4.3.0
 Thu, 27 Jun 2024 09:24:39 GMT

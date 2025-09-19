@@ -1,6 +1,7 @@
 import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {RpcCall, RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {GetBlock} from '@subsquid/solana-rpc-data'
+import {Simplify, wait} from '@subsquid/util-internal'
 import {
     array,
     B58,
@@ -12,24 +13,22 @@ import {
     Validator
 } from '@subsquid/util-internal-validation'
 import assert from 'assert'
+import {Commitment} from './base'
 
 
-export type Commitment = 'finalized' | 'confirmed'
+export type BlockInfo = Simplify<Omit<GetBlock, 'transactions' | 'rewards'>>
 
 
 export class Rpc {
     constructor(
         private client: RpcClient,
-        private priority: number = 0
+        private priority: number = 0,
+        private maxConfirmationAttempts: number = 10
     ) {
     }
 
     withPriority(priority: number): Rpc {
-        return new Rpc(this.client, priority)
-    }
-
-    getConcurrency(): number {
-        return this.client.getConcurrency()
+        return new Rpc(this.client, priority, this.maxConfirmationAttempts)
     }
 
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
@@ -66,11 +65,48 @@ export class Rpc {
         })
     }
 
-    getBlock(slot: number, options?: GetBlockOptions): Promise<GetBlock | null | undefined> {
-        return this.call('getBlock', options ? [slot, options] : [slot], {
+    getBlockInfo(commitment: Commitment, slot: number): Promise<undefined | null | BlockInfo> {
+        return this.call('getBlock', [
+            slot,
+            {
+                commitment,
+                rewards: false,
+                transactionDetails: 'none'
+            }
+        ], {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: captureNoBlockAtSlot
         })
+    }
+
+    async getTopSlot(commitment: Commitment): Promise<number> {
+        let {context: {slot}} = await this.getLatestBlockhash(commitment)
+        return slot
+    }
+
+    async getFinalizedBlockInfo(slot: number): Promise<BlockInfo> {
+        let attempts = this.maxConfirmationAttempts
+        while (attempts) {
+            let block = await this.getBlockInfo('finalized', slot)
+            if (block) return block
+            await wait(100)
+            attempts -= 1
+        }
+        throw new Error(`Failed to getBlock with finalized commitment at slot ${slot} ${this.maxConfirmationAttempts} times in a row`)
+    }
+
+    async getFinalizedBlockHeight(slot: number): Promise<number> {
+        let block = await this.getFinalizedBlockInfo(slot)
+        if (block.blockHeight == null) {
+            throw new Error(`Block height is not available at slot ${slot}`)
+        } else {
+            return block.blockHeight
+        }
+    }
+
+    async getFinalizedHeight(): Promise<number> {
+        let slot = await this.getTopSlot('finalized')
+        return this.getFinalizedBlockHeight(slot)
     }
 
     getBlockBatch(slots: number[], options?: GetBlockOptions): Promise<(GetBlock | null | undefined)[]> {
@@ -138,7 +174,7 @@ function captureNoBlockAtSlot(info: RpcErrorInfo): undefined {
 }
 
 
-function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
+export function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
     return function(result: unknown) {
         let err = validator.validate(result)
         if (err) {

@@ -1,6 +1,53 @@
 # Change Log - @subsquid/solana-normalization
 
-This log was last generated on Mon, 10 Feb 2025 07:46:03 GMT and should not be manually modified.
+This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+
+## 0.1.1
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
+
+## 0.1.0
+Fri, 04 Jul 2025 17:08:54 GMT
+
+### Minor changes
+
+- rework block normalization process
+
+## 0.0.9
+Fri, 04 Jul 2025 16:25:30 GMT
+
+### Patches
+
+- Another whitelisted program ID added
+
+## 0.0.8
+Fri, 04 Jul 2025 13:20:21 GMT
+
+### Patches
+
+- adding an extra program ID to the whitelist for the invoke message check
+
+## 0.0.7
+Fri, 04 Jul 2025 09:59:08 GMT
+
+### Patches
+
+- extend PROGRAMS_MISSING_INVOKE_LOG with one more system program
+
+## 0.0.6
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Patches
+
+- extend PROGRAMS_MISSING_INVOKE_LOG set
+
+## 0.0.5
+Sun, 16 Mar 2025 07:51:27 GMT
+
+### Patches
+
+- check if tx error is an object before looking into its keys
 
 ## 0.0.4
 Mon, 10 Feb 2025 07:46:03 GMT

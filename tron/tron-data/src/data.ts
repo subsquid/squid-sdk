@@ -41,7 +41,7 @@ export const TransactionRawData = object({
     ref_block_bytes: option(STRING),
     ref_block_hash: option(STRING),
     expiration: option(INT),
-    fee_limit: option(ANY_NAT),
+    fee_limit: option(ANY_INT),
     timestamp: option(ANY_INT)
 })
 

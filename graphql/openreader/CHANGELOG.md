@@ -1,6 +1,13 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Thu, 03 Oct 2024 16:36:15 GMT and should not be manually modified.
+This log was last generated on Mon, 05 May 2025 11:31:26 GMT and should not be manually modified.
+
+## 5.3.0
+Mon, 05 May 2025 11:31:26 GMT
+
+### Minor changes
+
+- Allows to specify --validation-max-errors option to abort validation and exit with an error message "Too many validation errors, error limit reached. Validation aborted".
 
 ## 5.2.0
 Thu, 03 Oct 2024 16:36:15 GMT

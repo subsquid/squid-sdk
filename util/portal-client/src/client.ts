@@ -9,10 +9,10 @@ import {
     withErrorContext,
 } from '@subsquid/util-internal'
 import {Readable} from 'stream'
-import {evm, PortalBlock, PortalQuery, solana, substrate} from './query'
-import {Simplify} from './query/common'
+import {GetBlock, evm, getBlockSchema, PortalBlock, PortalQuery, Query, solana, substrate} from './query'
+import {cast} from '@subsquid/util-internal-validation'
 
-export type * from './query'
+export * from './query'
 
 const USER_AGENT = `@subsquid/portal-client (https://sqd.ai)`
 
@@ -88,26 +88,12 @@ export type PortalStreamData<B> = {
 
 export interface PortalStream<B> extends AsyncIterable<PortalStreamData<B>> {}
 
-export type GetBlock<Q extends evm.Query | solana.Query | substrate.Query> = Q['type'] extends 'evm'
-    ? evm.Block<Q['fields']>
-    : Q['type'] extends 'solana'
-    ? solana.Block<Q['fields']>
-    : Q['type'] extends 'substrate'
-    ? substrate.Block<Q['fields']>
-    : PortalBlock
-
 export type BlockRef = {
     hash: string
     number: number
 }
 
-export function createQuery<Q extends evm.Query | solana.Query | substrate.Query>(query: Q): Simplify<Q & PortalQuery> {
-    return query
-}
-
 export class PortalClient {
-    static readonly completed = Symbol('PortalClient.completed')
-
     private url: URL
     private client: HttpClient
     private headPollInterval: number
@@ -155,10 +141,7 @@ export class PortalClient {
         return height
     }
 
-    getFinalizedQuery<Q extends evm.Query | solana.Query | substrate.Query, R extends GetBlock<Q> = GetBlock<Q>>(
-        query: Q,
-        options?: PortalRequestOptions
-    ): Promise<R[]> {
+    getFinalizedQuery<Q extends Query>(query: Q, options?: PortalRequestOptions): Promise<GetBlock<Q>[]> {
         // FIXME: is it needed or it is better to always use stream?
         return this.request<Buffer>('POST', this.getDatasetUrl(`finalized-stream`), {
             ...options,
@@ -203,19 +186,19 @@ export class PortalClient {
             })
     }
 
-    getFinalizedStream<Q extends evm.Query | solana.Query | substrate.Query, R extends GetBlock<Q> = GetBlock<Q>>(
+    getFinalizedStream<Q extends evm.Query | solana.Query | substrate.Query>(
         query: Q,
         options?: PortalStreamOptions
-    ): PortalStream<R> {
+    ): PortalStream<GetBlock<Q>> {
         return createPortalStream(query, this.getStreamOptions(options), async (q, o) =>
             this.getStreamRequest('finalized-stream', q, o)
         )
     }
 
-    getStream<Q extends evm.Query | solana.Query | substrate.Query, R extends GetBlock<Q> = GetBlock<Q>>(
+    getStream<Q extends evm.Query | solana.Query | substrate.Query>(
         query: Q,
         options?: PortalStreamOptions
-    ): PortalStream<R> {
+    ): PortalStream<GetBlock<Q>> {
         return createPortalStream(query, this.getStreamOptions(options), async (q, o) =>
             this.getStreamRequest('stream', q, o)
         )
@@ -256,13 +239,11 @@ export class PortalClient {
             switch (res.status) {
                 case 200:
                     let finalizedHead = getFinalizedHeadHeader(res.headers)
-                    let stream = res.body ? (Readable.toWeb(res.body) as ReadableStream<Uint8Array>) : undefined
+                    let stream = res.body ? splitLines(res.body) : undefined
 
                     return {
                         finalizedHead,
-                        stream: stream
-                            ?.pipeThrough(new TextDecoderStream('utf8'))
-                            ?.pipeThrough(new LineSplitStream('\n')),
+                        stream,
                     }
                 case 204:
                     return {
@@ -303,18 +284,19 @@ function isForkHttpError(err: unknown): err is HttpError {
     return true
 }
 
-function createPortalStream<Q extends PortalQuery = PortalQuery, R extends PortalBlock = any>(
+function createPortalStream<Q extends Query>(
     query: Q,
     options: Required<PortalStreamOptions>,
     requestStream: (
         query: Q,
         options?: PortalRequestOptions
-    ) => Promise<{finalizedHead?: BlockRef; stream?: ReadableStream<string[]> | null | undefined}>
-): PortalStream<R> {
+    ) => Promise<{finalizedHead?: BlockRef; stream?: AsyncIterable<string[]> | null | undefined}>
+): PortalStream<GetBlock<Q>> {
     let {headPollInterval, request, ...bufferOptions} = options
 
-    let buffer = new PortalStreamBuffer<R>(bufferOptions)
+    let buffer = new PortalStreamBuffer<GetBlock<Q>>(bufferOptions)
 
+    let schema = getBlockSchema(query)
     let {fromBlock = 0, toBlock, parentBlockHash} = query
 
     const ingest = async () => {
@@ -339,24 +321,26 @@ function createPortalStream<Q extends PortalQuery = PortalQuery, R extends Porta
         if (!('stream' in res)) {
             await buffer.put({blocks: [], meta: {bytes: 0}, finalizedHead})
             buffer.flush()
-            await wait(headPollInterval, buffer.signal)
+            if (headPollInterval > 0) {
+                await wait(headPollInterval, buffer.signal)
+            }
             return ingest()
         }
 
         // no data left on this range
         if (res.stream == null) return
 
-        let reader = res.stream.getReader()
+        let iterator = res.stream[Symbol.asyncIterator]()
         try {
             while (true) {
-                let data = await reader.read()
+                let data = await iterator.next()
                 if (data.done) break
 
-                let blocks: R[] = []
+                let blocks: GetBlock<Q>[] = []
                 let bytes = 0
 
                 for (let line of data.value) {
-                    let block = JSON.parse(line) as R
+                    let block = cast(schema, JSON.parse(line))
                     blocks.push(block)
                     bytes += line.length
 
@@ -366,8 +350,6 @@ function createPortalStream<Q extends PortalQuery = PortalQuery, R extends Porta
 
                 await buffer.put({blocks, finalizedHead, meta: {bytes}})
             }
-
-            buffer.flush()
         } catch (err) {
             if (buffer.signal.aborted || isStreamAbortedError(err)) {
                 // ignore
@@ -375,7 +357,7 @@ function createPortalStream<Q extends PortalQuery = PortalQuery, R extends Porta
                 throw err
             }
         } finally {
-            await reader?.cancel().catch(() => {})
+            await iterator?.return?.().catch(() => {})
         }
 
         return ingest()
@@ -557,40 +539,42 @@ class PortalStreamBuffer<B> {
     }
 }
 
-class LineSplitStream implements ReadableWritablePair<string[], string> {
+async function* splitLines(chunks: AsyncIterable<Uint8Array>) {
+    let splitter = new LineSplitter()
+    for await (let chunk of chunks) {
+        let lines = splitter.push(chunk)
+        if (lines) yield lines
+    }
+    let lastLine = splitter.end()
+    if (lastLine) yield [lastLine]
+}
+
+class LineSplitter {
+    private decoder = new TextDecoder('utf8')
     private line = ''
-    private transform: TransformStream<string, string[]>
 
-    get readable() {
-        return this.transform.readable
-    }
-    get writable() {
-        return this.transform.writable
+    push(data: Uint8Array): string[] | undefined {
+        let s = this.decoder.decode(data)
+        if (!s) return
+        let lines = s.split('\n')
+        if (lines.length == 1) {
+            this.line += lines[0]
+        } else {
+            let result: string[] = []
+            lines[0] = this.line + lines[0]
+            this.line = last(lines)
+            for (let i = 0; i < lines.length - 1; i++) {
+                let line = lines[i]
+                if (line) {
+                    result.push(line)
+                }
+            }
+            if (result.length > 0) return result
+        }
     }
 
-    constructor(separator: string) {
-        this.transform = new TransformStream({
-            transform: (chunk, controller) => {
-                let lines = chunk.split(separator)
-                if (lines.length === 1) {
-                    this.line += lines[0]
-                } else {
-                    let result: string[] = []
-                    lines[0] = this.line + lines[0]
-                    this.line = lines.pop() || ''
-                    result.push(...lines)
-                    controller.enqueue(result)
-                }
-            },
-            flush: (controller) => {
-                if (this.line) {
-                    controller.enqueue([this.line])
-                    this.line = ''
-                }
-                // NOTE: not needed according to the spec, but done the same way in nodejs sources
-                controller.terminate()
-            },
-        })
+    end(): string | undefined {
+        if (this.line) return this.line
     }
 }
 

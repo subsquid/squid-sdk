@@ -1,6 +1,6 @@
 import {HttpError, HttpTimeoutError, isHttpConnectionError} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
-import {addErrorContext, def, last, removeArrayItem, splitParallelWork, wait} from '@subsquid/util-internal'
+import {addErrorContext, def, last, splitParallelWork, wait} from '@subsquid/util-internal'
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
@@ -63,6 +63,15 @@ export interface RpcClientOptions {
 }
 
 
+export interface RpcMetrics {
+    url: string
+    requestsServed: number
+    connectionErrors: number
+    notificationsReceived: number
+    avgResponseTime: number
+}
+
+
 export interface CallOptions<R=any> {
     priority?: number
     retryAttempts?: number
@@ -113,6 +122,7 @@ export class RpcClient {
     private connectionErrors = 0
     private requestsServed = 0
     private notificationsReceived = 0
+    private totalResponseTime = 0
     private backoffEpoch = 0
     private backoffTime?: number
     private notificationListeners: ((msg: RpcNotification) => void)[] = []
@@ -179,12 +189,13 @@ export class RpcClient {
         return this.maxCapacity
     }
 
-    getMetrics() {
+    getMetrics(): RpcMetrics {
         return {
             url: this.url,
             requestsServed: this.requestsServed,
             connectionErrors: this.connectionErrors,
-            notificationsReceived: this.notificationsReceived
+            notificationsReceived: this.notificationsReceived,
+            avgResponseTime: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0
         }
     }
 
@@ -209,7 +220,7 @@ export class RpcClient {
     }
 
     removeNotificationListener(cb: (msg: RpcNotification) => void): void {
-        removeArrayItem(this.notificationListeners, cb)
+        removeItem(this.notificationListeners, cb)
     }
 
     addResetListener(cb: (reason: Error) => void): void {
@@ -217,7 +228,7 @@ export class RpcClient {
     }
 
     removeResetListener(cb: (reason: Error) => void): void {
-        removeArrayItem(this.resetListeners, cb)
+        removeItem(this.resetListeners, cb)
     }
 
     subscribe<T>(sub: Subscription<T>): SubscriptionHandle {
@@ -364,6 +375,7 @@ export class RpcClient {
         this.capacity -= 1
         let backoffEpoch = this.backoffEpoch
         let promise: Promise<any>
+        const startTime = Date.now()
         if (Array.isArray(req.call)) {
             let call = req.call
             this.log?.debug({rpcBatchId: [call[0].id, last(call).id]}, 'rpc send')
@@ -382,6 +394,9 @@ export class RpcClient {
             })
         }
         promise.then(result => {
+            const responseTimeSeconds = (Date.now() - startTime) / 1000
+            this.totalResponseTime += responseTimeSeconds
+            
             this.requestsServed += 1
             if (this.backoffEpoch == backoffEpoch) {
                 this.connectionErrorsInRow = 0
@@ -578,4 +593,10 @@ function isExecutionTimeoutError(err: unknown): boolean {
 
 function isRequestTimedOutError(err: unknown): boolean {
     return err instanceof RpcError && /request.*timed out/i.test(err.message)
+}
+
+function removeItem<T>(arr: T[], item: T): void {
+    let index = arr.indexOf(item)
+    if (index < 0) return
+    arr.splice(index, 1)
 }

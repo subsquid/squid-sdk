@@ -1,6 +1,62 @@
 # Change Log - @subsquid/solana-stream
 
-This log was last generated on Mon, 10 Feb 2025 07:46:03 GMT and should not be manually modified.
+This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+
+## 0.3.1
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
+
+## 0.3.0
+Fri, 04 Jul 2025 17:08:54 GMT
+
+### Minor changes
+
+- make compatible with new normalization process
+
+## 0.2.7
+Fri, 04 Jul 2025 16:25:30 GMT
+
+_Version update only_
+
+## 0.2.6
+Fri, 04 Jul 2025 13:20:21 GMT
+
+_Version update only_
+
+## 0.2.5
+Fri, 04 Jul 2025 09:59:08 GMT
+
+_Version update only_
+
+## 0.2.4
+Mon, 09 Jun 2025 12:15:37 GMT
+
+_Version update only_
+
+## 0.2.3
+Wed, 14 May 2025 19:46:11 GMT
+
+_Version update only_
+
+## 0.2.2
+Tue, 25 Mar 2025 14:14:33 GMT
+
+### Patches
+
+- change transaction error type schema to `any`
+
+## 0.2.1
+Sun, 16 Mar 2025 07:51:27 GMT
+
+_Version update only_
+
+## 0.2.0
+Wed, 12 Mar 2025 09:11:46 GMT
+
+### Minor changes
+
+- add `balances` and `tokenBalances` relations to transcation request
 
 ## 0.1.4
 Mon, 10 Feb 2025 07:46:03 GMT

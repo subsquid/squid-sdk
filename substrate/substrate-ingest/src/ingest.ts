@@ -7,12 +7,18 @@ import {
     readOldTypesBundle
 } from '@subsquid/substrate-runtime/lib/metadata'
 import {def} from '@subsquid/util-internal'
-import {Command, Ingest, IngestOptions, Range} from '@subsquid/util-internal-ingest-cli'
+import {Command, Ingest, IngestOptions, nat, Range} from '@subsquid/util-internal-ingest-cli'
 import {toJSON} from '@subsquid/util-internal-json'
 
 
 interface Options extends IngestOptions {
+    skipBlocks?: number[]
     typesBundle?: string
+}
+
+
+function collectBlocks(val: string, prev: number[]) {
+    return prev.concat([nat(val)])
 }
 
 
@@ -27,6 +33,7 @@ export class SubstrateIngest extends Ingest<Options> {
 
     protected setUpProgram(program: Command) {
         program.description('Data decoder and fetcher for substrate based chains')
+        program.option('--skip-blocks <blocks...>', 'A list of (errorneous?) blocks to skip', collectBlocks, [])
         program.option('--types-bundle <file>', 'JSON file with custom type definitions')
     }
 
@@ -68,7 +75,8 @@ export class SubstrateIngest extends Ingest<Options> {
                     }
                 }
             }],
-            this.typesBundle()
+            this.typesBundle(),
+            this.options().skipBlocks
         )
 
         let blockStream = this.hasArchive()
@@ -79,5 +87,13 @@ export class SubstrateIngest extends Ingest<Options> {
             let blocks = await parser.parseCold(batch)
             yield toJSON(blocks)
         }
+    }
+
+    protected getBlockHeight(block: any): number {
+        return block.header.height || 0
+    }
+
+    protected getBlockTimestamp(block: any): number {
+        return Math.floor(block.header.timestamp / 1000) || 0
     }
 }

@@ -5,22 +5,12 @@ export class Throttler<T> {
     private lastValue!: T
     private lastAccess = -Infinity
     private pending?: Promise<T>
-    private prefetch = false
 
     constructor(
         private fn: () => Promise<T>,
-        private interval: number
+        private interval: number,
+        private prefetch = false
     ) {}
-
-    enablePrefetch(): this {
-        this.prefetch = true
-        return this
-    }
-
-    disablePrefetch(): this {
-        this.prefetch = false
-        return this
-    }
 
     call(): Promise<T> {
         if (this.pending) return this.pending
