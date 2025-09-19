@@ -25,6 +25,6 @@
   "devDependencies": {
     "@subsquid/starknet-stream": "^1.0.0",
     "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4"
   }
 }

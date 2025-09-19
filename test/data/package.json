@@ -20,6 +20,6 @@
     "@types/pg": "^8.10.9",
     "expect": "^29.7.0",
     "pg": "^8.11.3",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4"
   }
 }
