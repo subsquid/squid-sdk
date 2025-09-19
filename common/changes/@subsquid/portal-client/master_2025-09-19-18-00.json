@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "add `discriminator` field to solana query",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}
