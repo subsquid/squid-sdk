@@ -5,7 +5,6 @@ import type {Headers, RequestInit, Response} from 'node-fetch'
 import {AgentProvider, defaultAgentProvider} from './agent'
 import {HttpBody} from './body'
 import {nodeFetch} from './request'
-import {Readable} from 'stream'
 
 
 export {HttpBody}

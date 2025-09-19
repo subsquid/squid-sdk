@@ -10,6 +10,6 @@
     "@subsquid/substrate-runtime": "^2.0.1",
     "@subsquid/substrate-typegen": "^8.1.0",
     "@types/node": "^18.18.14",
-    "typescript": "5.5.4"
+    "typescript": "~5.5.4"
   }
 }

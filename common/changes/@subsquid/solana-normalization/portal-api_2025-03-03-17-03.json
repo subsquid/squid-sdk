@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/solana-normalization",
-      "comment": "",
-      "type": "none"
+      "comment": "change block structure",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/solana-normalization"
