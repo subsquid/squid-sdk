@@ -2,6 +2,18 @@
   "name": "@subsquid/portal-client",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/portal-client_v0.2.0",
+      "date": "Fri, 19 Sep 2025 18:02:14 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `discriminator` field to solana query"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/portal-client_v0.1.0",
       "date": "Thu, 14 Aug 2025 15:16:33 GMT",
