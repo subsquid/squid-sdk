@@ -327,7 +327,7 @@ async function main() {
             if (!isForkException(e)) throw e
 
             let chain = coldHead ? [coldHead, ...hotHeads] : hotHeads
-            let rollbackIndex = findRollbackIndex(chain, e.lastBlocks)
+            let rollbackIndex = findRollbackIndex(chain, e.previousBlocks)
             if (rollbackIndex === -1) throw new Error('Unable to process fork')
 
             const rollbackHead = chain[rollbackIndex]

@@ -429,8 +429,8 @@ export class HttpResponse<T=any> {
 }
 
 
-export class HttpError extends Error {
-    constructor(public readonly response: HttpResponse) {
+export class HttpError<T=any> extends Error {
+    constructor(public readonly response: HttpResponse<T>) {
         super(`Got ${response.status} from ${response.url}`)
     }
 

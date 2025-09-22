@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "use `previousBlocks` field instead of `lastBlocks` in fork exception",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}

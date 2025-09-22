@@ -252,15 +252,15 @@ export class PortalClient {
                 default:
                     throw unexpectedCase(res.status)
             }
-        } catch (e: unknown) {
+        } catch (e: any) {
             if (isForkHttpError(e) && query.fromBlock != null && query.parentBlockHash != null) {
-                e = new ForkException(e.response.body.lastBlocks, {
+                e = new ForkException(e.response.body.previousBlocks, {
                     number: query.fromBlock - 1,
                     hash: query.parentBlockHash,
                 })
             }
 
-            throw addErrorContext(e as any, {
+            throw addErrorContext(e, {
                 query,
             })
         }
@@ -277,10 +277,10 @@ export class PortalClient {
     }
 }
 
-function isForkHttpError(err: unknown): err is HttpError {
+function isForkHttpError(err: unknown): err is HttpError<{previousBlocks: BlockRef[]}> {
     if (!(err instanceof HttpError)) return false
     if (err.response.status !== 409) return false
-    if (err.response.body.lastBlocks == null) return false
+    if (!Array.isArray(err.response.body.previousBlocks)) return false
     return true
 }
 
@@ -330,16 +330,14 @@ function createPortalStream<Q extends Query>(
         // no data left on this range
         if (res.stream == null) return
 
-        let iterator = res.stream[Symbol.asyncIterator]()
         try {
-            while (true) {
-                let data = await iterator.next()
-                if (data.done) break
+            for await (let data of res.stream) {
+                buffer.signal.throwIfAborted()
 
                 let blocks: GetBlock<Q>[] = []
                 let bytes = 0
 
-                for (let line of data.value) {
+                for (let line of data) {
                     let block = cast(schema, JSON.parse(line))
                     blocks.push(block)
                     bytes += line.length
@@ -351,13 +349,10 @@ function createPortalStream<Q extends Query>(
                 await buffer.put({blocks, finalizedHead, meta: {bytes}})
             }
         } catch (err) {
-            if (buffer.signal.aborted || isStreamAbortedError(err)) {
-                // ignore
-            } else {
+            if (buffer.signal.aborted) return
+            if (!isStreamAbortedError(err)) {
                 throw err
             }
-        } finally {
-            await iterator?.return?.().catch(() => {})
         }
 
         return ingest()
@@ -581,8 +576,8 @@ class LineSplitter {
 export class ForkException extends Error {
     readonly name = 'ForkError'
 
-    constructor(readonly lastBlocks: BlockRef[], readonly head: BlockRef) {
-        let parent = last(lastBlocks)
+    constructor(readonly previousBlocks: BlockRef[], readonly head: BlockRef) {
+        let parent = last(previousBlocks)
         super(
             `expected ${head.number + 1} to have parent ${parent.number}#${parent.hash}, but got ${head.number}#${
                 head.hash
