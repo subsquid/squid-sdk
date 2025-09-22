@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/http-client",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "description": "Small convenience layer on top of fetch",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

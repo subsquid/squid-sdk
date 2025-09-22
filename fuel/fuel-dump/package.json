@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@subsquid/fuel-data": "^1.1.5",
-    "@subsquid/http-client": "^1.6.1",
+    "@subsquid/http-client": "^1.7.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-dump-cli": "^1.1.1"
   },
