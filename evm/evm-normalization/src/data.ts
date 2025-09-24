@@ -200,6 +200,6 @@ export interface Block {
     header: BlockHeader,
     transactions: Transaction[],
     logs: Log[],
-    traces: Trace[],
-    stateDiffs: StateDiff[]
+    traces?: Trace[],
+    stateDiffs?: StateDiff[]
 }

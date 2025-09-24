@@ -480,8 +480,6 @@ export function mapRpcBlock(src: rpc.Block): Block {
         header: mapBlockHeader(src.block),
         transactions: [],
         logs: [],
-        traces: [],
-        stateDiffs: []
     }
 
     for (let i = 0; i < src.block.transactions.length; i++) {
@@ -520,12 +518,14 @@ export function mapRpcBlock(src: rpc.Block): Block {
             let transactionHash = assertNotNull(rep.transactionHash)
             let transactionIndex = assertNotNull(txIndex.get(transactionHash))
             if (rep.trace) {
+                block.traces = new Array(rep.trace.length)
                 for (let frame of rep.trace) {
                     block.traces.push(mapTrace(frame, transactionIndex))
                 }
             }
 
             if (rep.stateDiff) {
+                block.stateDiffs = []
                 for (let diff of mapReplayStateDiff(rep.stateDiff, transactionIndex)) {
                     if (diff.kind != '=') {
                         block.stateDiffs.push(diff)
@@ -536,7 +536,8 @@ export function mapRpcBlock(src: rpc.Block): Block {
     }
 
     if (src.debugFrames) {
-        assert(block.traces.length == 0)
+        assert(!block.traces?.length)
+        block.traces = []
         for (let i = 0; i < src.debugFrames.length; i++) {
             let frame = src.debugFrames[i]
             if (frame == null) continue
@@ -547,7 +548,8 @@ export function mapRpcBlock(src: rpc.Block): Block {
     }
 
     if (src.debugStateDiffs) {
-        assert(block.stateDiffs.length == 0)
+        assert(!block.stateDiffs?.length)
+        block.stateDiffs = []
         for (let i = 0; i < src.debugStateDiffs.length; i++) {
             let diffs = src.debugStateDiffs[i]
             if (diffs == null) continue
@@ -566,8 +568,6 @@ export function mapRawBlock(raw: RawBlock): Block {
         header: mapBlockHeader(raw),
         transactions: [],
         logs: [],
-        traces: [],
-        stateDiffs: []
     }
 
     for (let tx of raw.transactions) {
@@ -582,12 +582,14 @@ export function mapRawBlock(raw: RawBlock): Block {
 
         if (tx.traceReplay_) {
             if (tx.traceReplay_.trace) {
+                block.traces = new Array(tx.traceReplay_.trace.length)
                 for (let frame of tx.traceReplay_.trace) {
                     block.traces.push(mapTrace(frame, transactionIndex))
                 }
             }
 
             if (tx.traceReplay_.stateDiff) {
+                block.stateDiffs = []
                 for (let diff of mapReplayStateDiff(tx.traceReplay_.stateDiff, transactionIndex)) {
                     if (diff.kind != '=') {
                         block.stateDiffs.push(diff)
@@ -598,6 +600,7 @@ export function mapRawBlock(raw: RawBlock): Block {
 
         if (tx.debugFrame_) {
             assert(!tx.traceReplay_?.trace?.length)
+            block.traces = []
             for (let frame of mapDebugFrame(transactionIndex, tx.debugFrame_)) {
                 block.traces.push(frame)
             }
@@ -605,6 +608,7 @@ export function mapRawBlock(raw: RawBlock): Block {
 
         if (tx.debugStateDiff_) {
             assert(!tx.traceReplay_?.stateDiff)
+            block.stateDiffs = []
             for (let diff of mapDebugStateDiff(transactionIndex, tx.debugStateDiff_)) {
                 block.stateDiffs.push(diff)
             }
