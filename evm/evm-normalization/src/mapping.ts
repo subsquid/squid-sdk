@@ -475,16 +475,20 @@ function mapBlockHeader(src: rpc.GetBlock): BlockHeader {
 }
 
 
-export function mapRpcBlock(src: rpc.Block): Block {
+export function mapRpcBlock(src: rpc.Block, withTraces?: boolean, withStateDiffs?: boolean): Block {
     let block: Block = {
         header: mapBlockHeader(src.block),
         transactions: [],
         logs: [],
+        traces: withTraces ? [] : undefined,
+        stateDiffs: withStateDiffs ? [] : undefined,
     }
 
+    let txIndex = new Map()
     for (let i = 0; i < src.block.transactions.length; i++) {
         let tx = src.block.transactions[i] as rpc.Transaction
         assert(typeof tx !== 'string')
+        txIndex.set(getTxHash(tx), i)
         let receipt = src.receipts?.[i]
         if (receipt) {
             assert(tx.hash == receipt.transactionHash)
@@ -510,51 +514,48 @@ export function mapRpcBlock(src: rpc.Block): Block {
         }
     }
 
-    if (src.traceReplays) {
-        let txIndex = new Map(src.block.transactions.map((tx, idx) => {
-            return [getTxHash(tx), idx]
-        }))
-        for (let rep of src.traceReplays) {
-            let transactionHash = assertNotNull(rep.transactionHash)
-            let transactionIndex = assertNotNull(txIndex.get(transactionHash))
-            if (rep.trace) {
-                block.traces = new Array(rep.trace.length)
-                for (let frame of rep.trace) {
-                    block.traces.push(mapTrace(frame, transactionIndex))
+    if (withTraces) {
+        if (src.debugFrames) {
+            for (let i = 0; i < src.debugFrames.length; i++) {
+                let frame = src.debugFrames[i]
+                if (frame == null) continue
+                for (let trace of mapDebugFrame(i, frame)) {
+                    block.traces!.push(trace)
                 }
             }
-
-            if (rep.stateDiff) {
-                block.stateDiffs = []
-                for (let diff of mapReplayStateDiff(rep.stateDiff, transactionIndex)) {
-                    if (diff.kind != '=') {
-                        block.stateDiffs.push(diff)
+        } else if (src.traceReplays) {
+            for (let rep of src.traceReplays) {
+                let transactionHash = assertNotNull(rep.transactionHash)
+                let transactionIndex = assertNotNull(txIndex.get(transactionHash))
+                if (rep.trace) {
+                    for (let frame of rep.trace) {
+                        block.traces!.push(mapTrace(frame, transactionIndex))
                     }
                 }
             }
         }
     }
 
-    if (src.debugFrames) {
-        assert(!block.traces?.length)
-        block.traces = []
-        for (let i = 0; i < src.debugFrames.length; i++) {
-            let frame = src.debugFrames[i]
-            if (frame == null) continue
-            for (let trace of mapDebugFrame(i, frame)) {
-                block.traces.push(trace)
+    if (withStateDiffs) {
+        if (src.debugStateDiffs) {
+            for (let i = 0; i < src.debugStateDiffs.length; i++) {
+                let diffs = src.debugStateDiffs[i]
+                if (diffs == null) continue
+                for (let diff of mapDebugStateDiff(i, diffs)) {
+                    block.stateDiffs!.push(diff)
+                }
             }
-        }
-    }
-
-    if (src.debugStateDiffs) {
-        assert(!block.stateDiffs?.length)
-        block.stateDiffs = []
-        for (let i = 0; i < src.debugStateDiffs.length; i++) {
-            let diffs = src.debugStateDiffs[i]
-            if (diffs == null) continue
-            for (let diff of mapDebugStateDiff(i, diffs)) {
-                block.stateDiffs.push(diff)
+        } else if (src.traceReplays) {
+            for (let rep of src.traceReplays) {
+                let transactionHash = assertNotNull(rep.transactionHash)
+                let transactionIndex = assertNotNull(txIndex.get(transactionHash))
+                if (rep.stateDiff) {
+                    for (let diff of mapReplayStateDiff(rep.stateDiff, transactionIndex)) {
+                        if (diff.kind != '=') {
+                            block.stateDiffs!.push(diff)
+                        }
+                    }
+                }
             }
         }
     }
@@ -563,11 +564,13 @@ export function mapRpcBlock(src: rpc.Block): Block {
 }
 
 
-export function mapRawBlock(raw: RawBlock): Block {
+export function mapRawBlock(raw: RawBlock, withTraces?: boolean, withStateDiffs?: boolean): Block {
     let block: Block = {
         header: mapBlockHeader(raw),
         transactions: [],
         logs: [],
+        traces: withTraces ? [] : undefined,
+        stateDiffs: withStateDiffs ? [] : undefined
     }
 
     for (let tx of raw.transactions) {
@@ -580,37 +583,29 @@ export function mapRawBlock(raw: RawBlock): Block {
             }
         }
 
-        if (tx.traceReplay_) {
-            if (tx.traceReplay_.trace) {
-                block.traces = new Array(tx.traceReplay_.trace.length)
+        if (withTraces) {
+            if (tx.debugFrame_) {
+                for (let frame of mapDebugFrame(transactionIndex, tx.debugFrame_)) {
+                    block.traces!.push(frame)
+                }
+            } else if (tx.traceReplay_?.trace) {
                 for (let frame of tx.traceReplay_.trace) {
-                    block.traces.push(mapTrace(frame, transactionIndex))
+                    block.traces!.push(mapTrace(frame, transactionIndex))
                 }
             }
+        }
 
-            if (tx.traceReplay_.stateDiff) {
-                block.stateDiffs = []
+        if (withStateDiffs) {
+            if (tx.debugStateDiff_) {
+                for (let diff of mapDebugStateDiff(transactionIndex, tx.debugStateDiff_)) {
+                    block.stateDiffs!.push(diff)
+                }
+            } else if (tx.traceReplay_?.stateDiff) {
                 for (let diff of mapReplayStateDiff(tx.traceReplay_.stateDiff, transactionIndex)) {
                     if (diff.kind != '=') {
-                        block.stateDiffs.push(diff)
+                        block.stateDiffs!.push(diff)
                     }
                 }
-            }
-        }
-
-        if (tx.debugFrame_) {
-            assert(!tx.traceReplay_?.trace?.length)
-            block.traces = []
-            for (let frame of mapDebugFrame(transactionIndex, tx.debugFrame_)) {
-                block.traces.push(frame)
-            }
-        }
-
-        if (tx.debugStateDiff_) {
-            assert(!tx.traceReplay_?.stateDiff)
-            block.stateDiffs = []
-            for (let diff of mapDebugStateDiff(transactionIndex, tx.debugStateDiff_)) {
-                block.stateDiffs.push(diff)
             }
         }
     }

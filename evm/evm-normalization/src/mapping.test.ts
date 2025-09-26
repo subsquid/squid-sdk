@@ -41,7 +41,7 @@ for (let fix of listFixtures()) {
         let block = fix.readBlock()
         let expected = fix.readResult()
 
-        let actual = mapRpcBlock(block)
+        let actual = mapRpcBlock(block, true, true)
         actual = normalizeJson(actual)
         try {
             assert.deepStrictEqual(actual, expected)

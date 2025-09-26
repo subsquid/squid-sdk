@@ -61,5 +61,5 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         strideSize: options.httpRpcStrideSize,
         strideConcurrency: options.httpRpcStrideConcurrency
     })
-    return new Mapping(rpcSource)
+    return new Mapping(rpcSource, options.traces, options.diffs)
 }
