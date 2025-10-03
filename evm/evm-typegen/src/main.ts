@@ -28,8 +28,10 @@ The generated facades are assumed to be used by "squids" indexing EVM data.
         '--etherscan-api <url>',
         'etherscan API to fetch contract ABI by a known address',
         validator.Url(['http:', 'https:']),
+        'https://api.etherscan.io/v2'
       )
       .option('--etherscan-api-key <key>', 'etherscan API key')
+      .option('--chain-id <id>', 'the id of the chain to fetch the contract from. Defaults to Ethereum mainnet', '1')
       .option('--clean', 'delete output directory before run')
       .addHelpText(
         'afterAll',
@@ -58,9 +60,10 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
     program.parse()
 
     let opts = program.opts() as {
+      chainId: string
+      etherscanApi: string
       clean?: boolean
       multicall?: boolean
-      etherscanApi?: string
       etherscanApiKey?: string
     }
     let dest = new OutDir(program.processedArgs[0])
@@ -92,11 +95,16 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
 
 async function read(
   spec: Spec,
-  options?: { etherscanApi?: string; etherscanApiKey?: string },
+  options: {
+    etherscanApi: string;
+    chainId: string
+    etherscanApiKey?: string,
+  },
 ): Promise<any> {
   if (spec.kind == 'address') {
     return fetchFromEtherscan(
       spec.src,
+      options.chainId,
       options?.etherscanApi,
       options?.etherscanApiKey,
     )
@@ -118,15 +126,25 @@ async function read(
 
 async function fetchFromEtherscan(
   address: string,
-  api?: string,
+  chainId: string,
+  api: string,
   apiKey?: string,
 ): Promise<any> {
-  api = api || 'https://api.etherscan.io/'
-  let url = new URL('api?module=contract&action=getabi', api)
-  url.searchParams.set('address', address)
+  let API_VERSION = 'v2'
+  let params = new URLSearchParams({
+    module: "contract",
+    action: "getabi",
+    chainid: chainId,
+    address,
+  })
+
   if (apiKey) {
-    url.searchParams.set('apiKey', apiKey)
+    params.set('apiKey', apiKey);
   }
+
+  let url = new URL(`${API_VERSION}/api`, api)
+  url.search = params.toString()
+
   let response: { status: string; result: string }
   let attempts = 0
   while (true) {
