@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "fix memory leak due to infinite promise chaining",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}

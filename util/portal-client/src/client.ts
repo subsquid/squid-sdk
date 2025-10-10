@@ -300,62 +300,61 @@ function createPortalStream<Q extends Query>(
     let {fromBlock = 0, toBlock, parentBlockHash} = query
 
     const ingest = async () => {
-        if (buffer.signal.aborted) return
-        if (toBlock != null && fromBlock > toBlock) return
+        while (!buffer.signal.aborted) {
+            if (toBlock != null && fromBlock > toBlock) break
 
-        let res = await requestStream(
-            {
-                ...query,
-                fromBlock,
-                parentBlockHash,
-            },
-            {
-                ...request,
-                abort: buffer.signal,
-            }
-        )
-
-        const finalizedHead = res.finalizedHead
-
-        // we are on head
-        if (!('stream' in res)) {
-            await buffer.put({blocks: [], meta: {bytes: 0}, finalizedHead})
-            buffer.flush()
-            if (headPollInterval > 0) {
-                await wait(headPollInterval, buffer.signal)
-            }
-            return ingest()
-        }
-
-        // no data left on this range
-        if (res.stream == null) return
-
-        try {
-            for await (let data of res.stream) {
-                buffer.signal.throwIfAborted()
-
-                let blocks: GetBlock<Q>[] = []
-                let bytes = 0
-
-                for (let line of data) {
-                    let block = cast(schema, JSON.parse(line))
-                    blocks.push(block)
-                    bytes += line.length
-
-                    fromBlock = block.header.number + 1
-                    parentBlockHash = block.header.hash
+            let res = await requestStream(
+                {
+                    ...query,
+                    fromBlock,
+                    parentBlockHash,
+                },
+                {
+                    ...request,
+                    abort: buffer.signal,
                 }
+            )
 
-                await buffer.put({blocks, finalizedHead, meta: {bytes}})
+            const finalizedHead = res.finalizedHead
+
+            // we are on head
+            if (!('stream' in res)) {
+                await buffer.put({blocks: [], meta: {bytes: 0}, finalizedHead})
+                buffer.flush()
+                if (headPollInterval > 0) {
+                    await wait(headPollInterval, buffer.signal)
+                }
+                continue
             }
-        } catch (err) {
-            if (buffer.signal.aborted) return
-            if (!isStreamAbortedError(err)) {
-                throw err
+
+            // no data left on this range
+            if (res.stream == null) break
+
+            try {
+                for await (let data of res.stream) {
+                    buffer.signal.throwIfAborted()
+
+                    let blocks: GetBlock<Q>[] = []
+                    let bytes = 0
+
+                    for (let line of data) {
+                        let block = cast(schema, JSON.parse(line))
+                        blocks.push(block)
+                        bytes += line.length
+
+                        fromBlock = block.header.number + 1
+                        parentBlockHash = block.header.hash
+                    }
+
+                    await buffer.put({blocks, finalizedHead, meta: {bytes}})
+                }
+            } catch (err) {
+                if (buffer.signal.aborted) return
+                if (!isStreamAbortedError(err)) {
+                    throw err
+                }
             }
         }
-
-        return ingest()
     }
 
     ingest().then(
@@ -398,7 +397,7 @@ class PortalStreamBuffer<B> {
 
     async take(): Promise<PortalStreamData<B> | undefined> {
         if (this.state === 'pending') {
-            this.waitTimeout = setTimeout(() => this._ready(), this.maxWaitTime)
+            this.waitTimeout = setTimeout(() => this._ready('wait'), this.maxWaitTime)
         }
 
         await Promise.all([this.readyFuture.promise(), this.putFuture.promise()])
@@ -449,7 +448,7 @@ class PortalStreamBuffer<B> {
         this.putFuture.resolve()
 
         if (this.buffer.meta.bytes >= this.minBytes) {
-            this.readyFuture.resolve()
+            this._ready('minBytes')
         }
 
         if (this.buffer.meta.bytes >= this.maxBytes) {
@@ -457,13 +456,13 @@ class PortalStreamBuffer<B> {
         }
 
         if (this.state === 'pending') {
-            this.idleTimeout = setTimeout(() => this._ready(), this.maxIdleTime)
+            this.idleTimeout = setTimeout(() => this._ready('idle'), this.maxIdleTime)
         }
     }
 
     flush() {
         if (this.buffer == null) return
-        this._ready()
+        this._ready('flush')
     }
 
     close() {
@@ -503,7 +502,7 @@ class PortalStreamBuffer<B> {
         }
     }
 
-    private _ready() {
+    private _ready(reason?: string) {
         if (this.state === 'pending') {
             this.state = 'ready'
             this.readyFuture.resolve()
