@@ -2,6 +2,18 @@
   "name": "@subsquid/portal-client",
   "entries": [
     {
+      "version": "0.3.1",
+      "tag": "@subsquid/portal-client_v0.3.1",
+      "date": "Fri, 10 Oct 2025 11:50:29 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix memory leak due to infinite promise chaining"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.0",
       "tag": "@subsquid/portal-client_v0.3.0",
       "date": "Mon, 22 Sep 2025 13:20:40 GMT",
