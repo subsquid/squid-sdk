@@ -1,51 +1,94 @@
-import {RawBlock} from './data'
+import assert from 'assert'
+import * as raw from './data'
 
 
-export interface Transaction {
-    transactionIndex: number
-    user: string
-    actions: object[]
-    rawTxHash: null | string
-    error: null | string
+export type Bytes = string
+
+
+export interface Action {
+    actionIndex: number
+    signature: raw.Signature
+    action: raw.Action
+    nonce: number
+    vaultAddress?: Bytes
+    user?: Bytes
+    status: raw.Status
+    response: unknown
 }
 
 
 export interface BlockHeader {
     height: number
-    hash: string
-    parentHash: string
-    proposer: string
-    blockTime: number
+    hash: Bytes
+    parentHash: Bytes
+    round: number
+    parentRound: number
+    proposer: Bytes
+    time: number
+    hardfork: raw.HardforkInfo
 }
 
 
 export interface Block {
     header: BlockHeader
-    transactions: Transaction[]
+    actions: Action[]
 }
 
 
-export function mapRawBlock(raw: RawBlock, prevHash: string): Block {
-    let header = {
-        height: raw.header.height,
-        hash: raw.header.hash,
-        parentHash: prevHash,
-        proposer: raw.header.proposer,
-        blockTime: Date.parse(raw.header.block_time)
+function mapRawAction(raw: raw.SignedAction, response: raw.Response, actionIndex: number): Action {
+    return {
+        actionIndex,
+        signature: raw.signature,
+        action: raw.action,
+        nonce: raw.nonce,
+        vaultAddress: raw.vaultAddress ?? undefined,
+        user: response.user ?? undefined,
+        status: response.res.status,
+        response: response.res.response,
+    }
+}
+
+
+export function mapRawBlock(raw: raw.Block): Block {
+    let header: BlockHeader = {
+        height: raw.height,
+        // it's unknown how to calculate block hash yet
+        // but hash field is required among the indexing stack
+        hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+        parentHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+        round: raw.block.abci_block.round,
+        parentRound: raw.block.abci_block.parent_round,
+        proposer: raw.block.abci_block.proposer,
+        time: toTimestamp(raw.block.abci_block.time),
+        hardfork: raw.block.abci_block.hardfork,
     }
 
-    let transactions = raw.txs.map((tx, index) => {
-        return {
-            transactionIndex: index,
-            user: tx.user,
-            actions: tx.actions,
-            rawTxHash: tx.raw_tx_hash,
-            error: tx.error
+    let actions: Action[] = []
+    let bundles = raw.block.abci_block.signed_action_bundles
+    assert(bundles.length == raw.block.resps.Full.length)
+    for (let i = 0; i < bundles.length; i++) {
+        const [bundle_hash, signed_actions] = bundles[i]
+        const [bundle_responses_hash, responses] = raw.block.resps.Full[i]
+        assert(bundle_hash == bundle_responses_hash)
+        assert(signed_actions.signed_actions.length == responses.length)
+
+        for (let j = 0; j < signed_actions.signed_actions.length; j++) {
+            const signed_action = signed_actions.signed_actions[j]
+            const response = responses[j]
+            const action = mapRawAction(signed_action, response, actions.length)
+            actions.push(action)
         }
-    })
+    }
 
     return {
         header,
-        transactions
+        actions
     }
+}
+
+
+function toTimestamp(time: string) {
+    let ts = Date.parse(time)
+    assert(Number.isSafeInteger(ts))
+    return ts
 }
