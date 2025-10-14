@@ -2,6 +2,18 @@
   "name": "@subsquid/portal-client",
   "entries": [
     {
+      "version": "0.3.2",
+      "tag": "@subsquid/portal-client_v0.3.2",
+      "date": "Tue, 14 Oct 2025 06:41:02 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "validate PrePostTokenBalance shape first to avoid fields truncation"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.1",
       "tag": "@subsquid/portal-client_v0.3.1",
       "date": "Fri, 10 Oct 2025 11:50:29 GMT",

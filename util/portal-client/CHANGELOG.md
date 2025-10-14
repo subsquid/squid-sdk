@@ -1,6 +1,13 @@
 # Change Log - @subsquid/portal-client
 
-This log was last generated on Fri, 10 Oct 2025 11:50:29 GMT and should not be manually modified.
+This log was last generated on Tue, 14 Oct 2025 06:41:02 GMT and should not be manually modified.
+
+## 0.3.2
+Tue, 14 Oct 2025 06:41:02 GMT
+
+### Patches
+
+- validate PrePostTokenBalance shape first to avoid fields truncation
 
 ## 0.3.1
 Fri, 10 Oct 2025 11:50:29 GMT
