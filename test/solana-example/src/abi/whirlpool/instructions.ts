@@ -1,4 +1,4 @@
-import {address, bool, i32, option, struct, u128, u16, u64, u8, unit} from '@subsquid/borsh'
+import {address, bool, i32, option, struct, u128, u16, u32, u64, u8, unit} from '@subsquid/borsh'
 import {instruction} from '../abi.support'
 import {LockType, OpenPositionBumps, OpenPositionWithMetadataBumps, RemainingAccountsInfo, WhirlpoolBumps} from './types'
 
@@ -759,6 +759,219 @@ export const lockPosition = instruction(
     },
     struct({
         lockType: LockType,
+    }),
+)
+
+export interface ResetPositionRange {
+    newTickLowerIndex: number
+    newTickUpperIndex: number
+}
+
+export const resetPositionRange = instruction(
+    {
+        d8: '0xa47bb48dc264a0af',
+    },
+    {
+        funder: 0,
+        positionAuthority: 1,
+        whirlpool: 2,
+        position: 3,
+        positionTokenAccount: 4,
+        systemProgram: 5,
+    },
+    struct({
+        newTickLowerIndex: i32,
+        newTickUpperIndex: i32,
+    }),
+)
+
+export type TransferLockedPosition = undefined
+
+export const transferLockedPosition = instruction(
+    {
+        d8: '0xb379e52e438ac28a',
+    },
+    {
+        positionAuthority: 0,
+        receiver: 1,
+        position: 2,
+        positionMint: 3,
+        positionTokenAccount: 4,
+        destinationTokenAccount: 5,
+        lockConfig: 6,
+        token2022Program: 7,
+    },
+    unit,
+)
+
+export interface InitializeAdaptiveFeeTier {
+    feeTierIndex: number
+    tickSpacing: number
+    initializePoolAuthority: string
+    delegatedFeeAuthority: string
+    defaultBaseFeeRate: number
+    filterPeriod: number
+    decayPeriod: number
+    reductionFactor: number
+    adaptiveFeeControlFactor: number
+    maxVolatilityAccumulator: number
+    tickGroupSize: number
+    majorSwapThresholdTicks: number
+}
+
+export const initializeAdaptiveFeeTier = instruction(
+    {
+        d8: '0x4d63d0c88d7b7530',
+    },
+    {
+        whirlpoolsConfig: 0,
+        adaptiveFeeTier: 1,
+        funder: 2,
+        feeAuthority: 3,
+        systemProgram: 4,
+    },
+    struct({
+        feeTierIndex: u16,
+        tickSpacing: u16,
+        initializePoolAuthority: address,
+        delegatedFeeAuthority: address,
+        defaultBaseFeeRate: u16,
+        filterPeriod: u16,
+        decayPeriod: u16,
+        reductionFactor: u16,
+        adaptiveFeeControlFactor: u32,
+        maxVolatilityAccumulator: u32,
+        tickGroupSize: u16,
+        majorSwapThresholdTicks: u16,
+    }),
+)
+
+export interface SetDefaultBaseFeeRate {
+    defaultBaseFeeRate: number
+}
+
+export const setDefaultBaseFeeRate = instruction(
+    {
+        d8: '0xe54254fba486b707',
+    },
+    {
+        whirlpoolsConfig: 0,
+        adaptiveFeeTier: 1,
+        feeAuthority: 2,
+    },
+    struct({
+        defaultBaseFeeRate: u16,
+    }),
+)
+
+export type SetDelegatedFeeAuthority = undefined
+
+export const setDelegatedFeeAuthority = instruction(
+    {
+        d8: '0xc1eae7938a39037a',
+    },
+    {
+        whirlpoolsConfig: 0,
+        adaptiveFeeTier: 1,
+        feeAuthority: 2,
+        newDelegatedFeeAuthority: 3,
+    },
+    unit,
+)
+
+export type SetInitializePoolAuthority = undefined
+
+export const setInitializePoolAuthority = instruction(
+    {
+        d8: '0x7d2b7feb951a6aec',
+    },
+    {
+        whirlpoolsConfig: 0,
+        adaptiveFeeTier: 1,
+        feeAuthority: 2,
+        newInitializePoolAuthority: 3,
+    },
+    unit,
+)
+
+export interface SetPresetAdaptiveFeeConstants {
+    filterPeriod: number
+    decayPeriod: number
+    reductionFactor: number
+    adaptiveFeeControlFactor: number
+    maxVolatilityAccumulator: number
+    tickGroupSize: number
+    majorSwapThresholdTicks: number
+}
+
+export const setPresetAdaptiveFeeConstants = instruction(
+    {
+        d8: '0x84b94294535886c6',
+    },
+    {
+        whirlpoolsConfig: 0,
+        adaptiveFeeTier: 1,
+        feeAuthority: 2,
+    },
+    struct({
+        filterPeriod: u16,
+        decayPeriod: u16,
+        reductionFactor: u16,
+        adaptiveFeeControlFactor: u32,
+        maxVolatilityAccumulator: u32,
+        tickGroupSize: u16,
+        majorSwapThresholdTicks: u16,
+    }),
+)
+
+export interface InitializePoolWithAdaptiveFee {
+    initialSqrtPrice: bigint
+    tradeEnableTimestamp?: bigint | undefined
+}
+
+export const initializePoolWithAdaptiveFee = instruction(
+    {
+        d8: '0x8f5e604cac7c77c7',
+    },
+    {
+        whirlpoolsConfig: 0,
+        tokenMintA: 1,
+        tokenMintB: 2,
+        tokenBadgeA: 3,
+        tokenBadgeB: 4,
+        funder: 5,
+        initializePoolAuthority: 6,
+        whirlpool: 7,
+        oracle: 8,
+        tokenVaultA: 9,
+        tokenVaultB: 10,
+        adaptiveFeeTier: 11,
+        tokenProgramA: 12,
+        tokenProgramB: 13,
+        systemProgram: 14,
+        rent: 15,
+    },
+    struct({
+        initialSqrtPrice: u128,
+        tradeEnableTimestamp: option(u64),
+    }),
+)
+
+export interface SetFeeRateByDelegatedFeeAuthority {
+    feeRate: number
+}
+
+export const setFeeRateByDelegatedFeeAuthority = instruction(
+    {
+        d8: '0x7979367283e6a268',
+    },
+    {
+        whirlpool: 0,
+        adaptiveFeeTier: 1,
+        delegatedFeeAuthority: 2,
+    },
+    struct({
+        feeRate: u16,
     }),
 )
 
