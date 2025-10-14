@@ -124,7 +124,7 @@ export class TypeModuleOutput extends FileOutput {
 
         this.import('support', 'instruction')
 
-        const varName = toCamelCase(toJsName(ins.name))
+        const varName = toCamelCaseWithUnderscore(toJsName(ins.name))
         this.line()
         this.blockComment(ins.docs)
         this.line(`export const ${varName} = instruction(`)
@@ -155,7 +155,7 @@ export class TypeModuleOutput extends FileOutput {
 
         this.import('support', 'event')
 
-        const varName = toDslName(event.name)
+        const varName = toJsName(sanitize(event.name))
         this.line()
         this.line(`export const ${varName} = event(`)
         this.indentation(() => {
@@ -425,16 +425,17 @@ function sanitize(value: string) {
     return value.replace(/[:<>]/g, `_`)
 }
 
-function toDslName(value: string) {
-    return toJsName(sanitize(value))
-}
-
 function toTypeName(value: string) {
-    return toCamelCase(toDslName(value), true)
+    return toCamelCaseWithUnderscore(toJsName((sanitize(value))), true)
 }
 
 function toPropName(value: string) {
-    return toCamelCase(toJsName(value))
+    return toCamelCaseWithUnderscore(toJsName(value))
+}
+
+function toCamelCaseWithUnderscore(value: string, uppercaseFirstLetter: boolean = false) {
+    let camelCaseName = toCamelCase(value, uppercaseFirstLetter)
+    return value[0] === '_' ? `_${camelCaseName}` : camelCaseName
 }
 
 function dedupe(value: string) {

@@ -12,7 +12,6 @@ import {DataRequest} from './interfaces/data-request'
 import {Block} from './mapping'
 import {assertIsValid, IsInvalid} from '@subsquid/util-internal-ingest-tools'
 import {DEFAULT_FIELDS, FieldSelection} from './interfaces/data'
-import {mergeFields} from './selection'
 
 function getFields(fields: FieldSelection | undefined) {
     return {

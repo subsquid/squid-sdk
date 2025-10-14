@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@subsquid/borsh": "^0.3.0",
-    "@subsquid/http-client": "^1.6.1",
+    "@subsquid/http-client": "^1.7.0",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/rpc-client": "^4.13.0",
     "@subsquid/util-internal-code-printer": "^1.2.2",

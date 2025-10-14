@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-normalization",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "@subsquid/solana-normalization_v0.1.2",
+      "date": "Mon, 29 Sep 2025 07:23:51 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "extend set of programs missing invoke log"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/solana-normalization_v0.1.1",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",

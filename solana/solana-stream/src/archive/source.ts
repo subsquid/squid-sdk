@@ -164,7 +164,7 @@ export class PortalDataSource<F extends FieldSelection = {}, B extends Block<F> 
             }
         } catch (e: unknown) {
             if (isPortalForkException(e)) {
-                throw new ForkException(e.head.hash, e.head.number, e.lastBlocks)
+                throw new ForkException(e.head.hash, e.head.number, e.previousBlocks)
             }
 
             throw e

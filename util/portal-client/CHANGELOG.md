@@ -1,6 +1,27 @@
 # Change Log - @subsquid/portal-client
 
-This log was last generated on Fri, 19 Sep 2025 18:02:14 GMT and should not be manually modified.
+This log was last generated on Tue, 14 Oct 2025 06:41:02 GMT and should not be manually modified.
+
+## 0.3.2
+Tue, 14 Oct 2025 06:41:02 GMT
+
+### Patches
+
+- validate PrePostTokenBalance shape first to avoid fields truncation
+
+## 0.3.1
+Fri, 10 Oct 2025 11:50:29 GMT
+
+### Patches
+
+- fix memory leak due to infinite promise chaining
+
+## 0.3.0
+Mon, 22 Sep 2025 13:20:40 GMT
+
+### Minor changes
+
+- use `previousBlocks` field instead of `lastBlocks` in fork exception
 
 ## 0.2.0
 Fri, 19 Sep 2025 18:02:14 GMT

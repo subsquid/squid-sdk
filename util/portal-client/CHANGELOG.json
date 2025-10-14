@@ -2,6 +2,50 @@
   "name": "@subsquid/portal-client",
   "entries": [
     {
+      "version": "0.3.2",
+      "tag": "@subsquid/portal-client_v0.3.2",
+      "date": "Tue, 14 Oct 2025 06:41:02 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "validate PrePostTokenBalance shape first to avoid fields truncation"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.3.1",
+      "tag": "@subsquid/portal-client_v0.3.1",
+      "date": "Fri, 10 Oct 2025 11:50:29 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix memory leak due to infinite promise chaining"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.3.0",
+      "tag": "@subsquid/portal-client_v0.3.0",
+      "date": "Mon, 22 Sep 2025 13:20:40 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "use `previousBlocks` field instead of `lastBlocks` in fork exception"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.6.1` to `1.7.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.6.1` to `1.7.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/portal-client_v0.2.0",
       "date": "Fri, 19 Sep 2025 18:02:14 GMT",

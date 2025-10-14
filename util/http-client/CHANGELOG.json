@@ -2,6 +2,18 @@
   "name": "@subsquid/http-client",
   "entries": [
     {
+      "version": "1.7.0",
+      "tag": "@subsquid/http-client_v1.7.0",
+      "date": "Mon, 22 Sep 2025 13:20:40 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to pass `HttpResponse` generic type to `HttpError`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.6.1",
       "tag": "@subsquid/http-client_v1.6.1",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",
