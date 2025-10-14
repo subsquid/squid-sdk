@@ -224,7 +224,7 @@ export async function transactionsRoot(transactions: Transaction[]) {
                 decodeHex(assertNotNull(tx.beneficiary)),
                 BigInt(assertNotNull(tx.maxSubmissionFee)),
                 decodeHex(assertNotNull(tx.refundTo)),
-                decodeHex(assertNotNull(tx.retryData)),
+                tx.retryData ? decodeHex(tx.retryData) : Buffer.alloc(0),
             ])
             value = Buffer.concat([Buffer.from([0x69]), Buffer.from(payload)])
         } else if (tx.type == '0x6a') {
