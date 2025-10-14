@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "validate PrePostTokenBalance shape first to avoid fields truncation",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}

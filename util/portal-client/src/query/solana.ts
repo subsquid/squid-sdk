@@ -314,9 +314,9 @@ export function getBlockSchema<F extends FieldSelection>(fields: F): Validator<B
     let balance = object(project(BalanceShape, fields.balance))
 
     let tokenBalance = oneOf({
+        prePost: object(project(PrePostTokenBalanceShape, fields.tokenBalance)),
         pre: object(project(PreTokenBalanceShape, fields.tokenBalance)),
         post: object(project(PostTokenBalanceShape, fields.tokenBalance)),
-        prePost: object(project(PrePostTokenBalanceShape, fields.tokenBalance)),
     })
 
     let logMessage = object(project(LogMessageShape, fields.log))
