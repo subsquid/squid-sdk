@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/portal-client",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "SQD Portal API",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
