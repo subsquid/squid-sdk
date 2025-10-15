@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-typegen",
   "entries": [
     {
+      "version": "0.7.0",
+      "tag": "@subsquid/solana-typegen_v0.7.0",
+      "date": "Wed, 15 Oct 2025 07:01:15 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "preserve leading `_` in generated names"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.6.1",
       "tag": "@subsquid/solana-typegen_v0.6.1",
       "date": "Fri, 04 Jul 2025 17:08:54 GMT",

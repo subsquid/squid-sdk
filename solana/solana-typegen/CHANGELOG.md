@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-typegen
 
-This log was last generated on Fri, 04 Jul 2025 17:08:54 GMT and should not be manually modified.
+This log was last generated on Wed, 15 Oct 2025 07:01:15 GMT and should not be manually modified.
+
+## 0.7.0
+Wed, 15 Oct 2025 07:01:15 GMT
+
+### Minor changes
+
+- preserve leading `_` in generated names
 
 ## 0.6.1
 Fri, 04 Jul 2025 17:08:54 GMT
