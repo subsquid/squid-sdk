@@ -44,7 +44,7 @@ export class HyperliquidArchive {
         this.log.debug('listing root folder')
         let tops = await this.fs.ls()
 
-        let prevChunk: RawChunk | undefined
+        let prevBlock: number | undefined
         for (let i = 0; i < tops.length; i++) {
             let top = tops[i]
 
@@ -58,24 +58,12 @@ export class HyperliquidArchive {
                 files.sort((a, b) => parseFile(a) - parseFile(b))
                 for (let filename of files) {
                     let block = parseFile(filename)
-                    if (block > range.to) return
+                    if (block < range.from) continue
+                    if (block > range.to && prevBlock != null && prevBlock > range.to) return
 
-                    let chunk = { filename, subfolder, top, block }
+                    yield { filename, subfolder, top, block }
 
-                    if (block < range.from) {
-                        prevChunk = chunk
-                        continue
-                    } else {
-                        if (prevChunk != null) {
-                            let prevBlock = prevChunk.block
-                            if (prevBlock < range.from && block > range.from) {
-                                yield prevChunk
-                            }
-                        }
-                        yield chunk
-                    }
-
-                    prevChunk = chunk
+                    prevBlock = block
                 }
             }
         }
