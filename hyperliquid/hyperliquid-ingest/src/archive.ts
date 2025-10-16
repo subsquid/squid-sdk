@@ -1,3 +1,4 @@
+import type {Logger} from '@subsquid/logger'
 import {Fs} from '@subsquid/util-internal-fs'
 import {Range, assertRange, FiniteRange} from '@subsquid/util-internal-range'
 import {assertValidity} from '@subsquid/util-internal-validation'
@@ -15,12 +16,13 @@ interface RawChunk {
 
 
 export class HyperliquidArchive {
-    constructor(private fs: Fs) { }
+    constructor(private fs: Fs, private log: Logger) { }
 
     async *getRawBlocks(range?: Range): AsyncIterable<Block[]> {
         let {from, to} = getRange(range)
         let nextBlock = from
         for await (let rawChunk of this.getRawChunks({from, to})) {
+            this.log.debug(`processing chunk starting at block ${rawChunk.block}`)
             let batch = []
             for await (let block of this.getRawChunkBlocks(rawChunk)) {
                 if (block.height < from) continue
@@ -32,21 +34,26 @@ export class HyperliquidArchive {
                     batch = []
                 }
             }
-            yield batch
+            if (batch.length > 0) {
+                yield batch
+            }
         }
     }
 
     private async *getRawChunks(range: FiniteRange): AsyncIterable<RawChunk> {
+        this.log.debug('listing root folder')
         let tops = await this.fs.ls()
 
         let prevChunk: RawChunk | undefined
         for (let i = 0; i < tops.length; i++) {
             let top = tops[i]
 
+            this.log.debug(`listing ${top} folder`)
             let subfolders = await this.fs.ls(`${top}`)
             for (let j = 0; j < subfolders.length; j++) {
                 let subfolder = subfolders[j]
 
+                this.log.debug(`listing ${top}/${subfolder} folder`)
                 let files = await this.fs.ls(`${top}`, `${subfolder}`)
                 files.sort((a, b) => parseFile(a) - parseFile(b))
                 for (let filename of files) {

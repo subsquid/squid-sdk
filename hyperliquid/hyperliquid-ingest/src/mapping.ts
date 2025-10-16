@@ -67,15 +67,15 @@ export function mapRawBlock(raw: raw.Block): Block {
     let bundles = raw.block.abci_block.signed_action_bundles
     assert(bundles.length == raw.block.resps.Full.length)
     for (let i = 0; i < bundles.length; i++) {
-        const [bundle_hash, signed_actions] = bundles[i]
-        const [bundle_responses_hash, responses] = raw.block.resps.Full[i]
+        let [bundle_hash, signed_actions] = bundles[i]
+        let [bundle_responses_hash, responses] = raw.block.resps.Full[i]
         assert(bundle_hash == bundle_responses_hash)
         assert(signed_actions.signed_actions.length == responses.length)
 
         for (let j = 0; j < signed_actions.signed_actions.length; j++) {
-            const signed_action = signed_actions.signed_actions[j]
-            const response = responses[j]
-            const action = mapRawAction(signed_action, response, actions.length)
+            let signed_action = signed_actions.signed_actions[j]
+            let response = responses[j]
+            let action = mapRawAction(signed_action, response, actions.length)
             actions.push(action)
         }
     }

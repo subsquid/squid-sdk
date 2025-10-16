@@ -19,6 +19,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "@subsquid/logger": "^1.4.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-ingest-cli": "^0.1.1",
     "@subsquid/util-internal-json": "^1.2.3",

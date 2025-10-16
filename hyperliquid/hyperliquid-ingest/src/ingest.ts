@@ -24,8 +24,9 @@ export class HyperliquidIngest extends Ingest<HyperliquidIngestOptions> {
 
     @def
     protected hlArchive(): HyperliquidArchive {
+        let log = this.log().child('archive')
         let fs = createFs(this.options().hlArchive)
-        return new HyperliquidArchive(fs)
+        return new HyperliquidArchive(fs, log)
     }
 
     protected async *getBlocks(range: Range): AsyncIterable<object[]> {
