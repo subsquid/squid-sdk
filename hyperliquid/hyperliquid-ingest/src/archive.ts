@@ -21,19 +21,25 @@ export class HyperliquidArchive {
     async *getRawBlocks(range?: Range): AsyncIterable<Block[]> {
         let {from, to} = getRange(range)
         let nextBlock = from
+        let prevRound = null
         for await (let rawChunk of this.getRawChunks({from, to})) {
             this.log.debug(`processing chunk starting at block ${rawChunk.block}`)
             let batch = []
             for await (let block of this.getRawChunkBlocks(rawChunk)) {
                 if (block.height < from) continue
                 if (block.height > to) break
+                if (prevRound != null) {
+                    assert(block.block.abci_block.parent_round == prevRound)
+                }
                 assert(block.height == nextBlock++)
                 batch.push(block)
                 if (batch.length == 5) {
                     yield batch
                     batch = []
                 }
+                prevRound = block.block.abci_block.round
             }
+
             if (batch.length > 0) {
                 yield batch
             }
@@ -71,23 +77,23 @@ export class HyperliquidArchive {
 
     private async *getRawChunkBlocks(rawChunk: RawChunk): AsyncIterable<Block> {
         let filePath = `${rawChunk.top}/${rawChunk.subfolder}/${rawChunk.filename}`
-        let height = rawChunk.block
-        for await (let item of this.readFile(filePath)) {
-            yield {
-                height: height++,
-                block: item
-            }
-        }
-    }
-
-    private async *readFile(path: string): AsyncIterable<ReplicaBlock> {
-        let content = await this.fs.readFile(path)
+        let content = await this.fs.readFile(filePath)
         let buf = Buffer.from(content)
         let data = lz4.decode(buf)
+
+        let blocksCount = 0
+        for (let _ of bufferLineIterator(data)) {
+            blocksCount++
+        }
+
+        let height = rawChunk.block - blocksCount
         for (let line of bufferLineIterator(data)) {
             let block = JSON.parse(line)
             assertValidity(ReplicaBlock, block)
-            yield block
+            yield {
+                height: ++height,
+                block,
+            }
         }
     }
 }
