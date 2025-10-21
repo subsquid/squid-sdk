@@ -20,13 +20,27 @@ import {
 import {Bytes} from './types'
 
 
-export const Access = object({
+export const AccessItem = object({
     address: BYTES,
-    storageKeys: array(BYTES)
+    storageKeys: array(BYTES),
 })
 
 
-export type Access = GetSrcType<typeof Access>
+export type AccessItem = GetSrcType<typeof AccessItem>
+
+
+export const FrontierAccessItem = object({
+    address: BYTES,
+    // at least bittensor network has snake_case intead of camelCase
+    // potentially other frontier networks can be affected
+    storage_keys: array(BYTES)
+})
+
+
+export type FrontierAccessItem = GetSrcType<typeof FrontierAccessItem>
+
+
+export type AccessListItem = AccessItem | FrontierAccessItem
 
 
 export const EIP7702Authorization = object({
@@ -62,7 +76,10 @@ export const Transaction = object({
     type: SMALL_QTY,
     value: QTY,
     yParity: option(SMALL_QTY),
-    accessList: option(array(Access)),
+    accessList: option(array(oneOf({
+        evm: AccessItem,
+        frontier: FrontierAccessItem,
+    }))),
     maxFeePerBlobGas: option(QTY),
     blobVersionedHashes: option(array(BYTES)),
     authorizationList: option(array(EIP7702Authorization)),

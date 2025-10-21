@@ -6,7 +6,7 @@ import {
     Block,
     BlockHeader,
     Transaction,
-    Access,
+    AccessListItem,
     EIP7702Authorization,
     Log,
     Trace,
@@ -383,10 +383,11 @@ function mapLog(src: rpc.Log): Log {
 }
 
 
-function mapAccess(src: rpc.Access): Access {
+function mapAccessListItem(src: rpc.AccessListItem): AccessListItem {
+    let storageKeys = 'storageKeys' in src ? src.storageKeys : src.storage_keys
     return {
         address: src.address,
-        storageKeys: src.storageKeys
+        storageKeys
     }
 }
 
@@ -421,7 +422,7 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         r: src.r ?? undefined,
         s: src.s ?? undefined,
         yParity: src.yParity ? qty2Int(src.yParity) : undefined,
-        accessList: src.accessList?.map(mapAccess),
+        accessList: src.accessList?.map(mapAccessListItem),
         chainId: src.chainId ? qty2Int(src.chainId) : undefined,
         maxFeePerBlobGas: src.maxFeePerBlobGas ?? undefined,
         blobVersionedHashes: src.blobVersionedHashes ?? undefined,

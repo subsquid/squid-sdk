@@ -5,7 +5,7 @@ import {RLP} from '@ethereumjs/rlp'
 import {bigIntToUnpaddedBytes, concatBytes, setLengthLeft} from '@ethereumjs/util'
 import {keccak256} from 'ethereum-cryptography/keccak'
 import secp256k1 from 'secp256k1'
-import {Transaction, Access, EIP7702Authorization, GetBlock, Log, Receipt} from './rpc-data'
+import {Transaction, AccessListItem, EIP7702Authorization, GetBlock, Log, Receipt} from './rpc-data'
 import {qty2Int} from './util'
 
 
@@ -59,11 +59,14 @@ export function blockHash(block: GetBlock) {
 }
 
 
-function decodeAccessList(accessList: Access[]) {
-    return accessList.map(item => [
-        decodeHex(item.address),
-        item.storageKeys.map(key => decodeHex(key))
-    ])
+function decodeAccessList(accessList: AccessListItem[]) {
+    return accessList.map(item => {
+        let storageKeys = 'storageKeys' in item ? item.storageKeys : item.storage_keys
+        return [
+            decodeHex(item.address),
+            storageKeys.map(key => decodeHex(key))
+        ]
+    })
 }
 
 

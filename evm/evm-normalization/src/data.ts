@@ -40,7 +40,7 @@ export interface BlockHeader {
 }
 
 
-export interface Access {
+export interface AccessListItem {
     address: Bytes20,
     storageKeys: Bytes[]
 }
@@ -73,7 +73,7 @@ export interface Transaction {
     r: Bytes32,
     s: Bytes32,
     yParity?: number,
-    accessList?: Access[],
+    accessList?: AccessListItem[],
     chainId?: number,
     maxFeePerBlobGas?: Qty,
     blobVersionedHashes?: Bytes32[],
