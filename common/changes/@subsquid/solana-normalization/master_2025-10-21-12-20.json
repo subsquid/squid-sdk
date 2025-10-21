@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "extend set of programs missing invoke log",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-normalization"
+}
