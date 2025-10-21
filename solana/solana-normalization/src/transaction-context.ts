@@ -46,6 +46,8 @@ export class TransactionContext {
                 case 'NotEnoughAccountKeys':
                 case 'ReentrancyNotAllowed':
                 case 'UnsupportedProgramId':
+                case 'InvalidProgramForExecution':
+                case 'MaxLoadedAccountsDataSizeExceeded':
                     this.couldFailBeforeInvokeMessage = true
                     break
                 default:
