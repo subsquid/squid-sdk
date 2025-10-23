@@ -11,7 +11,7 @@ import {
     object,
     Validator
 } from '@subsquid/util-internal-validation'
-import {assertNotNull, groupBy, last} from '@subsquid/util-internal'
+import {addErrorContext, groupBy, last} from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     GetBlock,
@@ -148,35 +148,52 @@ export class Rpc {
             if (block == null) {
                 blocks[i] = null
             } else {
-                if (this.verifyBlockHash) {
-                    assert(block.hash == utils.calculateBlockHash(block))
-                }
-
-                if (this.verifyTxRoot && withTransactions) {
-                    let transactions = block.transactions as Transaction[]
-                    let txRoot = await utils.calculateTransactionsRoot(transactions)
-                    assert(block.transactionsRoot == txRoot)
-                }
-
-                if (this.verifyTxSender && withTransactions) {
-                    for (let tx of block.transactions) {
-                        let transaction = tx as Transaction
-                        let sender = utils.recoverTxSender(transaction)
-                        if (sender != null) {
-                            assert(sender == transaction.from)
-                        }
-                    }
-                }
-
-                blocks[i] = {
-                    number: qty2Int(block.number),
-                    hash: block.hash,
-                    block
+                try {
+                    blocks[i] = await this.mapBlock(block, withTransactions, utils)
+                } catch (err: any) {
+                    throw addErrorContext(err, {
+                        blockNumber: qty2Int(block.number),
+                        blockHash: block.hash
+                    })
                 }
             }
         }
 
         return blocks
+    }
+
+    private async mapBlock(block: GetBlock, withTransactions: boolean, utils: ChainUtils): Promise<Block> {
+        if (this.verifyBlockHash) {
+            let blockHash = utils.calculateBlockHash(block)
+            assert.equal(block.hash, blockHash, 'failed to verify block hash')
+        }
+
+        if (this.verifyTxRoot && withTransactions) {
+            let transactions = block.transactions as Transaction[]
+            let txRoot = await utils.calculateTransactionsRoot(transactions)
+            assert.equal(block.transactionsRoot, txRoot, 'failed to verify transactions root')
+        }
+
+        if (this.verifyTxSender && withTransactions) {
+            for (let tx of block.transactions) {
+                let transaction = tx as Transaction
+                try {
+                    let sender = utils.recoverTxSender(transaction)
+                    if (sender == null) continue
+                    assert.equal(transaction.from, sender, 'failed to verify transaction sender')
+                } catch (err: any) {
+                    throw addErrorContext(err, {
+                        transactionIndex: qty2Int(transaction.transactionIndex),
+                        transactionHash: transaction.hash
+                    })
+                }
+            }
+        }
+        return {
+            number: qty2Int(block.number),
+            hash: block.hash,
+            block
+        }
     }
 
     private async addRequestedData(blocks: Block[], req?: DataRequest) {
@@ -221,8 +238,16 @@ export class Rpc {
             let block = blocks[i]
             let logs = logsByBlock.get(block.hash) || []
 
-            if (this.verifyLogsBloom) {
-                assert(block.block.logsBloom == utils.calculateLogsBloom(block.block, logs))
+            try {
+                if (this.verifyLogsBloom) {
+                    let logsBloom = utils.calculateLogsBloom(block.block, logs)
+                    assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
+                }
+            } catch (err: any) {
+                throw addErrorContext(err, {
+                    blockNumber: block.number,
+                    blockHash: block.hash
+                })
             }
 
             block.logs = logs
@@ -280,13 +305,21 @@ export class Rpc {
                 }
             }
 
-            if (this.verifyLogsBloom) {
-                assert(block.block.logsBloom == utils.calculateLogsBloom(block.block, logs))
-            }
+            try {
+                if (this.verifyLogsBloom) {
+                    let logsBloom = utils.calculateLogsBloom(block.block, logs)
+                    assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
+                }
 
-            if (this.verifyReceiptsRoot) {
-                let root = await utils.calculateReceiptsRoot(receipts)
-                assert(block.block.receiptsRoot == root)
+                if (this.verifyReceiptsRoot) {
+                    let root = await utils.calculateReceiptsRoot(receipts)
+                    assert.equal(block.block.receiptsRoot, root, 'failed to verify receipts root')
+                }
+            } catch (err: any) {
+                throw addErrorContext(err, {
+                    blockNumber: block.number,
+                    blockHash: block.hash
+                })
             }
 
             if (block.block.transactions.length !== receipts.length) {
@@ -324,14 +357,22 @@ export class Rpc {
                 continue
             }
 
-            if (this.verifyLogsBloom) {
-                let logs = receipts.flatMap(r => r.logs)
-                assert(block.block.logsBloom == utils.calculateLogsBloom(block.block, logs))
-            }
+            try {
+                if (this.verifyLogsBloom) {
+                    let logs = receipts.flatMap(r => r.logs)
+                    let logsBloom = utils.calculateLogsBloom(block.block, logs)
+                    assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
+                }
 
-            if (this.verifyReceiptsRoot) {
-                let root = await utils.calculateReceiptsRoot(receipts)
-                assert(block.block.receiptsRoot == root)
+                if (this.verifyReceiptsRoot) {
+                    let root = await utils.calculateReceiptsRoot(receipts)
+                    assert.equal(block.block.receiptsRoot, root, 'failed to verify receipts root')
+                }
+            } catch (err: any) {
+                throw addErrorContext(err, {
+                    blockNumber: block.number,
+                    blockHash: block.hash
+                })
             }
 
             block.receipts = receipts
@@ -549,7 +590,7 @@ export class Rpc {
                         assert(txHash == null || txHash === frame.transactionHash)
                         txHash = txHash || frame.transactionHash
                     }
-                    assert(txHash, "Can't match transaction replay with its transaction")
+                    assert(txHash, "can't match transaction replay with its transaction")
                     rep.transactionHash = txHash
                 }
 

@@ -1,5 +1,5 @@
 import {decodeHex, toHex} from '@subsquid/util-internal-hex'
-import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import {addErrorContext, assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {createMPT} from '@ethereumjs/mpt'
 import {RLP} from '@ethereumjs/rlp'
 import {bigIntToUnpaddedBytes, concatBytes, setLengthLeft} from '@ethereumjs/util'
@@ -18,14 +18,14 @@ export function blockHash(block: GetBlock) {
         decodeHex(block.transactionsRoot),
         decodeHex(block.receiptsRoot),
         decodeHex(block.logsBloom),
-        BigInt(assertNotNull(block.difficulty)),
+        BigInt(assertNotNull(block.difficulty, 'block.difficuly is missing')),
         BigInt(block.number),
         BigInt(block.gasLimit),
         BigInt(block.gasUsed),
         BigInt(block.timestamp),
         decodeHex(block.extraData),
-        decodeHex(assertNotNull(block.mixHash)),
-        decodeHex(assertNotNull(block.nonce))
+        decodeHex(assertNotNull(block.mixHash, 'block.mixHash is missing')),
+        decodeHex(assertNotNull(block.nonce, 'block.nonce is missing'))
     ]
 
     // https://eips.ethereum.org/EIPS/eip-1559#block-hash-changing
@@ -82,6 +82,173 @@ function decodeAuthorizationList(authorizationList: EIP7702Authorization[]) {
 }
 
 
+function encodeTransaction(tx: Transaction): Buffer {
+    if (tx.type == '0x0') {
+        return Buffer.from(
+            RLP.encode([
+                BigInt(tx.nonce),
+                BigInt(tx.gasPrice),
+                BigInt(tx.gas),
+                tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+                BigInt(tx.value),
+                tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
+                BigInt(tx.v),
+                BigInt(tx.r),
+                BigInt(tx.s),
+            ])
+        )
+    } else if (tx.type == '0x1') {
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            BigInt(tx.nonce),
+            BigInt(tx.gasPrice),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(tx.value),
+            tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
+            decodeAccessList(tx.accessList ?? []),
+            BigInt(tx.v),
+            BigInt(tx.r),
+            BigInt(tx.s),
+        ])
+        return Buffer.concat([Buffer.from([0x01]), Buffer.from(payload)])
+    } else if (tx.type == '0x2') {
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
+            BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(tx.value),
+            tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
+            decodeAccessList(tx.accessList ?? []),
+            BigInt(tx.v),
+            BigInt(tx.r),
+            BigInt(tx.s),
+        ])
+        return Buffer.concat([Buffer.from([0x02]), Buffer.from(payload)])
+    } else if (tx.type == '0x3') {
+        // https://eips.ethereum.org/EIPS/eip-4844
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
+            BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(tx.value),
+            tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
+            decodeAccessList(tx.accessList ?? []),
+            BigInt(assertNotNull(tx.maxFeePerBlobGas, 'tx.maxFeePerBlobGas is missing')),
+            assertNotNull(tx.blobVersionedHashes, 'tx.blobVersionedHashes is missing').map(decodeHex),
+            BigInt(tx.yParity ?? tx.v),
+            BigInt(tx.r),
+            BigInt(tx.s),
+        ])
+        return Buffer.concat([Buffer.from([0x03]), Buffer.from(payload)])
+    } else if (tx.type == '0x4') {
+        // https://eips.ethereum.org/EIPS/eip-7702
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
+            BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(tx.value),
+            tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
+            decodeAccessList(tx.accessList ?? []),
+            decodeAuthorizationList(tx.authorizationList ?? []),
+            BigInt(tx.yParity ?? tx.v),
+            BigInt(tx.r),
+            BigInt(tx.s),
+        ])
+        return Buffer.concat([Buffer.from([0x04]), Buffer.from(payload)])
+    } else if (tx.type == '0x64') {
+        // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L338
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            decodeHex(assertNotNull(tx.requestId, 'tx.requestId is missing')),
+            decodeHex(tx.from),
+            decodeHex(assertNotNull(tx.to, 'tx.to is missing')),
+            BigInt(tx.value)
+        ])
+        return Buffer.concat([Buffer.from([0x64]), Buffer.from(payload)])
+    } else if (tx.type == '0x66') {
+        // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L104
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            decodeHex(assertNotNull(tx.requestId, 'tx.requestId is missing')),
+            decodeHex(tx.from),
+            BigInt(tx.gasPrice),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(tx.value),
+            decodeHex(tx.input)
+        ])
+        return Buffer.concat([Buffer.from([0x66]), Buffer.from(payload)])
+    } else if (tx.type == '0x68') {
+        // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L161
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            BigInt(tx.nonce),
+            decodeHex(tx.from),
+            BigInt(tx.gasPrice),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(tx.value),
+            decodeHex(tx.input),
+            decodeHex(assertNotNull(tx.ticketId, 'tx.ticketId is missing')),
+            decodeHex(assertNotNull(tx.refundTo, 'tx.refundTo is missing')),
+            BigInt(assertNotNull(tx.maxRefund, 'tx.maxRefund is missing')),
+            BigInt(assertNotNull(tx.submissionFeeRefund, 'tx.submissionFeeRefund is missing'))
+        ])
+        return Buffer.concat([Buffer.from([0x68]), Buffer.from(payload)])
+    } else if (tx.type == '0x69') {
+        // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L232
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            decodeHex(assertNotNull(tx.requestId, 'tx.requestId is missing')),
+            decodeHex(tx.from),
+            BigInt(assertNotNull(tx.l1BaseFee, 'tx.l1BaseFee is missing')),
+            BigInt(assertNotNull(tx.depositValue, 'tx.depositValue is missing')),
+            BigInt(tx.gasPrice),
+            BigInt(tx.gas),
+            tx.retryTo ? decodeHex(tx.retryTo) : Buffer.alloc(0),
+            BigInt(assertNotNull(tx.retryValue, 'tx.retryValue is missing')),
+            decodeHex(assertNotNull(tx.beneficiary, 'tx.beneficiary is missing')),
+            BigInt(assertNotNull(tx.maxSubmissionFee, 'tx.maxSubmissionFee is missing')),
+            decodeHex(assertNotNull(tx.refundTo, 'tx.refundTo is missing')),
+            tx.retryData ? decodeHex(tx.retryData) : Buffer.alloc(0),
+        ])
+        return Buffer.concat([Buffer.from([0x69]), Buffer.from(payload)])
+    } else if (tx.type == '0x6a') {
+        // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L387
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            decodeHex(tx.input),
+        ])
+        return Buffer.concat([Buffer.from([0x6a]), Buffer.from(payload)])
+    } else if (tx.type == '0x7e') {
+        // https://github.com/ethereum-optimism/optimism/blob/9ff3ebb3983be52c3ca189423ae7b4aec94e0fde/specs/deposits.md#the-deposited-transaction-type
+        let payload = RLP.encode([
+            decodeHex(assertNotNull(tx.sourceHash, 'tx.sourceHash is missing')),
+            decodeHex(tx.from),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(tx.mint ?? 0),
+            BigInt(tx.value),
+            BigInt(tx.gas),
+            0, // check if 0 is capable to substitute false
+            decodeHex(tx.input)
+        ])
+        return Buffer.concat([Buffer.from([0x7e]), Buffer.from(payload)])
+    } else {
+        throw unexpectedCase(tx.type)
+    }
+}
+
+
 export async function transactionsRoot(transactions: Transaction[]) {
     let trie = await createMPT()
 
@@ -89,171 +256,14 @@ export async function transactionsRoot(transactions: Transaction[]) {
         let tx = transactions[idx]
         let key = RLP.encode(idx)
         let value: Buffer
-
-        if (tx.type == '0x0') {
-            value = Buffer.from(
-                RLP.encode([
-                    BigInt(tx.nonce),
-                    BigInt(tx.gasPrice),
-                    BigInt(tx.gas),
-                    tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-                    BigInt(tx.value),
-                    tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
-                    BigInt(tx.v),
-                    BigInt(tx.r),
-                    BigInt(tx.s),
-                ])
-            )
-        } else if (tx.type == '0x1') {
-            let payload = RLP.encode([
-                BigInt(assertNotNull(tx.chainId)),
-                BigInt(tx.nonce),
-                BigInt(tx.gasPrice),
-                BigInt(tx.gas),
-                tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-                BigInt(tx.value),
-                tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
-                decodeAccessList(tx.accessList ?? []),
-                BigInt(tx.v),
-                BigInt(tx.r),
-                BigInt(tx.s),
-            ])
-            value = Buffer.concat([Buffer.from([0x01]), Buffer.from(payload)])
-        } else if (tx.type == '0x2') {
-            let payload = RLP.encode([
-                BigInt(assertNotNull(tx.chainId)),
-                BigInt(tx.nonce),
-                BigInt(assertNotNull(tx.maxPriorityFeePerGas)),
-                BigInt(assertNotNull(tx.maxFeePerGas)),
-                BigInt(tx.gas),
-                tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-                BigInt(tx.value),
-                tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
-                decodeAccessList(tx.accessList ?? []),
-                BigInt(tx.v),
-                BigInt(tx.r),
-                BigInt(tx.s),
-            ])
-            value = Buffer.concat([Buffer.from([0x02]), Buffer.from(payload)])
-        } else if (tx.type == '0x3') {
-            // https://eips.ethereum.org/EIPS/eip-4844
-            let payload = RLP.encode([
-                BigInt(assertNotNull(tx.chainId)),
-                BigInt(tx.nonce),
-                BigInt(assertNotNull(tx.maxPriorityFeePerGas)),
-                BigInt(assertNotNull(tx.maxFeePerGas)),
-                BigInt(tx.gas),
-                tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-                BigInt(tx.value),
-                tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
-                decodeAccessList(tx.accessList ?? []),
-                BigInt(assertNotNull(tx.maxFeePerBlobGas)),
-                assertNotNull(tx.blobVersionedHashes).map(decodeHex),
-                BigInt(tx.yParity ?? tx.v),
-                BigInt(tx.r),
-                BigInt(tx.s),
-            ])
-            value = Buffer.concat([Buffer.from([0x03]), Buffer.from(payload)])
-        } else if (tx.type == '0x4') {
-            // https://eips.ethereum.org/EIPS/eip-7702
-            let payload = RLP.encode([
-                BigInt(assertNotNull(tx.chainId)),
-                BigInt(tx.nonce),
-                BigInt(assertNotNull(tx.maxPriorityFeePerGas)),
-                BigInt(assertNotNull(tx.maxFeePerGas)),
-                BigInt(tx.gas),
-                tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-                BigInt(tx.value),
-                tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
-                decodeAccessList(tx.accessList ?? []),
-                decodeAuthorizationList(tx.authorizationList ?? []),
-                BigInt(tx.yParity ?? tx.v),
-                BigInt(tx.r),
-                BigInt(tx.s),
-            ])
-            value = Buffer.concat([Buffer.from([0x04]), Buffer.from(payload)])
-        } else if (tx.type == '0x64') {
-            // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L338
-            let payload = RLP.encode([
-                BigInt(assertNotNull(tx.chainId)),
-                decodeHex(assertNotNull(tx.requestId)),
-                decodeHex(tx.from),
-                decodeHex(assertNotNull(tx.to)),
-                BigInt(tx.value)
-            ])
-            value = Buffer.concat([Buffer.from([0x64]), Buffer.from(payload)])
-        } else if (tx.type == '0x66') {
-            // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L104
-            let payload = RLP.encode([
-                BigInt(assertNotNull(tx.chainId)),
-                decodeHex(assertNotNull(tx.requestId)),
-                decodeHex(tx.from),
-                BigInt(tx.gasPrice),
-                BigInt(tx.gas),
-                tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-                BigInt(tx.value),
-                decodeHex(tx.input)
-            ])
-            value = Buffer.concat([Buffer.from([0x66]), Buffer.from(payload)])
-        } else if (tx.type == '0x68') {
-            // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L161
-            let payload = RLP.encode([
-                BigInt(assertNotNull(tx.chainId)),
-                BigInt(tx.nonce),
-                decodeHex(tx.from),
-                BigInt(tx.gasPrice),
-                BigInt(tx.gas),
-                tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-                BigInt(tx.value),
-                decodeHex(tx.input),
-                decodeHex(assertNotNull(tx.ticketId)),
-                decodeHex(assertNotNull(tx.refundTo)),
-                BigInt(assertNotNull(tx.maxRefund)),
-                BigInt(assertNotNull(tx.submissionFeeRefund))
-            ])
-            value = Buffer.concat([Buffer.from([0x68]), Buffer.from(payload)])
-        } else if (tx.type == '0x69') {
-            // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L232
-            let payload = RLP.encode([
-                BigInt(assertNotNull(tx.chainId)),
-                decodeHex(assertNotNull(tx.requestId)),
-                decodeHex(tx.from),
-                BigInt(assertNotNull(tx.l1BaseFee)),
-                BigInt(assertNotNull(tx.depositValue)),
-                BigInt(tx.gasPrice),
-                BigInt(tx.gas),
-                tx.retryTo ? decodeHex(tx.retryTo) : Buffer.alloc(0),
-                BigInt(assertNotNull(tx.retryValue)),
-                decodeHex(assertNotNull(tx.beneficiary)),
-                BigInt(assertNotNull(tx.maxSubmissionFee)),
-                decodeHex(assertNotNull(tx.refundTo)),
-                tx.retryData ? decodeHex(tx.retryData) : Buffer.alloc(0),
-            ])
-            value = Buffer.concat([Buffer.from([0x69]), Buffer.from(payload)])
-        } else if (tx.type == '0x6a') {
-            // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L387
-            let payload = RLP.encode([
-                BigInt(assertNotNull(tx.chainId)),
-                decodeHex(tx.input),
-            ])
-            value = Buffer.concat([Buffer.from([0x6a]), Buffer.from(payload)])
-        } else if (tx.type == '0x7e') {
-            // https://github.com/ethereum-optimism/optimism/blob/9ff3ebb3983be52c3ca189423ae7b4aec94e0fde/specs/deposits.md#the-deposited-transaction-type
-            let payload = RLP.encode([
-                decodeHex(assertNotNull(tx.sourceHash)),
-                decodeHex(tx.from),
-                tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-                BigInt(tx.mint ?? 0),
-                BigInt(tx.value),
-                BigInt(tx.gas),
-                0, // check if 0 is capable to substitute false
-                decodeHex(tx.input)
-            ])
-            value = Buffer.concat([Buffer.from([0x7e]), Buffer.from(payload)])
-        } else {
-            throw unexpectedCase(tx.type)
+        try {
+            value = encodeTransaction(tx)
+        } catch (err: any) {
+            throw addErrorContext(err, {
+                transactionIndex: qty2Int(tx.transactionIndex),
+                transactionHash: tx.hash
+            })
         }
-
         await trie.put(key, value)
     }
 
@@ -270,33 +280,46 @@ function decodeLogs(logs: Log[]) {
 }
 
 
+function encodeReceipt(receipt: Receipt): Buffer {
+    let type = receipt.type == '0x0' ? Buffer.alloc(0) : RLP.encode(qty2Int(receipt.type))
+    let payload: Uint8Array
+    if (receipt.type == '0x7e') {
+        // https://github.com/ethereum-optimism/specs/blob/main/specs/protocol/deposits.md#deposit-receipt
+        payload = RLP.encode([
+            qty2Int(receipt.status),
+            BigInt(receipt.cumulativeGasUsed),
+            decodeHex(receipt.logsBloom),
+            decodeLogs(receipt.logs),
+            BigInt(assertNotNull(receipt.depositNonce, 'receipt.depositNonce is missing')),
+            Number('depositReceiptVersion' in receipt),
+        ])
+    } else {
+        payload = RLP.encode([
+            qty2Int(receipt.status),
+            BigInt(receipt.cumulativeGasUsed),
+            decodeHex(receipt.logsBloom),
+            decodeLogs(receipt.logs),
+        ])
+    }
+    return Buffer.concat([type, Buffer.from(payload)])
+}
+
+
 export async function receiptsRoot(receipts: Receipt[]) {
     let trie = await createMPT()
 
     for (let idx = 0; idx < receipts.length; idx++) {
         let receipt = receipts[idx]
         let key = RLP.encode(idx)
-        let type = receipt.type == '0x0' ? Buffer.alloc(0) : RLP.encode(qty2Int(receipt.type))
-        let payload: Uint8Array
-        if (receipt.type == '0x7e') {
-            // https://github.com/ethereum-optimism/specs/blob/main/specs/protocol/deposits.md#deposit-receipt
-            payload = RLP.encode([
-                qty2Int(receipt.status),
-                BigInt(receipt.cumulativeGasUsed),
-                decodeHex(receipt.logsBloom),
-                decodeLogs(receipt.logs),
-                BigInt(assertNotNull(receipt.depositNonce)),
-                Number('depositReceiptVersion' in receipt),
-            ])
-        } else {
-            payload = RLP.encode([
-                qty2Int(receipt.status),
-                BigInt(receipt.cumulativeGasUsed),
-                decodeHex(receipt.logsBloom),
-                decodeLogs(receipt.logs),
-            ])
+        let value: Buffer
+        try {
+            value = encodeReceipt(receipt)
+        } catch (err: any) {
+            throw addErrorContext(err, {
+                transactionIndex: qty2Int(receipt.transactionIndex),
+                transactionHash: receipt.transactionHash
+            })
         }
-        let value = Buffer.concat([type, Buffer.from(payload)])
         await trie.put(key, value)
     }
 
@@ -348,7 +371,7 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
         return RLP.encode(fields)
     } else if (tx.type == '0x1') {
         let payload = RLP.encode([
-            BigInt(assertNotNull(tx.chainId)),
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
             BigInt(tx.nonce),
             BigInt(tx.gasPrice),
             BigInt(tx.gas),
@@ -360,10 +383,10 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
         return Buffer.concat([Buffer.from([0x01]), Buffer.from(payload)])
     } else if (tx.type == '0x2') {
         let payload = RLP.encode([
-            BigInt(assertNotNull(tx.chainId)),
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
             BigInt(tx.nonce),
-            BigInt(assertNotNull(tx.maxPriorityFeePerGas)),
-            BigInt(assertNotNull(tx.maxFeePerGas)),
+            BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
+            BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
             BigInt(tx.value),
@@ -373,25 +396,25 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
         return Buffer.concat([Buffer.from([0x02]), Buffer.from(payload)])
     } else if (tx.type == '0x3') {
         let payload = RLP.encode([
-            BigInt(assertNotNull(tx.chainId)),
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
             BigInt(tx.nonce),
-            BigInt(assertNotNull(tx.maxPriorityFeePerGas)),
-            BigInt(assertNotNull(tx.maxFeePerGas)),
+            BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
+            BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
             BigInt(tx.value),
             decodeHex(tx.input),
             decodeAccessList(tx.accessList ?? []),
-            BigInt(assertNotNull(tx.maxFeePerBlobGas)),
-            assertNotNull(tx.blobVersionedHashes).map(decodeHex),
+            BigInt(assertNotNull(tx.maxFeePerBlobGas, 'tx.maxFeePerBlobGas is missing')),
+            assertNotNull(tx.blobVersionedHashes, 'tx.blobVersionedHashes is missing').map(decodeHex),
         ])
         return Buffer.concat([Buffer.from([0x03]), Buffer.from(payload)])
     } else if (tx.type == '0x4') {
         let payload = RLP.encode([
-            BigInt(assertNotNull(tx.chainId)),
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
             BigInt(tx.nonce),
-            BigInt(assertNotNull(tx.maxPriorityFeePerGas)),
-            BigInt(assertNotNull(tx.maxFeePerGas)),
+            BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
+            BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
             BigInt(tx.value),
