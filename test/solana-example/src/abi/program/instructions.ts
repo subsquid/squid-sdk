@@ -1,6 +1,6 @@
 import {address, array, binary, bool, f32, f64, fixedArray, i128, i16, i32, i64, i8, option, string, struct, u128, u16, u32, u64, u8, unit} from '@subsquid/borsh'
-import {instruction} from '../abi.support'
-import {FooEnum, FooStruct} from './types'
+import {instruction} from '../abi.support.js'
+import {FooEnum, FooStruct} from './types.js'
 
 export type CauseError = undefined
 
