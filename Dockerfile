@@ -99,3 +99,12 @@ RUN node common/scripts/install-run-rush.js deploy --project @subsquid/hyperliqu
 FROM node AS hyperliquid-ingest
 COPY --from=hyperliquid-ingest-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/hyperliquid/hyperliquid-ingest/bin/run.js"]
+
+
+FROM builder AS hyperliquid-ingest-fills-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/hyperliquid-ingest-fills
+
+
+FROM node AS hyperliquid-ingest-fills
+COPY --from=hyperliquid-ingest-fills-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/hyperliquid/hyperliquid-ingest-fills/bin/run.js"]

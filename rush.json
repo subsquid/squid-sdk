@@ -694,6 +694,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/hyperliquid-ingest-fills",
+      "projectFolder": "hyperliquid/hyperliquid-ingest-fills",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/typeorm-codegen",
       "projectFolder": "typeorm/typeorm-codegen",
       "shouldPublish": true,

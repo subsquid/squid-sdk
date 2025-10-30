@@ -35,9 +35,6 @@ dependencies:
   '@keyv/redis':
     specifier: ~2.5.8
     version: 2.5.8(supports-color@8.1.1)
-  '@msgpack/msgpack':
-    specifier: ^3.1.1
-    version: 3.1.1
   '@rush-temp/astar-erc20':
     specifier: file:./projects/astar-erc20.tgz
     version: file:projects/astar-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2)
@@ -113,6 +110,9 @@ dependencies:
   '@rush-temp/hyperliquid-ingest':
     specifier: file:./projects/hyperliquid-ingest.tgz
     version: file:projects/hyperliquid-ingest.tgz
+  '@rush-temp/hyperliquid-ingest-fills':
+    specifier: file:./projects/hyperliquid-ingest-fills.tgz
+    version: file:projects/hyperliquid-ingest-fills.tgz
   '@rush-temp/ink-abi':
     specifier: file:./projects/ink-abi.tgz
     version: file:projects/ink-abi.tgz
@@ -363,7 +363,7 @@ dependencies:
     specifier: ^2.1.3
     version: 2.1.3
   '@types/lz4':
-    specifier: ^0.6.0
+    specifier: ^0.6.4
     version: 0.6.4
   '@types/mocha':
     specifier: ^10.0.7
@@ -468,7 +468,7 @@ dependencies:
     specifier: ^5.1.0
     version: 5.1.0
   lz4:
-    specifier: ^0.6.5
+    specifier: ^0.6.4
     version: 0.6.5
   mocha:
     specifier: ^10.7.0
@@ -6919,7 +6919,7 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-/l4y2B9L9VCHxL/1H1deSJcUbVLsgqGjkG3sKN2AyjdpmIn6WFSt6QZckkZ09smQlRyq0/ysjsQqyfr+B8fVfw==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-GbgoT5xzDV+OnKEiMoyzcMN3ClhCd0WovBN52EGqJ+fq3XTiyv3J5yVBvJtyt+WnEfoYGo3+1/tSw0/9wIIb9A==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
@@ -7057,7 +7057,7 @@ packages:
     dev: false
 
   file:projects/erc20-transfers.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-ae05CO/7hY9+SmDThYQXVVFwTaUvZ+dSybXua//GRFB+mUVvraudw9Y5fd+xZwEFQEm0EXUeSws4kuxGbDcyKQ==, tarball: file:projects/erc20-transfers.tgz}
+    resolution: {integrity: sha512-V1cgkqmQBX8ACl6jnHTfRLUiwyBbfj+r04cmZUw7UdVvTHClLEhr8wHq2/bm3No78rIomrrxzkXV1nUbo3iJkg==, tarball: file:projects/erc20-transfers.tgz}
     id: file:projects/erc20-transfers.tgz
     name: '@rush-temp/erc20-transfers'
     version: 0.0.0
@@ -7361,8 +7361,19 @@ packages:
       typescript: 5.5.4
     dev: false
 
+  file:projects/hyperliquid-ingest-fills.tgz:
+    resolution: {integrity: sha512-hF3M3DbAwgZWw8PJYboBsM7wQDvs5btrtlvNbgRsg23otTsNyPY+nWU8IDiy8XNY1zn/cSDxVKPobSGNXWc3YQ==, tarball: file:projects/hyperliquid-ingest-fills.tgz}
+    name: '@rush-temp/hyperliquid-ingest-fills'
+    version: 0.0.0
+    dependencies:
+      '@types/lz4': 0.6.4
+      '@types/node': 18.19.0
+      lz4: 0.6.5
+      typescript: 5.5.4
+    dev: false
+
   file:projects/hyperliquid-ingest.tgz:
-    resolution: {integrity: sha512-CnGC61O6BgSwo7JmLRS5J3edaPCRQUtlWbkCClICkBMpaM3k/i6QKjtY+mWsnwfSK+9KvaP+uM68TJZVNObBoQ==, tarball: file:projects/hyperliquid-ingest.tgz}
+    resolution: {integrity: sha512-WBVYowjR2OouZ96Q0W1fFd9UxdWaE5+eTpfGK97qrpBHDvl70K1KTDP6/B5jRcYhABEN7fw5v/IaAlhqAhcvZw==, tarball: file:projects/hyperliquid-ingest.tgz}
     name: '@rush-temp/hyperliquid-ingest'
     version: 0.0.0
     dependencies:
@@ -7459,7 +7470,7 @@ packages:
     dev: false
 
   file:projects/polkavm-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-wVujFzO701F+WA397DPJR3vArwO8oIzdn9TsLJ9QPMuRuZADzL96nBKdICC5stv9s8wkv9De9cRMj2YoqxpbIw==, tarball: file:projects/polkavm-erc20.tgz}
+    resolution: {integrity: sha512-WL6ywo6DIMs2Irm1cjP/Ek50k8zRTt2DL9fC1UEuX47Yn0MJmMGr4ky3qlTInL0yrx3mCpML4/pUMZRmW8P8/Q==, tarball: file:projects/polkavm-erc20.tgz}
     id: file:projects/polkavm-erc20.tgz
     name: '@rush-temp/polkavm-erc20'
     version: 0.0.0
@@ -7945,7 +7956,7 @@ packages:
     dev: false
 
   file:projects/tron-usdt.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-QxPWvLgMKQ6l1VWH4I3qyHFe6tx44cvVoQLCjkzjdr8TzN1Z6g2k4TofZDo8tHvuesqZHp+rndaVqRH62ExuBg==, tarball: file:projects/tron-usdt.tgz}
+    resolution: {integrity: sha512-UG75Pc28PuAVUGBdY4GbK087xPKFyhLWW7W49JZyyPM+4tjdcTPvRTOgkginOLY+1w2PodkGsTzHQJNpSzF/tA==, tarball: file:projects/tron-usdt.tgz}
     id: file:projects/tron-usdt.tgz
     name: '@rush-temp/tron-usdt'
     version: 0.0.0
