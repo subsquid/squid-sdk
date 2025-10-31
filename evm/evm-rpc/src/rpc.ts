@@ -380,6 +380,7 @@ export class Rpc {
     }
 
     private async addTraces(blocks: Block[], req: DataRequest) {
+        blocks = blocks.filter(block => block.number != 0) // genesis is not traceable
         let tasks = []
         let replayTraces: TraceReplayTraces = {}
 
