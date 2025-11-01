@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.4.2",
+      "tag": "@subsquid/substrate-data_v4.4.2",
+      "date": "Sat, 01 Nov 2025 20:46:33 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "handle missing Proxy.ProxyExecuted event"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.4.1",
       "tag": "@subsquid/substrate-data_v4.4.1",
       "date": "Wed, 17 Sep 2025 03:17:50 GMT",
