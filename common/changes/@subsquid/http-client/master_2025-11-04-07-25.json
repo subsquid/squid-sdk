@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "make 521, 522, 523 errors retriable",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}
