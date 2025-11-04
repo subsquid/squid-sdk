@@ -16,9 +16,9 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.7.0",
+    "@subsquid/http-client": "^1.8.0",
     "@subsquid/logger": "^1.4.0",
-    "@subsquid/rpc-client": "^4.13.0",
+    "@subsquid/rpc-client": "^4.14.0",
     "@subsquid/substrate-data": "^4.4.2",
     "@subsquid/substrate-data-raw": "^1.2.0",
     "@subsquid/util-internal": "^3.2.0",
