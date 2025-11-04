@@ -1,6 +1,13 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+This log was last generated on Tue, 04 Nov 2025 07:29:46 GMT and should not be manually modified.
+
+## 4.14.0
+Tue, 04 Nov 2025 07:29:46 GMT
+
+### Minor changes
+
+- ignore websocket responses with empty id
 
 ## 4.13.0
 Sat, 09 Aug 2025 06:10:24 GMT

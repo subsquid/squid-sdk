@@ -1,6 +1,13 @@
 # Change Log - @subsquid/http-client
 
-This log was last generated on Mon, 22 Sep 2025 13:20:40 GMT and should not be manually modified.
+This log was last generated on Tue, 04 Nov 2025 07:29:46 GMT and should not be manually modified.
+
+## 1.8.0
+Tue, 04 Nov 2025 07:29:46 GMT
+
+### Minor changes
+
+- make 521, 522, 523 errors retriable
 
 ## 1.7.0
 Mon, 22 Sep 2025 13:20:40 GMT
