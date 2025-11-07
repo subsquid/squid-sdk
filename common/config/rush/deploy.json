@@ -27,7 +27,8 @@
     "@subsquid/substrate-metadata-service",
     "@subsquid/tron-dump",
     "@subsquid/tron-ingest",
-    "@subsquid/hyperliquid-ingest"
+    "@subsquid/hyperliquid-ingest",
+    "@subsquid/hyperliquid-ingest-fills"
   ],
 
   /**

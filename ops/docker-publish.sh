@@ -38,6 +38,7 @@ all_images=(
     "fuel/fuel-dump"
     "fuel/fuel-ingest"
     "hyperliquid/hyperliquid-ingest"
+    "hyperliquid/hyperliquid-ingest-fills"
 )
 
 if [ ${#images[@]} -eq 0 ]; then
