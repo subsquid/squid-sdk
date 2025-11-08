@@ -2,6 +2,7 @@ import type {Logger} from '@subsquid/logger'
 import {Fs} from '@subsquid/util-internal-fs'
 import {Range, assertRange, FiniteRange} from '@subsquid/util-internal-range'
 import {assertValidity} from '@subsquid/util-internal-validation'
+import {assertNotNull} from '@subsquid/util-internal'
 import * as lz4 from 'lz4'
 import assert from 'assert'
 import {Block} from './data'
@@ -39,7 +40,14 @@ export class HyperliquidArchive {
         let nextBlock = from
         for await (let rawChunk of this.getRawChunks(chunk)) {
             let batch = []
+            let firstBlock = undefined
+            let lastBlock = undefined
             for await (let block of this.readRawChunk(rawChunk)) {
+                if (firstBlock == null) {
+                    firstBlock = block.block_number
+                }
+                lastBlock = block.block_number
+
                 if (block.block_number < from) continue
                 assert(block.block_number == nextBlock++)
                 batch.push(block)
@@ -50,6 +58,11 @@ export class HyperliquidArchive {
                     yield batch
                     batch = []
                 }
+            }
+            this.lastProcessedChunk = {
+                chunk: rawChunk,
+                firstBlock: assertNotNull(firstBlock),
+                lastBlock: assertNotNull(lastBlock)
             }
 
             if (batch.length > 0) {
@@ -115,13 +128,16 @@ export class HyperliquidArchive {
         if (this.lastProcessedChunk != null) {
             let lastChunk = this.lastProcessedChunk.chunk
             if (this.lastProcessedChunk.firstBlock <= targetBlock && targetBlock <= this.lastProcessedChunk.lastBlock) {
+                this.log.debug(`returning last processed chunk ${getChunkPath(lastChunk)}`)
                 return lastChunk
             } else if (this.lastProcessedChunk.lastBlock + 1 == targetBlock) {
                 for await (let rawChunk of this.getRawChunks(lastChunk)) {
                     if (rawChunk.date != lastChunk.date && rawChunk.filename != lastChunk.filename) {
+                        this.log.debug(`returning new chunk ${getChunkPath(rawChunk)}`)
                         return rawChunk
                     }
                 }
+                this.log.debug('no chunk to return')
                 return
             }
         }
