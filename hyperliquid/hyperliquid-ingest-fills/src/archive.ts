@@ -49,7 +49,7 @@ export class HyperliquidArchive {
                 lastBlock = block.block_number
 
                 if (block.block_number < from) continue
-                assert(block.block_number == nextBlock++)
+                assert.equal(block.block_number, nextBlock++)
                 batch.push(block)
                 if (block.block_number == to) {
                     yield batch
@@ -59,6 +59,7 @@ export class HyperliquidArchive {
                     batch = []
                 }
             }
+            this.log.debug(`updating last processed chunk ${getChunkPath(rawChunk)}`)
             this.lastProcessedChunk = {
                 chunk: rawChunk,
                 firstBlock: assertNotNull(firstBlock),
@@ -125,6 +126,7 @@ export class HyperliquidArchive {
     }
 
     private async getRawChunkForBlock(targetBlock: number): Promise<RawChunk | undefined> {
+        this.log.debug(`searching chunk for a block ${targetBlock}`)
         if (this.lastProcessedChunk != null) {
             let lastChunk = this.lastProcessedChunk.chunk
             if (this.lastProcessedChunk.firstBlock <= targetBlock && targetBlock <= this.lastProcessedChunk.lastBlock) {
@@ -147,7 +149,6 @@ export class HyperliquidArchive {
         let left = 0
         let right = rawChunks.length - 1
 
-        this.log.debug(`searching chunk for a block ${targetBlock}`)
         while (left <= right) {
             let mid = Math.floor((left + right) / 2)
             let chunk = rawChunks[mid]
