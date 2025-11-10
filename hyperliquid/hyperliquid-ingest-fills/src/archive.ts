@@ -82,7 +82,7 @@ export class HyperliquidArchive {
             let files = await this.fs.ls(date)
             files.sort((a, b) => parseFile(a) - parseFile(b))
             for (let filename of files) {
-                if (parseFile(filename) < hour) continue
+                if (date == from.date && parseFile(filename) < hour) continue
                 yield { date, filename }
             }
         }
