@@ -518,6 +518,9 @@ export class RpcClient {
         if (err instanceof RpcConnectionError) return true
         if (isHttpConnectionError(err)) return true
         if (err instanceof HttpTimeoutError) return true
+        if (err instanceof RpcError) {
+            return err.code == 429
+        }
         if (err instanceof HttpError) {
             switch(err.response.status) {
                 case 408:
