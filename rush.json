@@ -124,7 +124,7 @@
    * LTS schedule: https://nodejs.org/en/about/releases/
    * LTS versions: https://nodejs.org/en/download/releases/
    */
-  "nodeSupportedVersionRange": ">=18.13.1 <23.11.0",
+  "nodeSupportedVersionRange": ">=18.13.1 <=24",
 
   /**
    * Odd-numbered major versions of Node.js are experimental.  Even-numbered releases
@@ -778,6 +778,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/portal-tools",
+      "projectFolder": "util/portal-tools",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/rpc-client",
       "projectFolder": "util/rpc-client",
       "shouldPublish": true,
@@ -1005,6 +1011,11 @@
     {
       "packageName": "fuel-indexer",
       "projectFolder": "test/fuel-indexer",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "mipt-evm-template",
+      "projectFolder": "test/mipt-evm-template",
       "shouldPublish": false
     },
 //    {

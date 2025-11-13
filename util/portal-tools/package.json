@@ -1,0 +1,25 @@
+{
+  "name": "@subsquid/portal-tools",
+  "version": "0.0.0",
+  "description": "A library of Subsquid Portal data streaming procedures",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/util-internal-validation": "^0.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "typescript": "5.5.4"
+  }
+}

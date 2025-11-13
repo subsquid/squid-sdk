@@ -140,12 +140,18 @@ dependencies:
   '@rush-temp/logger':
     specifier: file:./projects/logger.tgz
     version: file:projects/logger.tgz
+  '@rush-temp/mipt-evm-template':
+    specifier: file:./projects/mipt-evm-template.tgz
+    version: file:projects/mipt-evm-template.tgz
   '@rush-temp/openreader':
     specifier: file:./projects/openreader.tgz
     version: file:projects/openreader.tgz(supports-color@8.1.1)
   '@rush-temp/ops-xcm-typegen':
     specifier: file:./projects/ops-xcm-typegen.tgz
     version: file:projects/ops-xcm-typegen.tgz
+  '@rush-temp/portal-tools':
+    specifier: file:./projects/portal-tools.tgz
+    version: file:projects/portal-tools.tgz
   '@rush-temp/rpc-client':
     specifier: file:./projects/rpc-client.tgz
     version: file:projects/rpc-client.tgz
@@ -3215,6 +3221,12 @@ packages:
     resolution: {integrity: sha512-uYssdp9z5zH5GQ0L4zEJ2ZuavYsJwkozjiUzCRfGtaaQcyjAMJ34aP8idv61QlqTozu6kudyr6JMq9Chf09dfA==}
     dependencies:
       undici-types: 6.21.0
+    dev: false
+
+  /@types/node@24.10.1:
+    resolution: {integrity: sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ==}
+    dependencies:
+      undici-types: 7.16.0
     dev: false
 
   /@types/pg@8.10.9:
@@ -6858,6 +6870,10 @@ packages:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
     dev: false
 
+  /undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
+    dev: false
+
   /unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
     engines: {node: '>= 0.8'}
@@ -7880,6 +7896,15 @@ packages:
       typescript: 5.5.4
     dev: false
 
+  file:projects/mipt-evm-template.tgz:
+    resolution: {integrity: sha512-LzhiwS62QB181znFr2Ur1D+VeG11p5nm2zqFPNr1jXxlC4Uz4IxaNmc8bOOjqX+RcDG/DkaGY8JqZPnd1R51ew==, tarball: file:projects/mipt-evm-template.tgz}
+    name: '@rush-temp/mipt-evm-template'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 24.10.1
+      typescript: 5.5.4
+    dev: false
+
   file:projects/openreader.tgz(supports-color@8.1.1):
     resolution: {integrity: sha512-kWdUB/fFnn8Xn1PIwkRV3xNyoBT2gTbMMVFQ+bGF6PqOoQTM9RiBkULl8moA0RTAyeWzHR4gepZD3666CY4tjQ==, tarball: file:projects/openreader.tgz}
     id: file:projects/openreader.tgz
@@ -7926,6 +7951,15 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0
+      typescript: 5.5.4
+    dev: false
+
+  file:projects/portal-tools.tgz:
+    resolution: {integrity: sha512-2ILbbyKDA0RmorGd2wupyy7J30e2P5d4gAzsyI3LCdK0+wskhich0rAc63g+IDbkn9PESVJULH8KisM5Yl1smg==, tarball: file:projects/portal-tools.tgz}
+    name: '@rush-temp/portal-tools'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 24.10.1
       typescript: 5.5.4
     dev: false
 
@@ -8110,7 +8144,7 @@ packages:
     dev: false
 
   file:projects/solana-spray.tgz:
-    resolution: {integrity: sha512-5yTRuNpmaGUYixnWDF3py/tm5bEP9FcQylCbLVgIAz6wig3r7USOeVuy29EdgJHDtQ6DFSd6AlL05gHB6rYzug==, tarball: file:projects/solana-spray.tgz}
+    resolution: {integrity: sha512-ec9U4/Q8GnEMoJ6WN2LU2R71V/WviOV1Y+9cYoDdNTs647BJat4fMfq13vHKprSrsjdJCr4DbdqRy1tzPJjlig==, tarball: file:projects/solana-spray.tgz}
     name: '@rush-temp/solana-spray'
     version: 0.0.0
     dependencies:

@@ -132,3 +132,8 @@ export function assertValidity<V extends Validator<any>>(
     let err = validator.validate(value)
     if (err) throw new DataValidationError(err.toString())
 }
+
+
+export function isValid<V extends Validator<any>>(validator: V, value: unknown): value is GetSrcType<V> {
+    return validator.validate(value) == null
+}

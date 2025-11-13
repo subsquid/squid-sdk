@@ -170,7 +170,8 @@ function formatTime(time: number): string {
     let hour = date.getHours().toString().padStart(2, '0')
     let minutes = date.getMinutes().toString().padStart(2, '0')
     let seconds = date.getSeconds().toString().padStart(2, '0')
-    return `${hour}:${minutes}:${seconds}`
+    let milliseconds = date.getMilliseconds().toString().padStart(3, '0')
+    return `${hour}:${minutes}:${seconds}.${milliseconds}`
 }
 
 
