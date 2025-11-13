@@ -65,7 +65,7 @@ export const Transaction = object({
     from: BYTES,
     to: option(BYTES),
     gas: QTY,
-    gasPrice: QTY,
+    gasPrice: option(QTY),
     input: BYTES,
     maxFeePerGas: option(QTY),
     maxPriorityFeePerGas: option(QTY),

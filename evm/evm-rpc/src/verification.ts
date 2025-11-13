@@ -87,7 +87,7 @@ function encodeTransaction(tx: Transaction): Buffer {
         return Buffer.from(
             RLP.encode([
                 BigInt(tx.nonce),
-                BigInt(tx.gasPrice),
+                BigInt(tx.gasPrice ?? 0),
                 BigInt(tx.gas),
                 tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
                 BigInt(tx.value),
@@ -101,7 +101,7 @@ function encodeTransaction(tx: Transaction): Buffer {
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
             BigInt(tx.nonce),
-            BigInt(tx.gasPrice),
+            BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
             BigInt(tx.value),
@@ -181,7 +181,7 @@ function encodeTransaction(tx: Transaction): Buffer {
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
             decodeHex(assertNotNull(tx.requestId, 'tx.requestId is missing')),
             decodeHex(tx.from),
-            BigInt(tx.gasPrice),
+            BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
             BigInt(tx.value),
@@ -194,7 +194,7 @@ function encodeTransaction(tx: Transaction): Buffer {
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
             BigInt(tx.nonce),
             decodeHex(tx.from),
-            BigInt(tx.gasPrice),
+            BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
             BigInt(tx.value),
@@ -213,7 +213,7 @@ function encodeTransaction(tx: Transaction): Buffer {
             decodeHex(tx.from),
             BigInt(assertNotNull(tx.l1BaseFee, 'tx.l1BaseFee is missing')),
             BigInt(assertNotNull(tx.depositValue, 'tx.depositValue is missing')),
-            BigInt(tx.gasPrice),
+            BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.retryTo ? decodeHex(tx.retryTo) : Buffer.alloc(0),
             BigInt(assertNotNull(tx.retryValue, 'tx.retryValue is missing')),
@@ -357,7 +357,7 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
     if (tx.type == '0x0') {
         let fields = [
             BigInt(tx.nonce),
-            BigInt(tx.gasPrice),
+            BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
             BigInt(tx.value),
@@ -373,7 +373,7 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
             BigInt(tx.nonce),
-            BigInt(tx.gasPrice),
+            BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
             BigInt(tx.value),

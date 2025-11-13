@@ -66,7 +66,7 @@ export interface Transaction {
     value: Qty,
     type: number,
     gas: Qty,
-    gasPrice: Qty,
+    gasPrice?: Qty,
     maxFeePerGas?: Qty,
     maxPriorityFeePerGas?: Qty,
     v: Qty,
