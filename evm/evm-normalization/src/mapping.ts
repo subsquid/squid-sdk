@@ -55,6 +55,7 @@ function* mapDebugFrame(
 
         switch(frame.type) {
             case 'CREATE':
+            case 'create':
             case 'CREATE2': {
                 trace = {
                     ...base,
@@ -84,8 +85,10 @@ function* mapDebugFrame(
                 break
             }
             case 'CALL':
+            case 'call':
             case 'CALLCODE':
             case 'DELEGATECALL':
+            case 'delegateCall':
             case 'STATICCALL':
             case 'INVALID': {
                 trace = {

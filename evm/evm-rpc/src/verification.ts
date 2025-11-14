@@ -87,29 +87,29 @@ function encodeTransaction(tx: Transaction): Buffer {
         return Buffer.from(
             RLP.encode([
                 BigInt(tx.nonce),
-                BigInt(tx.gasPrice ?? 0),
+                BigInt(assertNotNull(tx.gasPrice, 'tx.gasPrice is missing')),
                 BigInt(tx.gas),
                 tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
                 BigInt(tx.value),
                 tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
-                BigInt(tx.v),
-                BigInt(tx.r),
-                BigInt(tx.s),
+                BigInt(assertNotNull(tx.v, 'tx.v is missing')),
+                BigInt(assertNotNull(tx.r, 'tx.r is missing')),
+                BigInt(assertNotNull(tx.s, 'tx.s is missing')),
             ])
         )
     } else if (tx.type == '0x1') {
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
             BigInt(tx.nonce),
-            BigInt(tx.gasPrice ?? 0),
+            BigInt(assertNotNull(tx.gasPrice, 'tx.gasPrice is missing')),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
             BigInt(tx.value),
             tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
             decodeAccessList(tx.accessList ?? []),
-            BigInt(tx.v),
-            BigInt(tx.r),
-            BigInt(tx.s),
+            BigInt(assertNotNull(tx.v, 'tx.v is missing')),
+            BigInt(assertNotNull(tx.r, 'tx.r is missing')),
+            BigInt(assertNotNull(tx.s, 'tx.s is missing')),
         ])
         return Buffer.concat([Buffer.from([0x01]), Buffer.from(payload)])
     } else if (tx.type == '0x2') {
@@ -123,9 +123,9 @@ function encodeTransaction(tx: Transaction): Buffer {
             BigInt(tx.value),
             tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
             decodeAccessList(tx.accessList ?? []),
-            BigInt(tx.v),
-            BigInt(tx.r),
-            BigInt(tx.s),
+            BigInt(assertNotNull(tx.v, 'tx.v is missing')),
+            BigInt(assertNotNull(tx.r, 'tx.r is missing')),
+            BigInt(assertNotNull(tx.s, 'tx.s is missing')),
         ])
         return Buffer.concat([Buffer.from([0x02]), Buffer.from(payload)])
     } else if (tx.type == '0x3') {
@@ -142,9 +142,9 @@ function encodeTransaction(tx: Transaction): Buffer {
             decodeAccessList(tx.accessList ?? []),
             BigInt(assertNotNull(tx.maxFeePerBlobGas, 'tx.maxFeePerBlobGas is missing')),
             assertNotNull(tx.blobVersionedHashes, 'tx.blobVersionedHashes is missing').map(decodeHex),
-            BigInt(tx.yParity ?? tx.v),
-            BigInt(tx.r),
-            BigInt(tx.s),
+            BigInt(tx.yParity ?? assertNotNull(tx.v, 'tx.v is missing')),
+            BigInt(assertNotNull(tx.r, 'tx.r is missing')),
+            BigInt(assertNotNull(tx.s, 'tx.s is missing')),
         ])
         return Buffer.concat([Buffer.from([0x03]), Buffer.from(payload)])
     } else if (tx.type == '0x4') {
@@ -160,9 +160,9 @@ function encodeTransaction(tx: Transaction): Buffer {
             tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
             decodeAccessList(tx.accessList ?? []),
             decodeAuthorizationList(tx.authorizationList ?? []),
-            BigInt(tx.yParity ?? tx.v),
-            BigInt(tx.r),
-            BigInt(tx.s),
+            BigInt(tx.yParity ?? assertNotNull(tx.v, 'tx.v is missing')),
+            BigInt(assertNotNull(tx.r, 'tx.r is missing')),
+            BigInt(assertNotNull(tx.s, 'tx.s is missing')),
         ])
         return Buffer.concat([Buffer.from([0x04]), Buffer.from(payload)])
     } else if (tx.type == '0x64') {
@@ -423,25 +423,25 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
             decodeAuthorizationList(tx.authorizationList ?? []),
         ])
         return Buffer.concat([Buffer.from([0x04]), Buffer.from(payload)])
-    } else if (tx['type'] == '0x64') {
+    } else if (tx.type == '0x64') {
         // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L338
         return
-    } else if (tx['type'] == '0x65') {
+    } else if (tx.type == '0x65') {
         // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L43
         return
-    } else if (tx['type'] == '0x66') {
+    } else if (tx.type == '0x66') {
         // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L104
         return
-    } else if (tx['type'] == '0x68') {
+    } else if (tx.type == '0x68') {
         // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L161
         return
-    } else if (tx['type'] == '0x69') {
+    } else if (tx.type == '0x69') {
         // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L232
         return
-    } else if (tx['type'] == '0x6a') {
+    } else if (tx.type == '0x6a') {
         // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L387
         return
-    } else if (tx['type'] == '0x7e') {
+    } else if (tx.type == '0x7e') {
         // https://github.com/ethereum-optimism/optimism/blob/9ff3ebb3983be52c3ca189423ae7b4aec94e0fde/specs/deposits.md#the-deposited-transaction-type
         return
     } else {
@@ -454,10 +454,11 @@ function calculateSigRecovery(tx: Transaction) {
     if (tx.v == '0x0' || tx.v == '0x1') {
         return qty2Int(tx.v)
     } else {
+        let v = assertNotNull(tx.v, 'tx.v is missing')
         if (tx.chainId == null) {
-            return qty2Int(tx.v) - 27
+            return qty2Int(v) - 27
         } else {
-            return qty2Int(tx.v) - (qty2Int(tx.chainId) * 2 + 35)
+            return qty2Int(v) - (qty2Int(tx.chainId) * 2 + 35)
         }
     }
 }
@@ -467,9 +468,11 @@ export function recoverTxSender(tx: Transaction): string | undefined {
     let message = serializeTransaction(tx)
     if (message == null) return
     let messageHash = keccak256(message)
+    let r = assertNotNull(tx.r, 'tx.r is missing')
+    let s = assertNotNull(tx.s, 'tx.s is missing')
     let signature = concatBytes(
-        setLengthLeft(bigIntToUnpaddedBytes(BigInt(tx.r)), 32),
-        setLengthLeft(bigIntToUnpaddedBytes(BigInt(tx.s)), 32)
+        setLengthLeft(bigIntToUnpaddedBytes(BigInt(r)), 32),
+        setLengthLeft(bigIntToUnpaddedBytes(BigInt(s)), 32)
     )
     let recovery = calculateSigRecovery(tx)
     let pubKey = secp256k1.ecdsaRecover(signature, recovery, messageHash, false)
