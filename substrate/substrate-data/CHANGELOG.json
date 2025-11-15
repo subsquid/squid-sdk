@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.4.3",
+      "tag": "@subsquid/substrate-data_v4.4.3",
+      "date": "Sat, 15 Nov 2025 05:59:11 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "extend `SystemOrigin` enum definition"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.4.2",
       "tag": "@subsquid/substrate-data_v4.4.2",
       "date": "Sat, 01 Nov 2025 20:46:33 GMT",
