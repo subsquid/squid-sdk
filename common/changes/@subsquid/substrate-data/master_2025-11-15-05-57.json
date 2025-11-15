@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "extend `SystemOrigin` enum definition",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

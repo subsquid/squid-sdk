@@ -4,7 +4,8 @@ import {bytes, closedEnum, externalEnum, GetType, openEnum, union, unit} from '@
 export const SystemOrigin = closedEnum({
     Signed: bytes(),
     Root: unit(),
-    None: unit()
+    None: unit(),
+    Authorized: unit()
 })
 
 
