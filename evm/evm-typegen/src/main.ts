@@ -28,8 +28,14 @@ The generated facades are assumed to be used by "squids" indexing EVM data.
         '--etherscan-api <url>',
         'etherscan API to fetch contract ABI by a known address',
         validator.Url(['http:', 'https:']),
+        'https://api.etherscan.io/v2'
       )
       .option('--etherscan-api-key <key>', 'etherscan API key')
+      .option(
+        '--etherscan-chain-id <id>', 
+        'the id of the chain to fetch the contract from',
+        validator.positiveInt,
+      )
       .option('--clean', 'delete output directory before run')
       .addHelpText(
         'afterAll',
@@ -58,9 +64,10 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
     program.parse()
 
     let opts = program.opts() as {
+      chainId: string
+      etherscanApi: string
       clean?: boolean
       multicall?: boolean
-      etherscanApi?: string
       etherscanApiKey?: string
     }
     let dest = new OutDir(program.processedArgs[0])
@@ -92,14 +99,14 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
 
 async function read(
   spec: Spec,
-  options?: { etherscanApi?: string; etherscanApiKey?: string },
+  options: {
+    etherscanApi: string;
+    chainId: string
+    etherscanApiKey?: string,
+  },
 ): Promise<any> {
   if (spec.kind == 'address') {
-    return fetchFromEtherscan(
-      spec.src,
-      options?.etherscanApi,
-      options?.etherscanApiKey,
-    )
+    return fetchFromEtherscan(spec.src, getEtherscanAPIConfig(options))
   }
   let abi: any
   if (spec.kind == 'url') {
@@ -118,15 +125,24 @@ async function read(
 
 async function fetchFromEtherscan(
   address: string,
-  api?: string,
-  apiKey?: string,
+  config: EtherscanAPIConfig,
 ): Promise<any> {
-  api = api || 'https://api.etherscan.io/'
-  let url = new URL('api?module=contract&action=getabi', api)
-  url.searchParams.set('address', address)
-  if (apiKey) {
-    url.searchParams.set('apiKey', apiKey)
+  let api = config.api + (config.api.endsWith('/') ? '' : '/') + 'api'
+  let url = new URL(api)
+
+  let params = new URLSearchParams({
+    module: 'contract',
+    action: 'getabi',
+    address,
+  })
+  if (config.chainId) {
+    params.set('chainid', config.chainId);
   }
+  if (config.apiKey) {
+    params.set('apiKey', config.apiKey);
+  }
+  url.search = params.toString()
+
   let response: { status: string; result: string }
   let attempts = 0
   while (true) {
@@ -150,7 +166,7 @@ async function fetchFromEtherscan(
     return JSON.parse(response.result)
   } else {
     throw new Error(
-      `Failed to fetch contract ABI from ${api}: ${response.result}`,
+      `Failed to fetch contract ABI from ${config.api}: ${response.result}`,
     )
   }
 }
@@ -214,4 +230,22 @@ function basename(file: string): string {
   throw new InvalidArgumentError(
     `Can't derive target basename for output files. Use url fragment to specify it, e.g. #erc20`,
   )
+}
+
+interface EtherscanAPIConfig {
+    api: string
+    apiKey?: string
+    chainId?: string
+}
+
+function getEtherscanAPIConfig(options: {
+    etherscanApi: string
+    etherscanApiKey?: string
+    etherscanChainId?: string
+}): EtherscanAPIConfig {
+    return {
+        api: options.etherscanApi || 'https://api.etherscan.io/v2',
+        apiKey: options.etherscanApiKey || undefined,
+        chainId: options.etherscanChainId || (options.etherscanApi ? undefined : '1'),
+    }
 }

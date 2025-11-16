@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "support etherscan v2 API",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-typegen"
+}
