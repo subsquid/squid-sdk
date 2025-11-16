@@ -64,11 +64,11 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
     program.parse()
 
     let opts = program.opts() as {
-      chainId: string
-      etherscanApi: string
       clean?: boolean
       multicall?: boolean
+      etherscanApi: string
       etherscanApiKey?: string
+      etherscanChainId?: string
     }
     let dest = new OutDir(program.processedArgs[0])
     let specs = program.processedArgs[1] as Spec[]
@@ -101,7 +101,7 @@ async function read(
   spec: Spec,
   options: {
     etherscanApi: string;
-    chainId: string
+    etherscanChainId?: string
     etherscanApiKey?: string,
   },
 ): Promise<any> {
