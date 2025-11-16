@@ -1,6 +1,6 @@
 import {struct, unit} from '@subsquid/borsh'
-import {instruction} from '../abi.support'
-import {AddCollectionPluginV1Args, AddPluginV1Args, ApproveCollectionPluginAuthorityV1Args, ApprovePluginAuthorityV1Args, BurnCollectionV1Args, BurnV1Args, CompressV1Args, CreateCollectionV1Args, CreateV1Args, DecompressV1Args, RemoveCollectionPluginV1Args, RemovePluginV1Args, RevokeCollectionPluginAuthorityV1Args, RevokePluginAuthorityV1Args, TransferV1Args, UpdateCollectionPluginV1Args, UpdateCollectionV1Args, UpdatePluginV1Args, UpdateV1Args} from './types'
+import {instruction} from '../abi.support.js'
+import {AddCollectionPluginV1Args, AddPluginV1Args, ApproveCollectionPluginAuthorityV1Args, ApprovePluginAuthorityV1Args, BurnCollectionV1Args, BurnV1Args, CompressV1Args, CreateCollectionV1Args, CreateV1Args, DecompressV1Args, RemoveCollectionPluginV1Args, RemovePluginV1Args, RevokeCollectionPluginAuthorityV1Args, RevokePluginAuthorityV1Args, TransferV1Args, UpdateCollectionPluginV1Args, UpdateCollectionV1Args, UpdatePluginV1Args, UpdateV1Args} from './types.js'
 
 export interface CreateV1 {
     createV1Args: CreateV1Args

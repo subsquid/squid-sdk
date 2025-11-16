@@ -1,5 +1,5 @@
-import {event} from '../abi.support'
-import {SomeEvent as SomeEvent_} from './types'
+import {event} from '../abi.support.js'
+import {SomeEvent as SomeEvent_} from './types.js'
 
 export type SomeEvent = SomeEvent_
 
