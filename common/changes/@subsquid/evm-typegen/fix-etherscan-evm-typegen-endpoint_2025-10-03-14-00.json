@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-typegen",
-      "comment": "migrate etherscan endpoint to v2",
-      "type": "patch"
+      "comment": "support etherscan v2 API",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/evm-typegen"

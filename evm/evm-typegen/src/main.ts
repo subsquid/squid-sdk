@@ -31,7 +31,11 @@ The generated facades are assumed to be used by "squids" indexing EVM data.
         'https://api.etherscan.io/v2'
       )
       .option('--etherscan-api-key <key>', 'etherscan API key')
-      .option('--chain-id <id>', 'the id of the chain to fetch the contract from. Defaults to Ethereum mainnet', '1')
+      .option(
+        '--etherscan-chain-id <id>', 
+        'the id of the chain to fetch the contract from',
+        validator.positiveInt,
+      )
       .option('--clean', 'delete output directory before run')
       .addHelpText(
         'afterAll',
@@ -102,12 +106,7 @@ async function read(
   },
 ): Promise<any> {
   if (spec.kind == 'address') {
-    return fetchFromEtherscan(
-      spec.src,
-      options.chainId,
-      options?.etherscanApi,
-      options?.etherscanApiKey,
-    )
+    return fetchFromEtherscan(spec.src, getEtherscanAPIConfig(options))
   }
   let abi: any
   if (spec.kind == 'url') {
@@ -126,23 +125,22 @@ async function read(
 
 async function fetchFromEtherscan(
   address: string,
-  chainId: string,
-  api: string,
-  apiKey?: string,
+  config: EtherscanAPIConfig,
 ): Promise<any> {
-  let API_VERSION = 'v2'
+  let api = config.api + (config.api.endsWith('/') ? '' : '/') + 'api'
+  let url = new URL(api)
+
   let params = new URLSearchParams({
-    module: "contract",
-    action: "getabi",
-    chainid: chainId,
+    module: 'contract',
+    action: 'getabi',
     address,
   })
-
-  if (apiKey) {
-    params.set('apiKey', apiKey);
+  if (config.chainId) {
+    params.set('chainid', config.chainId);
   }
-
-  let url = new URL(`${API_VERSION}/api`, api)
+  if (config.apiKey) {
+    params.set('apiKey', config.apiKey);
+  }
   url.search = params.toString()
 
   let response: { status: string; result: string }
@@ -168,7 +166,7 @@ async function fetchFromEtherscan(
     return JSON.parse(response.result)
   } else {
     throw new Error(
-      `Failed to fetch contract ABI from ${api}: ${response.result}`,
+      `Failed to fetch contract ABI from ${config.api}: ${response.result}`,
     )
   }
 }
@@ -232,4 +230,22 @@ function basename(file: string): string {
   throw new InvalidArgumentError(
     `Can't derive target basename for output files. Use url fragment to specify it, e.g. #erc20`,
   )
+}
+
+interface EtherscanAPIConfig {
+    api: string
+    apiKey?: string
+    chainId?: string
+}
+
+function getEtherscanAPIConfig(options: {
+    etherscanApi: string
+    etherscanApiKey?: string
+    etherscanChainId?: string
+}): EtherscanAPIConfig {
+    return {
+        api: options.etherscanApi || 'https://api.etherscan.io/v2',
+        apiKey: options.etherscanApiKey || undefined,
+        chainId: options.etherscanChainId || (options.etherscanApi ? undefined : '1'),
+    }
 }
