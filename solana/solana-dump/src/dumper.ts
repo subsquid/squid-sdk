@@ -1,5 +1,5 @@
 import {Block as RpcBlock, RemoteRpcPool, SolanaRpcDataSource} from '@subsquid/solana-rpc'
-import {def} from '@subsquid/util-internal'
+import {assertNotNull, def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
 
 
@@ -15,6 +15,7 @@ interface Options extends DumperOptions {
     strideConcurrency: number
     strideSize: number
     maxConfirmationAttempts: number
+    assertLogMessagesNotNull: boolean
 }
 
 
@@ -27,6 +28,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
         program.option('--stride-size <N>', 'Maximum size of getBlock batch call', positiveInt, 5)
         program.option('--stride-concurrency <N>', 'Maximum number of pending getBlock batch calls', positiveInt, 5)
         program.option('--max-confirmation-attempts <N>', 'Maximum number of confirmation attempts', positiveInt, 10)
+        program.option('--assert-log-messages-not-null', 'Check if tx.meta.logMessages is not null', false)
     }
 
     protected fixUnsafeIntegers(): boolean {
@@ -80,8 +82,16 @@ export class SolanaDumper extends Dumper<Block, Options> {
     }
 
     protected async* getBlocks(range: Range): AsyncIterable<Block[]> {
+        let options = this.options()
+
         for await (let batch of this.dataSource().getFinalizedStream(range)) {
             yield batch.blocks.map(block => {
+                if (options.assertLogMessagesNotNull) {
+                    let transactions = assertNotNull(block.block.transactions)
+                    for (let tx of transactions) {
+                        assertNotNull(tx.meta.logMessages)
+                    }
+                }
                 return {
                     hash: block.block.blockhash,
                     number: block.slot,
