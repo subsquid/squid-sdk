@@ -1,5 +1,5 @@
 import {Block as RpcBlock, RemoteRpcPool, SolanaRpcDataSource} from '@subsquid/solana-rpc'
-import {assertNotNull, def} from '@subsquid/util-internal'
+import {addErrorContext, assertNotNull, def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
 
 
@@ -89,7 +89,13 @@ export class SolanaDumper extends Dumper<Block, Options> {
                 if (options.assertLogMessagesNotNull) {
                     let transactions = assertNotNull(block.block.transactions)
                     for (let tx of transactions) {
-                        assertNotNull(tx.meta.logMessages)
+                        if (tx.meta.err == null && tx.meta.logMessages == null) {
+                            throw addErrorContext(new Error('tx.meta.logMessages is null'), {
+                                blockNumber: block.slot,
+                                blockHash: block.block.blockhash,
+                                transactionHash: tx.transaction.signatures[0]
+                            })
+                        }
                     }
                 }
                 return {
