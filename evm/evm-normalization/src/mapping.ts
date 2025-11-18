@@ -439,7 +439,7 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         l1BlobBaseFee: receipt?.l1BlobBaseFee ?? undefined,
         l1BlobBaseFeeScalar: receipt?.l1BlobBaseFeeScalar ? qty2Int(receipt.l1BlobBaseFeeScalar) : undefined,
         l1Fee: receipt?.l1Fee ?? undefined,
-        l1FeeScalar: receipt?.l1FeeScalar ? parseInt(receipt.l1FeeScalar) : undefined,
+        l1FeeScalar: receipt?.l1FeeScalar ? toFloat(receipt.l1FeeScalar) : undefined,
         l1GasPrice: receipt?.l1GasPrice ?? undefined,
         l1GasUsed: receipt?.l1GasUsed ?? undefined,
     }
@@ -630,4 +630,11 @@ function isEmpty(obj: object): boolean {
         return false
     }
     return true
+}
+
+
+function toFloat(val: string) {
+    let float = parseFloat(val)
+    assert(!Number.isNaN(float))
+    return float
 }
