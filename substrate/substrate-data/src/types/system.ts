@@ -1,7 +1,7 @@
-import {bytes, closedEnum, externalEnum, GetType, openEnum, union, unit} from '@subsquid/substrate-runtime/lib/sts'
+import {bytes, externalEnum, GetType, openEnum, union, unit} from '@subsquid/substrate-runtime/lib/sts'
 
 
-export const SystemOrigin = closedEnum({
+export const SystemOrigin = externalEnum({
     Signed: bytes(),
     Root: unit(),
     None: unit(),
