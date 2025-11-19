@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Sat, 15 Nov 2025 05:59:11 GMT and should not be manually modified.
+This log was last generated on Wed, 19 Nov 2025 10:21:16 GMT and should not be manually modified.
+
+## 4.4.4
+Wed, 19 Nov 2025 10:21:16 GMT
+
+### Patches
+
+- change SystemOrigin defintion to externalEnum
 
 ## 4.4.3
 Sat, 15 Nov 2025 05:59:11 GMT

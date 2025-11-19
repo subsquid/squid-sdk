@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.4.4",
+      "tag": "@subsquid/substrate-data_v4.4.4",
+      "date": "Wed, 19 Nov 2025 10:21:16 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "change SystemOrigin defintion to externalEnum"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.4.3",
       "tag": "@subsquid/substrate-data_v4.4.3",
       "date": "Sat, 15 Nov 2025 05:59:11 GMT",
