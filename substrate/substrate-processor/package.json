@@ -19,7 +19,7 @@
     "@subsquid/http-client": "^1.8.0",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/rpc-client": "^4.14.0",
-    "@subsquid/substrate-data": "^4.4.3",
+    "@subsquid/substrate-data": "^4.4.4",
     "@subsquid/substrate-data-raw": "^1.2.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-archive-client": "^0.1.2",
