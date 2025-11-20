@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Mon, 17 Nov 2025 08:42:47 GMT and should not be manually modified.
+This log was last generated on Thu, 20 Nov 2025 16:46:01 GMT and should not be manually modified.
+
+## 4.5.1
+Thu, 20 Nov 2025 16:46:01 GMT
+
+### Patches
+
+- fix multicall result array flattening
 
 ## 4.5.0
 Mon, 17 Nov 2025 08:42:47 GMT
