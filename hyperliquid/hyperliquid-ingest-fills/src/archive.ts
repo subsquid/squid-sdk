@@ -134,10 +134,9 @@ export class HyperliquidArchive {
                 return lastChunk
             } else if (this.lastProcessedChunk.lastBlock + 1 == targetBlock) {
                 for await (let rawChunk of this.getRawChunks(lastChunk)) {
-                    if (rawChunk.date != lastChunk.date && rawChunk.filename != lastChunk.filename) {
-                        this.log.debug(`returning new chunk ${getChunkPath(rawChunk)}`)
-                        return rawChunk
-                    }
+                    if (rawChunk.filename == lastChunk.filename) continue
+                    this.log.debug(`returning new chunk ${getChunkPath(rawChunk)}`)
+                    return rawChunk
                 }
                 this.log.debug('no chunk to return')
                 return
