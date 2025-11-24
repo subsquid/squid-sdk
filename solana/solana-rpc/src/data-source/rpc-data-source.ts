@@ -12,6 +12,7 @@ export interface SolanaRpcDataSourceOptions {
     req: DataRequest
     strideConcurrency: number
     strideSize?: number
+    validateChainContinuity?: boolean
     maxConfirmationAttempts?: number
 }
 
@@ -21,6 +22,7 @@ export class SolanaRpcDataSource implements DataSource<Block> {
     public readonly req: DataRequest
     private strideSize: number
     private strideConcurrency: number
+    private validateChainContinuity: boolean
     private maxConfirmationAttempts: number
 
     constructor(options: SolanaRpcDataSourceOptions) {
@@ -28,6 +30,7 @@ export class SolanaRpcDataSource implements DataSource<Block> {
         this.req = options.req
         this.strideSize = Math.max(1, options.strideSize ?? 5)
         this.strideConcurrency = options.strideConcurrency
+        this.validateChainContinuity = options.validateChainContinuity ?? true
         this.maxConfirmationAttempts = options.maxConfirmationAttempts ?? 10
     }
 
@@ -101,6 +104,7 @@ export class SolanaRpcDataSource implements DataSource<Block> {
             range: {from: range.from, to: range.to},
             strideSize: this.strideSize,
             strideConcurrency: this.strideConcurrency,
+            validateChainContinuity: this.validateChainContinuity,
             maxConfirmationAttempts: this.maxConfirmationAttempts,
         }
     }

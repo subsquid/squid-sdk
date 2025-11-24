@@ -16,6 +16,7 @@ interface Options extends DumperOptions {
     strideSize: number
     maxConfirmationAttempts: number
     assertLogMessagesNotNull: boolean
+    validateChainContinuity: boolean
 }
 
 
@@ -29,6 +30,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
         program.option('--stride-concurrency <N>', 'Maximum number of pending getBlock batch calls', positiveInt, 5)
         program.option('--max-confirmation-attempts <N>', 'Maximum number of confirmation attempts', positiveInt, 10)
         program.option('--assert-log-messages-not-null', 'Check if tx.meta.logMessages is not null', false)
+        program.option('--validate-chain-continuity', 'Check if block parent hash matches previous block hash', false)
     }
 
     protected fixUnsafeIntegers(): boolean {
@@ -55,6 +57,9 @@ export class SolanaDumper extends Dumper<Block, Options> {
         return Number(block.block.blockTime) || 0
     }
 
+    protected validateChainContinuity(): boolean {
+        return this.options().validateChainContinuity
+    }
 
     @def
     private dataSource(): SolanaRpcDataSource {
@@ -73,6 +78,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
             strideSize: this.options().strideSize,
             strideConcurrency: this.options().strideConcurrency,
             maxConfirmationAttempts: this.options().maxConfirmationAttempts,
+            validateChainContinuity: this.options().validateChainContinuity,
         })
     }
 

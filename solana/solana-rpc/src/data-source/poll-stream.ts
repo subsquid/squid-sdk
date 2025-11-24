@@ -11,6 +11,7 @@ export interface PollStreamOptions {
     from: number
     req?: DataRequest
     strideSize: number
+    validateChainContinuity: boolean
     maxConfirmationAttempts: number
     confirmationPauseMs: number
 }
@@ -21,6 +22,7 @@ export class PollStream {
     private commitment: Commitment
     private req: DataRequest
     private strideSize: number
+    private validateChainContinuity: boolean
     private maxConfirmationAttempts: number
     private confirmationPause: number
     private slots: Slot[]
@@ -31,6 +33,7 @@ export class PollStream {
         this.req = options.req ?? {}
         assert(options.strideSize > 0)
         this.strideSize = options.strideSize
+        this.validateChainContinuity = options.validateChainContinuity
         this.maxConfirmationAttempts = options.maxConfirmationAttempts
         this.confirmationPause = options.confirmationPauseMs
         this.slots = [{slot: options.from}]
@@ -77,7 +80,7 @@ export class PollStream {
             this.slots
         )
 
-        eliminateContradictions(this.slots)
+        eliminateContradictions(this.slots, this.validateChainContinuity)
 
         let blocks: Block[] = []
         let slots: Slot[] = []

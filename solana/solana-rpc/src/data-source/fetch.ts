@@ -40,7 +40,7 @@ export async function requestMissingSlots(
 }
 
 
-export function eliminateContradictions(slots: Slot[]): boolean {
+export function eliminateContradictions(slots: Slot[], validateChainContinuity: boolean): boolean {
     let found = false
     for (let i = 0; i < slots.length; i++) {
         let next = slots[i]
@@ -56,7 +56,7 @@ export function eliminateContradictions(slots: Slot[]): boolean {
             if (prev.slot === next.block.parentSlot) {
                 if (
                     prev.block === 'skipped' ||
-                    prev.block != null && prev.block.blockhash !== next.block.previousBlockhash
+                    validateChainContinuity && prev.block != null && prev.block.blockhash !== next.block.previousBlockhash
                 ) {
                     next.block = 'skipped'
                     found = true
@@ -76,6 +76,7 @@ export async function getBlocks(
     commitment: Commitment,
     req: DataRequest,
     range: FiniteRange,
+    validateChainContinuity: boolean,
     maxConfirmationAttempts: number = 10,
     confirmationPauseMs: number = 100
 ): Promise<Block[]>
@@ -106,7 +107,7 @@ export async function getBlocks(
         }
         await requestMissingSlots(rpc, commitment, req, slots)
         attempts += 1
-        if (eliminateContradictions(slots)) {
+        if (eliminateContradictions(slots, validateChainContinuity)) {
             inconsistentAttempts += 1
             for (let s of slots) {
                 s.block = undefined

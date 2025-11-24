@@ -132,6 +132,7 @@ export class ChainFixer {
                     this.ingest.commitment,
                     this.ingest.req,
                     range,
+                    this.ingest.validateChainContinuity,
                     this.ingest.maxConfirmationAttempts
                 )
                 return {blocks}
