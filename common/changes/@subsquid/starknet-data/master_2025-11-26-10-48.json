@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/starknet-data",
+      "comment": "update ExecutionResources definition",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/starknet-data"
+}
