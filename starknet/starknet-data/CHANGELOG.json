@@ -2,6 +2,18 @@
   "name": "@subsquid/starknet-data",
   "entries": [
     {
+      "version": "0.1.1",
+      "tag": "@subsquid/starknet-data_v0.1.1",
+      "date": "Wed, 26 Nov 2025 10:50:55 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "update ExecutionResources definition"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/starknet-data_v0.1.0",
       "date": "Thu, 21 Aug 2025 10:51:03 GMT",
