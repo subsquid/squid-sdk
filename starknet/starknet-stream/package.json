@@ -20,7 +20,7 @@
     "@subsquid/rpc-client": "^4.14.0",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/starknet-normalization": "^0.1.0",
-    "@subsquid/starknet-data": "^0.1.0",
+    "@subsquid/starknet-data": "^0.1.1",
     "@subsquid/starknet-rpc": "^0.0.1",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-archive-client": "^0.1.2",

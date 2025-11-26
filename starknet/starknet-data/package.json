@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/starknet-data",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Starknet data definition and fetching",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
