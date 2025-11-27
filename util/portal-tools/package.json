@@ -16,6 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-validation": "^0.7.0"
   },
   "devDependencies": {

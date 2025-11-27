@@ -1,3 +1,4 @@
+import {ensureError, last, Semaphore, Timer, wait} from '@subsquid/util-internal'
 import {
     DataValidationError,
     isValid,
@@ -12,7 +13,6 @@ import {ForkException} from './fork-exception'
 import {LineSplitter} from './line-splitter'
 import type {PortalApi, PortalStreamHeaders} from './portal-api'
 import type {BlockBase, BlockRef, DataBatch, QueryBase} from './types'
-import {ensureError, last, Semaphore, Timer} from './util'
 
 
 export interface StreamOptions {
@@ -23,6 +23,9 @@ export interface StreamOptions {
     lowItemWaterMark?: number
     queryStreamPauseThreshold?: number
     yieldPauseThreshold?: number
+    retryAttempts?: number
+    retrySchedule?: number[]
+    onRetry?: (err: unknown, attempt: number, pause: number) => void
 }
 
 
@@ -34,7 +37,7 @@ export function createQueryStream<B extends BlockBase>(
 ): AsyncIterable<DataBatch<B>>
 {
     return new Processor(query, blockSchema, options).stream(proc => {
-        return ingest(api, query, proc)
+        return ingest(api, query, proc, options)
     })
 }
 
@@ -42,30 +45,64 @@ export function createQueryStream<B extends BlockBase>(
 async function ingest(
     api: PortalApi,
     query: QueryBase,
-    processor: Processor<any>
+    processor: Processor<any>,
+    options: StreamOptions
 ): Promise<void>
 {
     query = {...query}
+
+    let maxRetryAttempts = options.retryAttempts ?? 0
+    let retrySchedule = options.retrySchedule ?? [10, 200, 500, 1000, 2000, 5000, 10000]
+    let onRetry = options.onRetry
+    let retryAttempt = 0
+    let retryPause = 0
+
     while (processor.isRunning()) {
+        if (retryPause) {
+            let start = Date.now()
+            await processor.drain()
+            let pause = retryPause - (Date.now() - start)
+            if (pause > 0) {
+                await wait(pause, processor.abortSignal)
+            }
+        } else {
+            await processor.drain()
+        }
+
         query.fromBlock = processor.getLastBlockNumber() + 1
         query.parentBlockHash = processor.getLastBlockHash()
-        await processor.drain()
-        let res = await api.stream(query, processor.abortSignal)
-        switch(res.status) {
-            case 200:
-                processor.startStream(res)
-                for await (let data of res.data) {
-                    await processor.drain()
-                    processor.writeStreamData(data)
-                }
-                processor.endStream()
-                break
-            case 204:
-                processor.onHead(res)
-                break
-            case 409:
-                processor.fork(res.previousBlocks)
-                break
+        try {
+            let res = await api.stream(query, processor.abortSignal)
+            switch(res.status) {
+                case 200:
+                    processor.startStream(res)
+                    for await (let data of res.data) {
+                        await processor.drain()
+                        processor.writeStreamData(data)
+                    }
+                    processor.endStream()
+                    break
+                case 204:
+                    processor.onHead(res)
+                    break
+                case 409:
+                    processor.fork(res.previousBlocks)
+                    break
+            }
+            retryAttempt = 0
+            retryPause = 0
+        } catch(err: any) {
+            if (retryAttempt >= maxRetryAttempts) {
+                throw err
+            }
+            if (api.isRetriableError?.(err)) {
+                retryPause = api.getRetryPause?.(err) ?? retrySchedule[Math.max(retryAttempt, retrySchedule.length - 1)]
+                retryAttempt += 1
+                onRetry?.(err, retryAttempt, retryPause)
+                processor.resetStream()
+            } else {
+                throw err
+            }
         }
     }
 }
@@ -240,8 +277,15 @@ class Processor<B extends BlockBase> {
         }
     }
 
+    resetStream(): void {
+        this.assertRunning()
+        this.state = 'idle'
+        this.queryStreamPause?.stop()
+        this.splitter.reset()
+    }
+
     private finishCurrentBatch(): void {
-        this.batchEndTime = this.batchEndTime ?? Date.now()
+        this.batchEndTime = Date.now()
         this.take.ready()
     }
 

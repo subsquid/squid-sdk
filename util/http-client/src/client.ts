@@ -283,7 +283,7 @@ export class HttpClient {
             }
             if (req.signal && res?.stream) {
                 // FIXME: is `close` always emitted?
-                (res.body as NodeJS.ReadableStream).on('close', () => {
+                (res.body as NodeJS.ReadableStream).once('close', () => {
                     req.signal!.removeEventListener('abort', abort)
                 })
             } else {
@@ -319,7 +319,7 @@ export class HttpClient {
 
         let arrayBuffer = await res.arrayBuffer()
         if (arrayBuffer.byteLength == 0) return undefined
-        return Buffer.from(arrayBuffer)
+        return Buffer.from(arrayBuffer, 0, arrayBuffer.byteLength)
     }
 
     isRetryableError(error: HttpResponse | Error, req?: FetchRequest): boolean {

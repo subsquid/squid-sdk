@@ -1,4 +1,5 @@
-import {HttpClient, HttpError, HttpResponse} from '@subsquid/http-client'
+import {asRetryAfterPause, HttpClient, HttpError, HttpResponse} from '@subsquid/http-client'
+import {createLogger} from '@subsquid/logger'
 import {PortalApi, PortalStreamHeaders, PortalStreamResponse} from '@subsquid/portal-tools'
 import {array, assertValidity, NAT, object, STRING} from '@subsquid/util-internal-validation'
 
@@ -9,8 +10,9 @@ export class PortalClient implements PortalApi {
     constructor(url: string) {
         this.http = new HttpClient({
             baseUrl: url,
-            retryAttempts: Number.MAX_SAFE_INTEGER,
-            httpTimeout: 20_000
+            retryAttempts: 0,
+            httpTimeout: 20_000,
+            log: createLogger('portal:http')
         })
     }
 
@@ -53,6 +55,16 @@ export class PortalClient implements PortalApi {
                 throw err
             }
         )
+    }
+
+    isRetriableError(err: unknown): boolean {
+        return err instanceof Error && this.http.isRetryableError(err)
+    }
+
+    getRetryPause(err: unknown): number | undefined {
+        if (err instanceof Error) {
+            return asRetryAfterPause(err)
+        }
     }
 }
 

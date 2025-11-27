@@ -1,0 +1,7 @@
+services:
+  clickhouse:
+    image: clickhouse:lts-jammy
+    ports:
+      - "8123:8123"
+    environment:
+      - CLICKHOUSE_PASSWORD=123

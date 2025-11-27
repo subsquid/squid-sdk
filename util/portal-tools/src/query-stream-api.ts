@@ -1,33 +1,24 @@
 import {Validator} from '@subsquid/util-internal-validation'
 import type {PortalApi} from './portal-api'
 import {createQueryStream as createStream, StreamOptions} from './query-stream-impl'
-import type {EvmBlock, EvmFieldSelection} from './query/evm/fields'
-import type {EvmQuery} from './query/evm/query'
 import {getEvmBlockSchema, patchEvmQueryFields} from './query/evm/schema'
-import type {SolanaBlock, SolanaFieldSelection} from './query/solana/fields'
-import type {SolanaQuery} from './query/solana/query'
 import {getSolanaBlockSchema} from './query/solana/schema'
+import type {AnyQuery, GetQueryBlock} from './query/type-getters'
 import type {BlockBase, DataBatch} from './types'
 
 
 export type {StreamOptions}
 
 
-export function createQueryStream<F extends EvmFieldSelection>(
+export function createQueryStream<Q extends AnyQuery>(
     api: PortalApi,
-    query: EvmQuery<F>,
+    query: Q,
     options?: StreamOptions
-): AsyncIterable<DataBatch<EvmBlock<F>>>
-
-export function createQueryStream<F extends SolanaFieldSelection>(
-    api: PortalApi,
-    query: SolanaQuery<F>,
-    options?: StreamOptions
-): AsyncIterable<DataBatch<SolanaBlock<F>>>
+): AsyncIterable<DataBatch<GetQueryBlock<Q>>>
 
 export function createQueryStream(
     api: PortalApi,
-    query: EvmQuery | SolanaQuery,
+    query: AnyQuery,
     options?: StreamOptions
 ): AsyncIterable<DataBatch>
 {

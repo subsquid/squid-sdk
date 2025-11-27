@@ -33,4 +33,6 @@ export type PortalStreamResponse =
 
 export interface PortalApi {
     stream(query: object, abortSignal: AbortSignal): Promise<PortalStreamResponse>
+    isRetriableError?(err: unknown): boolean
+    getRetryPause?(err: unknown): number | undefined
 }

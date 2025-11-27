@@ -35,4 +35,9 @@ export class LineSplitter {
             this.cb(line)
         }
     }
+
+    reset(): void {
+        this.decoder = new StringDecoder('utf-8')
+        this.line = ''
+    }
 }

@@ -1,5 +1,5 @@
+import {last} from '@subsquid/util-internal'
 import type {BlockRef} from './types'
-import {last} from './util'
 
 
 export class ForkException extends Error {

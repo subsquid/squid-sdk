@@ -1,27 +1,18 @@
-import {createLogger} from '@subsquid/logger'
-import {createQueryStream, DataBatch} from '@subsquid/portal-tools'
-import {last, runProgram} from '@subsquid/util-internal'
-import {PortalClient} from './core/portal-client'
+import {Bytes20, Bytes32} from '@subsquid/portal-tools'
+import * as erc20 from './abi/erc20'
+import {runClickhouseProcessing} from './core/clickhouse-processor'
+import {PortalDataSource} from './core/portal-data-source'
 
 
-const log = createLogger('main')
-
-
-runProgram(async () => {
-    let portal = new PortalClient('https://portal.sqd.dev/datasets/ethereum-mainnet/stream')
-
-    let stream = createQueryStream(portal, {
+const source = new PortalDataSource(
+    'https://portal.sqd.dev/datasets/ethereum-mainnet/stream',
+    {
         type: 'evm',
         fromBlock: 23600000,
         fields: {
-            transaction: {
-                transactionIndex: true,
-                hash: true,
-                from: true
-            },
             log: {
                 logIndex: true,
-                transactionIndex: true,
+                transactionHash: true,
                 address: true,
                 topics: true,
                 data: true
@@ -30,22 +21,53 @@ runProgram(async () => {
         logs: [
             {
                 address: ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'],
-                topic0: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'],
-                transaction: true
+                topic0: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
             }
         ]
-    })
-
-    for await (let batch of stream) {
-        printBatchStats(batch)
     }
-}, err => log.fatal(err))
+)
 
 
-function printBatchStats(batch: DataBatch): void {
-    let stats = `stream: ${batch.startStream}..${batch.endStream}, ttfb: ${batch.firstByteTime - batch.startTime} ms, build time: ${batch.endTime - batch.startTime} ms, size: ${Math.round(batch.byteSize / 1000)} kb, items: ${batch.itemSize}`
-    if (batch.blocks.length > 0) {
-        stats = `last block: ${last(batch.blocks).header.number}, ` + stats
+runClickhouseProcessing({
+    clickhouse: 'http://default:123@localhost:8123',
+    clickhouseTables: {
+        erc20_transfers: {
+            lowWaterMark: 8096,
+            highWaterMark: 16192
+        }
+    },
+    source,
+    map(block): Data {
+        let data = new Data()
+        for (let log of (block.logs ?? [])) {
+            if (erc20.events.Transfer.is(log)) {
+                let {from, to, value} = erc20.events.Transfer.decode(log)
+                data.erc20_transfers.push({
+                    log_index: log.logIndex,
+                    transaction_hash: log.transactionHash,
+                    contract: log.address,
+                    from,
+                    to,
+                    amount: value.toString()
+                })
+            }
+        }
+        return data
     }
-    log.info(stats)
+})
+
+
+
+class Data {
+    erc20_transfers: Transfers[] = []
+}
+
+
+interface Transfers {
+    log_index: number
+    transaction_hash: Bytes32
+    contract: Bytes20
+    from: Bytes20
+    to: Bytes20
+    amount: string
 }
