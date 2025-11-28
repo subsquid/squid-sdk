@@ -73,7 +73,7 @@ export const Transaction = object({
     v: option(QTY),
     r: option(BYTES),
     s: option(BYTES),
-    type: SMALL_QTY,
+    type: option(SMALL_QTY),
     value: QTY,
     yParity: option(SMALL_QTY),
     accessList: option(array(oneOf({

@@ -416,7 +416,7 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         to: src.to ?? undefined,
         input: src.input,
         value: src.value,
-        type: qty2Int(src.type),
+        type: src.type ? qty2Int(src.type) : undefined,
         gas: src.gas,
         gasPrice: src.gasPrice ?? undefined,
         maxFeePerGas: src.maxFeePerGas ?? undefined,

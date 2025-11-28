@@ -64,7 +64,7 @@ export interface Transaction {
     to?: Bytes20,
     input: Bytes,
     value: Qty,
-    type: number,
+    type?: number,
     gas: Qty,
     gasPrice?: Qty,
     maxFeePerGas?: Qty,
