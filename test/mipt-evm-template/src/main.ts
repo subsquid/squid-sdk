@@ -30,19 +30,14 @@ const source = new PortalDataSource(
 
 runClickhouseProcessing({
     clickhouse: 'http://default:123@localhost:8123',
-    clickhouseTables: {
-        erc20_transfers: {
-            lowWaterMark: 8096,
-            highWaterMark: 16192
-        }
-    },
+    clickhouseDatabase: 'erc20_src',
     source,
     map(block): Data {
         let data = new Data()
         for (let log of (block.logs ?? [])) {
             if (erc20.events.Transfer.is(log)) {
                 let {from, to, value} = erc20.events.Transfer.decode(log)
-                data.erc20_transfers.push({
+                data.transfers.push({
                     log_index: log.logIndex,
                     transaction_hash: log.transactionHash,
                     contract: log.address,
@@ -57,9 +52,8 @@ runClickhouseProcessing({
 })
 
 
-
 class Data {
-    erc20_transfers: Transfers[] = []
+    transfers: Transfers[] = []
 }
 
 

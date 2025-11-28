@@ -10,10 +10,23 @@ export class PortalDataSource<Q extends AnyQuery> implements DataSource<GetQuery
 
     constructor(url: string, private query: Q, options?: StreamOptions) {
         this.client = new PortalClient(url)
+
+        let log = createLogger('portal')
+        let batchLog = log.child('batch')
+
         this.options = {
             retryAttempts: Number.MAX_SAFE_INTEGER,
-            onRetry: (err, _attempt, _pause) => {
-                createLogger('portal').warn(''+err)
+            onRetry(err, _attempt, _pause) {
+                log.warn('' + err)
+            },
+            onBatch(batch) {
+                if (batchLog.isDebug()) {
+                    let {blocks, ...props} = batch
+                    batchLog.debug({
+                        blockSize: blocks.length,
+                        ...props
+                    })
+                }
             },
             ...options
         }
@@ -21,8 +34,12 @@ export class PortalDataSource<Q extends AnyQuery> implements DataSource<GetQuery
 
     createDataStream(afterBlock?: BlockRef): AsyncIterable<DataBatch<GetQueryBlock<Q>>> {
         let query = {...this.query}
-        if (afterBlock) {
-            throw new Error('afterBlock parameter is not implemented')
+        if (afterBlock && afterBlock.number >= query.fromBlock) {
+            if (query.toBlock && afterBlock.number >= query.toBlock) {
+                return (async function* emptyStream() {})()
+            }
+            query.fromBlock = afterBlock.number + 1
+            query.parentBlockHash = afterBlock.hash
         }
         return createQueryStream(this.client, query, this.options)
     }

@@ -35,7 +35,7 @@ export class TableWriter extends EventEmitter {
         super()
         this.lowWaterMark = options.lowWaterMark ?? 1024
         this.highWaterMark = options.highWaterMark ?? 16 * 1024
-        this.maxInsertDuration = options.maxInsertDuration ?? 30_000
+        this.maxInsertDuration = options.maxInsertDuration ?? 20_000
 
         assert(this.lowWaterMark >= 0)
         assert(this.highWaterMark > 0)

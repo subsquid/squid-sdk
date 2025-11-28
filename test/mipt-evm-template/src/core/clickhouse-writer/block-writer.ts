@@ -16,11 +16,12 @@ export class BlockWriter {
     private put = new Semaphore(true)
     private uploadAbort = new AbortController()
     private lowWaterMark = 1024
-    private highWaterMark = 2048
+    private highWaterMark = 4096
     private log: Logger
 
     constructor(
         private clickhouse: ClickhouseClient,
+        private database: string,
         tables: Record<string, TableOptions>
     ) {
         this.log = createLogger('clickhouse-writer:block')
@@ -28,7 +29,7 @@ export class BlockWriter {
         for (let table in tables) {
             let writer = new TableWriter(
                 clickhouse,
-                table,
+                database + '.' + table,
                 tables[table]
             )
             writer.on('error', err => this.fail(err))
@@ -52,7 +53,7 @@ export class BlockWriter {
             for (let name in block.tables) {
                 let writer = this.tables[name]
                 if (writer == null) {
-                    throw new Error(`Block table ${name} does not exist`)
+                    throw new Error(`table '${name}' does not exist`)
                 }
                 writer.push(block.header, block.tables[name])
             }
@@ -188,7 +189,7 @@ export class BlockWriter {
         this.log.debug(`${blocksToCommit.length} block(s) to commit`)
 
         let upload = this.clickhouse.insert({
-            table: 'blocks',
+            table: this.database + '.blocks',
             format: 'JSONEachRow'
         })
 

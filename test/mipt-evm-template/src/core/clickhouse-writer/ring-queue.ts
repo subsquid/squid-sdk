@@ -21,9 +21,8 @@ export class RingQueue<T> {
 
     shift(): T | undefined {
         if (this.size > 0) {
-            let i = this.pos % this.buf.length
-            let val = this.buf[i]
-            this.buf[i] = undefined
+            let val = this.buf[this.pos]
+            this.buf[this.pos] = undefined
             this.size -= 1
             this.pos = (this.pos + 1) % this.buf.length
             return val

@@ -26,6 +26,7 @@ export interface StreamOptions {
     retryAttempts?: number
     retrySchedule?: number[]
     onRetry?: (err: unknown, attempt: number, pause: number) => void
+    onBatch?: (batch: DataBatch) => void
 }
 
 
@@ -129,6 +130,7 @@ class Processor<B extends BlockBase> {
     private lowByteWaterMark: number
     private highItemWaterMark: number
     private lowItemWaterMark: number
+    private onBatch?: (batch: DataBatch) => void
     private lastBlockNumber: number
     private lastBlockHash: string | undefined
     private streamStartBlock: number
@@ -158,6 +160,7 @@ class Processor<B extends BlockBase> {
         this.lowByteWaterMark = options.lowByteWaterMark ?? 0
         this.highItemWaterMark = options.highItemWaterMark ?? Infinity
         this.lowItemWaterMark = options.lowItemWaterMark ?? 0
+        this.onBatch = options.onBatch
 
         let streamPause = options.queryStreamPauseThreshold ?? 50
         if (streamPause) {
@@ -495,6 +498,8 @@ class Processor<B extends BlockBase> {
         if (this.finalizedHeadHash != null) {
             batch.finalizedHeadHash = this.finalizedHeadHash
         }
+
+        this.onBatch?.(batch)
 
         // reset batch state
         this.blocks = []

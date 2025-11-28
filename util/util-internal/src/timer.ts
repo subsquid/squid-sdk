@@ -3,12 +3,12 @@ export class Timer {
 
     constructor(private ms: number, private cb: () => void) {}
 
-    start(): void {
+    start(ms?: number): void {
         if (this.timeout != null) return
         this.timeout = setTimeout(() => {
             this.timeout = undefined
             this.cb()
-        }, this.ms)
+        }, ms ?? this.ms)
     }
 
     stop(): void {

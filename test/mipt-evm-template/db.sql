@@ -1,27 +1,29 @@
 
+CREATE DATABASE erc20_src;
 
-CREATE TABLE blocks (
+
+CREATE TABLE erc20_src.blocks (
     number UInt64,
-    hash String,
-    parent_hash String,
+    hash FixedString(66),
+    parent_hash FixedString(66),
     timestamp DateTime
 )
 ENGINE = MergeTree()
 ORDER BY number;
 
 
-CREATE TABLE erc20_transfers
+CREATE TABLE erc20_src.transfers
 (
     block_number UInt64,
-    block_hash String,
+    block_hash FixedString(66),
     block_timestamp DateTime,
     log_index UInt32,
-    transaction_hash String,
-    contract String,
-    from String,
-    to String,
+    transaction_hash FixedString(66),
+    contract FixedString(42),
+    from FixedString(42),
+    to FixedString(42),
     amount UInt256
 )
 ENGINE = MergeTree()
 PARTITION BY toYYYYMM(block_timestamp)
-ORDER BY (contract, block_number, log_index);
+ORDER BY (block_number, log_index);
