@@ -1,5 +1,6 @@
 import {createLogger} from '@subsquid/logger'
 import {AnyQuery, BlockRef, createQueryStream, GetQueryBlock, StreamOptions} from '@subsquid/portal-tools'
+import {last} from '@subsquid/util-internal'
 import {DataBatch, DataSource} from './clickhouse-processor'
 import {PortalClient} from './portal-client'
 
@@ -22,10 +23,23 @@ export class PortalDataSource<Q extends AnyQuery> implements DataSource<GetQuery
             onBatch(batch) {
                 if (batchLog.isDebug()) {
                     let {blocks, ...props} = batch
+                    let ttfb = batch.firstByteTime - batch.startTime
+                    let duration = batch.endTime - batch.startTime
+                    let time = Math.max(duration, 1)
+
+                    let blockDistance = blocks.length
+                        ? last(blocks).header.number - blocks[0].header.number + 1
+                        : 0
+
+                    let bps = Math.round(1000 * blockDistance / time)
+                    let ips = Math.round(1000 * batch.itemSize / time)
+                    let mbs = Math.round(10000 * batch.byteSize / (time * 1024 * 1024)) / 10
+
                     batchLog.debug({
+                        blockDistance,
                         blockSize: blocks.length,
                         ...props
-                    })
+                    }, `rate: ${bps} blocks/sec, ${ips} items/sec, ${mbs} MB/sec; time: ${duration} ms; TTFB: ${ttfb} ms`)
                 }
             },
             ...options
