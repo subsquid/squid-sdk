@@ -22,7 +22,7 @@ export class Typegen {
         const out = this.dest.file(`index.ts`)
 
         for (const module of this.modules) {
-            out.line(`export * as ${module} from './${module}'`)
+            out.line(`export * as ${module} from './${module}.js'`)
         }
 
         if (this.program.programId) {
@@ -100,9 +100,9 @@ export class TypeModuleOutput extends FileOutput {
 
         this.lazy(() => {
             this.printImports(this.borsh, '@subsquid/borsh')
-            this.printImports(this.support, '../abi.support')
+            this.printImports(this.support, '../abi.support.js')
             if (!isTypes) {
-                this.printImports(this.types, './types')
+                this.printImports(this.types, './types.js')
             }
         })
     }

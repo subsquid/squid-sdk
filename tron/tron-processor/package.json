@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.7.0",
+    "@subsquid/http-client": "^1.8.0",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/tron-data": "^0.0.4",
     "@subsquid/tron-normalization": "^0.0.4",

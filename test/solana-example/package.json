@@ -19,7 +19,7 @@
     "reflect-metadata": "~0.2.2"
   },
   "devDependencies": {
-    "@subsquid/solana-typegen": "^0.6.1",
+    "@subsquid/solana-typegen": "^0.8.0",
     "@types/node": "^18.18.14",
     "typescript": "~5.5.4"
   }

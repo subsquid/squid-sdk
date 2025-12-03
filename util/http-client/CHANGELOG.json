@@ -2,6 +2,18 @@
   "name": "@subsquid/http-client",
   "entries": [
     {
+      "version": "1.8.0",
+      "tag": "@subsquid/http-client_v1.8.0",
+      "date": "Tue, 04 Nov 2025 07:29:46 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "make 521, 522, 523 errors retriable"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.7.0",
       "tag": "@subsquid/http-client_v1.7.0",
       "date": "Mon, 22 Sep 2025 13:20:40 GMT",

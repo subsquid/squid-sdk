@@ -1,6 +1,20 @@
 # Change Log - @subsquid/solana-typegen
 
-This log was last generated on Fri, 04 Jul 2025 17:08:54 GMT and should not be manually modified.
+This log was last generated on Mon, 17 Nov 2025 08:42:47 GMT and should not be manually modified.
+
+## 0.8.0
+Mon, 17 Nov 2025 08:42:47 GMT
+
+### Minor changes
+
+- make import paths esm compatible
+
+## 0.7.0
+Wed, 15 Oct 2025 07:01:15 GMT
+
+### Minor changes
+
+- preserve leading `_` in generated names
 
 ## 0.6.1
 Fri, 04 Jul 2025 17:08:54 GMT

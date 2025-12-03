@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/rpc-client",
-  "version": "4.13.0",
+  "version": "4.14.0",
   "description": "Lightweight JSON-RPC client library",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.7.0",
+    "@subsquid/http-client": "^1.8.0",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-binary-heap": "^1.0.0",

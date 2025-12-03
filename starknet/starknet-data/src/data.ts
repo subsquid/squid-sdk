@@ -48,24 +48,10 @@ const EventContent = object({
 })
 type EventContent = GetSrcType<typeof EventContent>
 
-const DataAvailability = object({
+const ExecutionResources = object({
     l1_gas: INT,
     l1_data_gas: INT,
-})
-type DataAvailability = GetSrcType<typeof DataAvailability>
-
-const ExecutionResources = object({
-    data_availability: DataAvailability,
-    steps: INT,
-    memory_holes: option(INT),
-    range_check_builtin_applications: option(INT),
-    pedersen_builtin_applications: option(INT),
-    poseidon_builtin_applications: option(INT),
-    ec_op_builtin_applications: option(INT),
-    ecdsa_builtin_applications: option(INT),
-    bitwise_builtin_applications: option(INT),
-    keccak_builtin_applications: option(INT),
-    segment_arena_builtin: option(INT)
+    l2_gas: INT,
 })
 type ExecutionResources = GetSrcType<typeof ExecutionResources>
 

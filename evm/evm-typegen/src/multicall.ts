@@ -54,13 +54,13 @@ export class Multicall extends ContractBase {
 
     const pages = Array.from(splitArray(pageSize, calls))
     const results = await Promise.all(
-        pages.flatMap(async (page) => {
+        pages.map(async (page) => {
             const {returnData} = await this.eth_call(aggregate, {calls: page})
             return returnData.map((data, i) => page[i].func.decodeResult(data)) 
         })
     )
 
-    return results
+    return results.flat()
   }
 
   tryAggregate<TF extends AnyFunc>(
@@ -87,7 +87,7 @@ export class Multicall extends ContractBase {
 
     const pages = Array.from(splitArray(pageSize, calls))
     const results = await Promise.all(
-        pages.flatMap(async (page) => {
+        pages.map(async (page) => {
             const response = await this.eth_call(tryAggregate, {
                 requireSuccess: false,
                 calls: page,
@@ -109,7 +109,7 @@ export class Multicall extends ContractBase {
         })
     )
 
-    return results
+    return results.flat()
   }
 
   private makeCalls(args: any[]): [calls: Call[], page: number] {
