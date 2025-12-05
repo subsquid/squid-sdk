@@ -131,6 +131,18 @@ dependencies:
   '@rush-temp/http-client':
     specifier: file:./projects/http-client.tgz
     version: file:projects/http-client.tgz
+  '@rush-temp/hyperliquid-fills-data':
+    specifier: file:./projects/hyperliquid-fills-data.tgz
+    version: file:projects/hyperliquid-fills-data.tgz
+  '@rush-temp/hyperliquid-fills-data-service':
+    specifier: file:./projects/hyperliquid-fills-data-service.tgz
+    version: file:projects/hyperliquid-fills-data-service.tgz
+  '@rush-temp/hyperliquid-fills-ingest':
+    specifier: file:./projects/hyperliquid-fills-ingest.tgz
+    version: file:projects/hyperliquid-fills-ingest.tgz
+  '@rush-temp/hyperliquid-fills-normalization':
+    specifier: file:./projects/hyperliquid-fills-normalization.tgz
+    version: file:projects/hyperliquid-fills-normalization.tgz
   '@rush-temp/ink-abi':
     specifier: file:./projects/ink-abi.tgz
     version: file:projects/ink-abi.tgz
@@ -389,6 +401,9 @@ dependencies:
   '@types/inflected':
     specifier: ^2.1.3
     version: 2.1.3
+  '@types/lz4':
+    specifier: ^0.6.4
+    version: 0.6.4
   '@types/mocha':
     specifier: ^10.0.7
     version: 10.0.8
@@ -497,6 +512,9 @@ dependencies:
   latest-version:
     specifier: ^5.1.0
     version: 5.1.0
+  lz4:
+    specifier: ^0.6.4
+    version: 0.6.5
   mocha:
     specifier: ^10.7.0
     version: 10.7.3
@@ -533,9 +551,6 @@ dependencies:
   typeorm:
     specifier: ^0.3.17
     version: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
-  typescript:
-    specifier: 5.5.4
-    version: 5.5.4
   upath:
     specifier: ^2.0.1
     version: 2.0.1
@@ -3173,6 +3188,12 @@ packages:
     resolution: {integrity: sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA==}
     dev: false
 
+  /@types/lz4@0.6.4:
+    resolution: {integrity: sha512-vvxMIkowyHbY6zkCantyYwAK83N5E04bzFZSPJICG1SDpaL89L7lObs9DhLuhJhXHCQMkjzN3LYoAH6LjfwMFQ==}
+    dependencies:
+      '@types/node': 20.19.6
+    dev: false
+
   /@types/mime@1.3.3:
     resolution: {integrity: sha512-Ys+/St+2VF4+xuY6+kDIXGxbNRO0mesVg0bbxEfB97Od1Vjpjx9KD1qxs64Gcb3CWPirk9Xe+PT4YiiHQ9T+eg==}
     dev: false
@@ -3853,6 +3874,13 @@ packages:
   /buffer-writer@2.0.0:
     resolution: {integrity: sha512-a7ZpuTZU1TRtnwyCNW3I5dc0wWNC3VR9S++Ewyk2HHZdrO3CQJqSpd+95Us590V6AL7JqUAH2IwZ/398PmNFgw==}
     engines: {node: '>=4'}
+    dev: false
+
+  /buffer@5.7.1:
+    resolution: {integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==}
+    dependencies:
+      base64-js: 1.5.1
+      ieee754: 1.2.1
     dev: false
 
   /buffer@6.0.3:
@@ -5525,6 +5553,17 @@ packages:
     engines: {node: '>=12'}
     dev: false
 
+  /lz4@0.6.5:
+    resolution: {integrity: sha512-KSZcJU49QZOlJSItaeIU3p8WoAvkTmD9fJqeahQXNu1iQ/kR0/mQLdbrK8JY9MY8f6AhJoMrihp1nu1xDbscSQ==}
+    engines: {node: '>= 0.10'}
+    requiresBuild: true
+    dependencies:
+      buffer: 5.7.1
+      cuint: 0.2.2
+      nan: 2.23.1
+      xxhashjs: 0.2.2
+    dev: false
+
   /magic-string@0.30.11:
     resolution: {integrity: sha512-+Wri9p0QHMy+545hKww7YAu5NyzF8iomPL/RQazugQ9+Ez4Ic3mERMd8ZTX5rfK944j+560ZJi8iAwgak1Ac7A==}
     dependencies:
@@ -5686,6 +5725,10 @@ packages:
       any-promise: 1.3.0
       object-assign: 4.1.1
       thenify-all: 1.6.0
+    dev: false
+
+  /nan@2.23.1:
+    resolution: {integrity: sha512-r7bBUGKzlqk8oPBDYxt6Z0aEdF1G1rwlMcLk8LCOMbOzf0mG+JUfUzG4fIMWwHWP0iyaLWEQZJmtB7nOHEm/qw==}
     dev: false
 
   /nanoassert@2.0.0:
@@ -7843,6 +7886,45 @@ packages:
       typescript: 5.5.4
     dev: false
 
+  file:projects/hyperliquid-fills-data-service.tgz:
+    resolution: {integrity: sha512-bM0A/unO2/U6uslmTEmcEiz/DUVL4ymnZEHb9oaWr7L8uLtp6hziMf5NtEYPtqgnwCdw1D1Yh4usuKD1yGlMzg==, tarball: file:projects/hyperliquid-fills-data-service.tgz}
+    name: '@rush-temp/hyperliquid-fills-data-service'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      commander: 11.1.0
+      typescript: 5.5.4
+    dev: false
+
+  file:projects/hyperliquid-fills-data.tgz:
+    resolution: {integrity: sha512-hTHuUsERKFkLFJP83ULdM2OGqTw+LNR1z/oW3m5qv/1i8ltyM45ptBpThdxf5iPkwK9o92JkIIl3p6VIXu5ElQ==, tarball: file:projects/hyperliquid-fills-data.tgz}
+    name: '@rush-temp/hyperliquid-fills-data'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.5.4
+    dev: false
+
+  file:projects/hyperliquid-fills-ingest.tgz:
+    resolution: {integrity: sha512-09XjbPldfyJWKe79VdblH/JniUyO7JWeXBlVptffh1FBnlPzbSKsgyaettsDoqQFKPIYB9uRj3N5W4zrJ1XBgA==, tarball: file:projects/hyperliquid-fills-ingest.tgz}
+    name: '@rush-temp/hyperliquid-fills-ingest'
+    version: 0.0.0
+    dependencies:
+      '@types/lz4': 0.6.4
+      '@types/node': 18.19.0
+      lz4: 0.6.5
+      typescript: 5.5.4
+    dev: false
+
+  file:projects/hyperliquid-fills-normalization.tgz:
+    resolution: {integrity: sha512-tncLYHzjC3K4chw+eEchpivCZajhIZAovfvk2y1iZkmICPZ3AgwBmTb+j9f5VdcciJf8qrwjdGVcCHRFSllWGA==, tarball: file:projects/hyperliquid-fills-normalization.tgz}
+    name: '@rush-temp/hyperliquid-fills-normalization'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.5.4
+    dev: false
+
   file:projects/ink-abi.tgz:
     resolution: {integrity: sha512-T82zh5GZqVg5kAJuf8Zi7sQqDtgCdL126Wwg/4LiPXNPBYNd/Zf6DGUl6Oiw/D+127fpTuuTU3akYEQCjPRd2Q==, tarball: file:projects/ink-abi.tgz}
     name: '@rush-temp/ink-abi'
@@ -8110,7 +8192,7 @@ packages:
     dev: false
 
   file:projects/solana-spray.tgz:
-    resolution: {integrity: sha512-5yTRuNpmaGUYixnWDF3py/tm5bEP9FcQylCbLVgIAz6wig3r7USOeVuy29EdgJHDtQ6DFSd6AlL05gHB6rYzug==, tarball: file:projects/solana-spray.tgz}
+    resolution: {integrity: sha512-ec9U4/Q8GnEMoJ6WN2LU2R71V/WviOV1Y+9cYoDdNTs647BJat4fMfq13vHKprSrsjdJCr4DbdqRy1tzPJjlig==, tarball: file:projects/solana-spray.tgz}
     name: '@rush-temp/solana-spray'
     version: 0.0.0
     dependencies:

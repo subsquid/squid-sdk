@@ -730,6 +730,30 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/hyperliquid-fills-data",
+      "projectFolder": "hyperliquid/hyperliquid-fills-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-data-service",
+      "projectFolder": "hyperliquid/hyperliquid-fills-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-ingest",
+      "projectFolder": "hyperliquid/hyperliquid-fills-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-normalization",
+      "projectFolder": "hyperliquid/hyperliquid-fills-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/typeorm-codegen",
       "projectFolder": "typeorm/typeorm-codegen",
       "shouldPublish": true,

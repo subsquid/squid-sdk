@@ -1,0 +1,26 @@
+{
+  "name": "@subsquid/hyperliquid-fills-data",
+  "version": "0.0.1",
+  "description": "Hyperliquid fills data definition",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/data.js",
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/logger": "^1.4.0",
+    "@subsquid/util-internal-validation": "^0.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.18.14",
+    "typescript": "5.5.4"
+  }
+}
