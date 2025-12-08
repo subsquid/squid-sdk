@@ -31,6 +31,6 @@
   "devDependencies": {
     "@subsquid/http-client": "^1.8.0",
     "@types/node": "^18.18.14",
-    "typescript": "5.5.4"
+    "typescript": "~5.5.4"
   }
 }

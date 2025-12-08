@@ -1,50 +1,33 @@
 import {unexpectedCase} from '@subsquid/util-internal'
-import {Simplify} from './common'
 import * as evm from './evm'
 import * as solana from './solana'
 import * as substrate from './substrate'
-import {Validator} from '@subsquid/util-internal-validation'
 
-export type {PortalBlock, PortalQuery} from './common'
-export type {evm, solana, substrate}
+export {evm, solana, substrate}
 
-export type Query = evm.Query | solana.Query | substrate.Query
+export type GetQueryBlock<Q> = Q extends evm.Query<infer F>
+    ? evm.Block<F>
+    : Q extends solana.Query<infer F>
+    ? solana.Block<F>
+    : Q extends substrate.Query<infer F>
+    ? substrate.Block<F>
+    : never
 
-export type GetBlock<Q extends Query> = Q extends evm.Query
-    ? evm.Block<Q['fields']>
-    : Q extends solana.Query
-    ? solana.Block<Q['fields']>
-    : substrate.Block<Q['fields']>
+export type AnyQuery = evm.Query | solana.Query | substrate.Query
 
-export function createQuery<Q extends Query>(query: Q): Simplify<Q & Query> {
-    return {
-        ...query,
-        type: query.type,
-        fields: query.fields,
-    }
-}
-
-const BLOCK_SCHEMAS = new WeakMap<Query, Validator<any, any>>()
-
-export function getBlockSchema<Q extends Query>(query: Q): Validator<GetBlock<Q>, any> {
-    let schema = BLOCK_SCHEMAS.get(query)
-    if (schema) return schema
-
+export function getQuery<Q extends AnyQuery>(query: Q) {
+    query = {...query}
     switch (query.type) {
-        case 'solana':
-            schema = solana.getBlockSchema(query.fields)
-            break
         case 'evm':
-            schema = evm.getBlockSchema(query.fields)
-            break
+            query.fields = evm.patchQueryFields(query.fields ?? {})
+            return [query, evm.getBlockSchema(query.fields)] as const
+        case 'solana':
+            query.fields = solana.patchQueryFields(query.fields ?? {})
+            return [query, solana.getBlockSchema(query.fields)] as const
         case 'substrate':
-            schema = substrate.getBlockSchema(query.fields)
-            break
+            query.fields = substrate.patchQueryFields(query.fields ?? {})
+            return [query, substrate.getBlockSchema(query.fields)] as const
         default:
-            throw unexpectedCase(query['type'])
+            throw unexpectedCase((query as any).type)
     }
-
-    BLOCK_SCHEMAS.set(query, schema)
-
-    return schema
 }

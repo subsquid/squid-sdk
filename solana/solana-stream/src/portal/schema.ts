@@ -4,12 +4,11 @@ import {
     ANY,
     array,
     B58,
-    BIG_NAT,
+    ANY_INT,
     BOOLEAN,
     BYTES,
     constant,
     NAT,
-    nullable,
     object,
     oneOf,
     option,
@@ -46,8 +45,8 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             recentBlockhash: B58,
             signatures: array(B58),
             err: ANY,
-            computeUnitsConsumed: BIG_NAT,
-            fee: BIG_NAT,
+            computeUnitsConsumed: ANY_INT,
+            fee: ANY_INT,
             loadedAddresses: option(object({
                 readonly: array(B58),
                 writable: array(B58)
@@ -63,7 +62,7 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             programId: B58,
             accounts: array(B58),
             data: B58,
-            computeUnitsConsumed: option(BIG_NAT),
+            computeUnitsConsumed: option(ANY_INT),
             d1: BYTES,
             d2: BYTES,
             d4: BYTES,
@@ -93,8 +92,8 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         transactionIndex: NAT,
         account: B58,
         ...project(fields.balance, {
-            pre: BIG_NAT,
-            post: BIG_NAT
+            pre: ANY_INT,
+            post: ANY_INT
         })
     })
 
@@ -110,16 +109,16 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             postDecimals: option(NAT),
             preOwner: option(B58),
             postOwner: option(B58),
-            preAmount: option(BIG_NAT),
-            postAmount: option(BIG_NAT)
+            preAmount: option(ANY_INT),
+            postAmount: option(ANY_INT)
         })
     })
 
     let Reward = object({
         pubkey: B58,
         ...project(fields.reward, {
-            lamports: BIG_NAT,
-            postBalance: BIG_NAT,
+            lamports: ANY_INT,
+            postBalance: ANY_INT,
             rewardType: option(STRING),
             commission: option(NAT)
         })
@@ -127,11 +126,11 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
 
     return object({
         header: BlockHeader,
-        transactions: option(array(Transaction)),
-        instructions: option(array(Instruction)),
-        logs: option(array(LogMessage)),
-        balances: option(array(Balance)),
-        tokenBalances: option(array(TokenBalance)),
-        rewards: option(array(Reward))
+        transactions: (array(Transaction)),
+        instructions: (array(Instruction)),
+        logs: (array(LogMessage)),
+        balances: (array(Balance)),
+        tokenBalances: (array(TokenBalance)),
+        rewards: (array(Reward))
     })
 })

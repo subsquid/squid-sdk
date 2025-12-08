@@ -1,16 +1,8 @@
 import {HttpBody, HttpClient, HttpClientOptions, HttpError, HttpResponse, RequestOptions} from '@subsquid/http-client'
-import {
-    addErrorContext,
-    createFuture,
-    Future,
-    last,
-    unexpectedCase,
-    wait,
-    withErrorContext,
-} from '@subsquid/util-internal'
-import {Readable} from 'stream'
-import {GetBlock, evm, getBlockSchema, PortalBlock, PortalQuery, Query, solana, substrate} from './query'
+import {addErrorContext, last, unexpectedCase, wait, withErrorContext} from '@subsquid/util-internal'
 import {cast} from '@subsquid/util-internal-validation'
+import {Semaphore, Timer} from './util'
+import {getQuery, type AnyQuery, type GetQueryBlock} from './query'
 
 export * from './query'
 
@@ -29,19 +21,19 @@ export interface PortalClientOptions {
 
     /**
      * Minimum number of bytes to return.
-     * @default 10_485_760 (10MB)
+     * @deprecated not used
      */
     minBytes?: number
 
     /**
      * Maximum number of bytes to return.
-     * @default minBytes
+     * @default 52_428_800 (50MB)
      */
     maxBytes?: number
 
     /**
      * Maximum time between stream data in milliseconds for return.
-     * @default 300
+     * @default 500
      */
     maxIdleTime?: number
 
@@ -70,7 +62,6 @@ export interface PortalRequestOptions {
 export interface PortalStreamOptions {
     request?: Omit<PortalRequestOptions, 'abort'>
 
-    minBytes?: number
     maxBytes?: number
     maxIdleTime?: number
     maxWaitTime?: number
@@ -78,10 +69,34 @@ export interface PortalStreamOptions {
     headPollInterval?: number
 }
 
+export interface PortalStreamBaseResponse {
+    headNumber?: number
+    finalizedHeadNumber?: number
+    finalizedHeadHash?: string
+}
+
+export interface PortalStreamDataResponse extends PortalStreamBaseResponse {
+    type: 'data'
+    data: AsyncIterable<Uint8Array> | null
+}
+
+export interface PortalStreamNoDataResponse extends PortalStreamBaseResponse {
+    type: 'no-data'
+}
+
+export interface PortalStreamForkResponse extends PortalStreamBaseResponse {
+    type: 'fork'
+    previousBlocks: BlockRef[]
+}
+
+export type PortalStreamResponse = PortalStreamDataResponse | PortalStreamNoDataResponse | PortalStreamForkResponse
+
 export type PortalStreamData<B> = {
     blocks: B[]
-    finalizedHead?: BlockRef
     meta: {
+        finalizedHeadNumber?: number
+        finalizedHeadHash?: string
+        headNumber?: number
         bytes: number
     }
 }
@@ -97,7 +112,6 @@ export class PortalClient {
     private url: URL
     private client: HttpClient
     private headPollInterval: number
-    private minBytes: number
     private maxBytes: number
     private maxIdleTime: number
     private maxWaitTime: number
@@ -106,9 +120,8 @@ export class PortalClient {
         this.url = new URL(options.url)
         this.client = options.http instanceof HttpClient ? options.http : new HttpClient(options.http)
         this.headPollInterval = options.headPollInterval ?? 0
-        this.minBytes = options.minBytes ?? 10 * 1024 * 1024
-        this.maxBytes = options.maxBytes ?? this.minBytes
-        this.maxIdleTime = options.maxIdleTime ?? 300
+        this.maxBytes = options.maxBytes ?? 50 * 1024 * 1024
+        this.maxIdleTime = options.maxIdleTime ?? 500
         this.maxWaitTime = options.maxWaitTime ?? 5_000
     }
 
@@ -122,92 +135,56 @@ export class PortalClient {
         return u.toString()
     }
 
-    async getHead(options?: PortalRequestOptions): Promise<BlockRef | undefined> {
-        const res = await this.request('GET', this.getDatasetUrl('head'), options)
+    async getHead(options?: PortalRequestOptions, finalized?: boolean): Promise<BlockRef | undefined> {
+        const res = await this.request('GET', this.getDatasetUrl(!finalized ? 'head' : 'finalized-head'), options)
         return res.body ?? undefined
     }
 
-    async getFinalizedHead(options?: PortalRequestOptions): Promise<BlockRef | undefined> {
-        const res = await this.request('GET', this.getDatasetUrl('finalized-head'), options)
-        return res.body ?? undefined
+    getFinalizedHead(options?: PortalRequestOptions): Promise<BlockRef | undefined> {
+        return this.getHead(options, true)
     }
 
     /**
-     * @deprecated
+     * Waits until the finalized head reaches or exceeds the specified block number.
+     * @param blockNumber - The block number to wait for finalization
+     * @param options - Request options including abort signal and poll interval
+     * @returns The finalized head once it reaches the target block number
      */
-    async getFinalizedHeight(options?: PortalRequestOptions): Promise<number> {
-        let {body} = await this.request<string>('GET', this.getDatasetUrl('finalized-stream/height'), options)
-        let height = parseInt(body)
-        return height
+    async waitForFinalization(
+        blockNumber: number,
+        options?: PortalRequestOptions & {pollInterval?: number}
+    ): Promise<BlockRef> {
+        let {pollInterval = this.headPollInterval || 1000, ...requestOptions} = options ?? {}
+
+        while (true) {
+            options?.abort?.throwIfAborted()
+
+            let head = await this.getFinalizedHead(requestOptions)
+            if (head && head.number >= blockNumber) {
+                return head
+            }
+
+            await wait(pollInterval, options?.abort)
+        }
     }
 
-    getFinalizedQuery<Q extends Query>(query: Q, options?: PortalRequestOptions): Promise<GetBlock<Q>[]> {
-        // FIXME: is it needed or it is better to always use stream?
-        return this.request<Buffer>('POST', this.getDatasetUrl(`finalized-stream`), {
-            ...options,
-            json: query,
-        })
-            .catch(
-                withErrorContext({
-                    archiveQuery: query,
-                })
-            )
-            .then((res) => {
-                let blocks = res.body
-                    .toString('utf8')
-                    .trimEnd()
-                    .split('\n')
-                    .map((line) => JSON.parse(line))
-                return blocks
-            })
-    }
-
-    getQuery<Q extends PortalQuery = PortalQuery, R extends PortalBlock = PortalBlock>(
+    getStream<Q extends AnyQuery>(
         query: Q,
-        options?: PortalRequestOptions
-    ): Promise<R[]> {
-        // FIXME: is it needed or it is better to always use stream?
-        return this.request<Buffer>('POST', this.getDatasetUrl(`stream`), {
-            ...options,
-            json: query,
-        })
-            .catch(
-                withErrorContext({
-                    archiveQuery: query,
-                })
-            )
-            .then((res) => {
-                let blocks = res.body
-                    .toString('utf8')
-                    .trimEnd()
-                    .split('\n')
-                    .map((line) => JSON.parse(line))
-                return blocks
-            })
-    }
-
-    getFinalizedStream<Q extends evm.Query | solana.Query | substrate.Query>(
-        query: Q,
-        options?: PortalStreamOptions
-    ): PortalStream<GetBlock<Q>> {
+        options?: PortalStreamOptions,
+        finalized?: boolean
+    ): PortalStream<GetQueryBlock<Q>> {
         return createPortalStream(query, this.getStreamOptions(options), async (q, o) =>
-            this.getStreamRequest('finalized-stream', q, o)
+            this.getStreamRequest(!finalized ? 'stream' : 'finalized-stream', q, o)
         )
     }
 
-    getStream<Q extends evm.Query | solana.Query | substrate.Query>(
-        query: Q,
-        options?: PortalStreamOptions
-    ): PortalStream<GetBlock<Q>> {
-        return createPortalStream(query, this.getStreamOptions(options), async (q, o) =>
-            this.getStreamRequest('stream', q, o)
-        )
+    getFinalizedStream<Q extends AnyQuery>(query: Q, options?: PortalStreamOptions): PortalStream<GetQueryBlock<Q>> {
+        return this.getStream(query, options, true)
     }
 
     private getStreamOptions(options?: PortalStreamOptions) {
         let {
             headPollInterval = this.headPollInterval,
-            minBytes = this.minBytes,
             maxBytes = this.maxBytes,
             maxIdleTime = this.maxIdleTime,
             maxWaitTime = this.maxWaitTime,
@@ -216,7 +193,6 @@ export class PortalClient {
 
         return {
             headPollInterval,
-            minBytes,
             maxBytes,
             maxIdleTime,
             maxWaitTime,
@@ -224,9 +200,13 @@ export class PortalClient {
         }
     }
 
-    private async getStreamRequest(path: string, query: PortalQuery, options?: PortalRequestOptions) {
+    private async getStreamRequest(
+        path: string,
+        query: AnyQuery,
+        options?: PortalRequestOptions
+    ): Promise<PortalStreamResponse> {
         try {
-            let res = await this.request<Readable | undefined>('POST', this.getDatasetUrl(path), {
+            let res = await this.request<AsyncIterable<Uint8Array> | undefined>('POST', this.getDatasetUrl(path), {
                 ...options,
                 json: query,
                 stream: true,
@@ -236,28 +216,29 @@ export class PortalClient {
                 })
             )
 
+            let headers = getPortalStreamHeaders(res.headers)
+
             switch (res.status) {
                 case 200:
-                    let finalizedHead = getFinalizedHeadHeader(res.headers)
-                    let stream = res.body ? splitLines(res.body) : undefined
-
                     return {
-                        finalizedHead,
-                        stream,
+                        ...headers,
+                        type: 'data',
+                        data: res.body ?? null,
                     }
                 case 204:
                     return {
-                        finalizedHead: getFinalizedHeadHeader(res.headers),
+                        ...headers,
+                        type: 'no-data',
                     }
                 default:
                     throw unexpectedCase(res.status)
             }
         } catch (e: any) {
-            if (isForkHttpError(e) && query.fromBlock != null && query.parentBlockHash != null) {
-                e = new ForkException(e.response.body.previousBlocks, {
-                    number: query.fromBlock - 1,
-                    hash: query.parentBlockHash,
-                })
+            if (isForkHttpError(e)) {
+                return {
+                    type: 'fork',
+                    previousBlocks: e.response.body.previousBlocks,
+                }
             }
 
             throw addErrorContext(e, {
@@ -284,20 +265,17 @@ function isForkHttpError(err: unknown): err is HttpError<{previousBlocks: BlockR
     return true
 }
 
-function createPortalStream<Q extends Query>(
+function createPortalStream<Q extends AnyQuery>(
     query: Q,
     options: Required<PortalStreamOptions>,
-    requestStream: (
-        query: Q,
-        options?: PortalRequestOptions
-    ) => Promise<{finalizedHead?: BlockRef; stream?: AsyncIterable<string[]> | null | undefined}>
-): PortalStream<GetBlock<Q>> {
+    requestStream: (query: Q, options?: PortalRequestOptions) => Promise<PortalStreamResponse>
+): PortalStream<GetQueryBlock<Q>> {
     let {headPollInterval, request, ...bufferOptions} = options
 
-    let buffer = new PortalStreamBuffer<GetBlock<Q>>(bufferOptions)
+    let buffer = new PortalStreamBuffer<GetQueryBlock<Q>>(bufferOptions)
 
-    let schema = getBlockSchema(query)
-    let {fromBlock = 0, toBlock, parentBlockHash} = query
+    let [normalizedQuery, schema] = getQuery(query)
+    let {fromBlock = 0, toBlock, parentBlockHash} = normalizedQuery
 
     const ingest = async () => {
         while (!buffer.signal.aborted) {
@@ -305,7 +283,7 @@ function createPortalStream<Q extends Query>(
 
             let res = await requestStream(
                 {
-                    ...query,
+                    ...normalizedQuery,
                     fromBlock,
                     parentBlockHash,
                 },
@@ -315,11 +293,13 @@ function createPortalStream<Q extends Query>(
                 }
             )
 
-            const finalizedHead = res.finalizedHead
+            if (res.type === 'fork') {
+                throw new ForkException(fromBlock, parentBlockHash!, res.previousBlocks)
+            }
 
-            // we are on head
-            if (!('stream' in res)) {
-                await buffer.put({blocks: [], meta: {bytes: 0}, finalizedHead})
+            buffer.updateHead(res)
+
+            if (res.type === 'no-data') {
                 buffer.flush()
                 if (headPollInterval > 0) {
                     await wait(headPollInterval, buffer.signal)
@@ -327,18 +307,17 @@ function createPortalStream<Q extends Query>(
                 continue
             }
 
-            // no data left on this range
-            if (res.stream == null) break
+            if (!res.data) break
 
             try {
-                for await (let data of res.stream) {
+                for await (let data of splitLines(res.data)) {
                     buffer.signal.throwIfAborted()
 
-                    let blocks: GetBlock<Q>[] = []
+                    let blocks: GetQueryBlock<Q>[] = []
                     let bytes = 0
 
                     for (let line of data) {
-                        let block = cast(schema, JSON.parse(line))
+                        let block = cast(schema, JSON.parse(line)) as GetQueryBlock<Q>
                         blocks.push(block)
                         bytes += line.length
 
@@ -346,8 +325,10 @@ function createPortalStream<Q extends Query>(
                         parentBlockHash = block.header.hash
                     }
 
-                    await buffer.put({blocks, finalizedHead, meta: {bytes}})
+                    await buffer.put(blocks, bytes)
                 }
+
+                buffer.flush()
             } catch (err) {
                 if (buffer.signal.aborted) return
                 if (!isStreamAbortedError(err)) {
@@ -355,6 +336,8 @@ function createPortalStream<Q extends Query>(
                 }
             }
         }
+
+        buffer.flush()
     }
 
     ingest().then(
@@ -362,174 +345,170 @@ function createPortalStream<Q extends Query>(
         (err) => buffer.fail(err)
     )
 
-    return buffer.iterate()
+    return buffer
 }
 
 class PortalStreamBuffer<B> {
-    private buffer: PortalStreamData<B> | undefined
-    private state: 'pending' | 'ready' | 'failed' | 'closed' = 'pending'
+    private blocks: B[] = []
+    private bytes = 0
+
+    private headNumber?: number
+    private finalizedHeadNumber?: number
+    private finalizedHeadHash?: string
+    private headUpdated = false
+
+    private state: 'open' | 'failed' | 'closed' = 'open'
     private error: unknown
 
-    private readyFuture: Future<void> = createFuture()
-    private takeFuture: Future<void> = createFuture()
-    private putFuture: Future<void> = createFuture()
+    private waitTimeouted = false
+    private putMutex = new Semaphore(false)
+    private takeMutex = new Semaphore(true)
 
-    private idleTimeout: ReturnType<typeof setTimeout> | undefined
-    private waitTimeout: ReturnType<typeof setTimeout> | undefined
-
-    private minBytes: number
     private maxBytes: number
-    private maxIdleTime: number
-    private maxWaitTime: number
-
+    private idleTimer: Timer
+    private waitTimer: Timer
     private abortController = new AbortController()
 
     get signal() {
         return this.abortController.signal
     }
 
-    constructor(options: {maxWaitTime: number; maxBytes: number; maxIdleTime: number; minBytes: number}) {
-        this.maxWaitTime = options.maxWaitTime
-        this.minBytes = options.minBytes
-        this.maxBytes = Math.max(options.maxBytes, options.minBytes)
-        this.maxIdleTime = options.maxIdleTime
+    constructor(options: {maxWaitTime: number; maxBytes: number; maxIdleTime: number}) {
+        this.maxBytes = options.maxBytes
+        this.idleTimer = new Timer(options.maxIdleTime, () => this.flush())
+        this.waitTimer = new Timer(options.maxWaitTime, () => (this.waitTimeouted = true))
     }
 
     async take(): Promise<PortalStreamData<B> | undefined> {
-        if (this.state === 'pending') {
-            this.waitTimeout = setTimeout(() => this._ready('wait'), this.maxWaitTime)
+        if (this.isTerminated()) {
+            return this.collect()
         }
 
-        await Promise.all([this.readyFuture.promise(), this.putFuture.promise()])
+        this.waitTimer.start()
+        await this.putMutex.wait()
+        this.waitTimer.stop()
 
-        if (this.state === 'failed') {
-            throw this.error
-        }
+        let result = this.collect()
 
-        let result = this.buffer
-        this.buffer = undefined
-
-        if (this.state === 'closed') {
-            return result
-        }
-
-        if (result == null) {
-            throw new Error('Buffer is empty')
-        }
-
-        this.takeFuture.resolve()
-
-        this.readyFuture = createFuture()
-        this.putFuture = createFuture()
-        this.takeFuture = createFuture()
-        this.state = 'pending'
+        this.putMutex.unready()
+        this.takeMutex.ready()
+        this.waitTimeouted = false
 
         return result
     }
 
-    async put(data: PortalStreamData<B>) {
-        if (this.state === 'closed' || this.state === 'failed') {
+    updateHead(head: {headNumber?: number; finalizedHeadNumber?: number; finalizedHeadHash?: string}) {
+        this.headNumber = head.headNumber
+        this.finalizedHeadNumber = head.finalizedHeadNumber
+        this.finalizedHeadHash = head.finalizedHeadHash
+        this.headUpdated = true
+    }
+
+    async put(blocks: B[], bytes: number) {
+        if (this.isTerminated()) {
             throw new Error('Buffer is closed')
         }
 
-        if (this.idleTimeout != null) {
-            clearTimeout(this.idleTimeout)
-            this.idleTimeout = undefined
+        this.idleTimer.stop()
+
+        this.blocks.push(...blocks)
+        this.bytes += bytes
+
+        if (this.waitTimeouted || this.bytes >= this.maxBytes) {
+            this.flush()
         }
 
-        if (this.buffer == null) {
-            this.buffer = {blocks: [], meta: {bytes: 0}}
+        if (this.bytes >= this.maxBytes) {
+            this.takeMutex.unready()
+            await this.takeMutex.wait()
         }
 
-        this.buffer.blocks.push(...data.blocks)
-        this.buffer.finalizedHead = data.finalizedHead
-        this.buffer.meta.bytes += data.meta.bytes
-
-        this.putFuture.resolve()
-
-        if (this.buffer.meta.bytes >= this.minBytes) {
-            this._ready('minBytes')
-        }
-
-        if (this.buffer.meta.bytes >= this.maxBytes) {
-            await this.takeFuture.promise()
-        }
-
-        if (this.state === 'pending') {
-            this.idleTimeout = setTimeout(() => this._ready('idle'), this.maxIdleTime)
-        }
+        this.idleTimer.start()
     }
 
     flush() {
-        if (this.buffer == null) return
-        this._ready('flush')
+        if (!this.hasData()) return
+        this.stopTimers()
+        this.putMutex.ready()
     }
 
     close() {
-        if (this.state === 'closed' || this.state === 'failed') return
+        if (this.isTerminated()) return
         this.state = 'closed'
-        this._cleanup()
+        this.stopTimers()
+        this.putMutex.ready()
+        this.takeMutex.reject(new Error('Buffer closed'))
+        this.abortController.abort()
     }
 
     fail(err: any) {
-        if (this.state === 'closed' || this.state === 'failed') return
+        if (this.isTerminated()) return
         this.state = 'failed'
         this.error = err
-        this._cleanup()
+        this.stopTimers()
+        this.putMutex.ready()
+        this.takeMutex.reject(new Error('Buffer closed'))
+        this.abortController.abort()
     }
 
-    iterate() {
+    [Symbol.asyncIterator](): AsyncIterator<PortalStreamData<B>> {
         return {
-            [Symbol.asyncIterator]: (): AsyncIterator<PortalStreamData<B>> => {
-                return {
-                    next: async (): Promise<IteratorResult<PortalStreamData<B>>> => {
-                        const value = await this.take()
-                        if (value == null) {
-                            return {done: true, value: undefined}
-                        }
-                        return {done: false, value}
-                    },
-                    return: async (): Promise<IteratorResult<PortalStreamData<B>>> => {
-                        this.close()
-                        return {done: true, value: undefined}
-                    },
-                    throw: async (error?: any): Promise<IteratorResult<PortalStreamData<B>>> => {
-                        this.fail(error)
-                        throw error
-                    },
+            next: async () => {
+                let value = await this.take()
+                if (value == null) {
+                    return {done: true, value: undefined}
                 }
+                return {done: false, value}
+            },
+            return: async () => {
+                this.close()
+                return {done: true, value: undefined}
+            },
+            throw: async (error?: unknown) => {
+                this.fail(error)
+                throw error
             },
         }
     }
 
-    private _ready(reason?: string) {
-        if (this.state === 'pending') {
-            this.state = 'ready'
-            this.readyFuture.resolve()
-        }
-        if (this.idleTimeout != null) {
-            clearTimeout(this.idleTimeout)
-            this.idleTimeout = undefined
-        }
-        if (this.waitTimeout != null) {
-            clearTimeout(this.waitTimeout)
-            this.waitTimeout = undefined
-        }
+    private hasData(): boolean {
+        return this.blocks.length > 0 || this.headUpdated
     }
 
-    private _cleanup() {
-        if (this.idleTimeout != null) {
-            clearTimeout(this.idleTimeout)
-            this.idleTimeout = undefined
+    private isTerminated(): boolean {
+        return this.state !== 'open'
+    }
+
+    private isFailed(): boolean {
+        return this.state === 'failed'
+    }
+
+    private collect(): PortalStreamData<B> | undefined {
+        if (!this.hasData()) {
+            if (this.isFailed()) throw this.error
+            return undefined
         }
-        if (this.waitTimeout != null) {
-            clearTimeout(this.waitTimeout)
-            this.waitTimeout = undefined
+
+        let result: PortalStreamData<B> = {
+            blocks: this.blocks,
+            meta: {
+                bytes: this.bytes,
+                headNumber: this.headNumber,
+                finalizedHeadNumber: this.finalizedHeadNumber,
+                finalizedHeadHash: this.finalizedHeadHash,
+            },
         }
-        this.readyFuture.resolve()
-        this.putFuture.resolve()
-        this.takeFuture.resolve()
-        this.abortController.abort()
+
+        this.blocks = []
+        this.bytes = 0
+        this.headUpdated = false
+
+        return result
+    }
+
+    private stopTimers() {
+        this.idleTimer.stop()
+        this.waitTimer.stop()
     }
 }
 
@@ -573,15 +552,20 @@ class LineSplitter {
 }
 
 export class ForkException extends Error {
-    readonly name = 'ForkError'
-
-    constructor(readonly previousBlocks: BlockRef[], readonly head: BlockRef) {
-        let parent = last(previousBlocks)
+    constructor(public blockNumber: number, public parentBlockHash: string, public previousBlocks: BlockRef[]) {
+        let base = last(previousBlocks)
         super(
-            `expected ${head.number + 1} to have parent ${parent.number}#${parent.hash}, but got ${head.number}#${
-                head.hash
-            }`
+            `expected block ${blockNumber} to have parent ${base.number}#${parentBlockHash}, ` +
+                `but got ${base.number}#${base.hash} as a parent instead`
         )
+    }
+
+    get name(): string {
+        return 'ForkException'
+    }
+
+    get isSubsquidForkException(): true {
+        return true
     }
 }
 
@@ -591,16 +575,16 @@ export function isForkException(err: unknown): err is ForkException {
     return false
 }
 
-function getFinalizedHeadHeader(headers: HttpResponse['headers']) {
-    let finalizedHeadHash = headers.get('X-Sqd-Finalized-Head-Hash')
-    let finalizedHeadNumber = headers.get('X-Sqd-Finalized-Head-Number')
+function getPortalStreamHeaders(headers: HttpResponse['headers']) {
+    let finalizedHeadHash = headers.get('x-sqd-finalized-head-hash')
+    let finalizedHeadNumber = headers.get('x-sqd-finalized-head-number')
+    let headNumber = headers.get('x-sqd-head-number')
 
-    return finalizedHeadHash != null && finalizedHeadNumber != null
-        ? {
-              hash: finalizedHeadHash,
-              number: parseInt(finalizedHeadNumber),
-          }
-        : undefined
+    return {
+        headNumber: headNumber ? parseInt(headNumber) : undefined,
+        finalizedHeadNumber: finalizedHeadNumber ? parseInt(finalizedHeadNumber) : undefined,
+        finalizedHeadHash: finalizedHeadHash ?? undefined,
+    }
 }
 
 function isStreamAbortedError(err: unknown) {

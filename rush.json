@@ -426,6 +426,18 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/evm-stream",
+      "projectFolder": "evm/evm-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-objects",
+      "projectFolder": "evm/evm-objects",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-codec",
       "projectFolder": "evm/evm-codec",
       "shouldPublish": true,
@@ -765,6 +777,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-data-source",
+      "projectFolder": "util/util-internal-data-source",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-archive-client",
       "projectFolder": "util/util-internal-archive-client",
       "shouldPublish": true,
@@ -959,11 +977,11 @@
       "projectFolder": "test/solana-example",
       "shouldPublish": false
     },
-    {
-      "packageName": "fuel-indexer",
-      "projectFolder": "test/fuel-indexer",
-      "shouldPublish": false
-    },
+//    {
+//      "packageName": "fuel-indexer",
+//      "projectFolder": "test/fuel-indexer",
+//      "shouldPublish": false
+//    },
 //    {
 //      "packageName": "karura-erc20",
 //      "projectFolder": "test/karura-erc20",
@@ -1018,11 +1036,11 @@
       "projectFolder": "starknet/starknet-rpc",
       "shouldPublish": true,
       "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "starknet-indexer",
-      "projectFolder": "test/starknet-indexer",
-      "shouldPublish": false
     }
+//    {
+//      "packageName": "starknet-indexer",
+//      "projectFolder": "test/starknet-indexer",
+//      "shouldPublish": false
+//    }
   ]
 }

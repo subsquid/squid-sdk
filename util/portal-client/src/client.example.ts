@@ -1,4 +1,7 @@
-import {BlockRef, createQuery, isForkException, PortalClient} from './client'
+import {BlockRef, isForkException, PortalClient} from './client'
+import * as evm from './query/evm'
+import * as solana from './query/solana'
+import * as substrate from './query/substrate'
 
 const portalUrls = {
     evm: 'https://portal.sqd.dev/datasets/ethereum-mainnet',
@@ -6,16 +9,13 @@ const portalUrls = {
     substrate: 'https://portal.sqd.dev/datasets/polkadot',
 }
 
-const queries = {
-    evm: createQuery({
+const queries: {evm: evm.Query; solana: solana.Query; substrate: substrate.Query} = {
+    evm: {
         type: 'evm',
         fromBlock: 23_000_000,
         fields: {
             block: {
-                number: true,
-                hash: true,
                 timestamp: true,
-                parentHash: true,
                 transactionsRoot: true,
                 receiptsRoot: true,
                 stateRoot: true,
@@ -31,8 +31,6 @@ const queries = {
                 nonce: true,
                 mixHash: true,
                 size: true,
-                blobGasUsed: true,
-                excessBlobGas: true,
                 l1BlockNumber: true,
             },
             transaction: {
@@ -56,7 +54,6 @@ const queries = {
                 effectiveGasPrice: true,
                 type: true,
                 status: true,
-                blobVersionedHashes: true,
                 l1Fee: true,
                 l1FeeScalar: true,
                 l1GasPrice: true,
@@ -74,7 +71,6 @@ const queries = {
                 transactionIndex: true,
             },
             stateDiff: {
-                kind: true,
                 next: true,
                 prev: true,
                 transactionIndex: true,
@@ -82,7 +78,6 @@ const queries = {
                 key: true,
             },
             trace: {
-                type: true,
                 transactionIndex: true,
                 traceAddress: true,
                 subtraces: true,
@@ -122,18 +117,14 @@ const queries = {
                 transactionLogs: true,
             },
         ],
-    }),
-    solana: createQuery({
+    },
+    solana: {
         type: 'solana',
         fromBlock: 358_600_000,
         fields: {
             block: {
-                number: true,
                 timestamp: true,
-                hash: true,
-                parentHash: true,
                 height: true,
-                parentNumber: true,
             },
             transaction: {
                 signatures: true,
@@ -201,7 +192,7 @@ const queries = {
         instructions: [
             {
                 programId: ['whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc'],
-                d8: ['0xf8c69e91e17587c8'],
+                discriminator: ['0xf8c69e91e17587c8'],
                 isCommitted: true,
                 innerInstructions: true,
                 logs: true,
@@ -210,15 +201,12 @@ const queries = {
                 transactionTokenBalances: true,
             },
         ],
-    }),
-    substrate: createQuery({
+    },
+    substrate: {
         type: 'substrate',
         fromBlock: 100_000,
         fields: {
             block: {
-                number: true,
-                hash: true,
-                parentHash: true,
                 stateRoot: true,
                 extrinsicsRoot: true,
                 digest: true,
@@ -257,7 +245,7 @@ const queries = {
                 stack: true,
             },
         ],
-    }),
+    },
 }
 
 async function main() {
@@ -269,7 +257,6 @@ async function main() {
         http: {
             retryAttempts: Infinity,
         },
-        minBytes: 50 * 1024 * 1024,
     })
 
     let coldHead: BlockRef | undefined = undefined
@@ -284,14 +271,17 @@ async function main() {
         }
 
         try {
-            for await (let {blocks, finalizedHead} of portal.getStream(query)) {
+            for await (let {
+                blocks,
+                meta: {finalizedHeadNumber, finalizedHeadHash},
+            } of portal.getStream(currentQuery)) {
                 if (head && blocks.length > 0 && head.number >= blocks[0].header.number) {
                     throw new Error('Data is not continuous')
                 }
 
                 let unfinalizedIndex = 0
-                if (finalizedHead) {
-                    unfinalizedIndex = blocks.findIndex((b) => b.header.number > finalizedHead?.number)
+                if (finalizedHeadNumber != null) {
+                    unfinalizedIndex = blocks.findIndex((b) => b.header.number > finalizedHeadNumber)
                 }
 
                 // all new blocks are finalized
@@ -301,7 +291,10 @@ async function main() {
                     // finalize all hot heads
                     hotHeads = []
                 } else {
-                    const finalizedRef = finalizedHead ?? blocks[unfinalizedIndex - 1]?.header
+                    let finalizedRef: BlockRef = blocks[unfinalizedIndex - 1]?.header
+                    if (finalizedHeadHash && finalizedHeadNumber) {
+                        finalizedRef = {hash: finalizedHeadHash, number: finalizedHeadNumber}
+                    }
                     coldHead = finalizedRef ?? coldHead
 
                     // finalize all hot heads that are older than the cold head
@@ -317,7 +310,7 @@ async function main() {
                 }
 
                 head = hotHeads[hotHeads.length - 1] ?? coldHead
-                let portalHead = Math.max(head.number, finalizedHead?.number ?? -1)
+                let portalHead = Math.max(head.number, finalizedHeadNumber ?? -1)
                 console.log(`progress: ${head.number} / ${portalHead}` + `, blocks: ${blocks.length}`)
                 console.log(`  \u001b[2mcold head: ${coldHead ? formatRef(coldHead) : 'N/A'}\u001b[0m`)
                 console.log(`  \u001b[2mhot heads: ${hotHeads.map((h) => formatRef(h)).join(', ') || 'N/A'}\u001b[0m`)
@@ -331,7 +324,7 @@ async function main() {
             if (rollbackIndex === -1) throw new Error('Unable to process fork')
 
             const rollbackHead = chain[rollbackIndex]
-            console.warn(`detected fork at block ${rollbackHead.number} (${e.head.number - rollbackHead.number} depth)`)
+            console.warn(`detected fork at block ${rollbackHead.number}`)
 
             hotHeads = chain.slice(1, rollbackIndex + 1)
             head = hotHeads[hotHeads.length - 1] ?? coldHead
