@@ -205,7 +205,7 @@ class Event<D> {
 
 
 function decodeHex(bytes: Bytes): Uint8Array {
-    return new Uint8Array(Buffer.from(bytes.slice(2), 'hex'))
+    return Buffer.from(bytes.slice(2), 'hex') as Uint8Array
 }
 
 
