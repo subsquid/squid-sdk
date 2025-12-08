@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-stream
 
-This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+This log was last generated on Mon, 08 Dec 2025 14:27:13 GMT and should not be manually modified.
+
+## 0.4.0
+Mon, 08 Dec 2025 14:27:13 GMT
+
+### Minor changes
+
+- change instruction data symbol string, use `Symbol.for`
 
 ## 0.3.1
 Sat, 09 Aug 2025 06:10:24 GMT

@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-stream",
   "entries": [
     {
+      "version": "0.4.0",
+      "tag": "@subsquid/solana-stream_v0.4.0",
+      "date": "Mon, 08 Dec 2025 14:27:13 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "change instruction data symbol string, use `Symbol.for`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.1",
       "tag": "@subsquid/solana-stream_v0.3.1",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",
