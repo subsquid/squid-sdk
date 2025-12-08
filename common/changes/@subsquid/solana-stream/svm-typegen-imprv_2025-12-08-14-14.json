@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-stream",
+      "comment": "change instruction data symbol string, use `Symbol.for`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-stream"
+}
