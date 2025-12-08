@@ -154,6 +154,7 @@ function mapTransaction(transactionIndex: number, src: rpc.Transaction): Transac
         signatures: src.transaction.signatures,
         err: src.meta.err,
         computeUnitsConsumed: BigInt(src.meta.computeUnitsConsumed ?? 0),
+        costUnits: BigInt(src.meta.costUnits ?? 0),
         fee: BigInt(src.meta.fee),
         loadedAddresses: src.meta.loadedAddresses ?? {readonly: [], writable: []},
         hasDroppedLogMessages: false
