@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-objects",
+      "comment": "rename `slot` to `number`",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/solana-objects"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "improve ingestion logic",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}
