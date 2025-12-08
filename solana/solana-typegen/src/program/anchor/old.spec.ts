@@ -520,7 +520,7 @@ function makeInstructionDiscriminator(nameSpace: string, ix: IdlInstruction) {
     let preimage = `${nameSpace}:${name}`
     const hash = crypto.createHash('sha256')
     hash.update(preimage)
-    return toHex(hash.digest().subarray(0, 8))
+    return toHex(new Uint8Array(hash.digest().subarray(0, 8)))
 }
 
 function makeAccountDiscriminator(a: {name: string}) {
@@ -528,12 +528,12 @@ function makeAccountDiscriminator(a: {name: string}) {
     let preimage = `account:${name[0].toUpperCase() + name.slice(1)}`
     const hash = crypto.createHash('sha256')
     hash.update(preimage)
-    return toHex(hash.digest().subarray(0, 8))
+    return toHex(new Uint8Array(hash.digest().subarray(0, 8)))
 }
 
 function makeEventDiscriminator(e: {name: string}) {
     let preimage = `event:${e.name}`
     const hash = crypto.createHash('sha256')
     hash.update(preimage)
-    return toHex(hash.digest().subarray(0, 8))
+    return toHex(new Uint8Array(hash.digest().subarray(0, 8)))
 }
