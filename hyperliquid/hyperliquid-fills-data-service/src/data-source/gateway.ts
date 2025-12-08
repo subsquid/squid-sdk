@@ -87,7 +87,9 @@ export class HyperliquidGateway {
                 }
 
                 if (lastBlock == null) {
-                    assert.equal(from, msg.block_number)
+                    if (from != null) {
+                        assert.equal(from, msg.block_number)
+                    }
                 } else {
                     assert.equal(lastBlock + 1, msg.block_number)
                 }
