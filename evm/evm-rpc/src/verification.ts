@@ -2,11 +2,12 @@ import {decodeHex, toHex} from '@subsquid/util-internal-hex'
 import {addErrorContext, assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import {createMPT} from '@ethereumjs/mpt'
 import {RLP} from '@ethereumjs/rlp'
-import {bigIntToUnpaddedBytes, concatBytes, setLengthLeft} from '@ethereumjs/util'
+import {bigIntToUnpaddedBytes, concatBytes, setLengthLeft, hexToBytes, PrefixedHexString} from '@ethereumjs/util'
 import {keccak256} from 'ethereum-cryptography/keccak'
 import secp256k1 from 'secp256k1'
 import {Transaction, AccessListItem, EIP7702Authorization, GetBlock, Log, Receipt} from './rpc-data'
 import {qty2Int} from './util'
+import {Bytes20, Bytes32, Qty} from './types'
 
 
 export function blockHash(block: GetBlock) {
@@ -464,7 +465,7 @@ function calculateSigRecovery(tx: Transaction) {
 }
 
 
-export function recoverTxSender(tx: Transaction): string | undefined {
+export function recoverTxSender(tx: Transaction): Bytes20 | undefined {
     let message = serializeTransaction(tx)
     if (message == null) return
     let messageHash = keccak256(message)
@@ -477,4 +478,14 @@ export function recoverTxSender(tx: Transaction): string | undefined {
     let recovery = calculateSigRecovery(tx)
     let pubKey = secp256k1.ecdsaRecover(signature, recovery, messageHash, false)
     return toHex(keccak256(pubKey.slice(1)).subarray(-20))
+}
+
+
+export function calculateStateSyncTxHash(blockNum: Qty, blockHash: Bytes32) {
+    let receiptKey = Buffer.concat([
+        new TextEncoder().encode('matic-bor-receipt-'),
+        setLengthLeft(hexToBytes(blockNum as PrefixedHexString), 8),
+        decodeHex(blockHash)
+    ])
+    return toHex(keccak256(receiptKey))
 }

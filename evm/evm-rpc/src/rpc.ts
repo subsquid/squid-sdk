@@ -169,8 +169,7 @@ export class Rpc {
         }
 
         if (this.verifyTxRoot && withTransactions) {
-            let transactions = block.transactions as Transaction[]
-            let txRoot = await utils.calculateTransactionsRoot(transactions)
+            let txRoot = await utils.calculateTransactionsRoot(block)
             assert.equal(block.transactionsRoot, txRoot, 'failed to verify transactions root')
         }
 
@@ -312,7 +311,7 @@ export class Rpc {
                 }
 
                 if (this.verifyReceiptsRoot) {
-                    let root = await utils.calculateReceiptsRoot(receipts)
+                    let root = await utils.calculateReceiptsRoot(block.block, receipts)
                     assert.equal(block.block.receiptsRoot, root, 'failed to verify receipts root')
                 }
             } catch (err: any) {
@@ -365,7 +364,7 @@ export class Rpc {
                 }
 
                 if (this.verifyReceiptsRoot) {
-                    let root = await utils.calculateReceiptsRoot(receipts)
+                    let root = await utils.calculateReceiptsRoot(block.block, receipts)
                     assert.equal(block.block.receiptsRoot, root, 'failed to verify receipts root')
                 }
             } catch (err: any) {
