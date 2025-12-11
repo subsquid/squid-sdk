@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-typegen
 
-This log was last generated on Mon, 17 Nov 2025 08:42:47 GMT and should not be manually modified.
+This log was last generated on Mon, 08 Dec 2025 14:27:13 GMT and should not be manually modified.
+
+## 0.9.0
+Mon, 08 Dec 2025 14:27:13 GMT
+
+### Minor changes
+
+- remove `@subsquid/solana-stream` dependency
 
 ## 0.8.0
 Mon, 17 Nov 2025 08:42:47 GMT

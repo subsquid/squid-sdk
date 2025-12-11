@@ -3,8 +3,8 @@ import bs58 from 'bs58'
 import {Base58Bytes, Bytes} from './data/model'
 
 
-export const DATA_SYM = Symbol('DATA')
-export const D8_SYM = Symbol('D8')
+export const DATA_SYM = Symbol.for('SQD_SVM_DATA')
+export const D8_SYM = Symbol.for('SQD_SVM_D8')
 
 
 interface Instruction {
