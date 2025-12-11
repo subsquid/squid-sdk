@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "extract datasource creation in TypeormDatabase",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}
