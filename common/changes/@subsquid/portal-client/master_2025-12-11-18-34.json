@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "refactor data ingestion process and stream buffer",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}

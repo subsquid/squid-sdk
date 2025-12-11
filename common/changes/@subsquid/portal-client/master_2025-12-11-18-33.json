@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "refactor query schemas and types",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}
