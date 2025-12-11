@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Thu, 09 May 2024 15:10:28 GMT and should not be manually modified.
+This log was last generated on Thu, 11 Dec 2025 18:35:52 GMT and should not be manually modified.
+
+## 1.6.0
+Thu, 11 Dec 2025 18:35:52 GMT
+
+### Minor changes
+
+- extract datasource creation in TypeormDatabase
 
 ## 1.5.1
 Thu, 09 May 2024 15:10:28 GMT

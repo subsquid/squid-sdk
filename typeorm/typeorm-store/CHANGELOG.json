@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "1.6.0",
+      "tag": "@subsquid/typeorm-store_v1.6.0",
+      "date": "Thu, 11 Dec 2025 18:35:52 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "extract datasource creation in TypeormDatabase"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.5.1",
       "tag": "@subsquid/typeorm-store_v1.5.1",
       "date": "Thu, 09 May 2024 15:10:28 GMT",
