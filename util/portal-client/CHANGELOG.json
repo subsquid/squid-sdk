@@ -2,6 +2,21 @@
   "name": "@subsquid/portal-client",
   "entries": [
     {
+      "version": "0.4.0",
+      "tag": "@subsquid/portal-client_v0.4.0",
+      "date": "Fri, 12 Dec 2025 12:00:23 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "refactor query schemas and types"
+          },
+          {
+            "comment": "refactor data ingestion process and stream buffer"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.2",
       "tag": "@subsquid/portal-client_v0.3.2",
       "date": "Tue, 14 Oct 2025 06:41:02 GMT",

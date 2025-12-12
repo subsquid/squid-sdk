@@ -1,6 +1,14 @@
 # Change Log - @subsquid/portal-client
 
-This log was last generated on Tue, 14 Oct 2025 06:41:02 GMT and should not be manually modified.
+This log was last generated on Fri, 12 Dec 2025 12:00:23 GMT and should not be manually modified.
+
+## 0.4.0
+Fri, 12 Dec 2025 12:00:23 GMT
+
+### Minor changes
+
+- refactor query schemas and types
+- refactor data ingestion process and stream buffer
 
 ## 0.3.2
 Tue, 14 Oct 2025 06:41:02 GMT
