@@ -36,7 +36,7 @@ export class TypeormDatabase {
     async connect(): Promise<DatabaseState> {
         assert(this.con == null, 'already connected')
 
-        this.con = await this.createDataSource()
+        this.con = await this.initializeDataSource()
 
         try {
             return await this.con.transaction('SERIALIZABLE', em => this.initTransaction(em))
@@ -51,11 +51,10 @@ export class TypeormDatabase {
         await this.con?.destroy().finally(() => this.con = undefined)
     }
 
-    protected async createDataSource(): Promise<DataSource> {
+    protected async initializeDataSource(): Promise<DataSource> {
         const cfg = createOrmConfig({projectDir: this.projectDir})
         const connection = new DataSource(cfg)
-        await connection.initialize()
-        return connection
+        return connection.initialize()
     }
 
     private async initTransaction(em: EntityManager): Promise<DatabaseState> {
