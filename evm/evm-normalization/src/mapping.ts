@@ -61,7 +61,7 @@ function* mapDebugFrame(
                     ...base,
                     type: 'create',
                     action: {
-                        from: frame.from,
+                        from: frame.from.toLowerCase(),
                         value: assertNotNull(frame.value),
                         gas: frame.gas,
                         init: frame.input,
@@ -76,7 +76,7 @@ function* mapDebugFrame(
                     result.code = frame.output
                 }
                 if (frame.to) {
-                    result.address = frame.to
+                    result.address = frame.to.toLowerCase()
                 }
                 if (!isEmpty(result)) {
                     assertNotNull(result.gasUsed)
@@ -96,8 +96,8 @@ function* mapDebugFrame(
                     type: 'call',
                     action: {
                         callType: frame.type.toLowerCase(),
-                        from: frame.from,
-                        to: assertNotNull(frame.to),
+                        from: frame.from.toLowerCase(),
+                        to: assertNotNull(frame.to).toLowerCase(),
                         value: frame.value ?? undefined,
                         gas: frame.gas,
                         input: frame.input,
@@ -121,8 +121,8 @@ function* mapDebugFrame(
                     ...base,
                     type: 'selfdestruct',
                     action: {
-                        address: frame.to ?? undefined,
-                        refundAddress: frame.from,
+                        address: frame.to ? frame.to.toLowerCase() : undefined,
+                        refundAddress: frame.from.toLowerCase(),
                         balance: frame.value ?? undefined
                     }
                 }
@@ -201,7 +201,7 @@ function makeDebugStateDiffRecord(
 ): StateDiff {
     let base = {
         transactionIndex,
-        address,
+        address: address.toLowerCase(),
         key
     }
 
@@ -236,7 +236,7 @@ function makeStateDiffFromReplay(
 ): StateDiff {
     let base = {
         transactionIndex,
-        address,
+        address: address.toLowerCase(),
         key
     }
 
@@ -291,7 +291,7 @@ function* mapReplayStateDiff(
 function mapAction(action: rpc.TraceActionCreate | rpc.TraceActionCall | rpc.TraceActionReward | rpc.TraceActionSelfdestruct): TraceCreateAction | TraceCallAction | TraceRewardAction | TraceSelfdestructAction {
     if ('init' in action) {
         return {
-            from: action.from,
+            from: action.from.toLowerCase(),
             value: action.value,
             gas: action.gas,
             init: action.init,
@@ -300,8 +300,8 @@ function mapAction(action: rpc.TraceActionCreate | rpc.TraceActionCall | rpc.Tra
     }
     if ('callType' in action) {
         return {
-            from: action.from,
-            to: action.to,
+            from: action.from.toLowerCase(),
+            to: action.to.toLowerCase(),
             value: action.value,
             gas: action.gas,
             input: action.input,
@@ -310,14 +310,14 @@ function mapAction(action: rpc.TraceActionCreate | rpc.TraceActionCall | rpc.Tra
     }
     if ('rewardType' in action) {
         return {
-            author: action.author,
+            author: action.author.toLowerCase(),
             value: action.value,
             rewardType: action.rewardType
         }
     }
     return {
-        address: action.address,
-        refundAddress: action.refundAddress,
+        address: action.address.toLowerCase(),
+        refundAddress: action.refundAddress.toLowerCase(),
         balance: action.balance
     }
 }
@@ -336,7 +336,7 @@ function mapResult(result: rpc.TraceResultCall | rpc.TraceResultCreate | undefin
     return {
         gasUsed: result.gasUsed,
         code: result.code,
-        address: result.address
+        address: result.address.toLowerCase()
     }
 }
 
@@ -379,7 +379,7 @@ function mapLog(src: rpc.Log): Log {
         logIndex: qty2Int(src.logIndex),
         transactionIndex: qty2Int(src.transactionIndex),
         transactionHash: src.transactionHash,
-        address: src.address,
+        address: src.address.toLowerCase(),
         data: src.data,
         topics: src.topics
     }
@@ -412,8 +412,8 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         transactionIndex: qty2Int(src.transactionIndex),
         hash: src.hash,
         nonce: qty2Int(src.nonce),
-        from: src.from,
-        to: src.to ?? undefined,
+        from: src.from.toLowerCase(),
+        to: src.to ? src.to.toLowerCase() : undefined,
         input: src.input,
         value: src.value,
         type: src.type ? qty2Int(src.type) : undefined,
@@ -430,7 +430,7 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         maxFeePerBlobGas: src.maxFeePerBlobGas ?? undefined,
         blobVersionedHashes: src.blobVersionedHashes ?? undefined,
         authorizationList: src.authorizationList?.map(mapEIP7702Authorization),
-        contractAddress: receipt?.contractAddress ?? undefined,
+        contractAddress: receipt?.contractAddress ? receipt?.contractAddress.toLowerCase() : undefined,
         cumulativeGasUsed: receipt?.cumulativeGasUsed,
         effectiveGasPrice: receipt?.effectiveGasPrice,
         gasUsed: receipt?.gasUsed,
