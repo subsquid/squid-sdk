@@ -1,7 +1,8 @@
 import {createLogger} from '@subsquid/logger'
-import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
-import {RpcCall, RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
-import {GetBlock} from '@subsquid/solana-rpc-data'
+import {CallOptions, RetryError, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
+import {RpcCall, RpcErrorInfo, RpcRequest} from '@subsquid/rpc-client/lib/interfaces'
+import {GetBlock, isVoteTransaction} from '@subsquid/solana-rpc-data'
+import {assertNotNull} from '@subsquid/util-internal'
 import {
     array,
     B58,
@@ -49,10 +50,18 @@ export interface RpcApi {
 
 
 export class Rpc implements RpcApi {
+    private requests: ThresholdRequests
+
     constructor(
         public readonly client: RpcClient,
-        public readonly log = createLogger('sqd:solana-rpc')
-    ) {}
+        public readonly txThreshold?: number,
+        public readonly log = createLogger('sqd:solana-rpc'),
+    ) {
+        if (this.txThreshold != null) {
+            assert(this.txThreshold > 0)
+        }
+        this.requests = new ThresholdRequests()
+    }
 
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
         return this.client.call(method, params, options)
@@ -107,7 +116,7 @@ export class Rpc implements RpcApi {
             call[i] = {method: 'getBlock', params}
         }
         return this.reduceBatchOnRetry<GetBlock | 'skipped' | null | undefined>(call, {
-            validateResult: getResultValidator(nullable(GetBlock)),
+            validateResult: (result, req) => this.validateGetBlockResult(result, req),
             validateError: captureNoBlockAtSlot
         })
     }
@@ -132,6 +141,23 @@ export class Rpc implements RpcApi {
 
         return pack.flat()
     }
+
+    validateGetBlockResult(result: unknown, req: RpcRequest) {
+        let validator = getResultValidator(nullable(GetBlock))
+        let block = validator(result)
+        if (this.txThreshold && block != null && block.transactions != null) {
+            let transactions = block.transactions.filter(tx => !isVoteTransaction(tx))
+            if (transactions.length < this.txThreshold) {
+                let slot = req.params![0] as any as number
+                let retries = this.requests.get(slot)
+                if (retries < 3) {
+                    this.requests.inc(slot)
+                    throw new RetryError(`transactions count is less than threshold: ${transactions.length} < ${this.txThreshold}`)
+                }
+            }
+        }
+        return block
+    }
 }
 
 
@@ -150,5 +176,30 @@ function getResultValidator<V extends Validator>(validator: V): (result: unknown
         } else {
             return result as any
         }
+    }
+}
+
+
+class ThresholdRequests {
+    inner: Map<number, number>
+
+    constructor() {
+        this.inner = new Map()
+    }
+
+    inc(slot: number) {
+        if (this.inner.size > 100) {
+            let keys = this.inner.keys()
+            for (let i = 0; i < 20; i++) {
+                let res = keys.next()
+                this.inner.delete(assertNotNull(res.value))
+            }
+        }
+        let val = this.inner.get(slot) ?? 0
+        this.inner.set(slot, val + 1)
+    }
+
+    get(slot: number) {
+        return this.inner.get(slot) ?? 0
     }
 }
