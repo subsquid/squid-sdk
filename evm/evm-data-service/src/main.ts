@@ -22,7 +22,7 @@ runProgram(async () => {
     program.option('--http-rpc-rate-limit <rps>', 'Maximum RPC rate in requests per second', positiveReal)
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
-    program.option('--finality-confirmation', 'Finality offset from the head of a chain', positiveInt)
+    program.option('--finality-confirmation <number>', 'Finality offset from the head of a chain', positiveInt)
     program.option('--traces', 'Force enable traces')
     program.option('--diffs', 'Force enable diffs')
     program.option('--receipts', 'Force enable receipts')
