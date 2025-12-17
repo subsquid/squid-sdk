@@ -1,9 +1,9 @@
 # Change Log - @subsquid/portal-client
 
-This log was last generated on Thu, 11 Dec 2025 18:35:52 GMT and should not be manually modified.
+This log was last generated on Fri, 12 Dec 2025 12:00:23 GMT and should not be manually modified.
 
 ## 0.4.0
-Thu, 11 Dec 2025 18:35:52 GMT
+Fri, 12 Dec 2025 12:00:23 GMT
 
 ### Minor changes
 

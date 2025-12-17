@@ -20,7 +20,7 @@
     "@subsquid/http-client": "^1.8.0",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/rpc-client": "^4.14.0",
-    "@subsquid/portal-client": "^0.3.2",
+    "@subsquid/portal-client": "^0.4.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-archive-client": "^0.1.2",
     "@subsquid/util-internal-hex": "^1.2.2",
