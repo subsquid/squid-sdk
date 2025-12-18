@@ -67,6 +67,14 @@ export class PollStream {
     private async fetchBlocks(): Promise<Block[]> {
         let plan = this.makePlan()
         let blocks = await this.rpc.getBlockBatch(plan, this.req)
+
+        for (let i = 0; i < blocks.length; i++) {
+            if (blocks[i]._isInvalid) {
+                blocks = blocks.slice(0, i)
+                break
+            }
+        }
+
         if (blocks.length > 0) {
             this.lastRead = blocks[blocks.length - 1].number
         }

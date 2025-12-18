@@ -25,6 +25,7 @@ export interface Block {
     debugStateDiffs?: (DebugStateDiffResult | undefined)[]
     debugFrames?: (DebugFrameResult | undefined)[]
     _isInvalid?: boolean
+    _errorMessage?: string
 }
 
 

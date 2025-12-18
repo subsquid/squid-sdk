@@ -120,9 +120,6 @@ export class Rpc {
 
         await this.addRequestedData(chain, req)
 
-        for (let i = 0; i < chain.length; i++) {
-            if (chain[i]._isInvalid) return chain.slice(0, i)
-        }
         return chain
     }
 
@@ -291,6 +288,7 @@ export class Rpc {
             let receipts = results[i]
             if (receipts == null) {
                 block._isInvalid = true
+                block._errorMessage = 'eth_getBlockReceipts returned null'
                 continue
             }
 
@@ -301,6 +299,7 @@ export class Rpc {
                 logs.push(...receipt.logs)
                 if (receipt.blockHash !== block.block.hash) {
                     block._isInvalid = true
+                    block._errorMessage = 'eth_getBlockReceipts returned receipts for a different block'
                 }
             }
 
@@ -323,6 +322,7 @@ export class Rpc {
 
             if (block.block.transactions.length !== receipts.length) {
                 block._isInvalid = true
+                block._errorMessage = 'got invalid number of receipts from eth_getBlockReceipts'
             }
         }
     }
@@ -353,6 +353,7 @@ export class Rpc {
 
             if (receipts.length !== block.block.transactions.length) {
                 block._isInvalid = true
+                block._errorMessage = 'failed to get receipts for all transactions'
                 continue
             }
 
@@ -427,6 +428,7 @@ export class Rpc {
             if (frames.length == 0) {
                 if (block.block.transactions.length > 0) {
                     block._isInvalid = true
+                    block._errorMessage = 'missing traces for some transactions'
                 }
                 continue
             }
@@ -434,6 +436,7 @@ export class Rpc {
             for (let frame of frames) {
                 if (frame.blockHash !== block.block.hash) {
                     block._isInvalid = true
+                    block._errorMessage = 'trace_block returned a trace of a different block'
                     break
                 }
 
@@ -479,6 +482,7 @@ export class Rpc {
             let diffs = results[i]
             if (diffs == null) {
                 block._isInvalid = true
+                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
             } else if (block.block.transactions.length === diffs.length) {
                 block.debugStateDiffs = diffs
             } else {
@@ -525,6 +529,7 @@ export class Rpc {
             let frames = results[i]
             if (frames == null) {
                 block._isInvalid = true
+                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
             } else if (block.block.transactions.length === frames.length) {
                 block.debugFrames = frames
             } else {
@@ -596,6 +601,7 @@ export class Rpc {
 
                 if (!txs.has(rep.transactionHash)) {
                     block._isInvalid = true
+                    block._errorMessage = 'trace_replayBlockTransactions returned a trace of a different block'
                 }
             }
 
