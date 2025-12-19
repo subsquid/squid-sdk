@@ -133,7 +133,7 @@ export class Rpc {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: info => {
                 // Avalanche
-                if (/cannot query unfinalized data/i.test(info.message)) return null
+                if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
                 throw new RpcError(info)
             }
         })
@@ -473,7 +473,11 @@ export class Rpc {
 
         let results = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(array(DebugStateDiffResult)),
-            validateError: captureNotFound
+            validateError: info => {
+                if (info.message.includes('not found')) return null
+                if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                throw new RpcError(info)
+            }
         })
 
         let utils = await this.getChainUtils()
@@ -520,7 +524,11 @@ export class Rpc {
                 }
                 return validateFrameResult(result)
             },
-            validateError: captureNotFound
+            validateError: info => {
+                if (info.message.includes('not found')) return null
+                if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                throw new RpcError(info)
+            }
         })
 
         let utils = await this.getChainUtils()
@@ -659,12 +667,6 @@ function getResultValidator<V extends Validator>(validator: V): (result: unknown
             return result as any
         }
     }
-}
-
-
-function captureNotFound(info: RpcErrorInfo): null {
-    if (info.message.includes('not found')) return null
-    throw new RpcError(info)
 }
 
 
