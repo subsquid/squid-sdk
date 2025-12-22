@@ -58,10 +58,9 @@ export class HyperliquidGateway {
 
     private subscribe(queue: AsyncQueue<IngestBatch | Error>, from?: number): Promise<void> {
         let future = createFuture<void>()
-        let lastBlock: number | undefined
 
-        let timer = new Timer(10_000, () => {
-            future.reject(new SubscriptionError('no blocks were received during the last 10 secs'))
+        let timer = new Timer(30_000, () => {
+            future.reject(new SubscriptionError('no blocks were received during the last 30 secs'))
         })
 
         timer.start()
@@ -86,14 +85,6 @@ export class HyperliquidGateway {
                     return
                 }
 
-                if (lastBlock == null) {
-                    if (from != null) {
-                        assert.equal(from, msg.block_number)
-                    }
-                } else {
-                    assert.equal(lastBlock + 1, msg.block_number)
-                }
-
                 if (this.log.isDebug()) {
                     this.log.debug({
                         blockNumber: msg.block_number,
@@ -116,8 +107,6 @@ export class HyperliquidGateway {
                         }, 'dropping bottom block, because internal queue has reached its max size')
                     }
                 }
-
-                lastBlock = msg.block_number
             },
             onError: err => {
                 future.reject(err)
