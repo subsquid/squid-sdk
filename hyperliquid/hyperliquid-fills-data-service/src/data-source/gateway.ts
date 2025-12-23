@@ -59,8 +59,8 @@ export class HyperliquidGateway {
     private subscribe(queue: AsyncQueue<IngestBatch | Error>, from?: number): Promise<void> {
         let future = createFuture<void>()
 
-        let timer = new Timer(30_000, () => {
-            future.reject(new SubscriptionError('no blocks were received during the last 30 secs'))
+        let timer = new Timer(10_000, () => {
+            future.reject(new SubscriptionError('no blocks were received during the last 10 secs'))
         })
 
         timer.start()
