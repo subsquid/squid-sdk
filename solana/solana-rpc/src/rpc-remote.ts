@@ -18,6 +18,7 @@ export type RemoteRpcOptions = Pick<
      * Remove vote transactions from all relevant responses
      */
     noVotes?: boolean
+    txThreshold?: number
 }
 
 
