@@ -14,9 +14,13 @@ import {getTxHash} from './util'
 
 export class ChainUtils {
     public isPolygonMainnet: boolean
+    public isHyperliquidMainnet: boolean
+    public isHyperliquidTestnet: boolean
 
     constructor(chainId: Qty) {
         this.isPolygonMainnet = chainId == '0x89'
+        this.isHyperliquidMainnet = chainId == '0x3e7'
+        this.isHyperliquidTestnet = chainId == '0x3e6'
     }
 
     calculateBlockHash(block: GetBlock) {
@@ -25,6 +29,7 @@ export class ChainUtils {
 
     calculateTransactionsRoot(block: GetBlock) {
         let transactions = block.transactions as Transaction[]
+
         if (this.isPolygonMainnet) {
             let stateSyncTxHash = calculateStateSyncTxHash(block.number, block.hash)
             let txs = []
@@ -40,6 +45,11 @@ export class ChainUtils {
                 }
             }
         }
+
+        if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
+            transactions = transactions.filter(tx => !isHyperliquidSystemAddress(tx))
+        }
+
         return transactionsRoot(transactions)
     }
 
@@ -53,6 +63,16 @@ export class ChainUtils {
                 return tx.hash != stateSyncTxHash
             })
         }
+
+        if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
+            let transactions = block.transactions as Transaction[]
+            let txByHash = new Map(transactions.map(tx => [getTxHash(tx), tx]))
+            logs = logs.filter(log => {
+                let tx = assertNotNull(txByHash.get(log.transactionHash))
+                return !isHyperliquidSystemAddress(tx)
+            })
+        }
+
         return logsBloom(logs)
     }
 
@@ -61,10 +81,25 @@ export class ChainUtils {
             let stateSyncTxHash = calculateStateSyncTxHash(block.number, block.hash)
             receipts = receipts.filter(receipt => receipt.transactionHash != stateSyncTxHash)
         }
+
+        if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
+            receipts = receipts.filter(receipt => !isHyperliquidSystemAddress(receipt))
+        }
+
         return receiptsRoot(receipts)
     }
 
     recoverTxSender(transaction: Transaction) {
+        if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
+            if (isHyperliquidSystemAddress(transaction)) return
+        }
+
         return recoverTxSender(transaction)
     }
+}
+
+
+function isHyperliquidSystemAddress(txOrReceipt: Transaction | Receipt) {
+    // https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm/hypercore-less-than-greater-than-hyperevm-transfers#system-addresses
+    return txOrReceipt.from == '0x2222222222222222222222222222222222222222' || txOrReceipt.from.startsWith('0x20')
 }
