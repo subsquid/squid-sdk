@@ -47,7 +47,7 @@ export class ChainUtils {
         }
 
         if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
-            transactions = transactions.filter(tx => !isHyperliquidSystemAddress(tx))
+            transactions = transactions.filter(tx => !isHyperliquidSystemTx(tx))
         }
 
         return transactionsRoot(transactions)
@@ -69,7 +69,7 @@ export class ChainUtils {
             let txByHash = new Map(transactions.map(tx => [getTxHash(tx), tx]))
             logs = logs.filter(log => {
                 let tx = assertNotNull(txByHash.get(log.transactionHash))
-                return !isHyperliquidSystemAddress(tx)
+                return !isHyperliquidSystemTx(tx)
             })
         }
 
@@ -83,7 +83,7 @@ export class ChainUtils {
         }
 
         if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
-            receipts = receipts.filter(receipt => !isHyperliquidSystemAddress(receipt))
+            receipts = receipts.filter(receipt => !isHyperliquidSystemReceipt(receipt))
         }
 
         return receiptsRoot(receipts)
@@ -91,7 +91,7 @@ export class ChainUtils {
 
     recoverTxSender(transaction: Transaction) {
         if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
-            if (isHyperliquidSystemAddress(transaction)) return
+            if (isHyperliquidSystemTx(transaction)) return
         }
 
         return recoverTxSender(transaction)
@@ -99,7 +99,13 @@ export class ChainUtils {
 }
 
 
-function isHyperliquidSystemAddress(txOrReceipt: Transaction | Receipt) {
-    // https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm/hypercore-less-than-greater-than-hyperevm-transfers#system-addresses
-    return txOrReceipt.from == '0x2222222222222222222222222222222222222222' || txOrReceipt.from.startsWith('0x20')
+function isHyperliquidSystemTx(tx: Transaction) {
+    // https://github.com/hl-archive-node/nanoreth/blob/732f8c574db2dde90344a29b0292189a5cddd2d1/src/node/primitives/transaction.rs#L165
+    return tx.gasPrice == '0x0'
+}
+
+
+function isHyperliquidSystemReceipt(receipt: Receipt) {
+    // https://github.com/hl-archive-node/nanoreth/blob/732f8c574db2dde90344a29b0292189a5cddd2d1/src/addons/hl_node_compliance.rs#L365
+    return receipt.cumulativeGasUsed == '0x0'
 }
