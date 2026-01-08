@@ -67,6 +67,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 stateDiffs: this.options().withStatediffs,
                 useDebugApiForStateDiffs: this.options().useDebugApiForStatediffs,
                 useTraceApi: this.options().useTraceApi,
+                debugTraceTimeout: '60s'
             },
         })
     }

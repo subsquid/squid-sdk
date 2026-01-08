@@ -57,6 +57,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
             stateDiffs: options.diffs,
             useTraceApi: options.useTraceApi,
             useDebugApiForStateDiffs: options.useDebugApiForStateDiffs,
+            debugTraceTimeout: '60s',
         },
         strideSize: options.httpRpcStrideSize,
         strideConcurrency: options.httpRpcStrideConcurrency
