@@ -9,6 +9,7 @@ import { GET } from './util/fetch'
 import { OutDir } from '@subsquid/util-internal-code-printer'
 
 const LOG = createLogger('sqd:evm-typegen')
+const PROXY_ETHERSCAN = 'https://cloud.sqd.dev/chains/api/v1/evm/abi'
 
 runProgram(
   async function () {
@@ -28,7 +29,7 @@ The generated facades are assumed to be used by "squids" indexing EVM data.
         '--etherscan-api <url>',
         'etherscan API to fetch contract ABI by a known address',
         validator.Url(['http:', 'https:']),
-        'https://api.etherscan.io/v2'
+        PROXY_ETHERSCAN
       )
       .option('--etherscan-api-key <key>', 'etherscan API key')
       .option(
@@ -127,7 +128,13 @@ async function fetchFromEtherscan(
   address: string,
   config: EtherscanAPIConfig,
 ): Promise<any> {
-  let api = config.api + (config.api.endsWith('/') ? '' : '/') + 'api'
+  let api: string
+  if (config.api === PROXY_ETHERSCAN ) {
+    api = config.api
+  }
+  else {
+    api = config.api + (config.api.endsWith('/') ? '' : '/') + 'api'
+  }
   let url = new URL(api)
 
   let params = new URLSearchParams({
