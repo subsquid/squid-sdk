@@ -74,6 +74,8 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
     let dest = new OutDir(program.processedArgs[0])
     let specs = program.processedArgs[1] as Spec[]
 
+    if (opts.etherscanChainId) LOG.warn('Parameter --etherscan-chain-id is deprecated. Please use --chain-id instead')
+
     if (opts.clean && dest.exists()) {
       LOG.info(`deleting ${dest.path()}`)
       dest.del()
