@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-archive-layout",
+      "comment": "fix raw writer when batch size is too small",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-archive-layout"
+}
