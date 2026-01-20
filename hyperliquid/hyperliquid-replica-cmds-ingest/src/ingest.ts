@@ -4,7 +4,7 @@ import {Command, FileOrUrl, Ingest, IngestOptions, Range} from '@subsquid/util-i
 import {toJSON} from '@subsquid/util-internal-json'
 import {def} from '@subsquid/util-internal'
 import {S3Fs} from '@subsquid/util-internal-fs'
-import {mapRawBlock, Block} from '@subsquid/hyperliquid-fills-normalization'
+import {mapRawBlock, Block} from '@subsquid/hyperliquid-replica-cmds-normalization'
 import {HyperliquidArchive} from './archive'
 
 
@@ -45,7 +45,7 @@ export class HyperliquidIngest extends Ingest<HyperliquidIngestOptions> {
                     return toJSON(block)
                 } catch(err: any) {
                     throw addErrorContext(err, {
-                        blockHeight: raw.block_number
+                        blockHeight: raw.height
                     })
                 }
             })
@@ -57,6 +57,6 @@ export class HyperliquidIngest extends Ingest<HyperliquidIngestOptions> {
     }
 
     protected getBlockHeight(block: Block): number {
-        return block.header.number
+        return block.header.height
     }
 }

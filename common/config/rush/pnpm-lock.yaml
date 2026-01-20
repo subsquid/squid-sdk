@@ -143,6 +143,15 @@ dependencies:
   '@rush-temp/hyperliquid-fills-normalization':
     specifier: file:./projects/hyperliquid-fills-normalization.tgz
     version: file:projects/hyperliquid-fills-normalization.tgz
+  '@rush-temp/hyperliquid-replica-cmds-data':
+    specifier: file:./projects/hyperliquid-replica-cmds-data.tgz
+    version: file:projects/hyperliquid-replica-cmds-data.tgz
+  '@rush-temp/hyperliquid-replica-cmds-ingest':
+    specifier: file:./projects/hyperliquid-replica-cmds-ingest.tgz
+    version: file:projects/hyperliquid-replica-cmds-ingest.tgz
+  '@rush-temp/hyperliquid-replica-cmds-normalization':
+    specifier: file:./projects/hyperliquid-replica-cmds-normalization.tgz
+    version: file:projects/hyperliquid-replica-cmds-normalization.tgz
   '@rush-temp/ink-abi':
     specifier: file:./projects/ink-abi.tgz
     version: file:projects/ink-abi.tgz
@@ -2729,6 +2738,20 @@ packages:
 
   /@sqltools/formatter@1.2.5:
     resolution: {integrity: sha512-Uy0+khmZqUrUGm5dmMqVlnvufZRSK0FbYzVgp0UMstm+F5+W2/jnEEQyc9vo1ZR/E5ZI/B1WjjoTqBqwJL6Krw==}
+    dev: false
+
+  /@streamparser/json-node@0.0.22:
+    resolution: {integrity: sha512-sJT2ptNRwqB1lIsQrQlCoWk5rF4tif9wDh+7yluAGijJamAhrHGYpFB/Zg3hJeceoZypi74ftXk8DHzwYpbZSg==}
+    dependencies:
+      '@streamparser/json': 0.0.22
+    dev: false
+
+  /@streamparser/json@0.0.21:
+    resolution: {integrity: sha512-v+49JBiG1kmc/9Ug79Lz9wyKaRocBgCnpRaLpdy7p0d3ICKtOAfc/H/Epa1j3F6YdnzjnZKKrnJ8xnh/v1P8Aw==}
+    dev: false
+
+  /@streamparser/json@0.0.22:
+    resolution: {integrity: sha512-b6gTSBjJ8G8SuO3Gbbj+zXbVx8NSs1EbpbMKpzGLWMdkR+98McH9bEjSz3+0mPJf68c5nxa3CrJHp5EQNXM6zQ==}
     dev: false
 
   /@subsquid/apollo-server-core@3.14.0(graphql@15.8.0):
@@ -7887,7 +7910,7 @@ packages:
     dev: false
 
   file:projects/hyperliquid-fills-data-service.tgz:
-    resolution: {integrity: sha512-bM0A/unO2/U6uslmTEmcEiz/DUVL4ymnZEHb9oaWr7L8uLtp6hziMf5NtEYPtqgnwCdw1D1Yh4usuKD1yGlMzg==, tarball: file:projects/hyperliquid-fills-data-service.tgz}
+    resolution: {integrity: sha512-LmcexkYvH9tA1AeaV3QN4UfdSpwbkK4dujMBGhKWtqW0jBZDwyOtrvs27yEc7oUtzt5wSOKDvS69puoE0nYrPA==, tarball: file:projects/hyperliquid-fills-data-service.tgz}
     name: '@rush-temp/hyperliquid-fills-data-service'
     version: 0.0.0
     dependencies:
@@ -7906,19 +7929,56 @@ packages:
     dev: false
 
   file:projects/hyperliquid-fills-ingest.tgz:
-    resolution: {integrity: sha512-09XjbPldfyJWKe79VdblH/JniUyO7JWeXBlVptffh1FBnlPzbSKsgyaettsDoqQFKPIYB9uRj3N5W4zrJ1XBgA==, tarball: file:projects/hyperliquid-fills-ingest.tgz}
+    resolution: {integrity: sha512-vmQPRuA5oFGpXfUi7LPqvXwwEfB7wJbnSjUaYvnNOqqOqM5CciAtMbcU8FSfv9xj9W0znAtPQNw6jaoC4qNkAw==, tarball: file:projects/hyperliquid-fills-ingest.tgz}
     name: '@rush-temp/hyperliquid-fills-ingest'
     version: 0.0.0
     dependencies:
+      '@aws-sdk/client-s3': 3.462.0
       '@types/lz4': 0.6.4
       '@types/node': 18.19.0
       lz4: 0.6.5
       typescript: 5.5.4
+    transitivePeerDependencies:
+      - aws-crt
     dev: false
 
   file:projects/hyperliquid-fills-normalization.tgz:
-    resolution: {integrity: sha512-tncLYHzjC3K4chw+eEchpivCZajhIZAovfvk2y1iZkmICPZ3AgwBmTb+j9f5VdcciJf8qrwjdGVcCHRFSllWGA==, tarball: file:projects/hyperliquid-fills-normalization.tgz}
+    resolution: {integrity: sha512-iZHoRcREDPCS/poDF2729NQn7fMp51bTjN1o5EH70tsXGsfNiH0DEQVuSa6YDnMyZKtD7Q2l9ZYjtibqCWvjAw==, tarball: file:projects/hyperliquid-fills-normalization.tgz}
     name: '@rush-temp/hyperliquid-fills-normalization'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.5.4
+    dev: false
+
+  file:projects/hyperliquid-replica-cmds-data.tgz:
+    resolution: {integrity: sha512-6Q8tVquizXoBLDSFzpOahHD4Qavunz9wAf2oYEHa2fNCtG3UOb382OMTOOPmvm4thwIRqeVAa/YjpbiUgnDVhg==, tarball: file:projects/hyperliquid-replica-cmds-data.tgz}
+    name: '@rush-temp/hyperliquid-replica-cmds-data'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.5.4
+    dev: false
+
+  file:projects/hyperliquid-replica-cmds-ingest.tgz:
+    resolution: {integrity: sha512-4HvYlj6WijQkhQqpUSRHSP8CIyB/PAcUkwh2I4paJw5et5c2SubHFGa5Wd+buXgumU6x6QeRWt0vOz7iF1LUpw==, tarball: file:projects/hyperliquid-replica-cmds-ingest.tgz}
+    name: '@rush-temp/hyperliquid-replica-cmds-ingest'
+    version: 0.0.0
+    dependencies:
+      '@aws-sdk/client-s3': 3.462.0
+      '@streamparser/json': 0.0.21
+      '@streamparser/json-node': 0.0.22
+      '@types/lz4': 0.6.4
+      '@types/node': 18.19.0
+      lz4: 0.6.5
+      typescript: 5.5.4
+    transitivePeerDependencies:
+      - aws-crt
+    dev: false
+
+  file:projects/hyperliquid-replica-cmds-normalization.tgz:
+    resolution: {integrity: sha512-apJDW9ScmRbQurBEpaTQ6qsDs04sEgCaLeHK8uMQ+La+Q+9SI7dGEK0EUhCvaEuYdpigiqLbjjjaQaKVfoGtlg==, tarball: file:projects/hyperliquid-replica-cmds-normalization.tgz}
+    name: '@rush-temp/hyperliquid-replica-cmds-normalization'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0

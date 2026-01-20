@@ -1,7 +1,7 @@
 {
-  "name": "@subsquid/hyperliquid-fills-ingest",
+  "name": "@subsquid/hyperliquid-replica-cmds-ingest",
   "version": "0.0.1",
-  "description": "Data fetcher and normalizer for Hyperliquid fills",
+  "description": "Data fetcher and normalizer for Hyperliquid replica cmds",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
   "publishConfig": {
@@ -20,8 +20,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.462.0",
-    "@subsquid/hyperliquid-fills-data": "^0.0.1",
-    "@subsquid/hyperliquid-fills-normalization": "^0.0.1",
+    "@subsquid/hyperliquid-replica-cmds-data": "^0.0.1",
+    "@subsquid/hyperliquid-replica-cmds-normalization": "^0.0.1",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-ingest-cli": "^0.1.1",

@@ -754,6 +754,24 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-data",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-ingest",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-normalization",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/typeorm-codegen",
       "projectFolder": "typeorm/typeorm-codegen",
       "shouldPublish": true,

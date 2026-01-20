@@ -1,0 +1,28 @@
+{
+  "name": "@subsquid/hyperliquid-replica-cmds-normalization",
+  "version": "0.0.1",
+  "description": "Hyperliquid replica cmds data model",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/hyperliquid-replica-cmds-data": "^0.0.1",
+    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/util-internal-validation": "^0.7.0"
+  },
+  "devDependencies": {
+    "@subsquid/util-internal-json": "^1.2.3",
+    "@types/node": "^18.18.14",
+    "typescript": "5.5.4"
+  }
+}
