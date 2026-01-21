@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+This log was last generated on Wed, 21 Jan 2026 13:21:57 GMT and should not be manually modified.
+
+## 1.28.0
+Wed, 21 Jan 2026 13:21:57 GMT
+
+### Minor changes
+
+- add `query exceeds max results` error handling during logs ingestion
 
 ## 1.27.3
 Sat, 09 Aug 2025 06:10:24 GMT

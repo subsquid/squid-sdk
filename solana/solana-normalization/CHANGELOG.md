@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-normalization
 
-This log was last generated on Tue, 21 Oct 2025 12:23:37 GMT and should not be manually modified.
+This log was last generated on Wed, 21 Jan 2026 13:21:57 GMT and should not be manually modified.
+
+## 0.1.4
+Wed, 21 Jan 2026 13:21:57 GMT
+
+### Patches
+
+- extend set of tx types that could fail before invoke message
 
 ## 0.1.3
 Tue, 21 Oct 2025 12:23:37 GMT
