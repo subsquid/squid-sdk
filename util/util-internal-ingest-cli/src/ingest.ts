@@ -57,6 +57,10 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
         return createLogger(this.getLoggingNamespace())
     }
 
+    protected socketTimeout() {
+        return 120_000
+    }
+
     @def
     private program(): Command {
         let program = new Command()
@@ -155,7 +159,7 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
 
         app.setMaxRequestBody(1024)
         app.setLogger(log)
-        app.setSocketTimeout(120_000)
+        app.setSocketTimeout(this.socketTimeout())
 
         app.add('/', {
             async GET(ctx: HttpContext) {

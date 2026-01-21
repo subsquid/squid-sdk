@@ -18,6 +18,10 @@ export class HyperliquidIngest extends Ingest<HyperliquidIngestOptions> {
         return 'sqd:hyperliquid-ingest'
     }
 
+    protected socketTimeout() {
+        return 600_000
+    }
+
     protected setUpProgram(program: Command) {
         program.description('Data ingestion tool for Hyperliquid')
             .requiredOption('--hl-archive <url>', 'Hyperliquid archive url', FileOrUrl(['s3:']))
