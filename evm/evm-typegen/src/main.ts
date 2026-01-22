@@ -10,6 +10,7 @@ import { OutDir } from '@subsquid/util-internal-code-printer'
 
 const LOG = createLogger('sqd:evm-typegen')
 const PROXY_ETHERSCAN = 'https://cloud.sqd.dev/chains/api/v1/evm/abi'
+const ORIGIN_ETHERSCAN = 'https://api.etherscan.io/v2/api'
 
 runProgram(
   async function () {
@@ -131,11 +132,11 @@ async function fetchFromEtherscan(
   config: EtherscanAPIConfig,
 ): Promise<any> {
   let api: string
-  if (config.api === PROXY_ETHERSCAN ) {
-    api = config.api
+  if (config.api === PROXY_ETHERSCAN && config.apiKey) {
+    api = ORIGIN_ETHERSCAN
   }
   else {
-    api = config.api + (config.api.endsWith('/') ? '' : '/') + 'api'
+    api = config.api
   }
   let url = new URL(api)
 
@@ -175,7 +176,7 @@ async function fetchFromEtherscan(
     return JSON.parse(response.result)
   } else {
     throw new Error(
-      `Failed to fetch contract ABI from ${config.api}: ${response.result}`,
+      `Failed to fetch contract ABI from ${api}: ${response.result}`,
     )
   }
 }
