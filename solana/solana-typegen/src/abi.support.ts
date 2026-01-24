@@ -9,7 +9,7 @@ export type Base58Bytes = string & {}
 export const DATA_SYM = Symbol.for('SQD_SVM_DATA')
 
 
-interface InstructionRecord {
+export interface InstructionRecord {
     accounts: Base58Bytes[]
     data: Base58Bytes
     [DATA_SYM]?: Uint8Array
