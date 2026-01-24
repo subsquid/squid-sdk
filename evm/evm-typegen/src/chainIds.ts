@@ -308,6 +308,6 @@ export function chainIdOption(chainId?: string): number {
 
     const suggestion = closest(chainId, Object.keys(CHAIN_IDS))
     throw new InvalidOptionArgumentError(
-        `Unknown chain: "${chainId}". Did you mean "${suggestion}"? Alternatively, provide a numeric chain id.`
+        `Unknown chain: "${chainId}". Did you mean "${suggestion}"? Alternatively, provide a numeric chain ID.`
     )
 }

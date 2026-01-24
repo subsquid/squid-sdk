@@ -35,7 +35,7 @@ The generated facades are assumed to be used by "squids" indexing EVM data.
       .option('--etherscan-api-key <key>', 'etherscan API key')
       .option(
         '--chain-id <id>, --etherscan-chain-id <id>',
-        'the id of the chain to fetch the contract from', 
+        'chain ID (numeric or named, e.g., "1" or "ethereum") to fetch the contract from', 
         chainIdOption,
         1,
       )
