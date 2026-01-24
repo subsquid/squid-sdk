@@ -2,17 +2,17 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-typegen",
-      "comment": "Add SQD Etherscan proxy service as default API endpoint. When no `--etherscan-api-key` is provided, the tool now uses the SQD proxy service (`https://cloud.sqd.dev/chains/api/v1/evm/abi`) instead of requiring direct Etherscan API access.",
+      "comment": "use SQD Etherscan proxy by default when no API key is provided",
       "type": "minor"
     },
     {
       "packageName": "@subsquid/evm-typegen",
-      "comment": "Deprecate `--etherscan-chain-id` option in favor of `--chain-id`. The old option still works but shows a deprecation warning.",
+      "comment": "deprecate `--etherscan-chain-id` in favor of `--chain-id`",
       "type": "minor"
     },
     {
       "packageName": "@subsquid/evm-typegen",
-      "comment": "Add support for named chain identifiers. The `--chain-id` option now accepts human-readable chain names (e.g., `ethereum`, `polygon`, `arbitrum`, `bsc`) in addition to numeric chain IDs. Supports 70+ EVM chains with multiple aliases per chain.",
+      "comment": "support named chain identifiers in `--chain-id` option (e.g., `ethereum`, `polygon`, `arbitrum`)",
       "type": "minor"
     }
   ],
