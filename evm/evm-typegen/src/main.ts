@@ -1,12 +1,13 @@
 import * as fs from 'fs'
 import path from 'path'
-import { InvalidArgumentError, program } from 'commander'
+import { InvalidArgumentError, InvalidOptionArgumentError, program } from 'commander'
 import { createLogger } from '@subsquid/logger'
 import { runProgram, wait } from '@subsquid/util-internal'
 import * as validator from '@subsquid/util-internal-commander'
 import { Typegen } from './typegen'
 import { GET } from './util/fetch'
 import { OutDir } from '@subsquid/util-internal-code-printer'
+import {chainIdOption} from './chainIds'
 
 const LOG = createLogger('sqd:evm-typegen')
 const PROXY_ETHERSCAN = 'https://cloud.sqd.dev/chains/api/v1/evm/abi'
@@ -28,15 +29,15 @@ The generated facades are assumed to be used by "squids" indexing EVM data.
       .option('--multicall', 'generate facade for MakerDAO multicall contract')
       .option(
         '--etherscan-api <url>',
-        'etherscan API to fetch contract ABI by a known address',
+        'etherscan API to fetch contract ABI by a known address\n(if no API token is provided, the default value equals to SQD Proxy service, otherwise equals to Etherscan API)', 
         validator.Url(['http:', 'https:']),
-        PROXY_ETHERSCAN
       )
       .option('--etherscan-api-key <key>', 'etherscan API key')
       .option(
-        '--etherscan-chain-id <id>, --chain-id <id>',
-        'the id of the chain to fetch the contract from',
-        validator.positiveInt,
+        '--chain-id <id>, --etherscan-chain-id <id>',
+        'the id of the chain to fetch the contract from', 
+        chainIdOption,
+        1,
       )
       .option('--clean', 'delete output directory before run')
       .addHelpText(
@@ -68,14 +69,22 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
     let opts = program.opts() as {
       clean?: boolean
       multicall?: boolean
-      etherscanApi: string
+      etherscanApi?: string
       etherscanApiKey?: string
-      etherscanChainId?: string
+      chainId: number
+      etherscanChainId?: number
     }
     let dest = new OutDir(program.processedArgs[0])
     let specs = program.processedArgs[1] as Spec[]
 
-    if (opts.etherscanChainId) LOG.warn('Parameter --etherscan-chain-id is deprecated. Please use --chain-id instead')
+    if (opts.etherscanChainId) { 
+      LOG.warn('Parameter --etherscan-chain-id is deprecated. Please use --chain-id instead')
+      if (opts.chainId) {
+        throw new InvalidOptionArgumentError('Parameter --chain-id and --etherscan-chain-id cannot be used together')
+      }
+      opts.chainId = opts.etherscanChainId
+      delete opts.etherscanChainId
+    }
 
     if (opts.clean && dest.exists()) {
       LOG.info(`deleting ${dest.path()}`)
@@ -104,8 +113,8 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
 async function read(
   spec: Spec,
   options: {
-    etherscanApi: string;
-    etherscanChainId?: string
+    etherscanApi?: string;
+    chainId: number
     etherscanApiKey?: string,
   },
 ): Promise<any> {
@@ -131,26 +140,19 @@ async function fetchFromEtherscan(
   address: string,
   config: EtherscanAPIConfig,
 ): Promise<any> {
-  let api: string
-  if (config.api === PROXY_ETHERSCAN && config.apiKey) {
-    api = ORIGIN_ETHERSCAN
-  }
-  else {
-    api = config.api
-  }
-  let url = new URL(api)
+  let url = new URL(config.api)
 
   let params = new URLSearchParams({
     module: 'contract',
     action: 'getabi',
     address,
+    chainid: config.chainId.toString(),
   })
-  if (config.chainId) {
-    params.set('chainid', config.chainId);
-  }
+
   if (config.apiKey) {
     params.set('apiKey', config.apiKey);
   }
+
   url.search = params.toString()
 
   let response: { status: string; result: string }
@@ -176,7 +178,7 @@ async function fetchFromEtherscan(
     return JSON.parse(response.result)
   } else {
     throw new Error(
-      `Failed to fetch contract ABI from ${api}: ${response.result}`,
+      `Failed to fetch contract ABI from ${config.api}: ${response.result}`,
     )
   }
 }
@@ -244,18 +246,35 @@ function basename(file: string): string {
 
 interface EtherscanAPIConfig {
     api: string
+    chainId: number
     apiKey?: string
-    chainId?: string
 }
 
 function getEtherscanAPIConfig(options: {
-    etherscanApi: string
+    etherscanApi?: string
     etherscanApiKey?: string
-    etherscanChainId?: string
+    chainId: number
 }): EtherscanAPIConfig {
-    return {
-        api: options.etherscanApi || 'https://api.etherscan.io/v2',
-        apiKey: options.etherscanApiKey || undefined,
-        chainId: options.etherscanChainId || (options.etherscanApi ? undefined : '1'),
+    let api: string
+    if (options.etherscanApi != null) {
+      api = normalizeEtherscanAPIUrl(options.etherscanApi)
+    }  else if (options.etherscanApiKey != null) {
+      api = ORIGIN_ETHERSCAN
+    } else {
+      api = PROXY_ETHERSCAN
     }
+
+    return {
+        api,
+        apiKey: options.etherscanApiKey || undefined,
+        chainId: options.chainId,
+    }
+}
+
+function normalizeEtherscanAPIUrl(url: string) {
+  if (url.endsWith('/api')) {
+    return url
+  }
+
+  return url.endsWith('/') ? url + 'api' : url + '/api'
 }

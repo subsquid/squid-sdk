@@ -26,7 +26,8 @@
     "@subsquid/util-internal-commander": "^1.4.0",
     "@subsquid/evm-codec": "^0.3.0",
     "@subsquid/evm-abi": "^0.3.1",
-    "commander": "^11.1.0"
+    "commander": "^11.1.0",
+    "fastest-levenshtein": "^1.0.16"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
