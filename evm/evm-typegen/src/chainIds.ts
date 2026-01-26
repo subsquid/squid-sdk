@@ -302,11 +302,13 @@ export function chainIdOption(chainId?: string): number {
         return validator.positiveInt(chainId)
     }
 
-    if (chainId in CHAIN_IDS) {
-        return CHAIN_IDS[chainId]
+    const normalizedChainId = chainId.toLowerCase()
+
+    if (normalizedChainId in CHAIN_IDS) {
+        return CHAIN_IDS[normalizedChainId]
     }
 
-    const suggestion = closest(chainId, Object.keys(CHAIN_IDS))
+    const suggestion = closest(normalizedChainId, Object.keys(CHAIN_IDS))
     throw new InvalidOptionArgumentError(
         `Unknown chain: "${chainId}". Did you mean "${suggestion}"? Alternatively, provide a numeric chain ID.`
     )

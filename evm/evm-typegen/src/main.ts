@@ -34,10 +34,15 @@ The generated facades are assumed to be used by "squids" indexing EVM data.
       )
       .option('--etherscan-api-key <key>', 'etherscan API key')
       .option(
-        '--chain-id <id>, --etherscan-chain-id <id>',
-        'chain ID (numeric or named, e.g., "1" or "ethereum") to fetch the contract from', 
+        '--chain-id <id>',
+        'chain ID (numeric or named, e.g., "1" or "ethereum") to fetch the contract from',
         chainIdOption,
         1,
+      )
+      .option(
+        '--etherscan-chain-id <id>',
+        'DEPRECATED: use --chain-id instead. Chain ID (numeric or named, e.g., "1" or "ethereum") to fetch the contract from',
+        chainIdOption,
       )
       .option('--clean', 'delete output directory before run')
       .addHelpText(
@@ -78,9 +83,9 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
     let specs = program.processedArgs[1] as Spec[]
 
     if (opts.etherscanChainId) { 
-      LOG.warn('Parameter --etherscan-chain-id is deprecated. Please use --chain-id instead')
+      LOG.warn('Option --etherscan-chain-id is deprecated. Please use --chain-id instead')
       if (opts.chainId) {
-        throw new InvalidOptionArgumentError('Parameter --chain-id and --etherscan-chain-id cannot be used together')
+        throw new InvalidOptionArgumentError('Option --chain-id and --etherscan-chain-id cannot be used together')
       }
       opts.chainId = opts.etherscanChainId
       delete opts.etherscanChainId
