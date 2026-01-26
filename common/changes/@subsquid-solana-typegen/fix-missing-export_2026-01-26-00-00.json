@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-typegen",
+      "comment": "export InstructionRecord interface",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-typegen",
+}
