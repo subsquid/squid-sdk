@@ -76,7 +76,7 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
       multicall?: boolean
       etherscanApi?: string
       etherscanApiKey?: string
-      chainId: number
+      chainId?: number
       etherscanChainId?: number
     }
     let dest = new OutDir(program.processedArgs[0])
@@ -119,7 +119,7 @@ async function read(
   spec: Spec,
   options: {
     etherscanApi?: string;
-    chainId: number
+    chainId?: number
     etherscanApiKey?: string,
   },
 ): Promise<any> {
@@ -258,7 +258,7 @@ interface EtherscanAPIConfig {
 function getEtherscanAPIConfig(options: {
     etherscanApi?: string
     etherscanApiKey?: string
-    chainId: number
+    chainId?: number
 }): EtherscanAPIConfig {
     let api: string
     if (options.etherscanApi != null) {
@@ -272,7 +272,7 @@ function getEtherscanAPIConfig(options: {
     return {
         api,
         apiKey: options.etherscanApiKey || undefined,
-        chainId: options.chainId,
+        chainId: options.chainId ?? 1,
     }
 }
 

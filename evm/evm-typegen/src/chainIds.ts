@@ -292,9 +292,9 @@ export const CHAIN_IDS: Record<string, number> = {
     'plasma-testnet': 9746,
 }
 
-export function chainIdOption(chainId?: string): number {
+export function chainIdOption(chainId?: string): number | undefined {
     if (chainId == null) {
-        return 1
+        return undefined
     }
 
     // @ts-expect-error - chainId is a string
