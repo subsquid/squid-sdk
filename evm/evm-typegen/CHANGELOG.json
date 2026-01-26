@@ -2,6 +2,24 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "4.6.0",
+      "tag": "@subsquid/evm-typegen_v4.6.0",
+      "date": "Mon, 26 Jan 2026 19:17:25 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "use SQD Etherscan proxy by default when no API key is provided"
+          },
+          {
+            "comment": "deprecate `--etherscan-chain-id` in favor of `--chain-id`"
+          },
+          {
+            "comment": "support named chain identifiers in `--chain-id` option (e.g., `ethereum`, `polygon`, `arbitrum`)"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.5.1",
       "tag": "@subsquid/evm-typegen_v4.5.1",
       "date": "Thu, 20 Nov 2025 16:46:01 GMT",
