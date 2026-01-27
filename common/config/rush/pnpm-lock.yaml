@@ -146,6 +146,9 @@ dependencies:
   '@rush-temp/hyperliquid-replica-cmds-data':
     specifier: file:./projects/hyperliquid-replica-cmds-data.tgz
     version: file:projects/hyperliquid-replica-cmds-data.tgz
+  '@rush-temp/hyperliquid-replica-cmds-data-service':
+    specifier: file:./projects/hyperliquid-replica-cmds-data-service.tgz
+    version: file:projects/hyperliquid-replica-cmds-data-service.tgz
   '@rush-temp/hyperliquid-replica-cmds-ingest':
     specifier: file:./projects/hyperliquid-replica-cmds-ingest.tgz
     version: file:projects/hyperliquid-replica-cmds-ingest.tgz
@@ -7948,6 +7951,16 @@ packages:
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0
+      typescript: 5.5.4
+    dev: false
+
+  file:projects/hyperliquid-replica-cmds-data-service.tgz:
+    resolution: {integrity: sha512-/Gdb8z2ah051cCrzvWyc/WAo9KQWophTKMF2cAR/XeV+vq01/DnvjV3pPB2RkpRUk0uGmpCGjc/zVqdEVbG0gg==, tarball: file:projects/hyperliquid-replica-cmds-data-service.tgz}
+    name: '@rush-temp/hyperliquid-replica-cmds-data-service'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      commander: 11.1.0
       typescript: 5.5.4
     dev: false
 

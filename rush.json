@@ -760,6 +760,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-data-service",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/hyperliquid-replica-cmds-ingest",
       "projectFolder": "hyperliquid/hyperliquid-replica-cmds-ingest",
       "shouldPublish": true,
