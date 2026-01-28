@@ -1,6 +1,5 @@
 import {Logger, createLogger} from '@subsquid/logger'
 import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
-import {RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {
     array,
     BYTES,
