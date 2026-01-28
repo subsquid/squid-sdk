@@ -621,7 +621,7 @@ export class Rpc {
         if (batch.length <= 1) return this.batchCall(batch, options)
 
         let result = await this.batchCall(batch, {...options, retryAttempts: 0}).catch(err => {
-            if (this.client.isConnectionError(err) || err instanceof RpcProtocolError) {
+            if (this.isRetryableError(err)) {
                 this.log.warn(err, 'will retry request with reduced batch')
             } else {
                 throw err
@@ -642,6 +642,14 @@ export class Rpc {
         if (this.chainUtils) return this.chainUtils
         let chainId: Qty = await this.call('eth_chainId')
         return this.chainUtils = new ChainUtils(chainId)
+    }
+
+    isRetryableError(err: any): boolean {
+        if (this.client.isConnectionError(err)) return true
+        if (err instanceof RpcProtocolError) return true
+        if (err instanceof RpcError && err.message == 'response too large') return true
+        if (err instanceof RpcError && err.code == 429) return true
+        return false
     }
 }
 

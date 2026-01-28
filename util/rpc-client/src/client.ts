@@ -518,9 +518,6 @@ export class RpcClient {
         if (err instanceof RpcConnectionError) return true
         if (isHttpConnectionError(err)) return true
         if (err instanceof HttpTimeoutError) return true
-        if (err instanceof RpcError) {
-            return err.code == 429
-        }
         if (err instanceof HttpError) {
             switch(err.response.status) {
                 case 408:
@@ -593,6 +590,7 @@ function isRateLimitError(err: unknown): boolean {
 function isExecutionTimeoutError(err: unknown): boolean {
     return err instanceof RpcError && /execution timeout/i.test(err.message)
 }
+
 
 function isRequestTimedOutError(err: unknown): boolean {
     return err instanceof RpcError && /request.*timed out/i.test(err.message)
