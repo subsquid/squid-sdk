@@ -18,7 +18,7 @@ export class HyperliquidIngest extends Ingest<HyperliquidIngestOptions> {
         return 'sqd:hyperliquid-ingest'
     }
 
-    protected socketTimeout() {
+    protected getSocketTimeout() {
         return 600_000
     }
 
