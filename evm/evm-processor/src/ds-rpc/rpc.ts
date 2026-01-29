@@ -750,16 +750,28 @@ function isLogsResponseTooBigError(err: unknown) {
     if (!(err instanceof RpcError)) return false
     if (/query returned more than/i.test(err.message)) return true
     if (/response is too big/i.test(err.message)) return true
+    if (/query exceeds max results/i.test(err.message)) return true
     return false
 }
 
 function asTryAnotherRangeError(err: unknown): FiniteRange | undefined {
     if (!(err instanceof RpcError)) return
+    
     let m = /try with this block range \[(0x[0-9a-f]+), (0x[0-9a-f]+)]/i.exec(err.message)
-    if (m == null) return
-    let from = qty2Int(m[1])
-    let to = qty2Int(m[2])
-    if (from <= to) return {from, to}
+    if (m != null) {
+        let from = qty2Int(m[1])
+        let to = qty2Int(m[2])
+        if (from <= to) return {from, to}
+    }
+    
+    m = /retry with the range (\d+)-(\d+)/i.exec(err.message)
+    if (m != null) {
+        let from = parseInt(m[1], 10)
+        let to = parseInt(m[2], 10)
+        if (from <= to) return {from, to}
+    }
+
+    return undefined
 }
 
 

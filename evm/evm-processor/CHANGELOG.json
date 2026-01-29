@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.28.0",
+      "tag": "@subsquid/evm-processor_v1.28.0",
+      "date": "Wed, 21 Jan 2026 13:21:57 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `query exceeds max results` error handling during logs ingestion"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.27.3",
       "tag": "@subsquid/evm-processor_v1.27.3",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",
