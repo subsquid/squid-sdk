@@ -36,7 +36,7 @@ export async function getBlocks(
     while (invalid != null) {
         await wait(100)
 
-        if (retries == 3) {
+        if (retries == 5) {
             throw new Error(invalid._errorMessage)
         }
 

@@ -95,7 +95,7 @@ runProgram(async () => {
             return mainWorker.getStream(req)
         }
     }
-    // dataSource = createDataSource(dataSourceOptions)
+
     let service = await runDataService({
         source: dataSource,
         blockCacheSize: args.blockCacheSize,

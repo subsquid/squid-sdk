@@ -131,8 +131,8 @@ export class Rpc {
         let results = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: info => {
-                // Avalanche
                 if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                if (info.message.includes('invalid block height')) return null // Hyperliquid
                 throw new RpcError(info)
             }
         })
