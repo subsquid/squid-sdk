@@ -16,11 +16,13 @@ export class ChainUtils {
     public isPolygonMainnet: boolean
     public isHyperliquidMainnet: boolean
     public isHyperliquidTestnet: boolean
+    public isStable: boolean
 
     constructor(chainId: Qty) {
         this.isPolygonMainnet = chainId == '0x89'
         this.isHyperliquidMainnet = chainId == '0x3e7'
         this.isHyperliquidTestnet = chainId == '0x3e6'
+        this.isStable = chainId == '0x3dc' || chainId == '0x899' // Chain ID 988 (mainnet) or 2201 (testnet)
     }
 
     calculateBlockHash(block: GetBlock) {
@@ -84,6 +86,11 @@ export class ChainUtils {
 
         if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
             receipts = receipts.filter(receipt => !isHyperliquidSystemReceipt(receipt))
+        }
+
+        // Stable chain uses gasUsed instead of cumulativeGasUsed in receipts root
+        if (this.isStable) {
+            return receiptsRoot(receipts, {useGasUsed: true})
         }
 
         return receiptsRoot(receipts)

@@ -281,14 +281,26 @@ function decodeLogs(logs: Log[]) {
 }
 
 
-function encodeReceipt(receipt: Receipt): Buffer {
+export interface ReceiptEncodingOptions {
+    /**
+     * Use gasUsed instead of cumulativeGasUsed when encoding receipts.
+     * This is needed for chains like Stable (chain ID 988) that deviate from
+     * the Ethereum standard by using per-transaction gas instead of cumulative.
+     */
+    useGasUsed?: boolean
+}
+
+
+function encodeReceipt(receipt: Receipt, options?: ReceiptEncodingOptions): Buffer {
     let type = receipt.type == '0x0' ? Buffer.alloc(0) : RLP.encode(qty2Int(receipt.type))
     let payload: Uint8Array
+    // Use gasUsed instead of cumulativeGasUsed for certain chains (e.g., Stable)
+    let gasField = options?.useGasUsed ? receipt.gasUsed : receipt.cumulativeGasUsed
     if (receipt.type == '0x7e') {
         // https://github.com/ethereum-optimism/specs/blob/main/specs/protocol/deposits.md#deposit-receipt
         payload = RLP.encode([
             qty2Int(receipt.status),
-            BigInt(receipt.cumulativeGasUsed),
+            BigInt(gasField),
             decodeHex(receipt.logsBloom),
             decodeLogs(receipt.logs),
             BigInt(assertNotNull(receipt.depositNonce, 'receipt.depositNonce is missing')),
@@ -297,7 +309,7 @@ function encodeReceipt(receipt: Receipt): Buffer {
     } else {
         payload = RLP.encode([
             qty2Int(receipt.status),
-            BigInt(receipt.cumulativeGasUsed),
+            BigInt(gasField),
             decodeHex(receipt.logsBloom),
             decodeLogs(receipt.logs),
         ])
@@ -306,7 +318,7 @@ function encodeReceipt(receipt: Receipt): Buffer {
 }
 
 
-export async function receiptsRoot(receipts: Receipt[]) {
+export async function receiptsRoot(receipts: Receipt[], options?: ReceiptEncodingOptions) {
     let trie = await createMPT()
 
     for (let idx = 0; idx < receipts.length; idx++) {
@@ -314,7 +326,7 @@ export async function receiptsRoot(receipts: Receipt[]) {
         let key = RLP.encode(idx)
         let value: Buffer
         try {
-            value = encodeReceipt(receipt)
+            value = encodeReceipt(receipt, options)
         } catch (err: any) {
             throw addErrorContext(err, {
                 transactionIndex: qty2Int(receipt.transactionIndex),
