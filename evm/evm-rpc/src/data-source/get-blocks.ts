@@ -32,17 +32,20 @@ export async function getBlocks(
     let blocks = await rpc.getBlockBatch(numbers, req)
 
     let retries = 0
-    let invalid = blocks.find(b => b._isInvalid)
-    while (invalid != null) {
-        await wait(100)
+    while (true) {
+        let invalid = blocks.find(b => b == null || b._isInvalid)
 
-        if (retries == 5) {
-            throw new Error(invalid._errorMessage)
+        if (invalid) {
+            if (retries == 5) {
+                throw new Error(invalid._errorMessage)
+            } else {
+                await wait(100)
+
+                await requestInvalidBlocks(rpc, req, blocks)
+                retries += 1
+            }
+        } else {
+            return blocks
         }
-
-        await requestInvalidBlocks(rpc, req, blocks)
-        retries += 1
     }
-
-    return blocks
 }

@@ -1,5 +1,5 @@
 import {Logger, createLogger} from '@subsquid/logger'
-import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
+import {CallOptions, RetryError, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {
     array,
     BYTES,
@@ -132,7 +132,7 @@ export class Rpc {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: info => {
                 if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
-                if (info.message.includes('invalid block height')) return null // Hyperliquid
+                if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
                 throw new RpcError(info)
             }
         })
@@ -278,7 +278,11 @@ export class Rpc {
         }))
 
         let results = await this.reduceBatchOnRetry(call, {
-            validateResult: getResultValidator(nullable(array(Receipt)))
+            validateResult: getResultValidator(nullable(array(Receipt))),
+            validateError: info => {
+                if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
+                throw new RpcError(info)
+            }
         })
 
         let utils = await this.getChainUtils()
