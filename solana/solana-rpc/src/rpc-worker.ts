@@ -5,12 +5,12 @@ import {Commitment, GetBlockOptions, Rpc} from './rpc'
 import type {RemoteRpcOptions} from './rpc-remote'
 
 
-const {noVotes, ...rpcOptions} = getServerArguments<RemoteRpcOptions>()
+const {noVotes, txThreshold, ...rpcOptions} = getServerArguments<RemoteRpcOptions>()
 
 const rpc = new Rpc(new RpcClient({
     ...rpcOptions,
     fixUnsafeIntegers: true
-}))
+}), txThreshold)
 
 
 getServer()

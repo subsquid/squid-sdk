@@ -17,6 +17,7 @@ interface Options extends DumperOptions {
     maxConfirmationAttempts: number
     assertLogMessagesNotNull: boolean
     validateChainContinuity: boolean
+    txThreshold?: number
 }
 
 
@@ -31,6 +32,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
         program.option('--max-confirmation-attempts <N>', 'Maximum number of confirmation attempts', positiveInt, 10)
         program.option('--assert-log-messages-not-null', 'Check if tx.meta.logMessages is not null', false)
         program.option('--validate-chain-continuity', 'Check if block parent hash matches previous block hash', false)
+        program.option('--tx-threshold <N>', 'Retry getBlock call if transactions count is less than threshold')
     }
 
     protected fixUnsafeIntegers(): boolean {
@@ -69,7 +71,8 @@ export class SolanaDumper extends Dumper<Block, Options> {
             url: options.endpoint,
             capacity: Number.MAX_SAFE_INTEGER,
             retryAttempts: Number.MAX_SAFE_INTEGER,
-            requestTimeout: 30_000
+            requestTimeout: 30_000,
+            txThreshold: options.txThreshold,
         })
 
         return new SolanaRpcDataSource({
