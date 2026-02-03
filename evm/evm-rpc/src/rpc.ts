@@ -234,6 +234,11 @@ export class Rpc {
             let logs = logsByBlock.get(block.hash) || []
 
             try {
+                let logIndex = 0
+                for (let log of logs) {
+                    assert.equal(qty2Int(log.logIndex), logIndex++)
+                }
+
                 if (this.verifyLogsBloom) {
                     let logsBloom = utils.calculateLogsBloom(block.block, logs)
                     assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
@@ -307,6 +312,11 @@ export class Rpc {
             }
 
             try {
+                let logIndex = 0
+                for (let log of logs) {
+                    assert.equal(qty2Int(log.logIndex), logIndex++)
+                }
+
                 if (this.verifyLogsBloom) {
                     let logsBloom = utils.calculateLogsBloom(block.block, logs)
                     assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
@@ -353,6 +363,7 @@ export class Rpc {
         let utils = await this.getChainUtils()
         for (let block of blocks) {
             let receipts = receiptsByBlock.get(block.hash) || []
+            let logs = receipts.flatMap(r => r.logs)
 
             if (receipts.length !== block.block.transactions.length) {
                 block._isInvalid = true
@@ -361,8 +372,12 @@ export class Rpc {
             }
 
             try {
+                let logIndex = 0
+                for (let log of logs) {
+                    assert.equal(qty2Int(log.logIndex), logIndex++)
+                }
+
                 if (this.verifyLogsBloom) {
-                    let logs = receipts.flatMap(r => r.logs)
                     let logsBloom = utils.calculateLogsBloom(block.block, logs)
                     assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
                 }
