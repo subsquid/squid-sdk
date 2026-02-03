@@ -143,7 +143,7 @@ export const Receipt = object({
     logs: array(Log),
     logsBloom: BYTES,
     status: SMALL_QTY,
-    to: nullable(BYTES),
+    to: option(BYTES),
     type: SMALL_QTY,
     l1Fee: option(QTY),
     l1FeeScalar: option(STRING_FLOAT),
