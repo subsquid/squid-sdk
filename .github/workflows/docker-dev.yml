@@ -5,6 +5,11 @@ on:
       custom_tag:
         description: 'Custom tag to use for the image (defaults to commit hash if empty)'
         required: false
+      tag_latest:
+        description: 'Also publish image with the latest tag'
+        type: boolean
+        default: true
+        required: false
       images:
         description: 'Space-separated list of images to publish (leave empty for all)'
         required: false
@@ -46,5 +51,6 @@ jobs:
           if [ -z "$CUSTOM_TAG" ]; then
             CUSTOM_TAG="${{ steps.commit_sha.outputs.sha }}"
           fi
+          TAG_LATEST="${{ inputs.tag_latest }}"
           IFS=' ' read -r -a image_array <<< "${{ inputs.images }}"
-          ./ops/docker-publish-dev.sh "$CUSTOM_TAG" "${image_array[@]}" 
+          ./ops/docker-publish-dev.sh "$CUSTOM_TAG" "$TAG_LATEST" "${image_array[@]}"

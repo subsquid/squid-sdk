@@ -32,12 +32,12 @@ COPY --from=evm-ingest-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/evm/evm-ingest/bin/run.js"]
 
 
-FROM builder AS evm-hotblocks-service-builder
+FROM builder AS evm-data-service-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/evm-data-service
 
 
-FROM node AS evm-hotblocks-service
-COPY --from=evm-hotblocks-service-builder /squid/common/deploy /squid
+FROM node AS evm-data-service
+COPY --from=evm-data-service-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/evm/evm-data-service/lib/main.js"]
 
 

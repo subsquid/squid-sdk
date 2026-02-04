@@ -1,7 +1,8 @@
 #!/bin/bash
 
 custom_tag=$1
-images=("${@:2}")
+tag_latest=$2
+images=("${@:3}")
 
 function publish() {
     pkg_path=$1
@@ -13,6 +14,9 @@ function publish() {
     fi
 
     tags="-t subsquid/$img:$custom_tag"
+    if [ "$tag_latest" = "true" ]; then
+        tags="$tags -t subsquid/$img:latest"
+    fi
 
     docker buildx build . --platform "linux/amd64,linux/arm64" \
         --push \
@@ -49,8 +53,6 @@ for image in "${images[@]}"; do
     echo "Publishing $image..."
     if [ "$image" = "solana/solana-data-service" ]; then
         publish "$image" "solana-hotblocks-service" || exit 1
-    elif [ "$image" = "evm/evm-data-service" ]; then
-        publish "$image" "evm-hotblocks-service" || exit 1
     elif [ "$image" = "hyperliquid/hyperliquid-fills-data-service" ]; then
         publish "$image" "hyperliquid-fills-hotblocks-service" || exit 1
     elif [ "$image" = "hyperliquid/hyperliquid-replica-cmds-data-service" ]; then
