@@ -14,6 +14,7 @@ export interface DataSourceOptions {
     httpRpcStrideSize?: number
     httpRpcStrideConcurrency?: number
     httpRpcRateLimit?: number,
+    httpRpcTimeout: number,
     finalityConfirmation?: number,
     traces?: boolean,
     diffs?: boolean,
@@ -34,7 +35,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         maxBatchCallSize: options.httpRpcMaxBatchCallSize,
         capacity: Number.MAX_SAFE_INTEGER,
         rateLimit: options.httpRpcRateLimit,
-        requestTimeout: 10000,
+        requestTimeout: options.httpRpcTimeout,
         retryAttempts: 5,
         log
     })

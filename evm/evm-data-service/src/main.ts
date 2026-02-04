@@ -1,6 +1,6 @@
 import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
-import {positiveInt, positiveReal, Url} from '@subsquid/util-internal-commander'
+import {nat, positiveInt, positiveReal, Url} from '@subsquid/util-internal-commander'
 import {Block, BlockStream, DataSource, runDataService, StreamRequest} from '@subsquid/util-internal-data-service'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
 import {Command} from 'commander'
@@ -20,6 +20,7 @@ runProgram(async () => {
     program.option('--http-rpc-stride-size <number>', 'The size of ingestion stride', positiveInt, 5)
     program.option('--http-rpc-stride-concurrency <number>', 'Max number of concurrent ingestion strides', positiveInt, 5)
     program.option('--http-rpc-rate-limit <rps>', 'Maximum RPC rate in requests per second', positiveReal)
+    program.option('--http-rpc-timeout <ms>', 'RPC client request timeout in ms', nat, 10000)
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
     program.option('--finality-confirmation <number>', 'Finality offset from the head of a chain', positiveInt)
@@ -41,6 +42,7 @@ runProgram(async () => {
         httpRpcStrideSize: number
         httpRpcStrideConcurrency: number
         httpRpcRateLimit?: number
+        httpRpcTimeout: number
         blockCacheSize: number
         port: number
         finalityConfirmation?: number
@@ -62,6 +64,7 @@ runProgram(async () => {
         httpRpcStrideSize: args.httpRpcStrideSize,
         httpRpcStrideConcurrency: args.httpRpcStrideConcurrency,
         httpRpcRateLimit: args.httpRpcRateLimit,
+        httpRpcTimeout: args.httpRpcTimeout,
         finalityConfirmation: args.finalityConfirmation,
         traces: args.traces,
         diffs: args.diffs,
