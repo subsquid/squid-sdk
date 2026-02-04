@@ -16,9 +16,9 @@ export interface DataSourceOptions {
     httpRpcRateLimit?: number,
     httpRpcTimeout: number,
     finalityConfirmation?: number,
-    traces?: boolean,
-    diffs?: boolean,
-    receipts?: boolean,
+    withReceipts?: boolean,
+    withTraces?: boolean,
+    withStatediffs?: boolean,
     useTraceApi?: boolean,
     useDebugApiForStateDiffs?: boolean
     verifyBlockHash?: boolean
@@ -52,10 +52,10 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         rpc: httpRpc,
         req: {
             transactions: true,
-            logs: !options.receipts,
-            receipts: options.receipts,
-            traces: options.traces,
-            stateDiffs: options.diffs,
+            logs: !options.withReceipts,
+            receipts: options.withReceipts,
+            traces: options.withTraces,
+            stateDiffs: options.withStatediffs,
             useTraceApi: options.useTraceApi,
             useDebugApiForStateDiffs: options.useDebugApiForStateDiffs,
             debugTraceTimeout: '60s',
@@ -63,5 +63,5 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         strideSize: options.httpRpcStrideSize,
         strideConcurrency: options.httpRpcStrideConcurrency
     })
-    return new Mapping(rpcSource, options.traces, options.diffs)
+    return new Mapping(rpcSource, options.withTraces, options.withStatediffs)
 }

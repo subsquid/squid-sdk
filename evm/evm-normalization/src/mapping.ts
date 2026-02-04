@@ -360,6 +360,10 @@ function extractRevertReason(result: rpc.TraceResultCall | rpc.TraceResultCreate
 
 
 function mapTrace(src: rpc.TraceFrame, transactionIndex: number): Trace {
+    if (src.traceAddress == null) {
+        console.log(src)
+        throw new Error('err')
+    }
     return {
         transactionIndex,
         traceAddress: src.traceAddress,

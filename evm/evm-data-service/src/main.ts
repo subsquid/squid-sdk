@@ -24,9 +24,9 @@ runProgram(async () => {
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
     program.option('--finality-confirmation <number>', 'Finality offset from the head of a chain', positiveInt)
-    program.option('--traces', 'Force enable traces')
-    program.option('--diffs', 'Force enable diffs')
-    program.option('--receipts', 'Force enable receipts')
+    program.option('--with-receipts', 'Fetch transaction receipt data')
+    program.option('--with-traces', 'Fetch EVM call traces')
+    program.option('--with-statediffs', 'Fetch EVM state updates')
     program.option('--use-trace-api', 'Use trace_* API for statediffs and call traces')
     program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
     program.option('--verify-block-hash', 'Verify block header against block hash')
@@ -46,9 +46,9 @@ runProgram(async () => {
         blockCacheSize: number
         port: number
         finalityConfirmation?: number
-        traces?: boolean
-        diffs?: boolean
-        receipts?: boolean
+        withReceipts?: boolean
+        withTraces?: boolean
+        withStatediffs?: boolean
         useTraceApi?: boolean
         useDebugApiForStatediffs?: boolean
         verifyBlockHash?: boolean
@@ -66,9 +66,9 @@ runProgram(async () => {
         httpRpcRateLimit: args.httpRpcRateLimit,
         httpRpcTimeout: args.httpRpcTimeout,
         finalityConfirmation: args.finalityConfirmation,
-        traces: args.traces,
-        diffs: args.diffs,
-        receipts: args.receipts,
+        withReceipts: args.withReceipts,
+        withTraces: args.withTraces,
+        withStatediffs: args.withStatediffs,
         useTraceApi: args.useTraceApi,
         useDebugApiForStateDiffs: args.useDebugApiForStatediffs,
         verifyBlockHash: args.verifyBlockHash,
