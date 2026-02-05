@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "1.7.0",
+      "tag": "@subsquid/typeorm-store_v1.7.0",
+      "date": "Thu, 05 Feb 2026 16:31:55 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "relax chain continuity check to support chains with gaps"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.6.0",
       "tag": "@subsquid/typeorm-store_v1.6.0",
       "date": "Fri, 12 Dec 2025 12:00:23 GMT",
