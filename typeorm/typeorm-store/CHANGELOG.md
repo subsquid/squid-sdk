@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Fri, 12 Dec 2025 12:00:23 GMT and should not be manually modified.
+This log was last generated on Thu, 05 Feb 2026 16:31:55 GMT and should not be manually modified.
+
+## 1.7.0
+Thu, 05 Feb 2026 16:31:55 GMT
+
+### Minor changes
+
+- relax chain continuity check to support chains with gaps
 
 ## 1.6.0
 Fri, 12 Dec 2025 12:00:23 GMT
