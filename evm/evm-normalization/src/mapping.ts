@@ -62,7 +62,7 @@ function* mapDebugFrame(
                     type: 'create',
                     action: {
                         from: frame.from.toLowerCase(),
-                        value: assertNotNull(frame.value),
+                        value: frame.value ?? undefined,
                         gas: frame.gas,
                         init: frame.input,
                     },

@@ -106,7 +106,7 @@ export interface Log {
 
 export interface TraceCreateAction {
     from: Bytes20,
-    value: Qty,
+    value?: Qty,
     gas: Qty,
     init: Bytes,
     creationMethod?: 'create' | 'create2'
