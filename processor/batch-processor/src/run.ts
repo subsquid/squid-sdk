@@ -98,16 +98,20 @@ class Processor<B extends BlockBase, S> {
         await this.initMetrics(head?.number ?? -1, await chainHeight.get())
 
         while (true) {
-            let getStream = this.db.supportsHotBlocks ? this.src.getStream.bind(this.src) : this.src.getFinalizedStream.bind(this.src)
+            let getStream = this.db.supportsHotBlocks
+                ? this.src.getStream.bind(this.src)
+                : this.src.getFinalizedStream.bind(this.src)
 
             head = getStateHead(state)
             try {
                 for await (let data of getStream({after: head})) {
                     state = await this.processBatch(state, data, await chainHeight.get())
                 }
+                break // Stream completed successfully, exit loop
             } catch (e) {
                 if (!isForkException(e) || !this.db.supportsHotBlocks) throw e
 
+                // Handle fork and continue loop to retry
                 let chain = state.finalizedHead
                     ? [state.finalizedHead, ...state.unfinalizedHeads]
                     : state.unfinalizedHeads
@@ -122,8 +126,6 @@ class Processor<B extends BlockBase, S> {
                     state.unfinalizedHeads = chain.slice(1, rollbackIndex + 1)
                 }
             }
-
-            break
         }
 
         this.reportFinalStatus()
@@ -142,10 +144,8 @@ class Processor<B extends BlockBase, S> {
     private updateProgressMetrics(chainHeight: number, indexerHeight: number, time?: bigint): void {
         this.metrics.setChainHeight(chainHeight)
         this.metrics.setLastProcessedBlock(indexerHeight)
-        let left: number
-        let processed: number
-        left = this.metrics.getChainHeight() - this.metrics.getLastProcessedBlock()
-        processed = this.metrics.getLastProcessedBlock()
+        let left = this.metrics.getChainHeight() - this.metrics.getLastProcessedBlock()
+        let processed = this.metrics.getLastProcessedBlock()
         this.metrics.updateProgress(processed, left, time)
     }
 
@@ -161,7 +161,7 @@ class Processor<B extends BlockBase, S> {
         let prevHead = getStateHead(state)
 
         // Validate data continuity
-        if (prevHead && blocks.length > 0 && prevHead.number >= blocks[0].header.number) {
+        if (prevHead && prevHead.number >= blocks[0].header.number) {
             throw new Error('Data is not continuous')
         }
 
@@ -217,9 +217,9 @@ class Processor<B extends BlockBase, S> {
 
             await this.db.transactHot2(
                 {
-                    finalizedHead: finalizedHeadData ? toHashAndHeight(finalizedHeadData) : {height: -1, hash: '0x'},
-                    baseHead: prevHead ? toHashAndHeight(prevHead) : {height: -1, hash: '0x'},
-                    newBlocks: data.blocks.map((b) => toHashAndHeight(b.header)),
+                    finalizedHead: toHashAndHeight(finalizedHeadData ?? state.finalizedHead),
+                    baseHead: toHashAndHeight(prevHead ?? state.finalizedHead),
+                    newBlocks: blocks.map((b) => toHashAndHeight(b.header)),
                 },
                 (store, start, end) => {
                     return this.handler({
@@ -277,12 +277,12 @@ function findRollbackIndex(currentChain: BlockRef[], forkChain: BlockRef[]): num
         const forkBlock = forkChain[forkIndex]
 
         if (currentBlock.number > forkBlock.number) {
-            currentIndex++
+            forkIndex++
             continue
         }
 
         if (currentBlock.number < forkBlock.number) {
-            forkIndex++
+            currentIndex++
             continue
         }
 
