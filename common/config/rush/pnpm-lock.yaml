@@ -359,9 +359,6 @@ dependencies:
   '@subsquid/graphiql-console':
     specifier: ^0.3.0
     version: 0.3.0
-  '@subsquid/portal-client':
-    specifier: ^0.3.2
-    version: 0.3.2
   '@subsquid/util-internal-validation':
     specifier: ^0.7.0
     version: 0.7.0
@@ -449,6 +446,9 @@ dependencies:
   fast-check:
     specifier: ^3.14.0
     version: 3.14.0
+  fastest-levenshtein:
+    specifier: ^1.0.16
+    version: 1.0.16
   glob:
     specifier: ^10.3.10
     version: 10.3.10
@@ -4379,6 +4379,11 @@ packages:
       strnum: 1.0.5
     dev: false
 
+  /fastest-levenshtein@1.0.16:
+    resolution: {integrity: sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg==}
+    engines: {node: '>= 4.9.1'}
+    dev: false
+
   /fetch-blob@3.2.0:
     resolution: {integrity: sha512-7yAQpD2UMJzLi1Dqv7qFYnPbaPx7ZfFK6PiIxQ4PfkGPyNyl2Ugx+a/umUonmKqjhM4DnfbMvdX6otXq83soQQ==}
     engines: {node: ^12.20 || >= 14.13}
@@ -7023,7 +7028,7 @@ packages:
     dev: false
 
   file:projects/astar-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-1M4uu2L7hzQjWq4TeVBpvraNtuhUkNBNmoT+wvCOQ5MCPIgt5yeQzGB2XpoisPgPf6Ks3nFmcH4olszV+aABfw==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-J0X28jrAJF4qXuVCg45ptfzHrA/HOhjvUhDLl91zsD78FHyJn7lrLGwJeNmqGvmIds2dA6h7xdUiEjZ5asGQxA==, tarball: file:projects/astar-erc20.tgz}
     id: file:projects/astar-erc20.tgz
     name: '@rush-temp/astar-erc20'
     version: 0.0.0
@@ -7161,7 +7166,7 @@ packages:
     dev: false
 
   file:projects/erc20-transfers.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-wqAn4o23iPRugE5Lv2umW0XS2VXP5qnzC8V/rhTKK1fi7lsOIgvIHnDrSofNssgwXtKCRg15vEpwi5bTYLOagQ==, tarball: file:projects/erc20-transfers.tgz}
+    resolution: {integrity: sha512-Dx1H7iqrp772esDTR4c7pR0vkc825SkhnsX4sN1OK3kG8m5WAikz/xZ/h8qSDQ87PbIpNZ6enoNQUNTafN+nmA==, tarball: file:projects/erc20-transfers.tgz}
     id: file:projects/erc20-transfers.tgz
     name: '@rush-temp/erc20-transfers'
     version: 0.0.0
@@ -7274,20 +7279,17 @@ packages:
     dev: false
 
   file:projects/evm-stream.tgz:
-    resolution: {integrity: sha512-MF1A+kOXhUrG875VfospjWEaNzLV3URkr0ebV/ZzUhicC8ClwBzU6cTs7tKLFm0v5hMBQC7gqX2+bv6DBx7d/w==, tarball: file:projects/evm-stream.tgz}
+    resolution: {integrity: sha512-dfsSA5vSdXDFvkHSK/mT2W/teuNG2fNGH/kFa7lmCm6TrNDgJQvy11Rw+hkgrCCLRdXbUSvqHv4TWlgrcp/uMQ==, tarball: file:projects/evm-stream.tgz}
     name: '@rush-temp/evm-stream'
     version: 0.0.0
     dependencies:
       '@subsquid/portal-client': 0.3.2
       '@types/node': 18.19.0
       typescript: 5.5.4
-    transitivePeerDependencies:
-      - '@subsquid/http-client'
-      - '@subsquid/logger'
     dev: false
 
   file:projects/evm-typegen.tgz:
-    resolution: {integrity: sha512-vu6PZuR6tf1OuxsKcbrKxiIg0UsPq6bCTDFqb71XQ3QQi9zQY7xZ0EoeF+lQcbHEHAKh7U1YRjPEQlkAWnUtXg==, tarball: file:projects/evm-typegen.tgz}
+    resolution: {integrity: sha512-1IrEkzFTTuHLwJnEcwaj7La8lsOBV9s9rU72YReUCjCzs3ff07QzyGHknc6UTVM/6oHuEf/RU4S7opfJDiJ56w==, tarball: file:projects/evm-typegen.tgz}
     name: '@rush-temp/evm-typegen'
     version: 0.0.0
     dependencies:
@@ -7295,6 +7297,7 @@ packages:
       abitype: 1.0.6(typescript@5.5.4)
       commander: 11.1.0
       ethers: 6.9.0
+      fastest-levenshtein: 1.0.16
       typescript: 5.5.4
     transitivePeerDependencies:
       - zod
@@ -7545,7 +7548,7 @@ packages:
     dev: false
 
   file:projects/polkavm-erc20.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-hzZRk/82TOm7ygxzrID8QTmdq2rnlDbFvSXbpdzlssdIE5Mba6jEtJkDjF3dO0mR6yZ4LeFbwXUUtOkBq3Tu4Q==, tarball: file:projects/polkavm-erc20.tgz}
+    resolution: {integrity: sha512-0UnzvQoDl9DOZ0cMtvS7yK7JbzkpJbwbX6bo7QH5JyELu0pYGIaPgRjRmVJ8tOsu0CnUcuopgtUWUFSFgEiRnQ==, tarball: file:projects/polkavm-erc20.tgz}
     id: file:projects/polkavm-erc20.tgz
     name: '@rush-temp/polkavm-erc20'
     version: 0.0.0
@@ -7695,7 +7698,7 @@ packages:
     dev: false
 
   file:projects/solana-example.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-m1d3SJu6kYlvnr8o2pEpYD4ozrD/W0slLBCnZ4mRdBgoC81/FN12dQq1W9v5WKbRZ5n5p9vsWrWixEzaaQOfKA==, tarball: file:projects/solana-example.tgz}
+    resolution: {integrity: sha512-+mJPmxGQvfWiEp/6zm32FXO+rSB5iERZCGZFfvIiYRvBUpJJvka2+4fbIwtyrtMy2Dsu/iNpdcYWKMu3WChBiw==, tarball: file:projects/solana-example.tgz}
     id: file:projects/solana-example.tgz
     name: '@rush-temp/solana-example'
     version: 0.0.0
@@ -7726,7 +7729,7 @@ packages:
     dev: false
 
   file:projects/solana-ingest.tgz:
-    resolution: {integrity: sha512-FgzK2uGTsMpmvdmWDc93O52uxxRcpg+mi/KbS8khFrIFIRUqMgHwpI17O2CTC7BMVhBDIUcrd5u7c+nRja1QXA==, tarball: file:projects/solana-ingest.tgz}
+    resolution: {integrity: sha512-FlsRrKZi4vgPrcYxlpG43TqFVAavaHiZ2c4bzZJbvPFDjCUD53Qx5t3B/rhfpC2+4ig0MibxgxqiGLJ78/9+yw==, tarball: file:projects/solana-ingest.tgz}
     name: '@rush-temp/solana-ingest'
     version: 0.0.0
     dependencies:
@@ -7780,7 +7783,7 @@ packages:
     dev: false
 
   file:projects/solana-stream.tgz:
-    resolution: {integrity: sha512-13/FARykG9UgBATj3g1Q2rwnekx7TDfTHMzS0qppFf+sYXFbcuai0V8UKaUmbcvW1Q0LRhLLUkhIy/SGSw5P0g==, tarball: file:projects/solana-stream.tgz}
+    resolution: {integrity: sha512-P7P132NsgpRJ6HSKFBjVVN8wCsCNg3X8HVjYTOVjLA21Qqo2oqrHcOZy4eLvHJGq5pti4Z9Zs1Vv3fh18EI3sA==, tarball: file:projects/solana-stream.tgz}
     name: '@rush-temp/solana-stream'
     version: 0.0.0
     dependencies:
@@ -7788,9 +7791,6 @@ packages:
       '@types/node': 18.19.0
       bs58: 5.0.0
       typescript: 5.5.4
-    transitivePeerDependencies:
-      - '@subsquid/http-client'
-      - '@subsquid/logger'
     dev: false
 
   file:projects/solana-typegen.tgz:
@@ -8035,7 +8035,7 @@ packages:
     dev: false
 
   file:projects/tron-usdt.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-wXH0Bec/2MPgFzjBzL4vd9NdiSQ4wuvC9+h1XUDvJxx/8Y12pus4EawZyCN5fIOoJbNj2KuO689hxCTh6eVM2Q==, tarball: file:projects/tron-usdt.tgz}
+    resolution: {integrity: sha512-GIqY9/hM6xAsNtizKFUo92gIhMWcaCk7LoJH1arhFnfwgzi3GiRHdQ5oubfNH720KpMohNfeI79RXJ6MhMFuqw==, tarball: file:projects/tron-usdt.tgz}
     id: file:projects/tron-usdt.tgz
     name: '@rush-temp/tron-usdt'
     version: 0.0.0

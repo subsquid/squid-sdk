@@ -166,8 +166,8 @@ class Processor<B extends BlockBase, S> {
         }
 
         let unfinalizedIndex = 0
-        if (finalizedHeadData?.number != null) {
-            unfinalizedIndex = blocks.findIndex((b) => b.header.number > finalizedHeadData.number)
+        if (finalizedHeadData != null) {
+            unfinalizedIndex = blocks.findIndex((b) => b.header.number > finalizedHeadData!.number)
         }
 
         let nextHead = last(blocks).header
