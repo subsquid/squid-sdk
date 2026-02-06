@@ -1,0 +1,29 @@
+{
+  "name": "@subsquid/evm-objects",
+  "version": "0.0.1",
+  "description": "Augmented EVM data model",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "@subsquid/util-internal": "^3.2.0"
+  },
+  "peerDependencies": {
+    "@subsquid/evm-stream": "^0.0.0"
+  },
+  "devDependencies": {
+    "@subsquid/evm-stream": "^0.0.0",
+    "@types/node": "^18.18.14",
+    "typescript": "~5.5.4"
+  }
+}

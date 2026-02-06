@@ -1,3 +1,4 @@
+import type {BlockRef} from '@subsquid/util-internal-data-source'
 import {HashAndHeight} from './database'
 
 
@@ -29,8 +30,8 @@ export function getItemsCount(blocks: any[]): number {
 }
 
 
-export function formatHead(head: HashAndHeight): string {
-    return `${head.height}#${shortHash(head.hash)}`
+export function formatHead(head: BlockRef): string {
+    return `${head.number}#${shortHash(head.hash)}`
 }
 
 

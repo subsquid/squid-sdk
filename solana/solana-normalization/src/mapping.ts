@@ -12,8 +12,8 @@ export function mapRpcBlock(src: rpc.Block, journal: Journal): Block {
     let header: BlockHeader = {
         hash: src.hash,
         height: src.height,
-        slot: src.slot,
-        parentSlot: src.block.parentSlot,
+        number: src.slot,
+        parentNumber: src.block.parentSlot,
         parentHash: src.block.previousBlockhash,
         timestamp: src.block.blockTime ?? 0
     }
