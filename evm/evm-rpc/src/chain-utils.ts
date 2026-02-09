@@ -13,23 +13,28 @@ import {
 import {getTxHash} from './util'
 
 
+export interface ChainUtilsOptions {
+    useGasUsedForReceiptsRoot?: boolean
+}
+
+
 export class ChainUtils {
     public isPolygonMainnet: boolean
     public isHyperliquidMainnet: boolean
     public isHyperliquidTestnet: boolean
-    public isStable: boolean
     public isTempo: boolean
+    public useGasUsedForReceiptsRoot: boolean
 
-    constructor(chainId: Qty) {
+    constructor(chainId: Qty, options?: ChainUtilsOptions) {
         this.isPolygonMainnet = chainId == '0x89'
         this.isHyperliquidMainnet = chainId == '0x3e7'
         this.isHyperliquidTestnet = chainId == '0x3e6'
-        this.isStable = chainId == '0x3dc' || chainId == '0x899' // Chain ID 988 (mainnet) or 2201 (testnet)
         // Tempo mainnet (4217), Moderato testnet (42431), Andantino testnet (42429)
         // https://drpc.org/chainlist/tempo-mainnet-rpc
         // https://drpc.org/chainlist/tempo-moderato-testnet-rpc
         // https://drpc.org/chainlist/tempo-testnet-rpc
         this.isTempo = chainId == '0x1079' || chainId == '0xa5bf' || chainId == '0xa5bd'
+        this.useGasUsedForReceiptsRoot = options?.useGasUsedForReceiptsRoot ?? false
     }
 
     calculateBlockHash(block: GetBlock) {
@@ -99,8 +104,7 @@ export class ChainUtils {
             receipts = receipts.filter(receipt => !isHyperliquidSystemReceipt(receipt))
         }
 
-        // Stable chain uses gasUsed instead of cumulativeGasUsed in receipts root
-        if (this.isStable) {
+        if (this.useGasUsedForReceiptsRoot) {
             return receiptsRoot(receipts, {useGasUsed: true})
         }
 

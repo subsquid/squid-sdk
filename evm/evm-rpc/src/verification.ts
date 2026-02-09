@@ -552,8 +552,8 @@ function decodeLogs(logs: Log[]) {
 export interface ReceiptEncodingOptions {
     /**
      * Use gasUsed instead of cumulativeGasUsed when encoding receipts.
-     * This is needed for chains like Stable (chain ID 988) that deviate from
-     * the Ethereum standard by using per-transaction gas instead of cumulative.
+     * Some RPC providers (Cosmos EVM) deviate from the Ethereum standard by using
+     * per-transaction gas instead of cumulative.
      */
     useGasUsed?: boolean
 }
@@ -562,7 +562,6 @@ export interface ReceiptEncodingOptions {
 function encodeReceipt(receipt: Receipt, options?: ReceiptEncodingOptions): Buffer {
     let type = receipt.type == '0x0' ? Buffer.alloc(0) : RLP.encode(qty2Int(receipt.type))
     let payload: Uint8Array
-    // Use gasUsed instead of cumulativeGasUsed for certain chains (e.g., Stable)
     let gasField = options?.useGasUsed ? receipt.gasUsed : receipt.cumulativeGasUsed
     if (receipt.type == '0x7e') {
         // https://github.com/ethereum-optimism/specs/blob/main/specs/protocol/deposits.md#deposit-receipt

@@ -39,6 +39,7 @@ export interface RpcOptions {
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
     verifyLogsBloom?: boolean
+    useGasUsedForReceiptsRoot?: boolean
 }
 
 
@@ -50,6 +51,7 @@ export class Rpc {
     private verifyTxRoot?: boolean
     private verifyReceiptsRoot?: boolean
     private verifyLogsBloom?: boolean
+    private useGasUsedForReceiptsRoot?: boolean
     private log: Logger
     private receiptsMethod?: GetReceiptsMethod
     private chainUtils?: ChainUtils
@@ -62,6 +64,7 @@ export class Rpc {
         this.verifyTxRoot = options.verifyTxRoot
         this.verifyReceiptsRoot = options.verifyReceiptsRoot
         this.verifyLogsBloom = options.verifyLogsBloom
+        this.useGasUsedForReceiptsRoot = options.useGasUsedForReceiptsRoot
         this.log = createLogger('sqd:evm-rpc')
     }
 
@@ -659,7 +662,9 @@ export class Rpc {
     private async getChainUtils(): Promise<ChainUtils> {
         if (this.chainUtils) return this.chainUtils
         let chainId: Qty = await this.call('eth_chainId')
-        return this.chainUtils = new ChainUtils(chainId)
+        return this.chainUtils = new ChainUtils(chainId, {
+            useGasUsedForReceiptsRoot: this.useGasUsedForReceiptsRoot
+        })
     }
 
     isRetryableError(err: any): boolean {
