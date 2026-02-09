@@ -16,6 +16,7 @@ interface Options extends DumperOptions {
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
     verifyLogsBloom?: boolean
+    useGasUsedForReceiptsRoot?: boolean
 }
 
 
@@ -33,6 +34,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.option('--verify-tx-root', 'Verify block transactions against transactions root')
         program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
         program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
+        program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
     }
 
     protected getLoggingNamespace(): string {
@@ -57,7 +59,8 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 verifyTxSender: this.options().verifyTxSender,
                 verifyTxRoot: this.options().verifyTxRoot,
                 verifyReceiptsRoot: this.options().verifyReceiptsRoot,
-                verifyLogsBloom: this.options().verifyLogsBloom
+                verifyLogsBloom: this.options().verifyLogsBloom,
+                useGasUsedForReceiptsRoot: this.options().useGasUsedForReceiptsRoot,
             }),
             req: {
                 transactions: true,
