@@ -55,8 +55,6 @@ for image in "${images[@]}"; do
         publish "$image" "solana-hotblocks-service" || exit 1
     elif [ "$image" = "hyperliquid/hyperliquid-fills-data-service" ]; then
         publish "$image" "hyperliquid-fills-hotblocks-service" || exit 1
-    elif [ "$image" = "hyperliquid/hyperliquid-replica-cmds-data-service" ]; then
-        publish "$image" "hyperliquid-replica-cmds-hotblocks-service" || exit 1
     else
         publish "$image" || exit 1
     fi
