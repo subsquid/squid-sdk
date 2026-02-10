@@ -74,7 +74,7 @@ export const GetBlock = object({
     chainwork: BAREHEX32,
     previousblockhash: option(BAREHEX32),
     nextblockhash: option(BAREHEX32),
-    stripedsize: NAT,
+    strippedsize: NAT,
     size: NAT,
     weight: NAT,
     tx: oneOf({
