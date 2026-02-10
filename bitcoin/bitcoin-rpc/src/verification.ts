@@ -4,11 +4,11 @@ import { BareHex } from './validators'
 import { hash } from 'node:crypto'
 import assert from 'node:assert'
 
-function LEHexToBuf(hex: BareHex): Buffer {
+function BEHexToBuf(hex: BareHex): Buffer {
   return Buffer.from(hex, 'hex').reverse()
 }
 
-function bufToLEHex(buff: Buffer): BareHex {
+function bufToBEHex(buff: Buffer): BareHex {
   return buff.reverse().toString('hex')
 }
 
@@ -84,15 +84,15 @@ export function blockHash(block: GetBlock): BareHex {
   const previousHash = block.previousblockhash ?? ZERO_HASH
   const payload = Buffer.concat([
     u32LE(block.version),
-    LEHexToBuf(previousHash),
-    LEHexToBuf(block.merkleroot),
+    BEHexToBuf(previousHash),
+    BEHexToBuf(block.merkleroot),
     u32LE(block.time),
-    LEHexToBuf(block.bits),
+    BEHexToBuf(block.bits),
     u32LE(block.nonce)
   ])
   const blockHash = doubleSha256(payload)
 
-  return bufToLEHex(blockHash)
+  return bufToBEHex(blockHash)
 }
 
 function encodeOutpoint(vin: TransactionInput): Buffer {
@@ -102,7 +102,7 @@ function encodeOutpoint(vin: TransactionInput): Buffer {
     return Buffer.concat([Buffer.alloc(32, 0x00), Buffer.from("ffffffff", "hex")])
   }
   return Buffer.concat([
-    LEHexToBuf(vin.txid),
+    BEHexToBuf(vin.txid),
     u32LE(vin.vout),
   ])
 }
@@ -186,11 +186,11 @@ function encodeTransaction(tx: Transaction, opts?: { withWitness?: boolean }): B
 export function txid(tx: Transaction): BareHex {
   const serialized = encodeTransaction(tx, { withWitness: false })
   const hash = doubleSha256(serialized)
-  return bufToLEHex(hash)
+  return bufToBEHex(hash)
 }
 
 function merkleRootFromTxids(txids: BareHex[]): Buffer {
-  const transactionHashesLE = txids.map((txid) => LEHexToBuf(txid))
+  const transactionHashesLE = txids.map((txid) => BEHexToBuf(txid))
   return merkleRoot(transactionHashesLE)
 }
 
@@ -210,13 +210,13 @@ export function transactionsRoot(transactions: Transaction[]) {
     }
   }
 
-  return bufToLEHex(merkleRootFromTxids(txids))
+  return bufToBEHex(merkleRootFromTxids(txids))
 }
 
 export function wtxid(tx: Transaction): BareHex {
   const serialized = encodeTransaction(tx, { withWitness: true })
   const hash = doubleSha256(serialized)
-  return bufToLEHex(hash)
+  return bufToBEHex(hash)
 }
 
 export function witnessCommitment(transactions: Transaction[]): BareHex | null {
