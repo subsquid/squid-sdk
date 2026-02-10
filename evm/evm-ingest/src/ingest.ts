@@ -49,11 +49,11 @@ export class EvmIngest extends Ingest<Options> {
         }
     }
 
-    protected getBlockHeight(block: RawBlock): number {
-        return Number(block.number)
+    protected getBlockHeight(block: any): number {
+        return block.header.number
     }
 
-    protected getBlockTimestamp(block: RawBlock): number {
-        return Number(block.timestamp)
+    protected getBlockTimestamp(block: any): number {
+        return block.header.timestamp
     }
 }
