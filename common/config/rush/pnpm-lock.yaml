@@ -56,6 +56,9 @@ dependencies:
   '@rush-temp/big-decimal':
     specifier: file:./projects/big-decimal.tgz
     version: file:projects/big-decimal.tgz
+  '@rush-temp/bitcoin-dump':
+    specifier: file:./projects/bitcoin-dump.tgz
+    version: file:projects/bitcoin-dump.tgz
   '@rush-temp/bitcoin-rpc':
     specifier: file:./projects/bitcoin-rpc.tgz
     version: file:projects/bitcoin-rpc.tgz
@@ -7527,6 +7530,15 @@ packages:
     version: 0.0.0
     dependencies:
       big.js: 6.2.1
+    dev: false
+
+  file:projects/bitcoin-dump.tgz:
+    resolution: {integrity: sha512-cNSkIokCYo2N6rQDEfUmQS3KyPIsvIz4QHYu/64+BwiT9VwY6XM2SiPtTX/lRhQE8ol+/DDXeWr2jWP0QAGPog==, tarball: file:projects/bitcoin-dump.tgz}
+    name: '@rush-temp/bitcoin-dump'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.5.4
     dev: false
 
   file:projects/bitcoin-rpc.tgz:

@@ -21,6 +21,8 @@ import { Block, DataRequest } from "./types"
 import { BareHex, BAREHEX32 } from "./validators"
 import { blockHash, coinbaseWitnessCommitment, transactionsRoot, witnessCommitment } from "./verification"
 
+export const DEFAULT_FINALITY_CONFIRMATION = 6
+
 export type Commitment = "finalized" | "latest"
 
 export enum GetBlockVerbosity {
@@ -31,7 +33,7 @@ export enum GetBlockVerbosity {
 
 export interface RpcOptions {
     client: RpcClient
-    finalityConfirmation: number
+    finalityConfirmation?: number
     verifyBlockHash?: boolean
     verifyTxRoot?: boolean
     verifyWitnessCommitment?: boolean
@@ -39,7 +41,7 @@ export interface RpcOptions {
 
 export class Rpc {
     private client: RpcClient
-    private finalityConfirmation: number = 6
+    private finalityConfirmation: number
     private verifyBlockHash?: boolean
     private verifyTxRoot?: boolean
     private verifyWitnessCommitment?: boolean
@@ -47,7 +49,7 @@ export class Rpc {
 
     constructor(options: RpcOptions) {
         this.client = options.client
-        this.finalityConfirmation = options.finalityConfirmation
+        this.finalityConfirmation = options.finalityConfirmation || DEFAULT_FINALITY_CONFIRMATION
         this.verifyBlockHash = options.verifyBlockHash
         this.verifyTxRoot = options.verifyTxRoot
         this.verifyWitnessCommitment = options.verifyWitnessCommitment
