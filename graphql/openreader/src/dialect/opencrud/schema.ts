@@ -155,7 +155,10 @@ export class SchemaBuilder {
                 if (prop.type.kind == 'fk') {
                     let idKey = toFkIdField(key)
                     if (!object.properties[idKey]) {
-                        fields[idKey] = {type: this.getPropType({type: {kind: 'scalar', name: 'String'}, nullable: prop.nullable})}
+                        fields[idKey] = {
+                            description: prop.description,
+                            type: this.getPropType({type: {kind: 'scalar', name: 'String'}, nullable: prop.nullable}),
+                        }
                     }
                 }
             }

@@ -524,6 +524,17 @@ function checkDisableForeignKeyConstraint(type: GraphQLNamedType, f: GraphQLFiel
     if (directives.length > 1) throw new SchemaError(
         `Multiple @disableForeignKeyConstraint directives were applied to ${type.name}.${f.name}`
     )
+    let fieldType = asNonNull(f)
+    let list = unwrapList(fieldType)
+    if (list.nulls.length > 0) throw new SchemaError(
+        `@disableForeignKeyConstraint was applied to ${type.name}.${f.name}, but list fields cannot have this directive`
+    )
+    if (!isEntityType(list.item)) throw new SchemaError(
+        `@disableForeignKeyConstraint was applied to ${type.name}.${f.name}, but only foreign key fields can have this directive`
+    )
+    if (f.astNode?.directives?.some(d => d.name.value == 'derivedFrom')) throw new SchemaError(
+        `@disableForeignKeyConstraint was applied to ${type.name}.${f.name}, but @derivedFrom fields cannot have this directive`
+    )
     return {disableConstraint: true}
 }
 
