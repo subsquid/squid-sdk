@@ -1,5 +1,6 @@
 import {toSnakeCase} from "@subsquid/util-naming"
 import assert from "assert"
+import {Prop} from "../model"
 
 
 export function toColumn(gqlFieldName: string): string {
@@ -36,4 +37,19 @@ export function invalidFormat(type: string, value: string): Error {
 
 export function identity<T>(x: T): T {
     return x
+}
+
+
+export function toFkIdField(fkFieldName: string): string {
+    return fkFieldName + 'Id'
+}
+
+
+export function getFkPropByIdField(
+    idFieldName: string,
+    properties: Record<string, Prop>
+): Prop | undefined {
+    if (!idFieldName.endsWith('Id')) return undefined
+    let fkProp = properties[idFieldName.slice(0, -2)]
+    return fkProp?.type.kind == 'fk' ? fkProp : undefined
 }

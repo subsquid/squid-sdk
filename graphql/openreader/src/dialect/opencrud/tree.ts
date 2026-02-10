@@ -7,7 +7,7 @@ import {AnyFields, FieldRequest, FieldsByEntity, OpaqueRequest} from '../../ir/f
 import {Model} from '../../model'
 import {getQueryableEntities} from '../../model.tools'
 import {simplifyResolveTree} from '../../util/resolve-tree'
-import {ensureArray} from '../../util/util'
+import {ensureArray, getFkPropByIdField} from '../../util/util'
 import {parseOrderBy} from './orderBy'
 import {parseWhere} from './where'
 
@@ -27,6 +27,23 @@ export function parseObjectTree(
     for (let alias in fields) {
         let f = fields[alias]
         let prop = object.properties[f.name]
+        if (!prop) {
+            let fkProp = getFkPropByIdField(f.name, object.properties)
+            if (fkProp) {
+                if (requestedScalars[f.name] == null) {
+                    requestedScalars[f.name] = true
+                    requests.push({
+                        field: f.name,
+                        aliases: [f.name],
+                        kind: 'scalar',
+                        type: {kind: 'scalar', name: 'String'},
+                        prop: {type: {kind: 'scalar', name: 'String'}, nullable: fkProp.nullable},
+                        index: 0
+                    } as OpaqueRequest)
+                }
+                continue
+            }
+        }
         switch(prop.type.kind) {
             case "scalar":
             case "enum":

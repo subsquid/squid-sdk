@@ -37,7 +37,7 @@ import {customScalars} from '../../scalars'
 import {ConnectionQuery, CountQuery, EntityByIdQuery, ListQuery, Query} from '../../sql/query'
 import {Limit} from '../../util/limit'
 import {getResolveTree, getTreeRequest, hasTreeRequest, simplifyResolveTree} from '../../util/resolve-tree'
-import {ensureArray, identity} from '../../util/util'
+import {ensureArray, identity, toFkIdField} from '../../util/util'
 import {getOrderByMapping, parseOrderBy} from './orderBy'
 import {parseAnyTree, parseObjectTree, parseSqlArguments} from './tree'
 import {parseWhere} from './where'
@@ -151,6 +151,15 @@ export class SchemaBuilder {
                     case 'list-lookup':
                         field.resolve = (source, args, context, info) => source[info.path.key]
                         break
+                }
+                if (prop.type.kind == 'fk') {
+                    let idKey = toFkIdField(key)
+                    if (!object.properties[idKey]) {
+                        fields[idKey] = {
+                            description: prop.description,
+                            type: this.getPropType({type: {kind: 'scalar', name: 'String'}, nullable: prop.nullable}),
+                        }
+                    }
                 }
             }
             fields[key] = field
@@ -303,7 +312,16 @@ export class SchemaBuilder {
                 fields[`${key}_isNull`] = {type: GraphQLBoolean}
                 fields[key] = {type: this.getWhere(prop.type.name)}
                 break
-            case "fk":
+            case "fk": {
+                fields[`${key}_isNull`] = {type: GraphQLBoolean}
+                fields[key] = {type: this.getWhere(prop.type.entity)}
+                this.buildPropWhereFilters(
+                    toFkIdField(key),
+                    {type: {kind: 'scalar', name: 'String'}, nullable: prop.nullable},
+                    fields
+                )
+                break
+            }
             case "lookup":
                 fields[`${key}_isNull`] = {type: GraphQLBoolean}
                 fields[key] = {type: this.getWhere(prop.type.entity)}

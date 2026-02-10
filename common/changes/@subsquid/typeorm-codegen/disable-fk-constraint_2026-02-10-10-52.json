@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-codegen",
+      "comment": "pass createForeignKeyConstraints: false to TypeORM relation decorators when @disableForeignKeyConstraint is set",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen"
+}

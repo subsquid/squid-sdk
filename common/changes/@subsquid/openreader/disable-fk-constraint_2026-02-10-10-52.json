@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "add @disableForeignKeyConstraint directive to suppress FK constraints and expose synthetic {field}Id fields with full filtering support",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}

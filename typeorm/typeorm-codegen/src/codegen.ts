@@ -75,12 +75,15 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             )}, nullable: ${prop.nullable}})`
                         )
                         break
-                    case 'fk':
+                    case 'fk': {
+                        const fkOptions = prop.type.disableConstraint
+                            ? ', createForeignKeyConstraints: false'
+                            : ''
                         if (getFieldIndex(entity, key)?.unique) {
                             imports.useTypeormStore('OneToOne', 'Index', 'JoinColumn')
                             out.line(`@Index_({unique: true})`)
                             out.line(
-                                `@OneToOne_(() => ${prop.type.entity}, {nullable: true})`
+                                `@OneToOne_(() => ${prop.type.entity}, {nullable: true${fkOptions}})`
                             )
                             out.line(`@JoinColumn_()`)
                         } else {
@@ -90,10 +93,11 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             }
                             // Make foreign entity references always nullable
                             out.line(
-                                `@ManyToOne_(() => ${prop.type.entity}, {nullable: true})`
+                                `@ManyToOne_(() => ${prop.type.entity}, {nullable: true${fkOptions}})`
                             )
                         }
                         break
+                    }
                     case 'lookup':
                         imports.useTypeormStore('OneToOne')
                         out.line(
