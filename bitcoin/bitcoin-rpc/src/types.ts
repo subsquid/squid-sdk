@@ -15,3 +15,5 @@ export interface Block {
 export interface DataRequest {
     transactions?: boolean
 }
+
+export const ZERO_HASH = '0'.repeat(64)

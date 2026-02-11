@@ -1,7 +1,7 @@
 import { BlockRef, BlockStream, DataSource, ForkException, StreamRequest } from '@subsquid/util-internal-data-source'
 import { Range } from '@subsquid/util-internal-range'
 import { Commitment, Rpc } from '../rpc'
-import { Block, DataRequest } from '../types'
+import { Block, DataRequest, ZERO_HASH } from '../types'
 import { finalize } from './finalizer'
 import { ingest, IngestBatch } from './ingest'
 
@@ -99,7 +99,7 @@ export class BitcoinRpcDataSource implements DataSource<Block> {
                         [
                             {
                                 number: block.number - 1,
-                                hash: block.block.previousblockhash ?? '',
+                                hash: block.block.previousblockhash ?? ZERO_HASH,
                             },
                         ],
                     )

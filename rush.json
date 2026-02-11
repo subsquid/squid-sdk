@@ -419,8 +419,20 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/bitcoin-ingest",
+      "projectFolder": "bitcoin/bitcoin-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/bitcoin-rpc",
       "projectFolder": "bitcoin/bitcoin-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-normalization",
+      "projectFolder": "bitcoin/bitcoin-normalization",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

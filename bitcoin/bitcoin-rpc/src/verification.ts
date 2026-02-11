@@ -3,6 +3,7 @@ import { Transaction, GetBlock, TransactionInput, TransactionOutput } from './rp
 import { BareHex } from './validators'
 import { hash } from 'node:crypto'
 import assert from 'node:assert'
+import { ZERO_HASH } from './types'
 
 function BEHexToBuf(hex: BareHex): Buffer {
   return Buffer.from(hex, 'hex').reverse()
@@ -11,8 +12,6 @@ function BEHexToBuf(hex: BareHex): Buffer {
 function bufToBEHex(buff: Buffer): BareHex {
   return buff.reverse().toString('hex')
 }
-
-const ZERO_HASH = '0'.repeat(64)
 
 function doubleSha256(payload: Buffer): Buffer {
   const pass1 = hash('sha256', payload, 'buffer')

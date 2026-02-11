@@ -59,6 +59,12 @@ dependencies:
   '@rush-temp/bitcoin-dump':
     specifier: file:./projects/bitcoin-dump.tgz
     version: file:projects/bitcoin-dump.tgz
+  '@rush-temp/bitcoin-ingest':
+    specifier: file:./projects/bitcoin-ingest.tgz
+    version: file:projects/bitcoin-ingest.tgz
+  '@rush-temp/bitcoin-normalization':
+    specifier: file:./projects/bitcoin-normalization.tgz
+    version: file:projects/bitcoin-normalization.tgz
   '@rush-temp/bitcoin-rpc':
     specifier: file:./projects/bitcoin-rpc.tgz
     version: file:projects/bitcoin-rpc.tgz
@@ -7535,6 +7541,24 @@ packages:
   file:projects/bitcoin-dump.tgz:
     resolution: {integrity: sha512-cNSkIokCYo2N6rQDEfUmQS3KyPIsvIz4QHYu/64+BwiT9VwY6XM2SiPtTX/lRhQE8ol+/DDXeWr2jWP0QAGPog==, tarball: file:projects/bitcoin-dump.tgz}
     name: '@rush-temp/bitcoin-dump'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      typescript: 5.5.4
+    dev: false
+
+  file:projects/bitcoin-ingest.tgz:
+    resolution: {integrity: sha512-GCHqjOneRSEl119MH2E90fEGTAV/+mxQeFyENtOMMcOJQLLbc1hx2fzYjVPzg9QEExaC1vKo1mooRUbpIBETwA==, tarball: file:projects/bitcoin-ingest.tgz}
+    name: '@rush-temp/bitcoin-ingest'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 20.19.6
+      typescript: 5.5.4
+    dev: false
+
+  file:projects/bitcoin-normalization.tgz:
+    resolution: {integrity: sha512-ZyIZJrpCutVgdxpHhdzzirMPWEWXjb7uJ73ADfzV/Tvt/jXQopaNLhkc4bmwSqYTvEqIMQ1j3B4dPiFX6k7l9w==, tarball: file:projects/bitcoin-normalization.tgz}
+    name: '@rush-temp/bitcoin-normalization'
     version: 0.0.0
     dependencies:
       '@types/node': 18.19.0

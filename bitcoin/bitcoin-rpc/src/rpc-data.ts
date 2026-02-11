@@ -1,6 +1,7 @@
 import {
     array,
     GetSrcType,
+    INT,
     NAT,
     object,
     oneOf,
@@ -50,7 +51,7 @@ export const Transaction = object({
     size: NAT,
     vsize: NAT,
     weight: NAT,
-    version: NAT,
+    version: INT,
     locktime: NAT,
     vin: array(TransactionInput),
     vout: array(TransactionOutput),
@@ -63,7 +64,7 @@ export const GetBlock = object({
     hash: BAREHEX32,
     confirmations: NAT,
     height: NAT,
-    version: NAT,
+    version: INT,
     merkleroot: BAREHEX32,
     time: NAT,
     mediantime: NAT,
@@ -85,3 +86,5 @@ export const GetBlock = object({
 
 
 export type GetBlock = GetSrcType<typeof GetBlock>
+
+export type BlockWithTx = GetBlock & { tx: Transaction[] }
