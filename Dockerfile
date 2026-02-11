@@ -13,6 +13,14 @@ RUN node common/scripts/install-run-rush.js install
 RUN rm common/config/rush/build-cache.json
 RUN node common/scripts/install-run-rush.js build
 
+FROM builder AS bitcoin-dump-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/bitcoin-dump
+
+
+FROM node AS bitcoin-dump
+COPY --from=bitcoin-dump-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/bitcoin/bitcoin-dump/bin/run.js"]
+
 
 FROM builder AS evm-dump-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/evm-dump
