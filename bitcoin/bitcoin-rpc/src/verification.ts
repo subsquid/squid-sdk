@@ -52,10 +52,8 @@ function varInt(n: number | bigint): Buffer {
   return b
 }
 
-function btcToSats(btc: number | string): bigint {
-  const [whole, frac = ""] = btc.toString().split(".")
-  const fracPadded = (frac + "00000000").slice(0, 8)
-  return BigInt(whole) * 100000000n + BigInt(fracPadded)
+function btcToSats(btc: number): bigint {
+  return BigInt(btc.toFixed(8).replace('.', ''))
 }
 
 function merkleRoot(hashes: Buffer[]): Buffer {
