@@ -35,6 +35,7 @@ runProgram(async () => {
     program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
     program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
     program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
+    program.option('--fix-log-index', 'Renumber log indices sequentially (workaround for chains with broken logIndex)')
     program.parse()
 
     let args = program.opts() as {
@@ -58,6 +59,7 @@ runProgram(async () => {
         verifyReceiptsRoot?: boolean
         verifyLogsBloom?: boolean
         useGasUsedForReceiptsRoot?: boolean
+        fixLogIndex?: boolean
     }
 
     let dataSourceOptions: DataSourceOptions = {
@@ -78,7 +80,8 @@ runProgram(async () => {
         verifyTxRoot: args.verifyTxRoot,
         verifyReceiptsRoot: args.verifyReceiptsRoot,
         verifyLogsBloom: args.verifyLogsBloom,
-        useGasUsedForReceiptsRoot: args.useGasUsedForReceiptsRoot
+        useGasUsedForReceiptsRoot: args.useGasUsedForReceiptsRoot,
+        fixLogIndex: args.fixLogIndex
     }
 
     let mainWorker = new WorkerClient(dataSourceOptions)
