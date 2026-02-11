@@ -8,6 +8,7 @@ interface Options extends IngestOptions {
     withTraces?: boolean
     withStatediffs?: boolean
     assertLogIndex?: boolean
+    fixLogIndex?: boolean
 }
 
 
@@ -30,6 +31,7 @@ export class EvmIngest extends Ingest<Options> {
         program.option('--with-traces', 'Include EVM call traces')
         program.option('--with-statediffs', 'Include EVM state updates')
         program.option('--assert-log-index', 'Assert that log indices within a block are sequential')
+        program.option('--fix-log-index', 'Renumber log indices sequentially (workaround for chains with broken logIndex)')
     }
 
     protected async *getBlocks(range: Range): AsyncIterable<object[]> {
@@ -40,6 +42,7 @@ export class EvmIngest extends Ingest<Options> {
                         withTraces: this.options().withTraces,
                         withStateDiffs: this.options().withStatediffs,
                         assertLogIndex: this.options().assertLogIndex,
+                        fixLogIndex: this.options().fixLogIndex,
                     })
                     return toJSON(block)
                 } catch(err: any) {

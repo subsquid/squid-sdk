@@ -615,6 +615,7 @@ export interface MappingOptions {
     withTraces?: boolean
     withStateDiffs?: boolean
     assertLogIndex?: boolean
+    fixLogIndex?: boolean
 }
 
 
@@ -716,6 +717,7 @@ export function mapRawBlock(raw: RawBlock, options?: MappingOptions): Block {
         stateDiffs: options?.withStateDiffs ? [] : undefined
     }
 
+    let logIndex = 0
     for (let tx of raw.transactions) {
         let transactionIndex = qty2Int(tx.transactionIndex)
         block.transactions.push(mapTransaction(tx, tx.receipt_))
@@ -723,6 +725,11 @@ export function mapRawBlock(raw: RawBlock, options?: MappingOptions): Block {
         if (tx.receipt_) {
             for (let log of tx.receipt_.logs) {
                 let normalized = mapLog(log)
+                if (options?.fixLogIndex) {
+                    normalized.logIndex = logIndex++
+                } else {
+                    assert.equal(normalized.logIndex, logIndex++)
+                }
                 block.logs.push(normalized)
             }
         }
@@ -758,6 +765,11 @@ export function mapRawBlock(raw: RawBlock, options?: MappingOptions): Block {
         assert(block.logs.length == 0)
         for (let log of raw.logs_) {
             let normalized = mapLog(log)
+            if (options?.fixLogIndex) {
+                normalized.logIndex = logIndex++
+            } else {
+                assert.equal(normalized.logIndex, logIndex++)
+            }
             block.logs.push(normalized)
         }
     }
