@@ -6,6 +6,7 @@
     "rootDir": "src",
     "allowJs": true,
     "strict": true,
+    "noUnusedLocals": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
