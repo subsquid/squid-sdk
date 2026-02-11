@@ -34,6 +34,7 @@ runProgram(async () => {
     program.option('--verify-tx-root', 'Verify block transactions against transactions root')
     program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
     program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
+    program.option('--fix-log-index', 'Renumber log indices sequentially (workaround for chains with broken logIndex)')
     program.parse()
 
     let args = program.opts() as {
@@ -56,6 +57,7 @@ runProgram(async () => {
         verifyTxRoot?: boolean
         verifyReceiptsRoot?: boolean
         verifyLogsBloom?: boolean
+        fixLogIndex?: boolean
     }
 
     let dataSourceOptions: DataSourceOptions = {
@@ -75,7 +77,8 @@ runProgram(async () => {
         verifyTxSender: args.verifyTxSender,
         verifyTxRoot: args.verifyTxRoot,
         verifyReceiptsRoot: args.verifyReceiptsRoot,
-        verifyLogsBloom: args.verifyLogsBloom
+        verifyLogsBloom: args.verifyLogsBloom,
+        fixLogIndex: args.fixLogIndex
     }
 
     let mainWorker = new WorkerClient(dataSourceOptions)

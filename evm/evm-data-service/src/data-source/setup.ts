@@ -26,6 +26,7 @@ export interface DataSourceOptions {
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
     verifyLogsBloom?: boolean
+    fixLogIndex?: boolean
 }
 
 
@@ -46,7 +47,8 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         verifyTxRoot: options.verifyTxRoot,
         verifyTxSender: options.verifyTxSender,
         verifyReceiptsRoot: options.verifyReceiptsRoot,
-        verifyLogsBloom: options.verifyLogsBloom
+        verifyLogsBloom: options.verifyLogsBloom,
+        fixLogIndex: options.fixLogIndex
     })
     let rpcSource = new EvmRpcDataSource({
         rpc: httpRpc,
