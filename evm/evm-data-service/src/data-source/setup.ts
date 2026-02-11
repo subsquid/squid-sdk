@@ -28,6 +28,7 @@ export interface DataSourceOptions {
     verifyLogsBloom?: boolean
     assertLogIndex?: boolean
     useGasUsedForReceiptsRoot?: boolean
+    fixLogIndex?: boolean
 }
 
 
@@ -51,7 +52,8 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         verifyReceiptsRoot: options.verifyReceiptsRoot,
         verifyLogsBloom: options.verifyLogsBloom,
         assertLogIndex: options.assertLogIndex,
-        useGasUsedForReceiptsRoot: options.useGasUsedForReceiptsRoot
+        useGasUsedForReceiptsRoot: options.useGasUsedForReceiptsRoot,
+        fixLogIndex: options.fixLogIndex,
     })
     let rpcSource = new EvmRpcDataSource({
         rpc: httpRpc,

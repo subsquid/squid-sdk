@@ -38,6 +38,7 @@ runProgram(async () => {
     program.option('--assert-log-index', 'Assert that log indices within a block are sequential')
     program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
     program.option('--auto-adjust-finalized-head', 'Automatically adjust finalized head when block cache is full and finalized head is not in the new range')
+    program.option('--fix-log-index', 'Renumber log indices sequentially (workaround for chains with broken logIndex)')
     program.parse()
 
     let args = program.opts() as {
@@ -64,6 +65,7 @@ runProgram(async () => {
         assertLogIndex?: boolean
         useGasUsedForReceiptsRoot?: boolean
         autoAdjustFinalizedHead?: boolean
+        fixLogIndex?: boolean
     }
 
     let dataSourceOptions: DataSourceOptions = {
@@ -85,7 +87,8 @@ runProgram(async () => {
         verifyReceiptsRoot: args.verifyReceiptsRoot,
         verifyLogsBloom: args.verifyLogsBloom,
         assertLogIndex: args.assertLogIndex,
-        useGasUsedForReceiptsRoot: args.useGasUsedForReceiptsRoot
+        useGasUsedForReceiptsRoot: args.useGasUsedForReceiptsRoot,
+        fixLogIndex: args.fixLogIndex,
     }
 
     let mainWorker = new WorkerClient(dataSourceOptions)
