@@ -19,6 +19,21 @@ export interface BlockHeader {
     weight: number
 }
 
+export interface ScriptPubKey {
+    hex: BareHex,
+    asm?: string,
+    desc?: string,
+    type?: string,
+    address?: string,
+}
+
+export interface Prevout {
+    generated: boolean,
+    height: number,
+    value: number,
+    scriptPubKey: ScriptPubKey
+}
+
 export interface TransactionInputTx {
     txid: BareHex32,
     vout: number,
@@ -28,6 +43,7 @@ export interface TransactionInputTx {
     },
     sequence: number,
     txInWitness?: BareHex[]
+    prevout?: Prevout
 }
 
 export interface TransactionInputCoinbase {

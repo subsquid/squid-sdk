@@ -1,5 +1,6 @@
 import {
     array,
+    BOOLEAN,
     GetSrcType,
     INT,
     NAT,
@@ -10,6 +11,25 @@ import {
 } from '@subsquid/util-internal-validation'
 import { BAREHEX, BAREHEX32, BTC_AMOUNT, FLOAT } from './validators'
 
+export const ScriptPubKey = object({
+    hex: BAREHEX,
+    asm: option(STRING),
+    desc: option(STRING),
+    type: option(STRING),
+    address: option(STRING),
+})
+
+export type ScriptPubKey = GetSrcType<typeof ScriptPubKey>
+
+export const Prevout = object({
+    generated: BOOLEAN,
+    height: NAT,
+    value: BTC_AMOUNT,
+    scriptPubKey: ScriptPubKey
+})
+
+export type Prevout = GetSrcType<typeof Prevout>
+
 export const TransactionInput = oneOf({
     tx: object({
         txid: BAREHEX32,
@@ -19,7 +39,8 @@ export const TransactionInput = oneOf({
             asm: option(STRING)
         }),
         sequence: NAT,
-        txinwitness: option(array(BAREHEX))
+        txinwitness: option(array(BAREHEX)),
+        prevout: option(Prevout)
     }),
     coinbase: object({
         coinbase: BAREHEX,

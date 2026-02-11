@@ -28,7 +28,8 @@ export type Commitment = "finalized" | "latest"
 export enum GetBlockVerbosity {
     RawHex = 0,
     Default = 1,
-    WithTransactionData = 2,
+    WithTx = 2,
+    WithTxAndPrevout = 3,
 }
 
 export interface RpcOptions {
@@ -149,7 +150,7 @@ export class Rpc {
                 params: [
                     hash,
                     withTransactions
-                        ? GetBlockVerbosity.WithTransactionData
+                        ? GetBlockVerbosity.WithTxAndPrevout
                         : GetBlockVerbosity.Default,
                 ],
             }))

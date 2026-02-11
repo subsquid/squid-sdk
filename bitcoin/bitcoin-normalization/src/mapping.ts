@@ -4,9 +4,30 @@ import {
     BlockHeader,
     Transaction,
     TransactionInput,
-    TransactionOutput
+    TransactionOutput,
+    ScriptPubKey,
+    Prevout
 } from './data'
 import { RawBlock } from './raw'
+
+function mapScriptPubKey(src: rpc.ScriptPubKey): ScriptPubKey {
+    return {
+        hex: src.hex,
+        asm: src.asm ?? undefined,
+        type: src.type ?? undefined,
+        desc: src.desc ?? undefined,
+        address: src.address ?? undefined
+    }
+}
+
+function mapPrevout(src: rpc.Prevout): Prevout {
+    return {
+        generated: src.generated,
+        height: src.height,
+        value: src.value,
+        scriptPubKey: mapScriptPubKey(src.scriptPubKey)
+    }
+}
 
 function mapTransactionInput(src: rpc.TransactionInput): TransactionInput {
     if ('coinbase' in src) {
@@ -25,7 +46,8 @@ function mapTransactionInput(src: rpc.TransactionInput): TransactionInput {
             asm: src.scriptSig.asm ?? undefined
         },
         sequence: src.sequence,
-        txInWitness: src.txinwitness ?? undefined
+        txInWitness: src.txinwitness ?? undefined,
+        prevout: src.prevout ? mapPrevout(src.prevout) : undefined
     }
 }
 
@@ -33,13 +55,7 @@ function mapTransactionOutput(src: rpc.TransactionOutput): TransactionOutput {
     return {
         value: src.value,
         n: src.n,
-        scriptPubKey: {
-            hex: src.scriptPubKey.hex,
-            asm: src.scriptPubKey.asm ?? undefined,
-            type: src.scriptPubKey.type ?? undefined,
-            desc: src.scriptPubKey.desc ?? undefined,
-            address: src.scriptPubKey.address ?? undefined
-        }
+        scriptPubKey: mapScriptPubKey(src.scriptPubKey)
     }
 }
 
