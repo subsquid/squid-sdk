@@ -568,7 +568,7 @@ export function mapRpcBlock(src: rpc.Block, withTraces?: boolean, withStateDiffs
 }
 
 
-export function mapRawBlock(raw: RawBlock, withTraces?: boolean, withStateDiffs?: boolean): Block {
+export function mapRawBlock(raw: RawBlock, withTraces?: boolean, withStateDiffs?: boolean, fixLogIndex?: boolean): Block {
     let block: Block = {
         header: mapBlockHeader(raw),
         transactions: [],
@@ -585,7 +585,11 @@ export function mapRawBlock(raw: RawBlock, withTraces?: boolean, withStateDiffs?
         if (tx.receipt_) {
             for (let log of tx.receipt_.logs) {
                 let normalized = mapLog(log)
-                assert.equal(normalized.logIndex, logIndex++)
+                if (fixLogIndex) {
+                    normalized.logIndex = logIndex++
+                } else {
+                    assert.equal(normalized.logIndex, logIndex++)
+                }
                 block.logs.push(normalized)
             }
         }
@@ -621,7 +625,11 @@ export function mapRawBlock(raw: RawBlock, withTraces?: boolean, withStateDiffs?
         assert(block.logs.length == 0)
         for (let log of raw.logs_) {
             let normalized = mapLog(log)
-            assert.equal(normalized.logIndex, logIndex++)
+            if (fixLogIndex) {
+                normalized.logIndex = logIndex++
+            } else {
+                assert.equal(normalized.logIndex, logIndex++)
+            }
             block.logs.push(normalized)
         }
     }
