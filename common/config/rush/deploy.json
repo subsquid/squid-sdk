@@ -19,6 +19,7 @@
    */
   "deploymentProjectNames": [
     "@subsquid/bitcoin-dump",
+    "@subsquid/bitcoin-ingest",
     "@subsquid/fuel-dump",
     "@subsquid/fuel-ingest",
     "@subsquid/evm-data-service",
