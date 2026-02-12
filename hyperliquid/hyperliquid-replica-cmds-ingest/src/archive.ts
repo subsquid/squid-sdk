@@ -31,9 +31,9 @@ export class HyperliquidArchive {
                 if (block.height < from) continue
                 if (block.height > to) break
                 if (prevRound != null) {
-                    assert(block.block.abci_block.parent_round == prevRound)
+                    assert.equal(block.block.abci_block.parent_round, prevRound)
                 }
-                assert(block.height == nextBlock++)
+                assert.equal(block.height, nextBlock++)
                 batch.push(block)
                 if (block.height == to) {
                     yield batch
