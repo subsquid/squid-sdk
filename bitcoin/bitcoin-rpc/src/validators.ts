@@ -4,7 +4,7 @@ import { Validator, ValidationFailure } from "@subsquid/util-internal-validation
 export type BareHex = string
 
 export function isBareHex(value: unknown): value is BareHex {
-    return typeof value == 'string' && /^[0-9a-fA-F]+$/.test(value)
+    return typeof value == 'string' && /^[0-9a-fA-F]*$/.test(value)
 }
 
 export const BAREHEX: Validator<BareHex> = {
