@@ -101,3 +101,7 @@ export function mapRawBlock(raw: RawBlock): Block {
         transactions: raw.tx.map(mapTransaction),
     }
 }
+
+export function mapRpcBlock(src: rpc.Block): Block {
+    return mapRawBlock(src.block as rpc.BlockWithTx)
+}

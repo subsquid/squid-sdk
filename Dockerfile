@@ -31,6 +31,14 @@ COPY --from=bitcoin-ingest-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/bitcoin/bitcoin-ingest/bin/run.js"]
 
 
+FROM builder AS bitcoin-data-service-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/bitcoin-data-service
+
+
+FROM node AS bitcoin-data-service
+COPY --from=bitcoin-data-service-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/bitcoin/bitcoin-data-service/lib/main.js"]
+
 FROM builder AS evm-dump-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/evm-dump
 

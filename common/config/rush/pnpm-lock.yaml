@@ -56,6 +56,9 @@ dependencies:
   '@rush-temp/big-decimal':
     specifier: file:./projects/big-decimal.tgz
     version: file:projects/big-decimal.tgz
+  '@rush-temp/bitcoin-data-service':
+    specifier: file:./projects/bitcoin-data-service.tgz
+    version: file:projects/bitcoin-data-service.tgz
   '@rush-temp/bitcoin-dump':
     specifier: file:./projects/bitcoin-dump.tgz
     version: file:projects/bitcoin-dump.tgz
@@ -7538,6 +7541,18 @@ packages:
       big.js: 6.2.1
     dev: false
 
+  file:projects/bitcoin-data-service.tgz:
+    resolution: {integrity: sha512-3ScLupyVdKDTDxBwajsytu55t/7ED2nvoHkW5oWaKTNfCDssAUHWQuu3DVLTOFeuoxl6ktIlKB8VOhzp/0YA8w==, tarball: file:projects/bitcoin-data-service.tgz}
+    name: '@rush-temp/bitcoin-data-service'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      '@types/source-map-support': 0.5.10
+      commander: 11.1.0
+      source-map-support: 0.5.21
+      typescript: 5.5.4
+    dev: false
+
   file:projects/bitcoin-dump.tgz:
     resolution: {integrity: sha512-cNSkIokCYo2N6rQDEfUmQS3KyPIsvIz4QHYu/64+BwiT9VwY6XM2SiPtTX/lRhQE8ol+/DDXeWr2jWP0QAGPog==, tarball: file:projects/bitcoin-dump.tgz}
     name: '@rush-temp/bitcoin-dump'
@@ -7548,7 +7563,7 @@ packages:
     dev: false
 
   file:projects/bitcoin-ingest.tgz:
-    resolution: {integrity: sha512-GCHqjOneRSEl119MH2E90fEGTAV/+mxQeFyENtOMMcOJQLLbc1hx2fzYjVPzg9QEExaC1vKo1mooRUbpIBETwA==, tarball: file:projects/bitcoin-ingest.tgz}
+    resolution: {integrity: sha512-qw3uLE5F2GlccIyAjCT8YECeL8qKGcTOXNxB1QkW6iRSL0qSPqZ2SQGeVj40JVJ3zSy1W2QtjRLPvNphy16MVQ==, tarball: file:projects/bitcoin-ingest.tgz}
     name: '@rush-temp/bitcoin-ingest'
     version: 0.0.0
     dependencies:

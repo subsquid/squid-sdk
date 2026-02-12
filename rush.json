@@ -437,6 +437,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/bitcoin-data-service",
+      "projectFolder": "bitcoin/bitcoin-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-dump",
       "projectFolder": "evm/evm-dump",
       "shouldPublish": true,
