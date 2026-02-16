@@ -19,6 +19,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "@subsquid/bitcoin-rpc": "^0.0.0",
     "@subsquid/bitcoin-normalization": "^0.0.0",
     "@subsquid/logger": "^1.4.0",
     "@subsquid/util-internal": "^3.2.0",

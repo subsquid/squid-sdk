@@ -3,8 +3,8 @@ import assert, { fail } from 'assert'
 import * as fs from 'fs'
 import { it } from 'node:test'
 import * as Path from 'path'
-import { mapRawBlock } from './mapping'
-import { RawBlock } from './raw'
+import { mapRpcBlock } from './mapping'
+import { BlockWithTx } from '@subsquid/bitcoin-rpc'
 
 
 const FIXTURES_DIR = Path.resolve(__dirname, '../fixtures')
@@ -12,7 +12,7 @@ const FIXTURES_DIR = Path.resolve(__dirname, '../fixtures')
 
 interface Fixture {
     name: string
-    readBlock(): RawBlock
+    readBlock(): BlockWithTx
     readResult(): any
 }
 
@@ -24,7 +24,7 @@ function* listFixtures(): Iterable<Fixture> {
         if (fs.existsSync(blocksPath) && fs.existsSync(resultPath)) {
             yield {
                 name,
-                readBlock(): RawBlock {
+                readBlock(): BlockWithTx {
                     return JSON.parse(fs.readFileSync(blocksPath, 'utf-8'))
                 },
                 readResult(): any {
@@ -41,7 +41,7 @@ for (let fix of listFixtures()) {
         let block = fix.readBlock()
         let expected = fix.readResult()
 
-        let actual = mapRawBlock(block)
+        let actual = mapRpcBlock(block)
         actual = normalizeJson(actual)
         try {
             assert.deepStrictEqual(actual, expected)

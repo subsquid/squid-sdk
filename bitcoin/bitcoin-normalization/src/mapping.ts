@@ -8,7 +8,6 @@ import {
     ScriptPubKey,
     Prevout
 } from './data'
-import { RawBlock } from './raw'
 
 function mapScriptPubKey(src: rpc.ScriptPubKey): ScriptPubKey {
     return {
@@ -95,13 +94,9 @@ function mapBlockHeader(src: rpc.GetBlock): BlockHeader {
     }
 }
 
-export function mapRawBlock(raw: RawBlock): Block {
+export function mapRpcBlock(src: rpc.BlockWithTx): Block {
     return {
-        header: mapBlockHeader(raw),
-        transactions: raw.tx.map(mapTransaction),
+        header: mapBlockHeader(src),
+        transactions: src.tx.map(mapTransaction),
     }
-}
-
-export function mapRpcBlock(src: rpc.Block): Block {
-    return mapRawBlock(src.block as rpc.BlockWithTx)
 }

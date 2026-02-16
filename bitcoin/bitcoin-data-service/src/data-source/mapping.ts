@@ -1,4 +1,4 @@
-import { Block as RpcBlock } from '@subsquid/bitcoin-rpc'
+import { BlockWithTx, Block as RpcBlock } from '@subsquid/bitcoin-rpc'
 import { mapRpcBlock } from '@subsquid/bitcoin-normalization'
 import { withErrorContext } from '@subsquid/util-internal'
 import { Block, BlockRef, BlockStream, DataSource, StreamRequest } from '@subsquid/util-internal-data-service'
@@ -51,7 +51,7 @@ export class Mapping implements DataSource<Block> {
     }
 
     private async mapRpcBlock(block: RpcBlock): Promise<Block> {
-        let normalized = mapRpcBlock(block)
+        let normalized = mapRpcBlock(block.block as BlockWithTx)
         let jsonLine = JSON.stringify(toJSON(normalized)) + '\n'
         let jsonLineGzip = await gzip(jsonLine, {
             level: zlib.constants.Z_BEST_SPEED

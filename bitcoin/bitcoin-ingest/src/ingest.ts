@@ -1,7 +1,8 @@
-import { RawBlock, mapRawBlock } from '@subsquid/bitcoin-normalization'
+import { mapRpcBlock } from '@subsquid/bitcoin-normalization'
 import { addErrorContext } from '@subsquid/util-internal'
 import { Command, Ingest, Range } from '@subsquid/util-internal-ingest-cli'
 import { toJSON } from '@subsquid/util-internal-json'
+import { BlockWithTx } from '@subsquid/bitcoin-rpc'
 
 export class BitcoinIngest extends Ingest {
     protected getLoggingNamespace(): string {
@@ -22,10 +23,10 @@ export class BitcoinIngest extends Ingest {
     }
 
     protected async *getBlocks(range: Range): AsyncIterable<object[]> {
-        for await (let batch of this.archive().getRawBlocks<RawBlock>(range)) {
+        for await (let batch of this.archive().getRawBlocks<BlockWithTx>(range)) {
             yield batch.map(raw => {
                 try {
-                    let block = mapRawBlock(raw)
+                    let block = mapRpcBlock(raw)
                     return toJSON(block)
                 } catch (err: any) {
                     throw addErrorContext(err, {
@@ -37,11 +38,11 @@ export class BitcoinIngest extends Ingest {
         }
     }
 
-    protected getBlockHeight(block: RawBlock): number {
+    protected getBlockHeight(block: BlockWithTx): number {
         return block.height
     }
 
-    protected getBlockTimestamp(block: RawBlock): number {
+    protected getBlockTimestamp(block: BlockWithTx): number {
         return block.time
     }
 }
