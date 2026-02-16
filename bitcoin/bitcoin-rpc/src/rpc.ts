@@ -249,8 +249,6 @@ export class Rpc {
     isRetryableError(err: any): boolean {
         if (this.client.isConnectionError(err)) return true
         if (err instanceof RpcProtocolError) return true
-        if (err instanceof RpcError && err.message == "response too large")
-            return true
         if (err instanceof RpcError && err.code == 429) return true
         return false
     }

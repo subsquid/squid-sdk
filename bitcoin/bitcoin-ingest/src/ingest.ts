@@ -38,10 +38,10 @@ export class BitcoinIngest extends Ingest {
     }
 
     protected getBlockHeight(block: RawBlock): number {
-        return Number(block.height)
+        return block.height
     }
 
     protected getBlockTimestamp(block: RawBlock): number {
-        return Number(block.time)
+        return block.time
     }
 }

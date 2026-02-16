@@ -54,7 +54,7 @@ export class Mapping implements DataSource<Block> {
         let normalized = mapRpcBlock(block)
         let jsonLine = JSON.stringify(toJSON(normalized)) + '\n'
         let jsonLineGzip = await gzip(jsonLine, {
-            level: zlib.constants.Z_BEST_COMPRESSION
+            level: zlib.constants.Z_BEST_SPEED
         })
 
         return {

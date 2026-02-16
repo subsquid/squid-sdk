@@ -31,7 +31,7 @@ export class BitcoinDumper extends Dumper<BlockWithTx, Options> {
     }
 
     protected getBlockTimestamp(block: BlockWithTx): number {
-        return Number(block.time) || 0
+        return block.time
     }
 
     @def
