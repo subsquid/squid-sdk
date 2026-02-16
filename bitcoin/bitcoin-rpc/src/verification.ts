@@ -237,7 +237,7 @@ function extractWitnessCommitment(coinbase: Transaction): BareHex | null {
     const script = out.scriptPubKey?.hex ?? ''
     return (script.startsWith('6a24aa21a9ed') && script.length >= 12 + 64)
   })
-  if (!candidates) {
+  if (!candidates.length) {
     return null
   }
 
