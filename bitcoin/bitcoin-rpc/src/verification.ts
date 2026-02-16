@@ -233,14 +233,16 @@ export function coinbaseWitnessCommitment(transactions: Transaction[]): BareHex 
 }
 
 function extractWitnessCommitment(coinbase: Transaction): BareHex | null {
-  for (const out of coinbase.vout) {
+  const candidates = coinbase.vout.filter(out => {
     const script = out.scriptPubKey?.hex ?? ''
-    if (script.length < 36 * 2) continue
-    if (script.startsWith('6a24aa21a9ed') && script.length >= 12 + 64) {
-      return script.slice(12, 12 + 64)
-    }
+    return (script.startsWith('6a24aa21a9ed') && script.length >= 12 + 64)
+  })
+  if (!candidates) {
+    return null
   }
-  return null
+
+  // The last witness commitment in `vout` is the right one
+  return candidates[candidates.length - 1].scriptPubKey.hex.slice(12, 12 + 64)
 }
 
 function extractWitnessReservedValue(coinbase: Transaction): Buffer {
