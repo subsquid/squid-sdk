@@ -23,17 +23,19 @@ export interface DataServiceOptions {
 }
 
 
-export async function runDataService(args: DataServiceOptions): Promise<ListeningServer & {started: Promise<void>}> {
+export async function runDataService(args: DataServiceOptions): Promise<ListeningServer & {started: Promise<void>, run: Promise<void>}> {
     let service = new DataService(args.source, args.blockCacheSize ?? 1000)
     let app = createHttpApp(service)
 
     await service.init()
     let server = await app.listen(args.port ?? 3000)
 
-    service.run().then()
+    let runPromise = service.run()
+    runPromise.catch(() => {})
 
     return {
         started: service.started(),
+        run: runPromise,
         port: server.port,
         close(): Promise<void> {
             service.stop()

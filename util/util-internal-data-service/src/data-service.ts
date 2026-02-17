@@ -187,9 +187,9 @@ export class DataService {
                 }
             } else {
                 if (!this.firstBlockIngested) {
-                    return this.firstBlockIngestedFuture.reject(
-                        err ?? new Error('data ingestion unexpectedly terminated')
-                    )
+                    let error = err ?? new Error('data ingestion unexpectedly terminated')
+                    this.firstBlockIngestedFuture.reject(error)
+                    throw error
                 }
 
                 let head = this.chain.getHeader()
