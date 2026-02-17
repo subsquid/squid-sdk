@@ -13,6 +13,31 @@ RUN node common/scripts/install-run-rush.js install
 RUN rm common/config/rush/build-cache.json
 RUN node common/scripts/install-run-rush.js build
 
+FROM builder AS bitcoin-dump-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/bitcoin-dump
+
+
+FROM node AS bitcoin-dump
+COPY --from=bitcoin-dump-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/bitcoin/bitcoin-dump/bin/run.js"]
+
+
+FROM builder AS bitcoin-ingest-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/bitcoin-ingest
+
+
+FROM node AS bitcoin-ingest
+COPY --from=bitcoin-ingest-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/bitcoin/bitcoin-ingest/bin/run.js"]
+
+
+FROM builder AS bitcoin-data-service-builder
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/bitcoin-data-service
+
+
+FROM node AS bitcoin-data-service
+COPY --from=bitcoin-data-service-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/bitcoin/bitcoin-data-service/lib/main.js"]
 
 FROM builder AS evm-dump-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/evm-dump
