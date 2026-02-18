@@ -14,9 +14,8 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "test": "tsc --noEmit -p tsconfig.test.json && npx tsx --test test/**/*.test.ts",
-    "test:verification": "npx tsx --test test/verification.test.ts",
-    "test:rpc": "npx tsx --test test/rpc.test.ts",
+    "lint": "tsc --noEmit -p tsconfig.test.json",
+    "test": "vitest --run",
     "capture-fixture": "npx tsx test/capture-fixtures.ts"
   },
   "dependencies": {
@@ -40,6 +39,7 @@
     "@types/node": "^20.10.0",
     "@types/secp256k1": "4.0.6",
     "tsx": "^4.7.0",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "vitest": "^1.4.0"
   }
 }

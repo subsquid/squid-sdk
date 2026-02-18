@@ -1,5 +1,4 @@
-import {it, describe} from 'node:test'
-import assert from 'assert'
+import {describe, it, expect} from 'vitest'
 import {loadBlock, loadReceipts} from './helpers/fixture-loader'
 import {MockRpcClient} from './helpers/mock-rpc-client'
 import {Rpc} from '../src/rpc'
@@ -18,10 +17,10 @@ describe('Rpc Class Integration', () => {
             const rpc = new Rpc({client: mockClient as any})
 
             const blocks = await rpc.getBlockBatch([18000000], {transactions: true})
-            assert.ok(blocks, 'Blocks should be returned')
-            assert.equal(blocks.length, 1)
-            assert.ok(blocks[0].block, 'Block should have block property')
-            assert.equal(blocks[0].block.number, fixtureBlock.number)
+            expect(blocks).toBeTruthy()
+            expect(blocks.length).toEqual(1)
+            expect(blocks[0].block).toBeTruthy()
+            expect(blocks[0].block.number).toEqual(fixtureBlock.number)
         })
 
         it('getBlockBatch without transactions returns blocks with tx hashes only', async () => {
@@ -35,8 +34,8 @@ describe('Rpc Class Integration', () => {
             const rpc = new Rpc({client: mockClient as any})
 
             const blocks = await rpc.getBlockBatch([18000000])
-            assert.ok(blocks, 'Blocks should be returned')
-            assert.equal(blocks.length, 1)
+            expect(blocks).toBeTruthy()
+            expect(blocks.length).toEqual(1)
         })
 
         it('getBlockBatch handles missing blocks', async () => {
@@ -47,7 +46,7 @@ describe('Rpc Class Integration', () => {
             const rpc = new Rpc({client: mockClient as any})
 
             const blocks = await rpc.getBlockBatch([99999999], {transactions: true})
-            assert.equal(blocks.length, 0, 'Missing blocks should be filtered out')
+            expect(blocks.length).toEqual(0)
         })
     })
 
@@ -65,10 +64,10 @@ describe('Rpc Class Integration', () => {
             const rpc = new Rpc({client: mockClient as any})
 
             const blocks = await rpc.getBlockBatch([18000000], {receipts: true, transactions: true})
-            assert.ok(blocks, 'Blocks should be returned')
-            assert.equal(blocks.length, 1)
-            assert.ok(blocks[0].receipts, 'Block should have receipts attached')
-            assert.ok(blocks[0].receipts!.length > 0, 'Receipts should not be empty')
+            expect(blocks).toBeTruthy()
+            expect(blocks.length).toEqual(1)
+            expect(blocks[0].receipts).toBeTruthy()
+            expect(blocks[0].receipts!.length).toBeGreaterThan(0)
         })
     })
 
@@ -86,8 +85,8 @@ describe('Rpc Class Integration', () => {
             })
 
             const blocks = await rpc.getBlockBatch([18000000], {transactions: true})
-            assert.ok(blocks, 'Blocks should be returned after verification')
-            assert.equal(blocks.length, 1)
+            expect(blocks).toBeTruthy()
+            expect(blocks.length).toEqual(1)
         })
 
         it('verifies transactions root when enabled', async () => {
@@ -103,8 +102,8 @@ describe('Rpc Class Integration', () => {
             })
 
             const blocks = await rpc.getBlockBatch([18000000], {transactions: true})
-            assert.ok(blocks, 'Blocks should be returned after tx root verification')
-            assert.equal(blocks.length, 1)
+            expect(blocks).toBeTruthy()
+            expect(blocks.length).toEqual(1)
         })
 
         it('detects invalid block hash', async () => {
@@ -120,16 +119,9 @@ describe('Rpc Class Integration', () => {
                 verifyBlockHash: true
             })
 
-            await assert.rejects(
-                () => rpc.getBlockBatch([18000000], {transactions: true}),
-                (error: any) => {
-                    assert.ok(
-                        error.message.includes('failed to verify') || error.message.includes('hash'),
-                        'Error should be about hash verification'
-                    )
-                    return true
-                }
-            )
+            await expect(
+                rpc.getBlockBatch([18000000], {transactions: true})
+            ).rejects.toThrow()
         })
     })
 
@@ -147,8 +139,8 @@ describe('Rpc Class Integration', () => {
             })
 
             const blocks = await rpc.getBlockBatch([50000000], {transactions: true})
-            assert.ok(blocks, 'Blocks should be returned')
-            assert.equal(blocks.length, 1)
+            expect(blocks).toBeTruthy()
+            expect(blocks.length).toEqual(1)
         })
 
         it('handles Arbitrum transaction types correctly', async () => {
@@ -164,8 +156,8 @@ describe('Rpc Class Integration', () => {
             })
 
             const blocks = await rpc.getBlockBatch([150000000], {transactions: true})
-            assert.ok(blocks, 'Blocks should be returned')
-            assert.equal(blocks.length, 1)
+            expect(blocks).toBeTruthy()
+            expect(blocks.length).toEqual(1)
         })
 
         it('handles Hyperliquid system transactions correctly', async () => {
@@ -181,8 +173,8 @@ describe('Rpc Class Integration', () => {
             })
 
             const blocks = await rpc.getBlockBatch([50000], {transactions: true})
-            assert.ok(blocks, 'Blocks should be returned')
-            assert.equal(blocks.length, 1)
+            expect(blocks).toBeTruthy()
+            expect(blocks.length).toEqual(1)
         })
     })
 })

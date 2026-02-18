@@ -1,5 +1,4 @@
-import {it, describe} from 'node:test'
-import assert from 'assert'
+import {describe, it, expect} from 'vitest'
 import {loadBlock, loadReceipts, hasReceipts, listFixtures, getChainId} from './helpers/fixture-loader'
 import {blockHash} from '../src/verification'
 import {ChainUtils} from '../src/chain-utils'
@@ -12,7 +11,7 @@ describe('Verification Functions', () => {
             it('blockHash verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 const computed = await blockHash(block)
-                assert.equal(computed, block.hash, `Block hash mismatch for ${fixture.name}`)
+                expect(computed).toEqual(block.hash)
             })
 
             it('transactionsRoot verification', async () => {
@@ -22,7 +21,7 @@ describe('Verification Functions', () => {
                 const chainId = getChainId(fixture.chain)
                 const utils = new ChainUtils(chainId)
                 const computed = await utils.calculateTransactionsRoot(block)
-                assert.equal(computed, block.transactionsRoot, `Transactions root mismatch for ${fixture.name}`)
+                expect(computed).toEqual(block.transactionsRoot)
             })
 
             if (hasReceipts(fixture.chain, fixture.blockNumber)) {
@@ -32,7 +31,7 @@ describe('Verification Functions', () => {
                     const chainId = getChainId(fixture.chain)
                     const utils = new ChainUtils(chainId)
                     const computed = await utils.calculateReceiptsRoot(block, receipts)
-                    assert.equal(computed, block.receiptsRoot, `Receipts root mismatch for ${fixture.name}`)
+                    expect(computed).toEqual(block.receiptsRoot)
                 })
 
                 it('logsBloom verification', async () => {
@@ -42,7 +41,7 @@ describe('Verification Functions', () => {
                     const chainId = getChainId(fixture.chain)
                     const utils = new ChainUtils(chainId)
                     const computed = utils.calculateLogsBloom(block, logs)
-                    assert.equal(computed, block.logsBloom, `Logs bloom mismatch for ${fixture.name}`)
+                    expect(computed).toEqual(block.logsBloom)
                 })
             }
 
@@ -61,11 +60,7 @@ describe('Verification Functions', () => {
 
                     const recovered = utils.recoverTxSender(tx)
                     if (recovered) {
-                        assert.equal(
-                            recovered.toLowerCase(),
-                            tx.from.toLowerCase(),
-                            `Sender mismatch for tx ${tx.hash} in ${fixture.name}`
-                        )
+                        expect(recovered.toLowerCase()).toEqual(tx.from.toLowerCase())
                     }
                 }
             })
