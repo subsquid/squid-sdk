@@ -16,7 +16,6 @@
     "build": "rm -rf lib && tsc",
     "test": "tsc --noEmit -p tsconfig.test.json && npx tsx --test test/**/*.test.ts",
     "test:verification": "npx tsx --test test/verification.test.ts",
-    "test:chain-utils": "npx tsx --test test/chain-utils.test.ts",
     "test:rpc": "npx tsx --test test/rpc.test.ts",
     "capture-fixture": "npx tsx test/capture-fixtures.ts"
   },
