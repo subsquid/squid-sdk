@@ -1,4 +1,4 @@
-import {GetBlock, Receipt} from '../../src/rpc-data'
+import { GetBlock, Receipt } from '../../src/rpc-data'
 import * as fs from 'fs'
 import * as Path from 'path'
 

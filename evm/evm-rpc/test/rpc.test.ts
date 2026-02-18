@@ -1,8 +1,8 @@
-import {describe, it, expect} from 'vitest'
-import {loadBlock, loadReceipts} from './helpers/fixture-loader'
-import {MockRpcClient} from './helpers/mock-rpc-client'
-import {Rpc} from '../src/rpc'
-import {toQty} from '../src/util'
+import { describe, it, expect } from 'vitest'
+import { loadBlock, loadReceipts } from './helpers/fixture-loader'
+import { MockRpcClient } from './helpers/mock-rpc-client'
+import { Rpc } from '../src/rpc'
+import { toQty } from '../src/util'
 
 
 describe('Rpc Class Integration', () => {
@@ -14,9 +14,9 @@ describe('Rpc Class Integration', () => {
             mockClient.setFixture('eth_chainId', undefined, '0x1')
             mockClient.setFixture('eth_getBlockByNumber', [toQty(18000000), true], fixtureBlock)
 
-            const rpc = new Rpc({client: mockClient as any})
+            const rpc = new Rpc({ client: mockClient as any })
 
-            const blocks = await rpc.getBlockBatch([18000000], {transactions: true})
+            const blocks = await rpc.getBlockBatch([18000000], { transactions: true })
             expect(blocks).toBeTruthy()
             expect(blocks.length).toEqual(1)
             expect(blocks[0].block).toBeTruthy()
@@ -25,13 +25,13 @@ describe('Rpc Class Integration', () => {
 
         it('getBlockBatch without transactions returns blocks with tx hashes only', async () => {
             const fixtureBlock = loadBlock('ethereum', 18000000)
-            const blockWithoutTxs = {...fixtureBlock, transactions: fixtureBlock.transactions?.map((tx: any) => tx.hash)}
+            const blockWithoutTxs = { ...fixtureBlock, transactions: fixtureBlock.transactions?.map((tx: any) => tx.hash) }
 
             const mockClient = new MockRpcClient()
             mockClient.setFixture('eth_chainId', undefined, '0x1')
             mockClient.setFixture('eth_getBlockByNumber', [toQty(18000000), false], blockWithoutTxs)
 
-            const rpc = new Rpc({client: mockClient as any})
+            const rpc = new Rpc({ client: mockClient as any })
 
             const blocks = await rpc.getBlockBatch([18000000])
             expect(blocks).toBeTruthy()
@@ -43,9 +43,9 @@ describe('Rpc Class Integration', () => {
             mockClient.setFixture('eth_chainId', undefined, '0x1')
             mockClient.setFixture('eth_getBlockByNumber', [toQty(99999999), true], null)
 
-            const rpc = new Rpc({client: mockClient as any})
+            const rpc = new Rpc({ client: mockClient as any })
 
-            const blocks = await rpc.getBlockBatch([99999999], {transactions: true})
+            const blocks = await rpc.getBlockBatch([99999999], { transactions: true })
             expect(blocks.length).toEqual(0)
         })
     })
@@ -61,9 +61,9 @@ describe('Rpc Class Integration', () => {
             mockClient.setFixture('eth_getBlockReceipts', ['latest'], fixtureReceipts)
             mockClient.setFixture('eth_getBlockReceipts', [toQty(18000000)], fixtureReceipts)
 
-            const rpc = new Rpc({client: mockClient as any})
+            const rpc = new Rpc({ client: mockClient as any })
 
-            const blocks = await rpc.getBlockBatch([18000000], {receipts: true, transactions: true})
+            const blocks = await rpc.getBlockBatch([18000000], { receipts: true, transactions: true })
             expect(blocks).toBeTruthy()
             expect(blocks.length).toEqual(1)
             expect(blocks[0].receipts).toBeTruthy()
@@ -84,7 +84,7 @@ describe('Rpc Class Integration', () => {
                 verifyBlockHash: true
             })
 
-            const blocks = await rpc.getBlockBatch([18000000], {transactions: true})
+            const blocks = await rpc.getBlockBatch([18000000], { transactions: true })
             expect(blocks).toBeTruthy()
             expect(blocks.length).toEqual(1)
         })
@@ -101,14 +101,14 @@ describe('Rpc Class Integration', () => {
                 verifyTxRoot: true
             })
 
-            const blocks = await rpc.getBlockBatch([18000000], {transactions: true})
+            const blocks = await rpc.getBlockBatch([18000000], { transactions: true })
             expect(blocks).toBeTruthy()
             expect(blocks.length).toEqual(1)
         })
 
         it('detects invalid block hash', async () => {
             const fixtureBlock = loadBlock('ethereum', 18000000)
-            const tamperedBlock = {...fixtureBlock, hash: '0x0000000000000000000000000000000000000000000000000000000000000000'}
+            const tamperedBlock = { ...fixtureBlock, hash: '0x0000000000000000000000000000000000000000000000000000000000000000' }
 
             const mockClient = new MockRpcClient()
             mockClient.setFixture('eth_chainId', undefined, '0x1')
@@ -120,7 +120,7 @@ describe('Rpc Class Integration', () => {
             })
 
             await expect(
-                rpc.getBlockBatch([18000000], {transactions: true})
+                rpc.getBlockBatch([18000000], { transactions: true })
             ).rejects.toThrow()
         })
     })
@@ -138,7 +138,7 @@ describe('Rpc Class Integration', () => {
                 verifyTxRoot: true
             })
 
-            const blocks = await rpc.getBlockBatch([50000000], {transactions: true})
+            const blocks = await rpc.getBlockBatch([50000000], { transactions: true })
             expect(blocks).toBeTruthy()
             expect(blocks.length).toEqual(1)
         })
@@ -155,7 +155,7 @@ describe('Rpc Class Integration', () => {
                 verifyTxRoot: true
             })
 
-            const blocks = await rpc.getBlockBatch([150000000], {transactions: true})
+            const blocks = await rpc.getBlockBatch([150000000], { transactions: true })
             expect(blocks).toBeTruthy()
             expect(blocks.length).toEqual(1)
         })
@@ -172,9 +172,11 @@ describe('Rpc Class Integration', () => {
                 verifyTxRoot: true
             })
 
-            const blocks = await rpc.getBlockBatch([50000], {transactions: true})
+            const blocks = await rpc.getBlockBatch([50000], { transactions: true })
             expect(blocks).toBeTruthy()
             expect(blocks.length).toEqual(1)
         })
+
     })
+
 })
