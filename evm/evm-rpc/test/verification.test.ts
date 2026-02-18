@@ -2,12 +2,18 @@ import {describe, it, expect} from 'vitest'
 import {loadBlock, loadReceipts, hasReceipts, listFixtures, getChainId} from './helpers/fixture-loader'
 import {blockHash} from '../src/verification'
 import {ChainUtils} from '../src/chain-utils'
-import {Transaction} from '../src/rpc-data'
+import {GetBlock, Transaction} from '../src/rpc-data'
 
 
 describe('Verification Functions', () => {
     for (const fixture of listFixtures()) {
         describe(`${fixture.chain} block ${fixture.blockNumber}`, () => {
+            it('schema validation', () => {
+                const block = loadBlock(fixture.chain, fixture.blockNumber)
+                const err = GetBlock.validate(block)
+                expect(err).toBeUndefined()
+            })
+
             it('blockHash verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 const computed = await blockHash(block)

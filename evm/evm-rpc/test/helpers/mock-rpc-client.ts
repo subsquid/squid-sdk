@@ -27,11 +27,14 @@ export class MockRpcClient {
         throw new Error(`No fixture found for method: ${method} with params: ${JSON.stringify(params)}`)
     }
 
-    async batchCall(batch: {method: string, params?: any[]}[]): Promise<any[]> {
+    async batchCall(batch: {method: string, params?: any[]}[], options?: {validateResult?: (result: any) => any}): Promise<any[]> {
         const results = []
         for (const req of batch) {
             try {
-                const result = await this.call(req.method, req.params)
+                let result = await this.call(req.method, req.params)
+                if (options?.validateResult) {
+                    result = options.validateResult(result)
+                }
                 results.push(result)
             } catch (error: any) {
                 results.push({error: error.message})
