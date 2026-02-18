@@ -68,6 +68,9 @@ export class HttpConnection implements Connection {
             retryAttempts: 0
         })
         if (req.id !== res.id) {
+            if (res.id === null && res.error) {
+                return res
+            }
             throw new RpcProtocolError(1008, `Got response for unknown request ${res.id}`)
         }
         return res
