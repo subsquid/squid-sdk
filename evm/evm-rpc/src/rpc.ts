@@ -667,6 +667,7 @@ export class Rpc {
         if (err instanceof RpcProtocolError) return true
         if (err instanceof RpcError && err.message == 'response too large') return true
         if (err instanceof RpcError && err.code == 429) return true
+        if (err instanceof RpcError && err.code == -32000) return true
         return false
     }
 }
