@@ -61,7 +61,7 @@ export const Transaction = object({
     blockHash: BYTES,
     hash: BYTES,
     transactionIndex: SMALL_QTY,
-    chainId: option(SMALL_QTY),
+    chainId: option(QTY),
     from: BYTES,
     to: option(BYTES),
     gas: QTY,
