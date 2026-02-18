@@ -21,6 +21,12 @@ import {
 import {RawBlock} from './raw'
 
 
+function safeQty2Int(qty: string): number | undefined {
+    let i = parseInt(qty, 16)
+    return Number.isSafeInteger(i) ? i : undefined
+}
+
+
 function* traverseDebugFrame(frame: rpc.DebugFrame, traceAddress: number[]): Iterable<{
     traceAddress: number[]
     subtraces: number
@@ -426,7 +432,7 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         s: src.s ?? undefined,
         yParity: src.yParity ? qty2Int(src.yParity) : undefined,
         accessList: src.accessList?.map(mapAccessListItem),
-        chainId: src.chainId ? qty2Int(src.chainId) : undefined,
+        chainId: src.chainId ? safeQty2Int(src.chainId) : undefined,
         maxFeePerBlobGas: src.maxFeePerBlobGas ?? undefined,
         blobVersionedHashes: src.blobVersionedHashes ?? undefined,
         authorizationList: src.authorizationList?.map(mapEIP7702Authorization),
