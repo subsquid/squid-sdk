@@ -1,4 +1,4 @@
-import { mapRpcBlock } from '@subsquid/bitcoin-normalization'
+import { mapRpcBlock, Block } from '@subsquid/bitcoin-normalization'
 import { addErrorContext } from '@subsquid/util-internal'
 import { Command, Ingest, Range } from '@subsquid/util-internal-ingest-cli'
 import { toJSON } from '@subsquid/util-internal-json'
@@ -38,11 +38,11 @@ export class BitcoinIngest extends Ingest {
         }
     }
 
-    protected getBlockHeight(block: BlockWithTx): number {
-        return block.height
+    protected getBlockHeight(block: Block): number {
+        return block.header.number
     }
 
-    protected getBlockTimestamp(block: BlockWithTx): number {
-        return block.time
+    protected getBlockTimestamp(block: Block): number {
+        return block.header.timestamp
     }
 }
