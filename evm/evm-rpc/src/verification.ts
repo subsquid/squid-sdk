@@ -377,8 +377,9 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
             decodeHex(tx.input),
         ]
 
-        if (tx.chainId) {
-            fields.push(BigInt(tx.chainId), 0n, 0n)
+        let v = tx.v ? qty2Int(tx.v) : undefined
+        if (v != null && v !== 27 && v !== 28) {
+            fields.push(BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')), 0n, 0n)
         }
 
         return RLP.encode(fields)
@@ -468,10 +469,11 @@ function calculateSigRecovery(tx: Transaction) {
         return qty2Int(tx.v)
     } else {
         let v = assertNotNull(tx.v, 'tx.v is missing')
-        if (tx.chainId == null) {
-            return qty2Int(v) - 27
+        let vInt = qty2Int(v)
+        if (vInt === 27 || vInt === 28) {
+            return vInt - 27
         } else {
-            return qty2Int(v) - (qty2Int(tx.chainId) * 2 + 35)
+            return vInt - (qty2Int(assertNotNull(tx.chainId, 'tx.chainId is missing')) * 2 + 35)
         }
     }
 }
