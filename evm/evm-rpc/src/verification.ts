@@ -377,8 +377,9 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
             decodeHex(tx.input),
         ]
 
-        if (tx.chainId) {
-            fields.push(BigInt(tx.chainId), 0n, 0n)
+        let v = tx.v ? qty2Int(tx.v) : undefined
+        if (v != null && v !== 27 && v !== 28) {
+            fields.push(BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')), 0n, 0n)
         }
 
         return RLP.encode(fields)
