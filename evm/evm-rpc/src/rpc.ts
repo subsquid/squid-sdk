@@ -1,5 +1,5 @@
-import {Logger, createLogger} from '@subsquid/logger'
-import {CallOptions, RetryError, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
+import { Logger, createLogger } from '@subsquid/logger'
+import { CallOptions, RetryError, RpcClient, RpcError, RpcProtocolError } from '@subsquid/rpc-client'
 import {
     array,
     BYTES,
@@ -10,7 +10,7 @@ import {
     object,
     Validator
 } from '@subsquid/util-internal-validation'
-import {addErrorContext, groupBy, last} from '@subsquid/util-internal'
+import { addErrorContext, groupBy, last } from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     GetBlock,
@@ -23,9 +23,9 @@ import {
     Transaction,
     Log
 } from './rpc-data'
-import {Block, DataRequest, Qty, Bytes, Bytes32} from './types'
-import {qty2Int, toQty, getTxHash} from './util'
-import {ChainUtils} from './chain-utils'
+import { Block, DataRequest, Qty, Bytes, Bytes32 } from './types'
+import { qty2Int, toQty, getTxHash } from './util'
+import { ChainUtils } from './chain-utils'
 
 
 export type Commitment = 'finalized' | 'latest'
@@ -69,11 +69,11 @@ export class Rpc {
         return this.client.getConcurrency()
     }
 
-    call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
+    call<T = any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
         return this.client.call(method, params, options)
     }
 
-    batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions<T>): Promise<T[]> {
+    batchCall<T = any>(batch: { method: string, params?: any[] }[], options?: CallOptions<T>): Promise<T[]> {
         return this.client.batchCall(batch, options)
     }
 
@@ -268,7 +268,7 @@ export class Rpc {
 
     private async addReceipts(blocks: Block[]) {
         let method = await this.getReceiptsMethod()
-        switch(method) {
+        switch (method) {
             case 'eth_getBlockReceipts':
                 return this.addReceiptsByBlock(blocks)
             default:
@@ -536,7 +536,7 @@ export class Rpc {
                     // Moonbeam quirk
                     for (let i = 0; i < result.length; i++) {
                         if (!('result' in result[i])) {
-                            result[i] = {result: result[i]}
+                            result[i] = { result: result[i] }
                         }
                     }
                 }
@@ -564,7 +564,7 @@ export class Rpc {
         }
     }
 
-    private matchDebugTrace<T extends {txHash?: Bytes | null}>(
+    private matchDebugTrace<T extends { txHash?: Bytes | null }>(
         type: string,
         block: Block,
         trace: T[],
@@ -635,10 +635,10 @@ export class Rpc {
         }
     }
 
-    private async reduceBatchOnRetry<T=any>(batch: {method: string, params?: any[]}[], options: CallOptions<T>): Promise<T[]>  {
+    private async reduceBatchOnRetry<T = any>(batch: { method: string, params?: any[] }[], options: CallOptions<T>): Promise<T[]> {
         if (batch.length <= 1) return this.batchCall(batch, options)
 
-        let result = await this.batchCall(batch, {...options, retryAttempts: 0}).catch(err => {
+        let result = await this.batchCall(batch, { ...options, retryAttempts: 0 }).catch(err => {
             if (this.isRetryableError(err)) {
                 this.log.warn(err, 'will retry request with reduced batch')
             } else {
@@ -686,7 +686,7 @@ type GetReceiptsMethod = 'eth_getTransactionReceipt' | 'eth_getBlockReceipts'
 
 
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
-    return function(result: unknown) {
+    return function (result: unknown) {
         let err = validator.validate(result)
         if (err) {
             throw new DataValidationError(`server returned unexpected result: ${err.toString()}`)

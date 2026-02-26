@@ -13,7 +13,10 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "lint": "tsc --noEmit -p tsconfig.test.json",
+    "test": "vitest --run",
+    "capture-fixture": "npx tsx test/capture-fixtures.ts"
   },
   "dependencies": {
     "@subsquid/logger": "^1.4.0",
@@ -35,6 +38,8 @@
     "@subsquid/rpc-client": "^4.11.0",
     "@types/node": "^20.10.0",
     "@types/secp256k1": "4.0.6",
-    "typescript": "5.5.4"
+    "tsx": "^4.7.0",
+    "typescript": "5.5.4",
+    "vitest": "^1.4.0"
   }
 }
