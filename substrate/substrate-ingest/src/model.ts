@@ -34,6 +34,7 @@ export interface Extrinsic {
     index_in_block: number
     version: number
     signature?: sub.ExtrinsicSignature
+    extension?: sub.ExtrinsicExtension
     call_id: string
     fee?: bigint
     tip?: bigint | number

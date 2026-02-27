@@ -28,6 +28,8 @@ export interface ChainDescription {
     eventRecord: Ti
     eventRecordList: Ti
     signature: Ti
+    /** Transaction extension type for v5 General extrinsics (4th param of UncheckedExtrinsic) */
+    extension?: Ti
     storage: Storage
     constants: Constants
 }
@@ -78,6 +80,7 @@ class FromV14 {
             eventRecord: this.eventRecord(),
             eventRecordList: this.eventRecordList(),
             signature: this.signature(),
+            extension: this.extension(),
             storage: this.storage(),
             constants: this.constants()
         }
@@ -123,6 +126,28 @@ class FromV14 {
     @def
     private eventRecordList(): Ti {
         return this.getStorageItem('System', 'Events').value
+    }
+
+    @def
+    private extension(): Ti {
+        return this.signedExtensionsType()
+    }
+     @def
+    private signedExtensionsType(): Ti {
+        let types = this.types()
+        let signedExtensionsType: Type = {
+            kind: TypeKind.Composite,
+            fields: this.metadata.extrinsic.signedExtensions.map(ext => {
+                return {
+                    name: ext.identifier,
+                    type: ext.type
+                }
+            }).filter(f => {
+                return !isUnitType(getUnwrappedType(types, f.type))
+            }),
+             path: ['SignedExtensions']
+        }
+        return types.push(signedExtensionsType) - 1
     }
 
     @def
@@ -366,6 +391,7 @@ class FromOld {
         let eventRecordList = this.registry.use('Vec<EventRecord>')
         let storage = this.storage()
         let constants = this.constants()
+        let extension = this.signedExtensions()
         return {
             types: this.registry.getTypes(),
             call,
@@ -375,6 +401,7 @@ class FromOld {
             eventRecord,
             eventRecordList,
             signature,
+            extension,
             storage,
             constants
         }

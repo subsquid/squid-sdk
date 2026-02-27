@@ -99,6 +99,12 @@ export type SubstrateEvent =
     SubstrateFinalizationEvent
 
 
+
+export interface SubstrateExtrinsicExtension {
+    version: number
+    extension: any
+}
+
 export interface SubstrateExtrinsic {
     id: string
     /**
@@ -107,6 +113,8 @@ export interface SubstrateExtrinsic {
     indexInBlock: number
     version: number
     signature?: SubstrateExtrinsicSignature
+    /** Present for v5 General extrinsics */
+    extension?: SubstrateExtrinsicExtension
     call: SubstrateCall
     fee?: bigint
     tip?: bigint

@@ -141,6 +141,7 @@ export class BlockParser {
                 success: true,
                 version: ex.version,
                 signature: ex.signature,
+                extension: ex.extension,
                 call_id: id,
                 call: ex.call,
                 tip: this.getExtrinsicTip(ex),
@@ -151,7 +152,9 @@ export class BlockParser {
     }
 
     private getExtrinsicTip(ex: SubstrateExtrinsic): bigint | undefined {
-        let payment = ex.signature?.signedExtensions.ChargeTransactionPayment
+        let payment =
+            ex.signature?.signedExtensions.ChargeTransactionPayment ??
+            ex.extension?.extension.ChargeTransactionPayment
         switch(typeof payment) {
             case 'bigint':
             case 'number':

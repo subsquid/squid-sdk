@@ -2,6 +2,7 @@ import type {Codec as ScaleCodec} from "@subsquid/scale-codec"
 import type {
     ChainDescription,
     Extrinsic as _Extrinsic,
+    ExtrinsicExtension as _ExtrinsicExtension,
     ExtrinsicSignature as _ExtrinsicSignature
 } from "@subsquid/substrate-metadata"
 import type * as eac from "@subsquid/substrate-metadata/lib/events-and-calls"
@@ -67,6 +68,7 @@ export namespace sub {
 
 
     export type Extrinsic = _Extrinsic
+    export type ExtrinsicExtension = _ExtrinsicExtension
     export type ExtrinsicSignature = _ExtrinsicSignature
 
 
