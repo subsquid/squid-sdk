@@ -432,7 +432,7 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         authorizationList: src.authorizationList?.map(mapEIP7702Authorization),
         contractAddress: receipt?.contractAddress ? receipt?.contractAddress.toLowerCase() : undefined,
         cumulativeGasUsed: receipt?.cumulativeGasUsed,
-        effectiveGasPrice: receipt?.effectiveGasPrice,
+        effectiveGasPrice: receipt?.effectiveGasPrice ?? undefined,
         gasUsed: receipt?.gasUsed,
         status: receipt?.status ? qty2Int(receipt.status) : undefined,
         l1BaseFeeScalar: receipt?.l1BaseFeeScalar ? qty2Int(receipt.l1BaseFeeScalar) : undefined,

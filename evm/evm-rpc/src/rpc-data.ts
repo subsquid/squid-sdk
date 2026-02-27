@@ -139,7 +139,7 @@ export const Receipt = object({
     cumulativeGasUsed: QTY,
     from: BYTES,
     gasUsed: QTY,
-    effectiveGasPrice: QTY,
+    effectiveGasPrice: option(QTY),
     logs: array(Log),
     logsBloom: BYTES,
     status: SMALL_QTY,
