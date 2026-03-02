@@ -98,6 +98,9 @@ export class HyperliquidArchive {
                 block
             }
         }
+
+        let count = rawChunk.block - height
+        this.log.debug(`found ${count} blocks in ${rawChunk.filename}`)
     }
 
     private async *readFile(path: string): AsyncIterable<Buffer> {
