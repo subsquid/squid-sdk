@@ -402,6 +402,7 @@ export class RpcClient {
             }
             req.resolve(result)
         }, err => {
+            // Duration of this individual send attempt (not cumulative across retries)
             let durationMs = Date.now() - startTime
             if (this.closed) return req.reject(this.enrichError(err, req, durationMs))
             if (this.isConnectionError(err)) {
@@ -512,10 +513,20 @@ export class RpcClient {
     }
 
     private enrichError(err: Error, req: Req, durationMs: number): Error {
-        let call = Array.isArray(req.call) ? req.call[0] : req.call
+        let rpcMethod: string
+        let rpcBatchSize: number | undefined
+
+        if (Array.isArray(req.call)) {
+            rpcBatchSize = req.call.length
+            rpcMethod = req.call.map(c => c.method).join(',')
+        } else {
+            rpcMethod = req.call.method
+        }
+
         return addErrorContext(err, {
             rpcUrl: this.url,
-            rpcMethod: call.method,
+            rpcMethod,
+            rpcBatchSize,
             durationMs
         })
     }
