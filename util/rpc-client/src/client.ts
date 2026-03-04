@@ -402,19 +402,20 @@ export class RpcClient {
             }
             req.resolve(result)
         }, err => {
-            if (this.closed) return req.reject(err)
+            let durationMs = Date.now() - startTime
+            if (this.closed) return req.reject(this.enrichError(err, req, durationMs))
             if (this.isConnectionError(err)) {
                 if (req.retryAttempts > 0) {
                     req.retryAttempts -= 1
                     this.enqueue(req)
                 } else {
-                    req.reject(err)
+                    req.reject(this.enrichError(err, req, durationMs))
                 }
                 if (this.backoffEpoch == backoffEpoch) {
                     this.backoff(err, req)
                 }
             } else {
-                req.reject(err)
+                req.reject(this.enrichError(err, req, durationMs))
             }
         }).finally(() => {
             this.capacity += 1
@@ -508,6 +509,15 @@ export class RpcClient {
                 rpcResponse: res
             })
         }
+    }
+
+    private enrichError(err: Error, req: Req, durationMs: number): Error {
+        let call = Array.isArray(req.call) ? req.call[0] : req.call
+        return addErrorContext(err, {
+            rpcUrl: this.url,
+            rpcMethod: call.method,
+            durationMs
+        })
     }
 
     isConnectionError(err: Error): boolean {
