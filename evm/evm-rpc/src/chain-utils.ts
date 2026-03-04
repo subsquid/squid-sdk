@@ -3,6 +3,7 @@ import {GetBlock, Log, Receipt, Transaction} from './rpc-data'
 import {Qty} from './types'
 import {
     blockHash,
+    tempoBlockHash,
     logsBloom,
     receiptsRoot,
     recoverTxSender,
@@ -17,15 +18,25 @@ export class ChainUtils {
     public isHyperliquidMainnet: boolean
     public isHyperliquidTestnet: boolean
     public isStable: boolean
+    public isTempo: boolean
 
     constructor(chainId: Qty) {
         this.isPolygonMainnet = chainId == '0x89'
         this.isHyperliquidMainnet = chainId == '0x3e7'
         this.isHyperliquidTestnet = chainId == '0x3e6'
         this.isStable = chainId == '0x3dc' || chainId == '0x899' // Chain ID 988 (mainnet) or 2201 (testnet)
+        // Tempo mainnet (4217), Moderato testnet (42431), Andantino testnet (42429)
+        // https://drpc.org/chainlist/tempo-mainnet-rpc
+        // https://drpc.org/chainlist/tempo-moderato-testnet-rpc
+        // https://drpc.org/chainlist/tempo-testnet-rpc
+        this.isTempo = chainId == '0x1079' || chainId == '0xa5bf' || chainId == '0xa5bd'
     }
 
     calculateBlockHash(block: GetBlock) {
+        // Tempo extends the Ethereum header with additional fields
+        if (this.isTempo) {
+            return tempoBlockHash(block)
+        }
         return blockHash(block)
     }
 
@@ -50,6 +61,18 @@ export class ChainUtils {
 
         if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
             transactions = transactions.filter(tx => !isHyperliquidSystemTx(tx))
+        }
+
+        if (this.isTempo) {
+            // Tempo 0x77 tx type appears on the deprecated Andantino testnet, but:
+            // - is not documented anywhere,
+            // - is absent from the latest (Moderato) testnet,
+            // so skip verification for blocks containing 0x77 transactions
+            for (let tx of transactions) {
+                if (tx.type == '0x77') {
+                    return block.transactionsRoot
+                }
+            }
         }
 
         return transactionsRoot(transactions)
@@ -101,6 +124,13 @@ export class ChainUtils {
             if (isHyperliquidSystemTx(transaction)) return
         }
 
+        // Tempo system transactions are legacy txs with a fake signature (r=0, s=0)
+        // and sender set to Address::ZERO. They cannot be ECDSA-recovered.
+        // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/envelope.rs
+        if (this.isTempo) {
+            if (isTempoSystemTx(transaction)) return
+        }
+
         return recoverTxSender(transaction)
     }
 }
@@ -109,6 +139,13 @@ export class ChainUtils {
 function isHyperliquidSystemTx(tx: Transaction) {
     // https://github.com/hl-archive-node/nanoreth/blob/732f8c574db2dde90344a29b0292189a5cddd2d1/src/node/primitives/transaction.rs#L165
     return tx.gasPrice == '0x0'
+}
+
+
+function isTempoSystemTx(tx: Transaction) {
+    // Tempo system transactions are legacy (type 0x0) with a fake signature (r=0, s=0).
+    // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/envelope.rs
+    return tx.type == '0x0' && tx.r == '0x0' && tx.s == '0x0'
 }
 
 
