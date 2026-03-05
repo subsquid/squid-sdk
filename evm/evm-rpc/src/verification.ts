@@ -16,7 +16,7 @@ export function blockHash(block: GetBlock) {
 
 
 /**
- * Compute block hash for Tempo (chain ID 4217).
+ * Compute block hash for Tempo networks.
  *
  * Tempo's TempoHeader wraps the standard Ethereum Header as a nested struct:
  *   rlp([general_gas_limit, shared_gas_limit, timestamp_millis_part, rlp([...standard_header_fields])])
@@ -326,15 +326,15 @@ function encodeTempoPrimitiveSignatureBytes(sig: TempoPrimitiveSignature): Uint8
             return concatBytes(r, s, new Uint8Array([v + 27]))
         }
         case 'p256': {
-            let pubKeyX = decodeHex(assertNotNull(sig.pubKeyX, 'P256 sig missing pubKeyX'))
-            let pubKeyY = decodeHex(assertNotNull(sig.pubKeyY, 'P256 sig missing pubKeyY'))
+            let pubKeyX = decodeHex(sig.pubKeyX)
+            let pubKeyY = decodeHex(sig.pubKeyY)
             let preHash = sig.preHash ? 1 : 0
             return concatBytes(new Uint8Array([0x01]), r, s, pubKeyX, pubKeyY, new Uint8Array([preHash]))
         }
         case 'webAuthn': {
-            let webauthnData = decodeHex(assertNotNull(sig.webauthnData, 'WebAuthn sig missing webauthnData'))
-            let pubKeyX = decodeHex(assertNotNull(sig.pubKeyX, 'WebAuthn sig missing pubKeyX'))
-            let pubKeyY = decodeHex(assertNotNull(sig.pubKeyY, 'WebAuthn sig missing pubKeyY'))
+            let webauthnData = decodeHex(sig.webauthnData)
+            let pubKeyX = decodeHex(sig.pubKeyX)
+            let pubKeyY = decodeHex(sig.pubKeyY)
             return concatBytes(new Uint8Array([0x02]), webauthnData, r, s, pubKeyX, pubKeyY)
         }
         default:
@@ -797,8 +797,8 @@ function recoverTempoPrimitiveSender(sig: TempoPrimitiveSignature, messageHash: 
         case 'p256':
         case 'webAuthn': {
             // P256/WebAuthn: address is derived from the embedded public key
-            let pubKeyX = decodeHex(assertNotNull(sig.pubKeyX, `${sig.type} sig missing pubKeyX`))
-            let pubKeyY = decodeHex(assertNotNull(sig.pubKeyY, `${sig.type} sig missing pubKeyY`))
+            let pubKeyX = decodeHex(sig.pubKeyX)
+            let pubKeyY = decodeHex(sig.pubKeyY)
             return toHex(keccak256(concatBytes(pubKeyX, pubKeyY)).subarray(-20))
         }
         default:

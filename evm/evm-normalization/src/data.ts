@@ -112,6 +112,30 @@ export interface TempoKeychainSignature {
 export type TempoSignature = TempoPrimitiveSignature | TempoKeychainSignature
 
 
+export interface TempoSignedAuthorization {
+    chainId: Qty,
+    address: Bytes20,
+    nonce: number,
+    signature: TempoSignature
+}
+
+
+export interface TempoTokenLimit {
+    token: Bytes20,
+    limit: Qty
+}
+
+
+export interface TempoSignedKeyAuthorization {
+    chainId: Qty,
+    keyType: string,
+    keyId: Bytes20,
+    expiry?: Qty,
+    limits?: TempoTokenLimit[],
+    signature: TempoPrimitiveSignature
+}
+
+
 export interface TempoFeePayerSignature {
     v: number,
     r: Bytes,
@@ -151,6 +175,8 @@ export interface Transaction {
     feePayerSignature?: TempoFeePayerSignature,
     validBefore?: Qty,
     validAfter?: Qty,
+    aaAuthorizationList?: TempoSignedAuthorization[],
+    keyAuthorization?: TempoSignedKeyAuthorization,
     // transaction receipt
     contractAddress?: Bytes20,
     cumulativeGasUsed?: Qty,

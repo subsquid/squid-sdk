@@ -12,6 +12,9 @@ import {
     TempoPrimitiveSignature,
     TempoKeychainSignature,
     TempoSignature,
+    TempoSignedAuthorization,
+    TempoTokenLimit,
+    TempoSignedKeyAuthorization,
     TempoFeePayerSignature,
     Log,
     Trace,
@@ -468,6 +471,36 @@ function mapTempoSignature(src: rpc.TempoSignatureObject): TempoSignature {
 }
 
 
+function mapTempoSignedAuthorization(src: rpc.TempoSignedAuthorization): TempoSignedAuthorization {
+    return {
+        chainId: src.chainId,
+        address: src.address.toLowerCase(),
+        nonce: qty2Int(src.nonce),
+        signature: mapTempoSignature(src.signature),
+    }
+}
+
+
+function mapTempoTokenLimit(src: rpc.TempoTokenLimit): TempoTokenLimit {
+    return {
+        token: src.token.toLowerCase(),
+        limit: src.limit,
+    }
+}
+
+
+function mapTempoSignedKeyAuthorization(src: rpc.TempoSignedKeyAuthorization): TempoSignedKeyAuthorization {
+    return {
+        chainId: src.chainId,
+        keyType: src.keyType,
+        keyId: src.keyId.toLowerCase(),
+        expiry: src.expiry ?? undefined,
+        limits: src.limits?.map(mapTempoTokenLimit),
+        signature: mapTempoPrimitiveSignature(src.signature),
+    }
+}
+
+
 function mapTempoFeePayerSignature(src: {v: string, r: string, s: string}): TempoFeePayerSignature {
     return {
         v: qty2Int(src.v),
@@ -507,6 +540,8 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         feePayerSignature: src.feePayerSignature ? mapTempoFeePayerSignature(src.feePayerSignature) : undefined,
         validBefore: src.validBefore ?? undefined,
         validAfter: src.validAfter ?? undefined,
+        aaAuthorizationList: src.aaAuthorizationList?.map(mapTempoSignedAuthorization),
+        keyAuthorization: src.keyAuthorization ? mapTempoSignedKeyAuthorization(src.keyAuthorization) : undefined,
         contractAddress: receipt?.contractAddress ? receipt?.contractAddress.toLowerCase() : undefined,
         cumulativeGasUsed: receipt?.cumulativeGasUsed,
         effectiveGasPrice: receipt?.effectiveGasPrice ?? undefined,
