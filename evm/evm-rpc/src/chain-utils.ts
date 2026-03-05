@@ -63,18 +63,6 @@ export class ChainUtils {
             transactions = transactions.filter(tx => !isHyperliquidSystemTx(tx))
         }
 
-        if (this.isTempo) {
-            // Tempo 0x77 tx type appears on the deprecated Andantino testnet, but:
-            // - is not documented anywhere,
-            // - is absent from the latest (Moderato) testnet,
-            // so skip verification for blocks containing 0x77 transactions
-            for (let tx of transactions) {
-                if (tx.type == '0x77') {
-                    return block.transactionsRoot
-                }
-            }
-        }
-
         return transactionsRoot(transactions)
     }
 

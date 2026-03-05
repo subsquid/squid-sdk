@@ -268,11 +268,6 @@ function encodeTransaction(tx: Transaction): Buffer {
         // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
         let payload = RLP.encode(encodeTempoTransactionFields(tx))
         return Buffer.concat([Buffer.from([0x76]), Buffer.from(payload)])
-    } else if (tx.type == '0x77') {
-        // Tempo fee-token transaction type (0x77) — encoding not publicly documented.
-        // (only appears on the older, Andantino testnet)
-        // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/envelope.rs
-        throw unexpectedCase(tx.type)
     } else if (tx.type == '0x7e') {
         // https://github.com/ethereum-optimism/optimism/blob/9ff3ebb3983be52c3ca189423ae7b4aec94e0fde/specs/deposits.md#the-deposited-transaction-type
         let payload = RLP.encode([
@@ -733,10 +728,6 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
         // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
         let payload = RLP.encode(encodeTempoTransactionFieldsForSigning(tx))
         return Buffer.concat([Buffer.from([0x76]), Buffer.from(payload)])
-    } else if (tx.type == '0x77') {
-        // Tempo fee-token transaction type (0x77) — encoding not publicly documented.
-        // (only appears on Andantino testnet)
-        return
     } else if (tx.type == '0x7e') {
         // https://github.com/ethereum-optimism/optimism/blob/9ff3ebb3983be52c3ca189423ae7b4aec94e0fde/specs/deposits.md#the-deposited-transaction-type
         return
