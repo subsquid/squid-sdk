@@ -5,13 +5,45 @@ import {RLP} from '@ethereumjs/rlp'
 import {bigIntToUnpaddedBytes, concatBytes, setLengthLeft, hexToBytes, PrefixedHexString} from '@ethereumjs/util'
 import {keccak256} from 'ethereum-cryptography/keccak'
 import secp256k1 from 'secp256k1'
-import {Transaction, AccessListItem, EIP7702Authorization, GetBlock, Log, Receipt} from './rpc-data'
+import {Transaction, AccessListItem, EIP7702Authorization, TempoCall, TempoSignatureObject, TempoPrimitiveSignature, TempoKeychainSignature, TempoSignedAuthorization, TempoSignedKeyAuthorization, GetBlock, Log, Receipt} from './rpc-data'
 import {qty2Int} from './util'
 import {Bytes20, Bytes32, Qty} from './types'
 
 
 export function blockHash(block: GetBlock) {
+    return hashBlockHeader(ethereumHeaderFields(block))
+}
+
+
+/**
+ * Compute block hash for Tempo networks.
+ *
+ * Tempo's TempoHeader wraps the standard Ethereum Header as a nested struct:
+ *   rlp([general_gas_limit, shared_gas_limit, timestamp_millis_part, rlp([...standard_header_fields])])
+ *
+ * The inner Header is RLP-encoded as its own list, producing a nested RLP structure.
+ *
+ * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/header.rs
+ */
+export function tempoBlockHash(block: GetBlock) {
     let fields = [
+        BigInt(assertNotNull(block.mainBlockGeneralGasLimit, 'block.mainBlockGeneralGasLimit is missing')),
+        BigInt(assertNotNull(block.sharedGasLimit, 'block.sharedGasLimit is missing')),
+        BigInt(assertNotNull(block.timestampMillisPart, 'block.timestampMillisPart is missing')),
+        ethereumHeaderFields(block),
+    ]
+    return hashBlockHeader(fields)
+}
+
+
+function hashBlockHeader(fields: any[]) {
+    let encoded = RLP.encode(fields)
+    return toHex(keccak256(encoded))
+}
+
+
+function ethereumHeaderFields(block: GetBlock) {
+    let fields: any[] = [
         decodeHex(block.parentHash),
         decodeHex(block.sha3Uncles),
         decodeHex(block.miner),
@@ -55,8 +87,7 @@ export function blockHash(block: GetBlock) {
         fields.push(decodeHex(block.requestsHash))
     }
 
-    let encoded = RLP.encode(fields)
-    return toHex(keccak256(encoded))
+    return fields
 }
 
 
@@ -91,7 +122,7 @@ function encodeTransaction(tx: Transaction): Buffer {
                 BigInt(assertNotNull(tx.gasPrice, 'tx.gasPrice is missing')),
                 BigInt(tx.gas),
                 tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-                BigInt(tx.value),
+                BigInt(assertNotNull(tx.value, 'tx.value is missing')),
                 tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
                 BigInt(assertNotNull(tx.v, 'tx.v is missing')),
                 BigInt(assertNotNull(tx.r, 'tx.r is missing')),
@@ -105,7 +136,7 @@ function encodeTransaction(tx: Transaction): Buffer {
             BigInt(assertNotNull(tx.gasPrice, 'tx.gasPrice is missing')),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-            BigInt(tx.value),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
             tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
             decodeAccessList(tx.accessList ?? []),
             BigInt(assertNotNull(tx.v, 'tx.v is missing')),
@@ -121,7 +152,7 @@ function encodeTransaction(tx: Transaction): Buffer {
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-            BigInt(tx.value),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
             tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
             decodeAccessList(tx.accessList ?? []),
             BigInt(assertNotNull(tx.v, 'tx.v is missing')),
@@ -138,7 +169,7 @@ function encodeTransaction(tx: Transaction): Buffer {
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-            BigInt(tx.value),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
             tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
             decodeAccessList(tx.accessList ?? []),
             BigInt(assertNotNull(tx.maxFeePerBlobGas, 'tx.maxFeePerBlobGas is missing')),
@@ -157,7 +188,7 @@ function encodeTransaction(tx: Transaction): Buffer {
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-            BigInt(tx.value),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
             tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
             decodeAccessList(tx.accessList ?? []),
             decodeAuthorizationList(tx.authorizationList ?? []),
@@ -173,7 +204,7 @@ function encodeTransaction(tx: Transaction): Buffer {
             decodeHex(assertNotNull(tx.requestId, 'tx.requestId is missing')),
             decodeHex(tx.from),
             decodeHex(assertNotNull(tx.to, 'tx.to is missing')),
-            BigInt(tx.value)
+            BigInt(assertNotNull(tx.value, 'tx.value is missing'))
         ])
         return Buffer.concat([Buffer.from([0x64]), Buffer.from(payload)])
     } else if (tx.type == '0x66') {
@@ -185,8 +216,8 @@ function encodeTransaction(tx: Transaction): Buffer {
             BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-            BigInt(tx.value),
-            decodeHex(tx.input)
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing'))
         ])
         return Buffer.concat([Buffer.from([0x66]), Buffer.from(payload)])
     } else if (tx.type == '0x68') {
@@ -198,8 +229,8 @@ function encodeTransaction(tx: Transaction): Buffer {
             BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-            BigInt(tx.value),
-            decodeHex(tx.input),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
             decodeHex(assertNotNull(tx.ticketId, 'tx.ticketId is missing')),
             decodeHex(assertNotNull(tx.refundTo, 'tx.refundTo is missing')),
             BigInt(assertNotNull(tx.maxRefund, 'tx.maxRefund is missing')),
@@ -228,9 +259,15 @@ function encodeTransaction(tx: Transaction): Buffer {
         // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L387
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
-            decodeHex(tx.input),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
         ])
         return Buffer.concat([Buffer.from([0x6a]), Buffer.from(payload)])
+    } else if (tx.type == '0x76') {
+        // Tempo native transaction type (batched calls, multi-sig)
+        // EIP-2718 encoding: 0x76 || rlp([...tx_fields, signature_bytes])
+        // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
+        let payload = RLP.encode(encodeTempoTransactionFields(tx))
+        return Buffer.concat([Buffer.from([0x76]), Buffer.from(payload)])
     } else if (tx.type == '0x7e') {
         // https://github.com/ethereum-optimism/optimism/blob/9ff3ebb3983be52c3ca189423ae7b4aec94e0fde/specs/deposits.md#the-deposited-transaction-type
         let payload = RLP.encode([
@@ -238,15 +275,246 @@ function encodeTransaction(tx: Transaction): Buffer {
             decodeHex(tx.from),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
             BigInt(tx.mint ?? 0),
-            BigInt(tx.value),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
             BigInt(tx.gas),
             0, // check if 0 is capable to substitute false
-            decodeHex(tx.input)
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing'))
         ])
         return Buffer.concat([Buffer.from([0x7e]), Buffer.from(payload)])
     } else {
         throw unexpectedCase(tx.type)
     }
+}
+
+
+/**
+ * Encode a Tempo Call for RLP: [to, value, input]
+ * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
+ */
+function encodeTempoCall(call: TempoCall): any[] {
+    return [
+        call.to ? decodeHex(call.to) : Buffer.alloc(0),
+        BigInt(call.value),
+        decodeHex(call.input),
+    ]
+}
+
+
+/**
+ * Encode a Tempo primitive signature (secp256k1/P256/WebAuthn) as raw bytes.
+ *
+ * Byte formats (from PrimitiveSignature::to_bytes):
+ * - secp256k1: r(32) || s(32) || v(1) = 65 bytes, NO type prefix (backward compat)
+ * - P256: 0x01 || r(32) || s(32) || pubKeyX(32) || pubKeyY(32) || preHash(1) = 130 bytes
+ * - WebAuthn: 0x02 || webauthnData(var) || r(32) || s(32) || pubKeyX(32) || pubKeyY(32)
+ *
+ * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tt_signature.rs
+ */
+function encodeTempoPrimitiveSignatureBytes(sig: TempoPrimitiveSignature): Uint8Array {
+    let r = setLengthLeft(bigIntToUnpaddedBytes(BigInt(sig.r)), 32)
+    let s = setLengthLeft(bigIntToUnpaddedBytes(BigInt(sig.s)), 32)
+
+    switch (sig.type) {
+        case 'secp256k1': {
+            // Alloy's Signature::as_bytes() uses legacy v format: 27 + y_parity
+            let v = qty2Int(assertNotNull(sig.yParity ?? sig.v, 'secp256k1 sig missing yParity/v'))
+            return concatBytes(r, s, new Uint8Array([v + 27]))
+        }
+        case 'p256': {
+            let pubKeyX = decodeHex(sig.pubKeyX)
+            let pubKeyY = decodeHex(sig.pubKeyY)
+            let preHash = sig.preHash ? 1 : 0
+            return concatBytes(new Uint8Array([0x01]), r, s, pubKeyX, pubKeyY, new Uint8Array([preHash]))
+        }
+        case 'webAuthn': {
+            let webauthnData = decodeHex(sig.webauthnData)
+            let pubKeyX = decodeHex(sig.pubKeyX)
+            let pubKeyY = decodeHex(sig.pubKeyY)
+            return concatBytes(new Uint8Array([0x02]), webauthnData, r, s, pubKeyX, pubKeyY)
+        }
+        default:
+            throw unexpectedCase((sig as any).type)
+    }
+}
+
+
+/**
+ * Encode a Tempo signature (primitive or Keychain) as raw bytes.
+ *
+ * Keychain format: type_byte(0x03 or 0x04) || userAddress(20) || innerSignatureBytes
+ *
+ * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tt_signature.rs
+ */
+function encodeTempoSignatureBytes(sig: TempoSignatureObject): Uint8Array {
+    if (isKeychainSignature(sig)) {
+        // Keychain V1 (0x03) is the serde default; V2 (0x04) only when explicit
+        let typeByte = sig.version === 'v2' ? 0x04 : 0x03
+        let userAddress = decodeHex(sig.userAddress)
+        let innerBytes = encodeTempoPrimitiveSignatureBytes(sig.signature)
+        return concatBytes(new Uint8Array([typeByte]), userAddress, innerBytes)
+    }
+    return encodeTempoPrimitiveSignatureBytes(sig)
+}
+
+
+function isKeychainSignature(sig: TempoSignatureObject): sig is TempoKeychainSignature {
+    return 'userAddress' in sig && sig.userAddress != null
+}
+
+
+/**
+ * Encode a TempoSignedAuthorization for RLP: [chain_id, address, nonce, signature_bytes]
+ *
+ * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tt_authorization.rs
+ */
+function encodeTempoSignedAuthorization(auth: TempoSignedAuthorization): any[] {
+    return [
+        BigInt(auth.chainId),
+        decodeHex(auth.address),
+        BigInt(auth.nonce),
+        encodeTempoSignatureBytes(auth.signature),
+    ]
+}
+
+
+/**
+ * Map SignatureType string to its RLP-encoded u8 value.
+ * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
+ */
+function tempoSignatureTypeToU8(keyType: string): number {
+    switch (keyType) {
+        case 'secp256k1': return 0
+        case 'p256': return 1
+        case 'webAuthn': return 2
+        default: throw unexpectedCase(keyType)
+    }
+}
+
+
+/**
+ * Encode a SignedKeyAuthorization for RLP: [[chain_id, key_type, key_id, expiry?, limits?], signature_bytes]
+ *
+ * The inner KeyAuthorization is a nested RLP list with trailing optional fields.
+ * The signature is encoded as an RLP byte string.
+ *
+ * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/key_authorization.rs
+ */
+function encodeTempoSignedKeyAuthorization(auth: TempoSignedKeyAuthorization): any[] {
+    // Inner KeyAuthorization as nested RLP list
+    let authFields: any[] = [
+        BigInt(auth.chainId),
+        tempoSignatureTypeToU8(auth.keyType),
+        decodeHex(auth.keyId),
+    ]
+
+    // Trailing optional fields — only encode if present (or if a later field is present)
+    if (auth.expiry != null || auth.limits != null) {
+        authFields.push(auth.expiry != null ? BigInt(auth.expiry) : Buffer.alloc(0))
+    }
+    if (auth.limits != null) {
+        authFields.push(auth.limits.map(limit => [
+            decodeHex(limit.token),
+            BigInt(limit.limit),
+        ]))
+    }
+
+    return [
+        authFields,
+        encodeTempoPrimitiveSignatureBytes(auth.signature),
+    ]
+}
+
+
+/**
+ * Encode all Tempo transaction fields + signature for the full signed encoding.
+ *
+ * RLP field order (from TempoTransaction::rlp_encode_fields_default + AASigned::rlp_encode):
+ *   chain_id, max_priority_fee_per_gas, max_fee_per_gas, gas_limit, calls,
+ *   access_list, nonce_key, nonce, valid_before, valid_after, fee_token,
+ *   fee_payer_signature, tempo_authorization_list, [key_authorization], signature_bytes
+ *
+ * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tt_signed.rs
+ */
+function encodeTempoTransactionFields(tx: Transaction): any[] {
+    let sig = assertNotNull(tx.signature, 'tx.signature is missing for 0x76 tx')
+
+    let fields: any[] = [
+        BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+        BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
+        BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
+        BigInt(tx.gas),
+        assertNotNull(tx.calls, 'tx.calls is missing for 0x76 tx').map(encodeTempoCall),
+        decodeAccessList(tx.accessList ?? []),
+        BigInt(assertNotNull(tx.nonceKey, 'tx.nonceKey is missing for 0x76 tx')),
+        BigInt(tx.nonce),
+        // valid_before: u64 when present, 0x80 (empty string) when null
+        tx.validBefore != null ? BigInt(tx.validBefore) : Buffer.alloc(0),
+        // valid_after: u64 when present, 0x80 (empty string) when null
+        tx.validAfter != null ? BigInt(tx.validAfter) : Buffer.alloc(0),
+        // fee_token: Address when present, 0x80 (empty string) when null
+        tx.feeToken != null ? decodeHex(tx.feeToken) : Buffer.alloc(0),
+        // fee_payer_signature (secp256k1 only): rlp([v, r, s]) when present, 0x80 when null
+        tx.feePayerSignature != null
+            ? [
+                BigInt(assertNotNull(tx.feePayerSignature.v, 'fee_payer_signature missing v')),
+                BigInt(assertNotNull(tx.feePayerSignature.r, 'fee_payer_signature missing r')),
+                BigInt(assertNotNull(tx.feePayerSignature.s, 'fee_payer_signature missing s')),
+            ]
+            : Buffer.alloc(0),
+        // tempo_authorization_list (aaAuthorizationList in JSON)
+        (tx.aaAuthorizationList ?? []).map(encodeTempoSignedAuthorization),
+    ]
+
+    // key_authorization is truly optional — only encoded if present
+    if (tx.keyAuthorization != null) {
+        fields.push(encodeTempoSignedKeyAuthorization(tx.keyAuthorization))
+    }
+
+    // Append the main signature as RLP bytes string
+    fields.push(encodeTempoSignatureBytes(sig))
+
+    return fields
+}
+
+
+/**
+ * Encode Tempo transaction fields for signing (encode_for_signing).
+ *
+ * Differences from the full encoding:
+ * - fee_token is skipped (empty string) when fee_payer_signature is present
+ * - fee_payer_signature is replaced with placeholder: 0x00 if present, 0x80 (empty) if absent
+ * - No actual signature appended
+ *
+ * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
+ */
+function encodeTempoTransactionFieldsForSigning(tx: Transaction): any[] {
+    let skipFeeToken = tx.feePayerSignature != null
+
+    let fields: any[] = [
+        BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+        BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
+        BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
+        BigInt(tx.gas),
+        assertNotNull(tx.calls, 'tx.calls is missing for 0x76 tx').map(encodeTempoCall),
+        decodeAccessList(tx.accessList ?? []),
+        BigInt(assertNotNull(tx.nonceKey, 'tx.nonceKey is missing for 0x76 tx')),
+        BigInt(tx.nonce),
+        tx.validBefore != null ? BigInt(tx.validBefore) : Buffer.alloc(0),
+        tx.validAfter != null ? BigInt(tx.validAfter) : Buffer.alloc(0),
+        // fee_token: skipped when fee_payer_signature is present
+        !skipFeeToken && tx.feeToken != null ? decodeHex(tx.feeToken) : Buffer.alloc(0),
+        // fee_payer_signature placeholder: 0x00 if present, 0x80 (empty string) if absent
+        tx.feePayerSignature != null ? Buffer.from([0x00]) : Buffer.alloc(0),
+        // tempo_authorization_list (aaAuthorizationList in JSON)
+        (tx.aaAuthorizationList ?? []).map(encodeTempoSignedAuthorization),
+    ]
+
+    // key_authorization is truly optional — only encoded if present
+    if (tx.keyAuthorization != null) {
+        fields.push(encodeTempoSignedKeyAuthorization(tx.keyAuthorization))
+    }
+
+    return fields
 }
 
 
@@ -373,8 +641,8 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
             BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-            BigInt(tx.value),
-            decodeHex(tx.input),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
         ]
 
         let v = tx.v ? qty2Int(tx.v) : undefined
@@ -390,8 +658,8 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
             BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-            BigInt(tx.value),
-            decodeHex(tx.input),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
             decodeAccessList(tx.accessList ?? []),
         ])
         return Buffer.concat([Buffer.from([0x01]), Buffer.from(payload)])
@@ -403,8 +671,8 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-            BigInt(tx.value),
-            decodeHex(tx.input),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
             decodeAccessList(tx.accessList ?? []),
         ])
         return Buffer.concat([Buffer.from([0x02]), Buffer.from(payload)])
@@ -416,8 +684,8 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-            BigInt(tx.value),
-            decodeHex(tx.input),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
             decodeAccessList(tx.accessList ?? []),
             BigInt(assertNotNull(tx.maxFeePerBlobGas, 'tx.maxFeePerBlobGas is missing')),
             assertNotNull(tx.blobVersionedHashes, 'tx.blobVersionedHashes is missing').map(decodeHex),
@@ -431,8 +699,8 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
-            BigInt(tx.value),
-            decodeHex(tx.input),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
             decodeAccessList(tx.accessList ?? []),
             decodeAuthorizationList(tx.authorizationList ?? []),
         ])
@@ -455,6 +723,11 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
     } else if (tx.type == '0x6a') {
         // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L387
         return
+    } else if (tx.type == '0x76') {
+        // Tempo native transaction type — encode_for_signing payload
+        // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
+        let payload = RLP.encode(encodeTempoTransactionFieldsForSigning(tx))
+        return Buffer.concat([Buffer.from([0x76]), Buffer.from(payload)])
     } else if (tx.type == '0x7e') {
         // https://github.com/ethereum-optimism/optimism/blob/9ff3ebb3983be52c3ca189423ae7b4aec94e0fde/specs/deposits.md#the-deposited-transaction-type
         return
@@ -479,10 +752,63 @@ function calculateSigRecovery(tx: Transaction) {
 }
 
 
+/**
+ * Recover the sender address from a Tempo signature.
+ *
+ * - secp256k1: standard ecdsaRecover
+ * - P256/WebAuthn: address derived from embedded public key as keccak256(pubKeyX || pubKeyY)[12:]
+ * - Keychain V1: inner signature signs sig_hash directly
+ * - Keychain V2: inner signature signs keccak256(0x04 || sig_hash || userAddress)
+ *
+ * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tt_signature.rs
+ */
+function recoverTempoSender(sig: TempoSignatureObject, sigHash: Uint8Array): Bytes20 | undefined {
+    if (isKeychainSignature(sig)) {
+        // For Keychain signatures, the sender is always the userAddress
+        // (the root account this transaction is executed for)
+        return toHex(decodeHex(sig.userAddress)) as Bytes20
+    }
+    return recoverTempoPrimitiveSender(sig, sigHash)
+}
+
+
+/**
+ * Recover the sender from a Tempo primitive signature (secp256k1/P256/WebAuthn).
+ */
+function recoverTempoPrimitiveSender(sig: TempoPrimitiveSignature, messageHash: Uint8Array): Bytes20 | undefined {
+    switch (sig.type) {
+        case 'secp256k1': {
+            let r = setLengthLeft(bigIntToUnpaddedBytes(BigInt(sig.r)), 32)
+            let s = setLengthLeft(bigIntToUnpaddedBytes(BigInt(sig.s)), 32)
+            let signature = concatBytes(r, s)
+            let recovery = qty2Int(assertNotNull(sig.yParity ?? sig.v, 'secp256k1 sig missing yParity/v'))
+            let pubKey = secp256k1.ecdsaRecover(signature, recovery, messageHash, false)
+            return toHex(keccak256(pubKey.slice(1)).subarray(-20))
+        }
+        case 'p256':
+        case 'webAuthn': {
+            // P256/WebAuthn: address is derived from the embedded public key
+            let pubKeyX = decodeHex(sig.pubKeyX)
+            let pubKeyY = decodeHex(sig.pubKeyY)
+            return toHex(keccak256(concatBytes(pubKeyX, pubKeyY)).subarray(-20))
+        }
+        default:
+            return
+    }
+}
+
+
 export function recoverTxSender(tx: Transaction): Bytes20 | undefined {
     let message = serializeTransaction(tx)
     if (message == null) return
     let messageHash = keccak256(message)
+
+    if (tx.type == '0x76') {
+        // Tempo 0x76: signature is in tx.signature object
+        let sig = assertNotNull(tx.signature, 'tx.signature is missing for 0x76 tx')
+        return recoverTempoSender(sig, messageHash)
+    }
+
     let r = assertNotNull(tx.r, 'tx.r is missing')
     let s = assertNotNull(tx.s, 'tx.s is missing')
     let signature = concatBytes(

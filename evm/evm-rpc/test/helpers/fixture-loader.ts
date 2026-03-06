@@ -11,6 +11,7 @@ const CHAIN_IDS: Record<string, string> = {
     polygon: '0x89',
     arbitrum: '0xa4b1',
     hyperliquid: '0x3e7',
+    tempoModerato: '0xa5bf',
 }
 
 

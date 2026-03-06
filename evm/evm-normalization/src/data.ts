@@ -36,7 +36,11 @@ export interface BlockHeader {
     excessBlobGas?: Qty,
     parentBeaconBlockRoot?: Bytes32,
     requestsHash?: Bytes32,
-    l1BlockNumber?: number
+    l1BlockNumber?: number,
+    // Tempo-specific block header fields
+    mainBlockGeneralGasLimit?: Qty,
+    sharedGasLimit?: Qty,
+    timestampMillisPart?: Qty,
 }
 
 
@@ -56,14 +60,99 @@ export interface EIP7702Authorization {
 }
 
 
+export interface TempoCall {
+    to?: Bytes20,
+    value: Qty,
+    input: Bytes
+}
+
+
+export interface TempoSecp256k1Signature {
+    type: 'secp256k1',
+    r: Bytes,
+    s: Bytes,
+    yParity?: number,
+    v?: number,
+}
+
+
+export interface TempoP256Signature {
+    type: 'p256',
+    r: Bytes,
+    s: Bytes,
+    pubKeyX: Bytes,
+    pubKeyY: Bytes,
+    preHash: boolean,
+}
+
+
+export interface TempoWebAuthnSignature {
+    type: 'webAuthn',
+    r: Bytes,
+    s: Bytes,
+    pubKeyX: Bytes,
+    pubKeyY: Bytes,
+    webauthnData: Bytes,
+}
+
+
+export type TempoPrimitiveSignature =
+    | TempoSecp256k1Signature
+    | TempoP256Signature
+    | TempoWebAuthnSignature
+
+
+export interface TempoKeychainSignature {
+    userAddress: Bytes20,
+    signature: TempoPrimitiveSignature,
+    version?: string
+}
+
+
+export type TempoSignature = TempoPrimitiveSignature | TempoKeychainSignature
+
+
+export interface TempoSignedAuthorization {
+    chainId: Qty,
+    address: Bytes20,
+    nonce: number,
+    signature: TempoSignature
+}
+
+
+export interface TempoTokenLimit {
+    token: Bytes20,
+    limit: Qty
+}
+
+
+export interface TempoSignedKeyAuthorization {
+    chainId: Qty,
+    keyType: string,
+    keyId: Bytes20,
+    expiry?: Qty,
+    limits?: TempoTokenLimit[],
+    signature: TempoPrimitiveSignature
+}
+
+
+export interface TempoFeePayerSignature {
+    v: number,
+    r: Bytes,
+    s: Bytes
+}
+
+
 export interface Transaction {
     transactionIndex: number,
     hash: Bytes32,
     nonce: number,
     from: Bytes20,
     to?: Bytes20,
-    input: Bytes,
-    value: Qty,
+    // Optional for Tempo 0x76 transactions which use batched `calls` instead of `input`
+    input?: Bytes,
+    // Optional for Tempo 0x76 transactions which use batched `calls`
+    value?: Qty,
     type?: number,
     gas: Qty,
     gasPrice?: Qty,
@@ -78,6 +167,16 @@ export interface Transaction {
     maxFeePerBlobGas?: Qty,
     blobVersionedHashes?: Bytes32[],
     authorizationList?: EIP7702Authorization[],
+    // Tempo 0x76 transaction fields
+    calls?: TempoCall[],
+    nonceKey?: Bytes,
+    signature?: TempoSignature,
+    feeToken?: Bytes20,
+    feePayerSignature?: TempoFeePayerSignature,
+    validBefore?: Qty,
+    validAfter?: Qty,
+    aaAuthorizationList?: TempoSignedAuthorization[],
+    keyAuthorization?: TempoSignedKeyAuthorization,
     // transaction receipt
     contractAddress?: Bytes20,
     cumulativeGasUsed?: Qty,

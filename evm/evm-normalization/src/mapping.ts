@@ -8,6 +8,14 @@ import {
     Transaction,
     AccessListItem,
     EIP7702Authorization,
+    TempoCall,
+    TempoPrimitiveSignature,
+    TempoKeychainSignature,
+    TempoSignature,
+    TempoSignedAuthorization,
+    TempoTokenLimit,
+    TempoSignedKeyAuthorization,
+    TempoFeePayerSignature,
     Log,
     Trace,
     TraceCreateAction,
@@ -407,6 +415,101 @@ function mapEIP7702Authorization(src: rpc.EIP7702Authorization): EIP7702Authoriz
 }
 
 
+function mapTempoCall(src: rpc.TempoCall): TempoCall {
+    return {
+        to: src.to ? src.to.toLowerCase() : undefined,
+        value: src.value,
+        input: src.input
+    }
+}
+
+
+function mapTempoPrimitiveSignature(src: rpc.TempoPrimitiveSignature): TempoPrimitiveSignature {
+    switch (src.type) {
+        case 'secp256k1':
+            return {
+                type: 'secp256k1',
+                r: src.r,
+                s: src.s,
+                yParity: src.yParity != null ? qty2Int(src.yParity) : undefined,
+                v: src.v != null ? qty2Int(src.v) : undefined,
+            }
+        case 'p256':
+            return {
+                type: 'p256',
+                r: src.r,
+                s: src.s,
+                pubKeyX: src.pubKeyX,
+                pubKeyY: src.pubKeyY,
+                preHash: src.preHash,
+            }
+        case 'webAuthn':
+            return {
+                type: 'webAuthn',
+                r: src.r,
+                s: src.s,
+                pubKeyX: src.pubKeyX,
+                pubKeyY: src.pubKeyY,
+                webauthnData: src.webauthnData,
+            }
+        default:
+            throw unexpectedCase((src as any).type)
+    }
+}
+
+
+function mapTempoSignature(src: rpc.TempoSignatureObject): TempoSignature {
+    if ('userAddress' in src) {
+        let result: TempoKeychainSignature = {
+            userAddress: src.userAddress.toLowerCase(),
+            signature: mapTempoPrimitiveSignature(src.signature)
+        }
+        if (src.version != null) result.version = src.version
+        return result
+    }
+    return mapTempoPrimitiveSignature(src as rpc.TempoPrimitiveSignature)
+}
+
+
+function mapTempoSignedAuthorization(src: rpc.TempoSignedAuthorization): TempoSignedAuthorization {
+    return {
+        chainId: src.chainId,
+        address: src.address.toLowerCase(),
+        nonce: qty2Int(src.nonce),
+        signature: mapTempoSignature(src.signature),
+    }
+}
+
+
+function mapTempoTokenLimit(src: rpc.TempoTokenLimit): TempoTokenLimit {
+    return {
+        token: src.token.toLowerCase(),
+        limit: src.limit,
+    }
+}
+
+
+function mapTempoSignedKeyAuthorization(src: rpc.TempoSignedKeyAuthorization): TempoSignedKeyAuthorization {
+    return {
+        chainId: src.chainId,
+        keyType: src.keyType,
+        keyId: src.keyId.toLowerCase(),
+        expiry: src.expiry ?? undefined,
+        limits: src.limits?.map(mapTempoTokenLimit),
+        signature: mapTempoPrimitiveSignature(src.signature),
+    }
+}
+
+
+function mapTempoFeePayerSignature(src: {v: string, r: string, s: string}): TempoFeePayerSignature {
+    return {
+        v: qty2Int(src.v),
+        r: src.r,
+        s: src.s
+    }
+}
+
+
 function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transaction {
     return {
         transactionIndex: qty2Int(src.transactionIndex),
@@ -414,8 +517,8 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         nonce: qty2Int(src.nonce),
         from: src.from.toLowerCase(),
         to: src.to ? src.to.toLowerCase() : undefined,
-        input: src.input,
-        value: src.value,
+        input: src.input ?? undefined,
+        value: src.value ?? undefined,
         type: src.type ? qty2Int(src.type) : undefined,
         gas: src.gas,
         gasPrice: src.gasPrice ?? undefined,
@@ -430,6 +533,15 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         maxFeePerBlobGas: src.maxFeePerBlobGas ?? undefined,
         blobVersionedHashes: src.blobVersionedHashes ?? undefined,
         authorizationList: src.authorizationList?.map(mapEIP7702Authorization),
+        calls: src.calls?.map(mapTempoCall),
+        nonceKey: src.nonceKey ?? undefined,
+        signature: src.signature ? mapTempoSignature(src.signature) : undefined,
+        feeToken: src.feeToken ? src.feeToken.toLowerCase() : undefined,
+        feePayerSignature: src.feePayerSignature ? mapTempoFeePayerSignature(src.feePayerSignature) : undefined,
+        validBefore: src.validBefore ?? undefined,
+        validAfter: src.validAfter ?? undefined,
+        aaAuthorizationList: src.aaAuthorizationList?.map(mapTempoSignedAuthorization),
+        keyAuthorization: src.keyAuthorization ? mapTempoSignedKeyAuthorization(src.keyAuthorization) : undefined,
         contractAddress: receipt?.contractAddress ? receipt?.contractAddress.toLowerCase() : undefined,
         cumulativeGasUsed: receipt?.cumulativeGasUsed,
         effectiveGasPrice: receipt?.effectiveGasPrice ?? undefined,
@@ -474,7 +586,10 @@ function mapBlockHeader(src: rpc.GetBlock): BlockHeader {
         excessBlobGas: src.excessBlobGas ?? undefined,
         parentBeaconBlockRoot: src.parentBeaconBlockRoot ?? undefined,
         requestsHash: src.requestsHash ?? undefined,
-        l1BlockNumber: src.l1BlockNumber ? qty2Int(src.l1BlockNumber) : undefined
+        l1BlockNumber: src.l1BlockNumber ? qty2Int(src.l1BlockNumber) : undefined,
+        mainBlockGeneralGasLimit: src.mainBlockGeneralGasLimit ?? undefined,
+        sharedGasLimit: src.sharedGasLimit ?? undefined,
+        timestampMillisPart: src.timestampMillisPart ?? undefined,
     }
 }
 
