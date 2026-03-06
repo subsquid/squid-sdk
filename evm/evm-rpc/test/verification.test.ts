@@ -1,6 +1,5 @@
 import {describe, it, expect} from 'vitest'
 import {loadBlock, loadReceipts, hasReceipts, listFixtures, getChainId} from './helpers/fixture-loader'
-import {blockHash} from '../src/verification'
 import {ChainUtils} from '../src/chain-utils'
 import {GetBlock, Transaction} from '../src/rpc-data'
 
@@ -16,7 +15,9 @@ describe('Verification Functions', () => {
 
             it('blockHash verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
-                const computed = await blockHash(block)
+                const chainId = getChainId(fixture.chain)
+                const utils = new ChainUtils(chainId)
+                const computed = await utils.calculateBlockHash(block)
                 expect(computed).toEqual(block.hash)
             })
 
