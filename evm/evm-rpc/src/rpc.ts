@@ -668,6 +668,8 @@ export class Rpc {
         if (err instanceof RpcError && err.message == 'response too large') return true
         if (err instanceof RpcError && err.code == 429) return true
         if (err instanceof RpcError && err.code == -32000) return true
+        // Goldsky will sometimes respond with HTTP 200 and error inside response.error.data
+        if (err instanceof RpcError && err.data && typeof err.data === 'string' && err.data.includes('429 Too Many Requests')) return true
         return false
     }
 }
