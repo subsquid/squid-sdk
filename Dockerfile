@@ -156,12 +156,12 @@ COPY --from=fuel-ingest-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/fuel/fuel-ingest/bin/run.js"]
 
 
-FROM builder AS hyperliquid-fills-hotblocks-service-builder
+FROM builder AS hyperliquid-fills-data-service-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/hyperliquid-fills-data-service
 
 
-FROM node AS hyperliquid-fills-hotblocks-service
-COPY --from=hyperliquid-fills-hotblocks-service-builder /squid/common/deploy /squid
+FROM node AS hyperliquid-fills-data-service
+COPY --from=hyperliquid-fills-data-service-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/hyperliquid/hyperliquid-fills-data-service/lib/main.js"]
 
 

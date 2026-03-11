@@ -53,8 +53,6 @@ for image in "${images[@]}"; do
     echo "Publishing $image..."
     if [ "$image" = "solana/solana-data-service" ]; then
         publish "$image" "solana-hotblocks-service" || exit 1
-    elif [ "$image" = "hyperliquid/hyperliquid-fills-data-service" ]; then
-        publish "$image" "hyperliquid-fills-hotblocks-service" || exit 1
     else
         publish "$image" || exit 1
     fi
