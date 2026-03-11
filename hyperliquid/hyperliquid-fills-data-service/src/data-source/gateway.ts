@@ -1,4 +1,4 @@
-import {createLogger} from '@subsquid/logger'
+import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {Block} from '@subsquid/hyperliquid-fills-data'
 import {AsyncQueue, createFuture, last, wait} from '@subsquid/util-internal'
@@ -13,12 +13,20 @@ export interface IngestBatch {
 
 
 export class HyperliquidGateway {
+    private blockBufferSize: number
+    private subscriptionTimeout: number
+    private log: Logger
+
     constructor(
         private client: RpcClient,
-        private blockBufferSize = 10,
-        private log = createLogger('sqd:hyperliquid-data-service:gateway')
+        blockBufferSize?: number,
+        subscriptionTimeout?: number,
     ) {
+        this.blockBufferSize = blockBufferSize ?? 10
         assert(this.blockBufferSize > 0)
+        this.subscriptionTimeout = subscriptionTimeout ?? 10_000
+        assert(this.subscriptionTimeout > 0)
+        this.log = createLogger('sqd:hyperliquid-data-service:gateway')
     }
 
     async *getStream(from?: number): BlockStream<Block> {
@@ -59,8 +67,8 @@ export class HyperliquidGateway {
     private subscribe(queue: AsyncQueue<IngestBatch | Error>, from?: number): Promise<void> {
         let future = createFuture<void>()
 
-        let timer = new Timer(10_000, () => {
-            future.reject(new SubscriptionError('no blocks were received during the last 10 secs'))
+        let timer = new Timer(this.subscriptionTimeout, () => {
+            future.reject(new SubscriptionError(`no blocks were received during the last ${this.subscriptionTimeout} ms`))
         })
 
         timer.start()

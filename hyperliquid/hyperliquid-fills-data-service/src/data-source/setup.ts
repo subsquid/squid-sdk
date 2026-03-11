@@ -13,6 +13,7 @@ const log = createLogger('sqd:hyperliquid-data-service/data-source')
 export interface DataSourceOptions {
     gatewayProxy: string
     gatewayBlockQueueSize?: number
+    gatewaySubscriptionTimeout?: number
 }
 
 
@@ -23,7 +24,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         retryAttempts: 5,
         log
     })
-    let gateway = new HyperliquidGateway(rpc, options.gatewayBlockQueueSize)
+    let gateway = new HyperliquidGateway(rpc, options.gatewayBlockQueueSize, options.gatewaySubscriptionTimeout)
     let dataSource = new HyperliquidGatewayDataSource(gateway)
     return new Mapping(dataSource)
 }
