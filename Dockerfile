@@ -9,9 +9,30 @@ RUN apt-get update && apt-get -y --no-install-recommends install \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /squid
 ADD . .
-RUN node common/scripts/install-run-rush.js install
-RUN rm common/config/rush/build-cache.json
-RUN node common/scripts/install-run-rush.js build
+RUN --mount=type=cache,id=pnpm-store,target=/squid/common/temp/pnpm-store \
+    node common/scripts/install-run-rush.js install
+RUN rm -f common/config/rush/build-cache.json
+RUN node common/scripts/install-run-rush.js build \
+    --to @subsquid/bitcoin-dump \
+    --to @subsquid/bitcoin-ingest \
+    --to @subsquid/bitcoin-data-service \
+    --to @subsquid/evm-dump \
+    --to @subsquid/evm-ingest \
+    --to @subsquid/evm-data-service \
+    --to @subsquid/solana-dump \
+    --to @subsquid/solana-ingest \
+    --to @subsquid/solana-data-service \
+    --to @subsquid/substrate-dump \
+    --to @subsquid/substrate-ingest \
+    --to @subsquid/substrate-metadata-service \
+    --to @subsquid/tron-dump \
+    --to @subsquid/tron-ingest \
+    --to @subsquid/fuel-dump \
+    --to @subsquid/fuel-ingest \
+    --to @subsquid/hyperliquid-fills-data-service \
+    --to @subsquid/hyperliquid-fills-ingest \
+    --to @subsquid/hyperliquid-replica-cmds-ingest \
+    --to @subsquid/hyperliquid-replica-cmds-data-service
 
 FROM builder AS bitcoin-dump-builder
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/bitcoin-dump
