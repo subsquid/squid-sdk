@@ -2,9 +2,7 @@
 
 set -euo pipefail
 
-custom_tag=$1
-tag_latest=$2
-images=("${@:3}")
+images=("$@")
 
 platform="${PLATFORM:-linux/amd64}"
 
@@ -50,13 +48,7 @@ first=true
 
 for image in "${images[@]}"; do
     img="$(docker_target "$image")"
-
-    tags_json="[\"subsquid/$img:$custom_tag\""
-    if [ "$tag_latest" = "true" ]; then
-        tags_json+=",\"subsquid/$img:latest\""
-    fi
-    tags_json+="]"
-
+    output="type=image,name=docker.io/subsquid/$img,push-by-digest=true,name-canonical=true,push=true"
     label="org.opencontainers.image.url=https://github.com/subsquid/squid-sdk/tree/${commit_sha}/${image}"
 
     if [ "$first" = true ]; then
@@ -65,7 +57,7 @@ for image in "${images[@]}"; do
         bake_json+=','
     fi
 
-    bake_json+="\"$img\":{\"tags\":$tags_json,\"labels\":{\"org.opencontainers.image.url\":\"$label\"}}"
+    bake_json+="\"$img\":{\"output\":[\"$output\"],\"labels\":{\"org.opencontainers.image.url\":\"$label\"}}"
     bake_targets+=("$img")
 done
 
@@ -87,9 +79,17 @@ fi
 docker buildx bake \
     -f docker-bake.hcl \
     -f "$override_file" \
-    --push \
     --set "*.platform=$platform" \
+    --metadata-file /tmp/bake-metadata.json \
     $cache_args \
     "${bake_targets[@]}" || exit 1
 
 rm -f "$override_file"
+
+for image in "${images[@]}"; do
+    img="$(docker_target "$image")"
+    digest=$(jq -r ".\"$img\".\"containerimage.digest\"" /tmp/bake-metadata.json)
+    mkdir -p "/tmp/digests/$img"
+    touch "/tmp/digests/$img/${digest#sha256:}"
+    echo "Built $img for $platform: $digest"
+done
