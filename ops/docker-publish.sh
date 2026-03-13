@@ -7,13 +7,7 @@ tag=$2
 pkg_path=$3
 img=$4
 
-# When PLATFORM is set (e.g. "linux/amd64"), build for that platform only
-# and append an arch suffix to all tags (e.g. ":1.2.3-amd64").
-platform="${PLATFORM:-linux/amd64,linux/arm64}"
-platform_suffix=""
-if [[ "$platform" != *","* ]]; then
-    platform_suffix="-${platform#*/}"
-fi
+platform="${PLATFORM:-linux/amd64}"
 
 function publish() {
     local pkg_path=$1
@@ -41,10 +35,10 @@ function publish() {
         --push \
         --target "$img" \
         --label "org.opencontainers.image.url=https://github.com/subsquid/squid-sdk/tree/$(git rev-parse HEAD)/${pkg_path}" \
-        -t "subsquid/$img:${pkg_version}${platform_suffix}" \
-        -t "subsquid/$img:${major}${platform_suffix}" \
-        -t "subsquid/$img:${tag}${platform_suffix}" \
-        -t "subsquid/$img:${release}${platform_suffix}" \
+        -t "subsquid/$img:$pkg_version" \
+        -t "subsquid/$img:$major" \
+        -t "subsquid/$img:$tag" \
+        -t "subsquid/$img:$release" \
         $cache_args || exit 1
 }
 

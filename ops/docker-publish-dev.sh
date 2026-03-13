@@ -6,13 +6,7 @@ custom_tag=$1
 tag_latest=$2
 images=("${@:3}")
 
-# When PLATFORM is set (e.g. "linux/amd64"), build for that platform only
-# and append an arch suffix to all tags (e.g. ":abc123-amd64").
-platform="${PLATFORM:-}"
-platform_suffix=""
-if [ -n "$platform" ]; then
-    platform_suffix="-${platform#*/}"
-fi
+platform="${PLATFORM:-linux/amd64}"
 
 all_images=(
     "bitcoin/bitcoin-dump"
@@ -57,9 +51,9 @@ first=true
 for image in "${images[@]}"; do
     img="$(docker_target "$image")"
 
-    tags_json="[\"subsquid/$img:${custom_tag}${platform_suffix}\""
+    tags_json="[\"subsquid/$img:$custom_tag\""
     if [ "$tag_latest" = "true" ]; then
-        tags_json+=",\"subsquid/$img:latest${platform_suffix}\""
+        tags_json+=",\"subsquid/$img:latest\""
     fi
     tags_json+="]"
 
@@ -81,7 +75,6 @@ override_file=$(mktemp)
 echo "$bake_json" > "$override_file"
 
 echo "Building targets: ${bake_targets[*]}"
-echo "Bake override: $(cat "$override_file")"
 
 cache_args=""
 if [ -n "${BUILDX_CACHE_FROM:-}" ]; then
@@ -91,17 +84,12 @@ if [ -n "${BUILDX_CACHE_TO:-}" ]; then
     cache_args+=" --set *.cache-to=${BUILDX_CACHE_TO}"
 fi
 
-platform_args=""
-if [ -n "$platform" ]; then
-    platform_args=" --set *.platform=$platform"
-fi
-
 docker buildx bake \
     -f docker-bake.hcl \
     -f "$override_file" \
     --push \
+    --set "*.platform=$platform" \
     $cache_args \
-    $platform_args \
     "${bake_targets[@]}" || exit 1
 
 rm -f "$override_file"

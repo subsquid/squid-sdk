@@ -33,8 +33,6 @@ docker-bake.hcl
 docker-compose.yml
 /ops/docker-publish.sh
 /ops/docker-publish-dev.sh
-/ops/docker-merge.sh
-/ops/docker-merge-dev.sh
 /ops/pkg-name.js
 /ops/pkg-version.js
 

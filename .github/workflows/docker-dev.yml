@@ -13,43 +13,22 @@ on:
         type: boolean
         default: true
         required: false
+      platform:
+        description: 'Platform to build'
+        required: false
+        default: 'linux/amd64'
+        type: choice
+        options:
+          - linux/amd64
+          - linux/arm64
 
 env:
   CI: true
 
 jobs:
-  prepare:
-    name: prepare
-    runs-on: ubuntu-latest
-    outputs:
-      custom_tag: ${{ steps.resolve_tag.outputs.tag }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Resolve tag
-        id: resolve_tag
-        run: |
-          CUSTOM_TAG="${{ inputs.custom_tag }}"
-          if [ -z "$CUSTOM_TAG" ]; then
-            CUSTOM_TAG="$(git rev-parse --short HEAD)"
-          fi
-          echo "tag=$CUSTOM_TAG" >> $GITHUB_OUTPUT
-
-  build:
-    name: build-${{ matrix.arch }}
-    needs: prepare
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: true
-      matrix:
-        include:
-          - arch: amd64
-            platform: linux/amd64
-            runner: ubuntu-latest
-          - arch: arm64
-            platform: linux/arm64
-            runner: ubuntu-24.04-arm
+  publish:
+    name: docker-dev-publish
+    runs-on: ${{ inputs.platform == 'linux/arm64' && 'ubuntu-latest-arm' || 'ubuntu-latest' }}
     steps:
       - name: Docker login
         uses: docker/login-action@v3
@@ -65,35 +44,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build and Push
+      - name: Get commit short SHA
+        id: commit_sha
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build and Publish
         env:
-          PLATFORM: ${{ matrix.platform }}
-          BUILDX_CACHE_FROM: type=gha,scope=dev-${{ matrix.arch }}
-          BUILDX_CACHE_TO: type=gha,scope=dev-${{ matrix.arch }},mode=max
+          PLATFORM: ${{ inputs.platform }}
+          BUILDX_CACHE_FROM: type=gha
+          BUILDX_CACHE_TO: type=gha,mode=max
         run: |
+          CUSTOM_TAG="${{ inputs.custom_tag }}"
+          if [ -z "$CUSTOM_TAG" ]; then
+            CUSTOM_TAG="${{ steps.commit_sha.outputs.sha }}"
+          fi
           TAG_LATEST="${{ inputs.tag_latest }}"
           IFS=' ' read -r -a image_array <<< "${{ inputs.images }}"
-          ./ops/docker-publish-dev.sh "${{ needs.prepare.outputs.custom_tag }}" "$TAG_LATEST" "${image_array[@]}"
-
-  merge:
-    name: merge-manifests
-    needs: [prepare, build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Docker login
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_LOGIN }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Create multi-arch manifests
-        run: |
-          TAG_LATEST="${{ inputs.tag_latest }}"
-          IFS=' ' read -r -a image_array <<< "${{ inputs.images }}"
-          ./ops/docker-merge-dev.sh "${{ needs.prepare.outputs.custom_tag }}" "$TAG_LATEST" "${image_array[@]}"
+          ./ops/docker-publish-dev.sh "$CUSTOM_TAG" "$TAG_LATEST" "${image_array[@]}"
