@@ -53,7 +53,7 @@ export class PoolOpenreaderContext implements OpenreaderContext {
     private async transact<T>(pool: Pool, cb: (db: Database) => Promise<T>): Promise<T> {
         let client = await pool.connect()
         try {
-            await this.query(client, 'START TRANSACTION ISOLATION LEVEL SERIALIZABLE READ ONLY')
+            await this.query(client, 'START TRANSACTION ISOLATION LEVEL READ COMMITTED READ ONLY')
             try {
                 return await cb(async (sql, parameters) => {
                     let result = await this.query(client, sql, parameters)
