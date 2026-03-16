@@ -150,8 +150,8 @@ function isTempoSystemTx(tx: Transaction) {
 
 
 function isStableSystemTx(tx: Transaction) {
-    // Stable system txs are legacy (type 0x0) with a fake signature (r=0, s=0)
-    return tx.type == '0x0' && tx.r == '0x0' && tx.s == '0x0'
+    // Stable system txs have a fake signature (r=0, s=0) and can be legacy (0x0) or EIP-1559 (0x2)
+    return tx.r == '0x0' && tx.s == '0x0'
 }
 
 
