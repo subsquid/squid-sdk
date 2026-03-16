@@ -22,6 +22,7 @@ export class ChainUtils {
     public isPolygonMainnet: boolean
     public isHyperliquidMainnet: boolean
     public isHyperliquidTestnet: boolean
+    public isStable: boolean
     public isTempo: boolean
     public useGasUsedForReceiptsRoot: boolean
 
@@ -29,6 +30,7 @@ export class ChainUtils {
         this.isPolygonMainnet = chainId == '0x89'
         this.isHyperliquidMainnet = chainId == '0x3e7'
         this.isHyperliquidTestnet = chainId == '0x3e6'
+        this.isStable = chainId == '0x3dc' || chainId == '0x899' // Chain ID 988 (mainnet) or 2201 (testnet)
         // Tempo mainnet (4217), Moderato testnet (42431), Andantino testnet (42429)
         // https://drpc.org/chainlist/tempo-mainnet-rpc
         // https://drpc.org/chainlist/tempo-moderato-testnet-rpc
@@ -116,6 +118,12 @@ export class ChainUtils {
             if (isHyperliquidSystemTx(transaction)) return
         }
 
+        // Stable system transactions are legacy txs with a fake signature (r=0, s=0)
+        // sent from the zero address to system contracts. They cannot be ECDSA-recovered.
+        if (this.isStable) {
+            if (isStableSystemTx(transaction)) return
+        }
+
         // Tempo system transactions are legacy txs with a fake signature (r=0, s=0)
         // and sender set to Address::ZERO. They cannot be ECDSA-recovered.
         // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/envelope.rs
@@ -137,6 +145,12 @@ function isHyperliquidSystemTx(tx: Transaction) {
 function isTempoSystemTx(tx: Transaction) {
     // Tempo system transactions are legacy (type 0x0) with a fake signature (r=0, s=0).
     // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/envelope.rs
+    return tx.type == '0x0' && tx.r == '0x0' && tx.s == '0x0'
+}
+
+
+function isStableSystemTx(tx: Transaction) {
+    // Stable system txs are legacy (type 0x0) with a fake signature (r=0, s=0)
     return tx.type == '0x0' && tx.r == '0x0' && tx.s == '0x0'
 }
 
