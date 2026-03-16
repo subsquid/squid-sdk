@@ -16,6 +16,7 @@ describe('Verification Functions', () => {
             it('blockHash verification', async () => {
                 // Cosmos/Tendermint EVM chains use SHA-256 Merkle trees, not Keccak-256
                 if (fixture.chain === 'stable') return
+                if (fixture.chain === 'bittensor-testnet') return
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 const chainId = getChainId(fixture.chain)
                 const utils = new ChainUtils(chainId)

@@ -409,7 +409,18 @@ function mapAccessListItem(src: rpc.AccessListItem): AccessListItem {
 }
 
 
-function mapEIP7702Authorization(src: rpc.EIP7702Authorization): EIP7702Authorization {
+function mapEIP7702Authorization(src: rpc.EIP7702AuthorizationItem): EIP7702Authorization {
+    if ('chain_id' in src) {
+        return {
+            chainId: toQty(src.chain_id),
+            address: src.address,
+            nonce: qty2Int(src.nonce),
+            yParity: src.signature.odd_y_parity ? 1 : 0,
+            r: src.signature.r,
+            s: src.signature.s
+        }
+    }
+
     return {
         chainId: src.chainId,
         address: src.address,

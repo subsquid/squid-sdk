@@ -55,6 +55,26 @@ export const EIP7702Authorization = object({
 
 export type EIP7702Authorization = GetSrcType<typeof EIP7702Authorization>
 
+
+// Frontier-based nodes (like Bittensor) return EIP-7702 authorization list items
+// in snake_case format with a nested signature object instead of flat yParity/r/s
+export const FrontierEIP7702Authorization = object({
+    chain_id: NAT,
+    address: BYTES,
+    nonce: SMALL_QTY,
+    signature: object({
+        odd_y_parity: BOOLEAN,
+        r: BYTES,
+        s: BYTES
+    })
+})
+
+
+export type FrontierEIP7702Authorization = GetSrcType<typeof FrontierEIP7702Authorization>
+
+
+export type EIP7702AuthorizationItem = EIP7702Authorization | FrontierEIP7702Authorization
+
 // Tempo 0x76 transaction call entry
 // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
 export const TempoCall = object({
@@ -212,7 +232,10 @@ export const Transaction = object({
     }))),
     maxFeePerBlobGas: option(QTY),
     blobVersionedHashes: option(array(BYTES)),
-    authorizationList: option(array(EIP7702Authorization)),
+    authorizationList: option(array(oneOf({
+        evm: EIP7702Authorization,
+        frontier: FrontierEIP7702Authorization,
+    }))),
     requestId: option(BYTES),
     ticketId: option(BYTES),
     refundTo: option(BYTES),

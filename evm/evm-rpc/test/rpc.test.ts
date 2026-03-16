@@ -194,6 +194,22 @@ describe('Rpc Class Integration', () => {
             expect(blocks.length).toEqual(1)
         })
 
+        it('handles Frontier EIP-7702 transactions correctly', async () => {
+            const fixtureBlock = loadBlock('bittensor-testnet', 6646068)
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0x3b1')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(6646068), true], fixtureBlock)
+
+            const rpc = new Rpc({
+                client: mockClient as any,
+                verifyTxRoot: true
+            })
+
+            const blocks = await rpc.getBlockBatch([6646068], { transactions: true })
+            expect(blocks).toBeTruthy()
+            expect(blocks.length).toEqual(1)
+        })
     })
 
 })

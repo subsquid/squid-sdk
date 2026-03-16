@@ -5,7 +5,20 @@ import {RLP} from '@ethereumjs/rlp'
 import {bigIntToUnpaddedBytes, concatBytes, setLengthLeft, hexToBytes, PrefixedHexString} from '@ethereumjs/util'
 import {keccak256} from 'ethereum-cryptography/keccak'
 import secp256k1 from 'secp256k1'
-import {Transaction, AccessListItem, EIP7702Authorization, TempoCall, TempoSignatureObject, TempoPrimitiveSignature, TempoKeychainSignature, TempoSignedAuthorization, TempoSignedKeyAuthorization, GetBlock, Log, Receipt} from './rpc-data'
+import {
+    Transaction,
+    AccessListItem,
+    EIP7702AuthorizationItem,
+    TempoCall,
+    TempoSignatureObject,
+    TempoPrimitiveSignature,
+    TempoKeychainSignature,
+    TempoSignedAuthorization,
+    TempoSignedKeyAuthorization,
+    GetBlock,
+    Log,
+    Receipt,
+} from './rpc-data'
 import {qty2Int} from './util'
 import {Bytes20, Bytes32, Qty} from './types'
 
@@ -102,15 +115,28 @@ function decodeAccessList(accessList: AccessListItem[]) {
 }
 
 
-function decodeAuthorizationList(authorizationList: EIP7702Authorization[]) {
-    return authorizationList.map(item => [
-        BigInt(item.chainId),
-        decodeHex(item.address),
-        BigInt(item.nonce),
-        BigInt(item.yParity),
-        BigInt(item.r),
-        BigInt(item.s)
-    ])
+function decodeAuthorizationList(authorizationList: EIP7702AuthorizationItem[]) {
+    return authorizationList.map(item => {
+        if ('chain_id' in item) {
+            return [
+                BigInt(item.chain_id),
+                decodeHex(item.address),
+                BigInt(item.nonce),
+                BigInt(item.signature.odd_y_parity ? 1 : 0),
+                BigInt(item.signature.r),
+                BigInt(item.signature.s)
+            ]
+        }
+
+        return [
+            BigInt(item.chainId),
+            decodeHex(item.address),
+            BigInt(item.nonce),
+            BigInt(item.yParity),
+            BigInt(item.r),
+            BigInt(item.s)
+        ]
+    })
 }
 
 

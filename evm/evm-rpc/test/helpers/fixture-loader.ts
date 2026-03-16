@@ -13,6 +13,7 @@ const CHAIN_IDS: Record<string, string> = {
     hyperliquid: '0x3e7',
     tempoModerato: '0xa5bf',
     stable: '0x3dc',
+    'bittensor-testnet': '0x3b1',
 }
 
 
