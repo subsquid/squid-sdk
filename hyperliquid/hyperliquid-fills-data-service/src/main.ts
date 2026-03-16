@@ -63,5 +63,8 @@ runProgram(async () => {
     })
 
     log.info(`listening on port ${service.port}`)
-    return waitForInterruption(service)
+    await Promise.race([
+        waitForInterruption(service),
+        service.run
+    ])
 }, err => log.fatal(err))
