@@ -1,61 +1,95 @@
 #!/bin/bash
 
-custom_tag=$1
-tag_latest=$2
-images=("${@:3}")
+set -euo pipefail
 
-function publish() {
-    pkg_path=$1
-    if [ -n "$2" ]
-    then
-       img=$2
-    else
-       img="$(basename "$pkg_path")"
-    fi
+images=("$@")
 
-    tags="-t subsquid/$img:$custom_tag"
-    if [ "$tag_latest" = "true" ]; then
-        tags="$tags -t subsquid/$img:latest"
-    fi
-
-    docker buildx build . --platform "linux/amd64,linux/arm64" \
-        --push \
-        --target "$img" \
-        --label "org.opencontainers.image.url=https://github.com/subsquid/squid-sdk/tree/$(git rev-parse HEAD)/${pkg_path}" \
-        $tags || exit 1
-}
+platform="${PLATFORM:-linux/amd64}"
 
 all_images=(
-    "solana/solana-dump"
-    "solana/solana-ingest"
-    "solana/solana-data-service"
-    "tron/tron-dump"
-    "tron/tron-ingest"
-    "substrate/substrate-dump"
-    "substrate/substrate-ingest"
-    "substrate/substrate-metadata-service"
-    "fuel/fuel-dump"
-    "fuel/fuel-ingest"
+    "bitcoin/bitcoin-dump"
+    "bitcoin/bitcoin-ingest"
+    "bitcoin/bitcoin-data-service"
     "evm/evm-dump"
     "evm/evm-ingest"
     "evm/evm-data-service"
-    "hyperliquid/hyperliquid-fills-ingest"
+    "solana/solana-dump"
+    "solana/solana-ingest"
+    "solana/solana-data-service"
+    "substrate/substrate-dump"
+    "substrate/substrate-ingest"
+    "substrate/substrate-metadata-service"
+    "tron/tron-dump"
+    "tron/tron-ingest"
+    "fuel/fuel-dump"
+    "fuel/fuel-ingest"
     "hyperliquid/hyperliquid-fills-data-service"
+    "hyperliquid/hyperliquid-fills-ingest"
     "hyperliquid/hyperliquid-replica-cmds-ingest"
     "hyperliquid/hyperliquid-replica-cmds-data-service"
 )
+
+function docker_target() {
+    local base="$(basename "$1")"
+    case "$base" in
+        solana-data-service) echo "solana-hotblocks-service" ;;
+        *) echo "$base" ;;
+    esac
+}
 
 if [ ${#images[@]} -eq 0 ]; then
     images=("${all_images[@]}")
 fi
 
+commit_sha=$(git rev-parse HEAD)
+bake_targets=()
+bake_json='{"target":{'
+first=true
+
 for image in "${images[@]}"; do
-    echo "Publishing $image..."
-    if [ "$image" = "solana/solana-data-service" ]; then
-        publish "$image" "solana-hotblocks-service" || exit 1
+    img="$(docker_target "$image")"
+    output="type=image,name=docker.io/subsquid/$img,push-by-digest=true,name-canonical=true,push=true"
+    label="org.opencontainers.image.url=https://github.com/subsquid/squid-sdk/tree/${commit_sha}/${image}"
+
+    if [ "$first" = true ]; then
+        first=false
     else
-        publish "$image" || exit 1
+        bake_json+=','
     fi
+
+    bake_json+="\"$img\":{\"output\":[\"$output\"],\"labels\":{\"org.opencontainers.image.url\":\"$label\"}}"
+    bake_targets+=("$img")
 done
 
-#git push origin "HEAD:release/${release}" --follow-tags --verbose
+bake_json+='}}'
+
+override_file=$(mktemp)
+echo "$bake_json" > "$override_file"
+
+echo "Building targets: ${bake_targets[*]}"
+
+cache_args=""
+if [ -n "${BUILDX_CACHE_FROM:-}" ]; then
+    cache_args+=" --set *.cache-from=${BUILDX_CACHE_FROM}"
+fi
+if [ -n "${BUILDX_CACHE_TO:-}" ]; then
+    cache_args+=" --set *.cache-to=${BUILDX_CACHE_TO}"
+fi
+
+docker buildx bake \
+    -f docker-bake.hcl \
+    -f "$override_file" \
+    --set "*.platform=$platform" \
+    --metadata-file /tmp/bake-metadata.json \
+    $cache_args \
+    "${bake_targets[@]}" || exit 1
+
+rm -f "$override_file"
+
+for image in "${images[@]}"; do
+    img="$(docker_target "$image")"
+    digest=$(jq -r ".\"$img\".\"containerimage.digest\"" /tmp/bake-metadata.json)
+    mkdir -p "/tmp/digests/$img"
+    touch "/tmp/digests/$img/${digest#sha256:}"
+    echo "Built $img for $platform: $digest"
+done

@@ -18,20 +18,26 @@ env:
   CI: true
 
 jobs:
-  publish:
-    name: docker-dev-publish
-    runs-on: ubuntu-latest
+  build:
+    name: Build ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+
       - name: Docker login
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_LOGIN }}
           password: ${{ secrets.DOCKER_TOKEN }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: all
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -41,16 +47,52 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Get commit short SHA
-        id: commit_sha
-        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Build and push by digest
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          BUILDX_CACHE_FROM: type=gha,scope=build-${{ matrix.platform }}
+          BUILDX_CACHE_TO: type=gha,scope=build-${{ matrix.platform }},mode=max
+        run: |
+          IFS=' ' read -r -a image_array <<< "${{ inputs.images }}"
+          ./ops/docker-publish-dev.sh "${image_array[@]}"
 
-      - name: Build and Publish
+      - name: Upload digests
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: Merge manifests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_LOGIN }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Create manifests and push
         run: |
           CUSTOM_TAG="${{ inputs.custom_tag }}"
           if [ -z "$CUSTOM_TAG" ]; then
-            CUSTOM_TAG="${{ steps.commit_sha.outputs.sha }}"
+            CUSTOM_TAG="$(git rev-parse --short HEAD)"
           fi
-          TAG_LATEST="${{ inputs.tag_latest }}"
           IFS=' ' read -r -a image_array <<< "${{ inputs.images }}"
-          ./ops/docker-publish-dev.sh "$CUSTOM_TAG" "$TAG_LATEST" "${image_array[@]}"
+          ./ops/docker-merge-dev.sh "$CUSTOM_TAG" "${{ inputs.tag_latest }}" "${image_array[@]}"
