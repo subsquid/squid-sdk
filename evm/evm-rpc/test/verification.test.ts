@@ -66,8 +66,6 @@ describe('Verification Functions', () => {
 
                 for (const tx of txs) {
                     if (tx.type === '0x7f') continue
-                    if (chainId === '0x3e7' && tx.gasPrice === '0x0') continue
-                    if (tx.r === '0x0' && tx.s === '0x0') continue // unsigned system txs (e.g. Stable)
 
                     const recovered = utils.recoverTxSender(tx)
                     if (recovered) {
