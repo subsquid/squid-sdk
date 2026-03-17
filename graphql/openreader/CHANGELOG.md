@@ -1,6 +1,13 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Mon, 05 May 2025 11:31:26 GMT and should not be manually modified.
+This log was last generated on Tue, 17 Mar 2026 11:47:18 GMT and should not be manually modified.
+
+## 5.4.0
+Tue, 17 Mar 2026 11:47:18 GMT
+
+### Minor changes
+
+- add @disableForeignKeyConstraint directive to suppress FK constraints and expose synthetic {field}Id fields with full filtering support
 
 ## 5.3.0
 Mon, 05 May 2025 11:31:26 GMT

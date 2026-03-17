@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Tue, 17 Mar 2026 11:47:18 GMT and should not be manually modified.
+
+## 2.1.0
+Tue, 17 Mar 2026 11:47:18 GMT
+
+### Minor changes
+
+- pass createForeignKeyConstraints: false to TypeORM relation decorators when @disableForeignKeyConstraint is set
 
 ## 2.0.2
 Thu, 25 Jul 2024 11:48:18 GMT
