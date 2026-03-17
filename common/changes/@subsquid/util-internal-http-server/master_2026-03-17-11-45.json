@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-http-server",
+      "comment": "fix duplicate charset value in prometheus content-type header",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-http-server"
+}
