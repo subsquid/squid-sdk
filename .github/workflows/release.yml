@@ -13,7 +13,7 @@ on:
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -47,6 +47,10 @@ jobs:
       - name: Build project
         run: node common/scripts/install-run-rush.js build
 
+      - name: Save existing tags
+        if: inputs.mode == 'release'
+        run: git tag -l | sort > /tmp/tags-before.txt
+
       - name: Publish npm packages
         run: |
           if [ "${{ inputs.mode }}" = "release" ]; then
@@ -57,3 +61,65 @@ jobs:
           fi
         env:
           NPM_CONFIG_PROVENANCE: 'true'
+
+      - name: Publish changelogs to GitHub releases
+        if: inputs.mode == 'release'
+        run: |
+          new_tags=$(comm -13 /tmp/tags-before.txt <(git tag -l | sort))
+
+          if [ -z "$new_tags" ]; then
+            echo "No new tags found, skipping GitHub release"
+            exit 0
+          fi
+
+          : > /tmp/release-notes.md
+
+          for tag in $new_tags; do
+            pkg_name="${tag%_v*}"
+            version="${tag##*_v}"
+
+            pkg_dir=$(node -e "
+              const p = require('./rush.json').projects.find(p => p.packageName === process.argv[1]);
+              if (p) console.log(p.projectFolder);
+            " -- "$pkg_name")
+
+            if [ -z "$pkg_dir" ] || [ ! -f "$pkg_dir/CHANGELOG.md" ]; then
+              echo "Skipping $tag: no changelog found"
+              continue
+            fi
+
+            body=$(awk -v ver="$version" '
+              /^## / { if (found) exit; if ($2 == ver) { found=1; next } }
+              found { print }
+            ' "$pkg_dir/CHANGELOG.md")
+
+            trimmed=$(echo "$body" | sed '/^[[:space:]]*$/d')
+            if [ -z "$trimmed" ] || [ "$trimmed" = "_Version update only_" ]; then
+              echo "Skipping $tag: version update only"
+              continue
+            fi
+
+            printf '## %s %s\n%s\n\n' "$pkg_name" "$version" "$body" >> /tmp/release-notes.md
+          done
+
+          if [ ! -s /tmp/release-notes.md ]; then
+            echo "No meaningful changelog entries, skipping GitHub release"
+            exit 0
+          fi
+
+          release_tag=$(date -u +%Y-%m-%d)
+          n=2
+          while git rev-parse "$release_tag" >/dev/null 2>&1; do
+            release_tag="$(date -u +%Y-%m-%d).${n}"
+            n=$((n + 1))
+          done
+
+          git tag "$release_tag"
+          git push origin "$release_tag"
+
+          gh release create "$release_tag" \
+            --title "$release_tag" \
+            --notes-file /tmp/release-notes.md \
+            --verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
