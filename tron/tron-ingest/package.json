@@ -3,7 +3,7 @@
   "description": "Data fetcher for tron based chains",
   "version": "0.1.1",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },

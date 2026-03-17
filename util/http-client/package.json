@@ -3,7 +3,7 @@
   "version": "1.8.0",
   "description": "Small convenience layer on top of fetch",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
