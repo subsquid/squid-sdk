@@ -1,10 +1,10 @@
-import { LEVELS, LogLevel } from './level'
-import { Logger, LogRecord, Sink } from './logger'
-import { jsonLinesStderrSink } from './sinks/json'
-import { prettyStderrSink } from './sinks/pretty'
+import {LEVELS, LogLevel} from './level'
+import {Logger, LogRecord, Sink} from './logger'
+import {jsonLinesStderrSink} from './sinks/json'
+import {prettyStderrSink} from './sinks/pretty'
 
 
-export { LogLevel } from "./level"
+export {LogLevel} from "./level"
 export * from "./logger"
 
 
