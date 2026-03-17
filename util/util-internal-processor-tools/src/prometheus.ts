@@ -1,6 +1,5 @@
 import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
 import {collectDefaultMetrics, Gauge, Registry} from 'prom-client'
-import {DatadogMetrics, isDatadogEnabled} from './datadog'
 import {RunnerMetrics} from './runner-metrics'
 
 
@@ -10,17 +9,23 @@ interface ConnectionMetrics {
     connectionErrors: number
 }
 
+export interface MetricsSink {
+    register(registry: Registry): void
+}
+
+type StartHookType = (registry: Registry) => Promise<void> | void;
 
 export class PrometheusServer {
     private registry = new Registry()
     private port?: number | string
-    private datadog?: DatadogMetrics
+    private metricSinks: MetricsSink[] = [];
 
     constructor() {
-        collectDefaultMetrics({register: this.registry})
-        if (isDatadogEnabled()) {
-            this.datadog = new DatadogMetrics(this.registry)
-        }
+        collectDefaultMetrics({ register: this.registry })
+    }
+
+    addMetricsSink(sink: MetricsSink) {
+        this.metricSinks.push(sink);
     }
 
     setPort(port: number | string): void {
@@ -79,7 +84,7 @@ export class PrometheusServer {
     }
 
     async serve(): Promise<ListeningServer> {
-        this.datadog?.start()
+        await Promise.all(this.metricSinks.map(sink => sink.register(this.registry)))
         return createPrometheusServer(this.registry, this.getPort())
     }
 

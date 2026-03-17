@@ -193,6 +193,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private rpcIngestSettings?: RpcDataIngestionSettings
     private rpcEndpoint?: RpcEndpointSettings
     private running = false
+    private prometheusServer?: PrometheusServer
 
     /**
      * @deprecated Use {@link .setGateway()}
@@ -415,6 +416,12 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         return this
     }
 
+    setPrometheusServer(server: PrometheusServer): this {
+        this.assertNotRunning()
+        this.prometheusServer = server
+        return this
+    }
+
     private assertNotRunning(): void {
         if (this.running) {
             throw new Error('Settings modifications are not allowed after start of processing')
@@ -433,7 +440,10 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
 
     @def
     private getPrometheusServer(): PrometheusServer {
-        return new PrometheusServer()
+        if (!this.prometheusServer) {
+            this.prometheusServer = new PrometheusServer()
+        }
+        return this.prometheusServer
     }
 
     @def

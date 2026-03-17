@@ -1,5 +1,6 @@
 import https from 'https'
 import type { Registry } from 'prom-client'
+import { MetricsSink } from './prometheus'
 
 
 interface DatadogSeries {
@@ -9,33 +10,34 @@ interface DatadogSeries {
     tags: string[]
 }
 
-
-export function isDatadogEnabled(): boolean {
-    let flag = process.env.DATADOG_METRICS_ENABLED
-    return (flag === '1' || flag === 'true') && !!process.env.DATADOG_API_KEY
+export interface DatadogConfig {
+    apiKey: string
+    site?: string
+    tags?: string[]
+    pushIntervalMs?: number;
 }
 
-
-export class DatadogMetrics {
+export class DatadogMetricsSink implements MetricsSink {
+    private registry?: Registry
     private apiKey: string
     private site: string
     private baseTags: string[]
-    private registry: Registry
+    private pushIntervalMs?: number
     private timer?: NodeJS.Timeout
 
-    constructor(registry: Registry) {
-        this.registry = registry
-        this.apiKey = process.env.DATADOG_API_KEY!
-        this.site = process.env.DATADOG_SITE || 'datadoghq.com'
-        this.baseTags = process.env.DATADOG_TAGS
-            ? process.env.DATADOG_TAGS.split(',').map(t => t.trim()).filter(Boolean)
-            : []
+    constructor(config: DatadogConfig) {
+        this.apiKey = config.apiKey
+        this.site = config.site || 'datadoghq.com'
+        this.baseTags = config.tags ?? []
+        if (!config.pushIntervalMs || config.pushIntervalMs < 0)
+            this.pushIntervalMs = 15_000
+        else
+            this.pushIntervalMs = config.pushIntervalMs
     }
 
-    start(): void {
-        let interval = Number(process.env.DATADOG_PUSH_INTERVAL)
-        if (!(interval > 0)) interval = 15_000
-        this.timer = setInterval(() => this.push(), interval)
+    register(registry: Registry): void {
+        this.registry = registry
+        this.timer = setInterval(() => this.push(), this.pushIntervalMs)
         this.timer.unref()
     }
 
@@ -47,9 +49,8 @@ export class DatadogMetrics {
     }
 
     private async push(): Promise<void> {
-
         try {
-            let metrics = await this.registry.getMetricsAsJSON()
+            let metrics = await this.registry!.getMetricsAsJSON()
             let timestamp = Math.floor(Date.now() / 1000)
             let series: DatadogSeries[] = []
 
