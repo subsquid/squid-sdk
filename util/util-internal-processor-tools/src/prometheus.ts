@@ -10,22 +10,20 @@ interface ConnectionMetrics {
 }
 
 export interface MetricsSink {
-    register(registry: Registry): void
+    register(registry: Registry): void | Promise<void>
 }
-
-type StartHookType = (registry: Registry) => Promise<void> | void;
 
 export class PrometheusServer {
     private registry = new Registry()
     private port?: number | string
-    private metricSinks: MetricsSink[] = [];
+    private metricSinks: MetricsSink[] = []
 
     constructor() {
-        collectDefaultMetrics({ register: this.registry })
+        collectDefaultMetrics({register: this.registry})
     }
 
-    addMetricsSink(sink: MetricsSink) {
-        this.metricSinks.push(sink);
+    addMetricsSink(sink: MetricsSink): void {
+        this.metricSinks.push(sink)
     }
 
     setPort(port: number | string): void {

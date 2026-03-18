@@ -1,10 +1,10 @@
 {
   "changes": [
     {
-      "packageName": "@subsquid/evm-processor",
+      "packageName": "@subsquid/tron-processor",
       "comment": "add `setPrometheusServer()` method, deprecate `setPrometheusPort()`",
       "type": "minor"
     }
   ],
-  "packageName": "@subsquid/evm-processor"
+  "packageName": "@subsquid/tron-processor"
 }

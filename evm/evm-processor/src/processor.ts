@@ -414,18 +414,21 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      */
     setPrometheusPort(port: number | string): this {
         this.assertNotRunning()
+        if (this.prometheusServer) {
+            throw new Error('Prometheus server has already been configured')
+        }
         this.getPrometheusServer().setPort(port)
         return this
     }
 
     /**
      * Sets a custom prometheus metrics server.
-     */    
+     */
     setPrometheusServer(server: PrometheusServer): this {
-        if (this.prometheusServer) {
-            throw new Error('setPrometheusPort has been already called')
-        }
         this.assertNotRunning()
+        if (this.prometheusServer) {
+            throw new Error('Prometheus server has already been configured')
+        }
         this.prometheusServer = server
         return this
     }
@@ -446,7 +449,6 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
         return getOrGenerateSquidId()
     }
 
-    @def
     private getPrometheusServer(): PrometheusServer {
         if (!this.prometheusServer) {
             this.prometheusServer = new PrometheusServer()
