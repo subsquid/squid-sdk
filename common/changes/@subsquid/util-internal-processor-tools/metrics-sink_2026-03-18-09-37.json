@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-processor-tools",
+      "comment": "Added support for custom metrics sink",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-processor-tools"
+}
