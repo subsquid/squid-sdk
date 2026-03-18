@@ -49,7 +49,7 @@ export function createLogger(ns: string, attributes?: object): Logger {
 
 type PinoLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
 
-interface PinoLikeLogger {
+export interface PinoLikeLogger {
     trace(obj: unknown, msg?: string): void
     debug(obj: unknown, msg?: string): void
     info(obj: unknown, msg?: string): void
@@ -58,28 +58,23 @@ interface PinoLikeLogger {
     fatal(obj: unknown, msg?: string): void
 }
 
+const LEVEL_MAP: Record<LogLevel, PinoLevel> = {
+    [LogLevel.TRACE]: 'trace',
+    [LogLevel.DEBUG]: 'debug',
+    [LogLevel.INFO]: 'info',
+    [LogLevel.WARN]: 'warn',
+    [LogLevel.ERROR]: 'error',
+    [LogLevel.FATAL]: 'fatal',
+}
+
 /**
  * Creates Pino logger sink that can be later used in setRootSink
  */
 export function createPinoSink(pinoLogger: PinoLikeLogger): Sink {
-    const LEVEL_MAP: Record<LogLevel, PinoLevel> = {
-        [LogLevel.TRACE]: 'trace',
-        [LogLevel.DEBUG]: 'debug',
-        [LogLevel.INFO]: 'info',
-        [LogLevel.WARN]: 'warn',
-        [LogLevel.ERROR]: 'error',
-        [LogLevel.FATAL]: 'fatal',
-    }
-
     return (rec: LogRecord) => {
-        const { level, ns, msg, err, ...rest } = rec
+        const {level, msg, ...rest} = rec
         const method: PinoLevel = LEVEL_MAP[level] ?? 'info'
 
-        const errorFields =
-            err != null
-                ? { err: { name: err.name, message: err.message, stack: err.stack } }
-                : {}
-
-        pinoLogger[method]({ ns, ...errorFields, ...rest }, msg)
+        pinoLogger[method](rest, msg)
     }
 }

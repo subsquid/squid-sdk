@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/logger",
-      "comment": "pino sink support is added",
+      "comment": "add support for pino-like sinks",
       "type": "minor"
     }
   ],
