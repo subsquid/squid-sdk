@@ -193,6 +193,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
     private rpcIngestSettings?: RpcDataIngestionSettings
     private rpcEndpoint?: RpcEndpointSettings
     private running = false
+    private prometheusServer?: PrometheusServer
 
     /**
      * @deprecated Use {@link .setGateway()}
@@ -408,10 +409,24 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
      * By default, the value of `PROMETHEUS_PORT` environment
      * variable is used. When it is not set,
      * the processor will pick up an ephemeral port.
+     * 
+     * @deprecated Use {@link .setPrometheusServer()} method for fine customization.
      */
     setPrometheusPort(port: number | string): this {
         this.assertNotRunning()
         this.getPrometheusServer().setPort(port)
+        return this
+    }
+
+    /**
+     * Sets a custom prometheus metrics server.
+     */    
+    setPrometheusServer(server: PrometheusServer): this {
+        if (this.prometheusServer) {
+            throw new Error('setPrometheusPort has been already called')
+        }
+        this.assertNotRunning()
+        this.prometheusServer = server
         return this
     }
 
@@ -433,7 +448,10 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
 
     @def
     private getPrometheusServer(): PrometheusServer {
-        return new PrometheusServer()
+        if (!this.prometheusServer) {
+            this.prometheusServer = new PrometheusServer()
+        }
+        return this.prometheusServer
     }
 
     @def

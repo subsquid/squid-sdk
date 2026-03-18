@@ -9,13 +9,23 @@ interface ConnectionMetrics {
     connectionErrors: number
 }
 
+export interface MetricsSink {
+    register(registry: Registry): void
+}
+
+type StartHookType = (registry: Registry) => Promise<void> | void;
 
 export class PrometheusServer {
     private registry = new Registry()
     private port?: number | string
+    private metricSinks: MetricsSink[] = [];
 
     constructor() {
-        collectDefaultMetrics({register: this.registry})
+        collectDefaultMetrics({ register: this.registry })
+    }
+
+    addMetricsSink(sink: MetricsSink) {
+        this.metricSinks.push(sink);
     }
 
     setPort(port: number | string): void {
@@ -73,7 +83,8 @@ export class PrometheusServer {
         })
     }
 
-    serve(): Promise<ListeningServer> {
+    async serve(): Promise<ListeningServer> {
+        await Promise.all(this.metricSinks.map(sink => sink.register(this.registry)))
         return createPrometheusServer(this.registry, this.getPort())
     }
 
