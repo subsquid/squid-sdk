@@ -58,7 +58,10 @@ interface PinoLikeLogger {
     fatal(obj: unknown, msg?: string): void
 }
 
-export function setPinoRootSink(pinoLogger: PinoLikeLogger) {
+/**
+ * Creates Pino logger sink that can be later used in setRootSink
+ */
+export function createPinoSink(pinoLogger: PinoLikeLogger): Sink {
     const LEVEL_MAP: Record<LogLevel, PinoLevel> = {
         [LogLevel.TRACE]: 'trace',
         [LogLevel.DEBUG]: 'debug',
@@ -68,7 +71,7 @@ export function setPinoRootSink(pinoLogger: PinoLikeLogger) {
         [LogLevel.FATAL]: 'fatal',
     }
 
-    setRootSink((rec: LogRecord) => {
+    return (rec: LogRecord) => {
         const { level, ns, msg, err, ...rest } = rec
         const method: PinoLevel = LEVEL_MAP[level] ?? 'info'
 
@@ -78,5 +81,5 @@ export function setPinoRootSink(pinoLogger: PinoLikeLogger) {
                 : {}
 
         pinoLogger[method]({ ns, ...errorFields, ...rest }, msg)
-    })
+    }
 }
