@@ -73,13 +73,20 @@ function extractNewEntries(changelogPath, baselineRef) {
     }
     if (current) entries.push(current)
 
-    return entries.filter((e) => {
-        const meaningful = e.body
-            .filter((l) => l.trim())
-            .join('\n')
-            .trim()
-        return meaningful && meaningful !== '_Version update only_'
-    })
+    return entries
+        .map((e) => {
+            e.body = e.body
+                .filter((l) => !/^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4}/.test(l))
+                .map((l) => (l.startsWith('### ') ? '#' + l : l))
+            return e
+        })
+        .filter((e) => {
+            const meaningful = e.body
+                .filter((l) => l.trim())
+                .join('\n')
+                .trim()
+            return meaningful && meaningful !== '_Version update only_'
+        })
 }
 
 function buildReleaseNotes(changedPaths, baselineRef, projectMap) {
@@ -95,7 +102,7 @@ function buildReleaseNotes(changedPaths, baselineRef, projectMap) {
 
         const entries = extractNewEntries(filePath, baselineRef)
         for (const entry of entries) {
-            notes += `## ${pkgName} ${entry.version}\n${entry.body.join('\n')}\n\n`
+            notes += `### ${pkgName} ${entry.version}\n${entry.body.join('\n')}\n\n`
         }
     }
 
@@ -166,7 +173,8 @@ function main() {
 
     const contributors = getContributors(baselineRef)
     if (contributors.length > 0) {
-        notes += '\n\n' + contributors.map((login) => `@${login}`).join(' ')
+        notes += '\n\n---\n\n### Contributors\n\n'
+        notes += contributors.map((login) => `@${login}`).join(', ')
     }
 
     const notesFile = '/tmp/release-notes.md'
