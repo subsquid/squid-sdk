@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/logger",
+      "comment": "pino sink support is added",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/logger"
+}
