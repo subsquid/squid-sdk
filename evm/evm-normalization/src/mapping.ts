@@ -414,7 +414,7 @@ function mapEIP7702Authorization(src: rpc.EIP7702AuthorizationItem): EIP7702Auth
         return {
             chainId: toQty(src.chain_id),
             address: src.address,
-            nonce: qty2Int(src.nonce),
+            nonce: BigInt(src.nonce),
             yParity: src.signature.odd_y_parity ? 1 : 0,
             r: src.signature.r,
             s: src.signature.s
@@ -424,7 +424,7 @@ function mapEIP7702Authorization(src: rpc.EIP7702AuthorizationItem): EIP7702Auth
     return {
         chainId: src.chainId,
         address: src.address,
-        nonce: qty2Int(src.nonce),
+        nonce: BigInt(src.nonce),
         yParity: qty2Int(src.yParity),
         r: src.r,
         s: src.s

@@ -53,7 +53,7 @@ export interface AccessListItem {
 export interface EIP7702Authorization {
     chainId: Qty,
     address: Bytes20,
-    nonce: number,
+    nonce: bigint,
     yParity: number,
     r: Bytes32,
     s: Bytes32

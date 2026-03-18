@@ -46,7 +46,7 @@ export type AccessListItem = AccessItem | FrontierAccessItem
 export const EIP7702Authorization = object({
     chainId: QTY,
     address: BYTES,
-    nonce: SMALL_QTY,
+    nonce: QTY,
     yParity: SMALL_QTY,
     r: BYTES,
     s: BYTES
