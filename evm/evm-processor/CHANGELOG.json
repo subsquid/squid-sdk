@@ -2,6 +2,26 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.29.0",
+      "tag": "@subsquid/evm-processor_v1.29.0",
+      "date": "Wed, 18 Mar 2026 10:55:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `setPrometheusServer()` method, deprecate `setPrometheusPort()`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.4.0` to `1.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^4.2.1` to `4.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.28.0",
       "tag": "@subsquid/evm-processor_v1.28.0",
       "date": "Wed, 21 Jan 2026 13:21:57 GMT",

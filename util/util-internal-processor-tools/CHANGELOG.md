@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Tue, 31 Dec 2024 14:45:43 GMT and should not be manually modified.
+This log was last generated on Wed, 18 Mar 2026 10:55:26 GMT and should not be manually modified.
+
+## 4.3.0
+Wed, 18 Mar 2026 10:55:26 GMT
+
+### Minor changes
+
+- add support for custom metrics sink
 
 ## 4.2.1
 Tue, 31 Dec 2024 14:45:43 GMT
