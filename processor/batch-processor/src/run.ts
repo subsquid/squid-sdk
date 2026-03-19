@@ -110,12 +110,15 @@ class Processor<B extends BlockBase, S> {
     private async initMetrics(state: HashAndHeight): Promise<void> {
         await this.updateProgressMetrics(await this.chainHeight.get(), state)
         let port = process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT
-        if (port == null) return
+        if (port == null && !this.metricsSink) return
         prom.collectDefaultMetrics()
         this.metrics.install()
         this.metricsSink?.register(prom.register);
-        let server = await createPrometheusServer(prom.register, port)
-        log.info(`prometheus metrics are served on port ${server.port}`)
+
+        if (port != null) {
+            let server = await createPrometheusServer(prom.register, port)
+            log.info(`prometheus metrics are served on port ${server.port}`)
+        }
     }
 
     private updateProgressMetrics(chainHeight: number, state: HashAndHeight, time?: bigint): void {
