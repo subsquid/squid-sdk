@@ -6,6 +6,7 @@ import {Database, HashAndHeight} from './database'
 import {DataSource} from './datasource'
 import {Metrics} from './metrics'
 import {formatHead, getItemsCount} from './util'
+import { Registry } from 'prom-client'
 
 
 const log = createLogger('sqd:batch-processor')
@@ -31,6 +32,14 @@ interface BlockBase {
     header: HashAndHeight
 }
 
+interface RunOptions {
+    metricsSink?: MetricsSink
+}
+
+export interface MetricsSink {
+    register(registry: Registry): void | Promise<void>
+}
+
 
 /**
  * Run data processing.
@@ -49,10 +58,11 @@ interface BlockBase {
 export function run<Block extends BlockBase, Store>(
     src: DataSource<Block>,
     db: Database<Store>,
-    dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<void>
+    dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<void>,
+    opts?: RunOptions
 ): void {
     runProgram(() => {
-        return new Processor(src, db, dataHandler).run()
+        return new Processor(src, db, dataHandler, opts).run()
     }, err => {
         log.fatal(err)
     })
@@ -68,7 +78,8 @@ class Processor<B extends BlockBase, S> {
     constructor(
         private src: DataSource<B>,
         private db: Database<S>,
-        private handler: (ctx: DataHandlerContext<B, S>) => Promise<void>
+        private handler: (ctx: DataHandlerContext<B, S>) => Promise<void>,
+        private readonly opts?: RunOptions
     ) {
         this.chainHeight = new Throttler(() => this.src.getFinalizedHeight(), 30_000)
     }
@@ -103,11 +114,15 @@ class Processor<B extends BlockBase, S> {
     private async initMetrics(state: HashAndHeight): Promise<void> {
         await this.updateProgressMetrics(await this.chainHeight.get(), state)
         let port = process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT
-        if (port == null) return
+        if (port == null && !this.opts?.metricsSink) return
         prom.collectDefaultMetrics()
         this.metrics.install()
-        let server = await createPrometheusServer(prom.register, port)
-        log.info(`prometheus metrics are served on port ${server.port}`)
+        this.opts?.metricsSink?.register(prom.register);
+
+        if (port != null) {
+            let server = await createPrometheusServer(prom.register, port)
+            log.info(`prometheus metrics are served on port ${server.port}`)
+        }
     }
 
     private updateProgressMetrics(chainHeight: number, state: HashAndHeight, time?: bigint): void {

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/batch-processor",
+      "comment": "Add custom metrics sink",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/batch-processor"
+}
