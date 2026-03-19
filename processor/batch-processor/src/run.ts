@@ -6,6 +6,7 @@ import {Database, HashAndHeight} from './database'
 import {DataSource} from './datasource'
 import {Metrics} from './metrics'
 import {formatHead, getItemsCount} from './util'
+import { Registry } from 'prom-client'
 
 
 const log = createLogger('sqd:batch-processor')
@@ -31,6 +32,10 @@ interface BlockBase {
     header: HashAndHeight
 }
 
+export interface MetricsSink {
+    register(registry: Registry): void | Promise<void>
+}
+
 
 /**
  * Run data processing.
@@ -49,10 +54,11 @@ interface BlockBase {
 export function run<Block extends BlockBase, Store>(
     src: DataSource<Block>,
     db: Database<Store>,
-    dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<void>
+    dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<void>,
+    metricsSink?: MetricsSink
 ): void {
     runProgram(() => {
-        return new Processor(src, db, dataHandler).run()
+        return new Processor(src, db, dataHandler, metricsSink).run()
     }, err => {
         log.fatal(err)
     })
@@ -68,7 +74,8 @@ class Processor<B extends BlockBase, S> {
     constructor(
         private src: DataSource<B>,
         private db: Database<S>,
-        private handler: (ctx: DataHandlerContext<B, S>) => Promise<void>
+        private handler: (ctx: DataHandlerContext<B, S>) => Promise<void>,
+        private metricsSink?: MetricsSink
     ) {
         this.chainHeight = new Throttler(() => this.src.getFinalizedHeight(), 30_000)
     }
@@ -106,6 +113,7 @@ class Processor<B extends BlockBase, S> {
         if (port == null) return
         prom.collectDefaultMetrics()
         this.metrics.install()
+        this.metricsSink?.register(prom.register);
         let server = await createPrometheusServer(prom.register, port)
         log.info(`prometheus metrics are served on port ${server.port}`)
     }
