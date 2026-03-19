@@ -32,6 +32,10 @@ interface BlockBase {
     header: HashAndHeight
 }
 
+interface RunOptions {
+    metricsSink?: MetricsSink
+}
+
 export interface MetricsSink {
     register(registry: Registry): void | Promise<void>
 }
@@ -55,10 +59,10 @@ export function run<Block extends BlockBase, Store>(
     src: DataSource<Block>,
     db: Database<Store>,
     dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<void>,
-    metricsSink?: MetricsSink
+    opts?: RunOptions
 ): void {
     runProgram(() => {
-        return new Processor(src, db, dataHandler, metricsSink).run()
+        return new Processor(src, db, dataHandler, opts).run()
     }, err => {
         log.fatal(err)
     })
@@ -75,7 +79,7 @@ class Processor<B extends BlockBase, S> {
         private src: DataSource<B>,
         private db: Database<S>,
         private handler: (ctx: DataHandlerContext<B, S>) => Promise<void>,
-        private metricsSink?: MetricsSink
+        private readonly opts?: RunOptions
     ) {
         this.chainHeight = new Throttler(() => this.src.getFinalizedHeight(), 30_000)
     }
@@ -110,10 +114,10 @@ class Processor<B extends BlockBase, S> {
     private async initMetrics(state: HashAndHeight): Promise<void> {
         await this.updateProgressMetrics(await this.chainHeight.get(), state)
         let port = process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT
-        if (port == null && !this.metricsSink) return
+        if (port == null && !this.opts?.metricsSink) return
         prom.collectDefaultMetrics()
         this.metrics.install()
-        this.metricsSink?.register(prom.register);
+        this.opts?.metricsSink?.register(prom.register);
 
         if (port != null) {
             let server = await createPrometheusServer(prom.register, port)
