@@ -709,8 +709,12 @@ export function mapRawBlock(raw: RawBlock, withTraces?: boolean, withStateDiffs?
         stateDiffs: withStateDiffs ? [] : undefined
     }
 
+    // It's a workaround for incorrect sorting in etherlink mainnet 38021770 block
+    let sortedTransactions = [...raw.transactions]
+    sortedTransactions.sort((a, b) => qty2Int(a.transactionIndex) - qty2Int(b.transactionIndex))
+
     let logIndex = 0
-    for (let tx of raw.transactions) {
+    for (let tx of sortedTransactions) {
         let transactionIndex = qty2Int(tx.transactionIndex)
         block.transactions.push(mapTransaction(tx, tx.receipt_))
 
