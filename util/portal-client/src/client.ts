@@ -399,9 +399,14 @@ class PortalStreamBuffer<B> {
 
     updateHead(head: {headNumber?: number; finalizedHeadNumber?: number; finalizedHeadHash?: string}) {
         this.headNumber = head.headNumber
-        this.finalizedHeadNumber = head.finalizedHeadNumber
-        this.finalizedHeadHash = head.finalizedHeadHash
         this.headUpdated = true
+
+        if (head.finalizedHeadNumber == null) return
+
+        if (this.finalizedHeadNumber == null || head.finalizedHeadNumber > this.finalizedHeadNumber) {
+            this.finalizedHeadNumber = head.finalizedHeadNumber
+            this.finalizedHeadHash = head.finalizedHeadHash
+        }
     }
 
     async put(blocks: B[], bytes: number) {
