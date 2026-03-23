@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/batch-processor",
+      "comment": "allow to set optional custom PrometheusServer in run()",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/batch-processor"
+}
