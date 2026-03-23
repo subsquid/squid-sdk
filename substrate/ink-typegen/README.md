@@ -23,7 +23,7 @@ squid-ink-typegen --abi erc20.json --output src/erc20.ts
 ```
 
 ### Decoding
-Generated fuctions allow to decode [scale](https://docs.substrate.io/reference/scale-codec/)-encoded data for 3 different kind of ink! objects:
+Generated functions allow to decode [scale](https://docs.substrate.io/reference/scale-codec/)-encoded data for 3 different kind of ink! objects:
 * `constructor` - it's arguments that the contract receives on instantiation
 * `message` - it's arguments that the contract receives on call execution
 * `event` - it's data that the contract emittes on call execution
