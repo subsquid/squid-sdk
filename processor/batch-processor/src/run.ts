@@ -1,10 +1,8 @@
 import {createLogger} from '@subsquid/logger'
 import {last, runProgram, Throttler} from '@subsquid/util-internal'
-import {PrometheusServer} from '@subsquid/util-internal-processor-tools'
-import type {Registry} from 'prom-client'
+import {PrometheusServer, RunnerMetrics} from '@subsquid/util-internal-processor-tools'
 import {Database, HashAndHeight} from './database'
 import {DataSource} from './datasource'
-import {Metrics} from './metrics'
 import {formatHead, getItemsCount} from './util'
 
 export {PrometheusServer}
@@ -67,7 +65,7 @@ export function run<Block extends BlockBase, Store>(
 
 
 class Processor<B extends BlockBase, S> {
-    private metrics = new Metrics()
+    private metrics = new RunnerMetrics([{range: {from: 0}}])
     private chainHeight: Throttler<number>
     private statusReportTimer?: any
     private hasStatusNews = false
@@ -109,17 +107,19 @@ class Processor<B extends BlockBase, S> {
     }
 
     private async initMetrics(state: HashAndHeight): Promise<void> {
-        await this.updateProgressMetrics(await this.chainHeight.get(), state)
+        this.updateProgressMetrics(await this.chainHeight.get(), state)
         let port = process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT
-        let prometheus = this.opts?.prometheus
-        if (port == null && !prometheus) return
 
-        let prometheusServer = prometheus ?? new PrometheusServer()
-        prometheusServer.addMetricsSink({
-            register: (registry: Registry) => {
-                this.metrics.install(registry)
-            }
-        })
+        let prometheusServer: PrometheusServer | undefined
+        if (this.opts?.prometheus != null) {
+            prometheusServer = this.opts.prometheus
+        } else if (port != null) {
+            prometheusServer = new PrometheusServer()
+            prometheusServer.setPort(port)
+        }
+        if (prometheusServer == null) return
+
+        prometheusServer.addRunnerMetrics(this.metrics)
         let listening = await prometheusServer.serve()
         log.info(`prometheus metrics are served on port ${listening.port}`)
     }
@@ -127,22 +127,7 @@ class Processor<B extends BlockBase, S> {
     private updateProgressMetrics(chainHeight: number, state: HashAndHeight, time?: bigint): void {
         this.metrics.setChainHeight(chainHeight)
         this.metrics.setLastProcessedBlock(state.height)
-        let left: number
-        let processed: number
-        if (this.src.getBlocksCountInRange) {
-            left = this.src.getBlocksCountInRange({
-                from: this.metrics.getLastProcessedBlock() + 1,
-                to: this.metrics.getChainHeight()
-            })
-            processed = this.src.getBlocksCountInRange({
-                from: 0,
-                to: this.metrics.getChainHeight()
-            }) - left
-        } else {
-            left = this.metrics.getChainHeight() - this.metrics.getLastProcessedBlock()
-            processed = this.metrics.getLastProcessedBlock()
-        }
-        this.metrics.updateProgress(processed, left, time)
+        this.metrics.updateProgress(time)
     }
 
     private async processBatch(prevHead: HashAndHeight, blocks: B[]): Promise<HashAndHeight> {
