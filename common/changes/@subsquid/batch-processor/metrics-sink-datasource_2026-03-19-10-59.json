@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/batch-processor",
-      "comment": "Add custom metrics sink",
+      "comment": "allow to set optional custom PrometheusServer in run()",
       "type": "minor"
     }
   ],
