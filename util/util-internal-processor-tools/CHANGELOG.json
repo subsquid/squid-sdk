@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-processor-tools",
   "entries": [
     {
+      "version": "4.4.0",
+      "tag": "@subsquid/util-internal-processor-tools_v4.4.0",
+      "date": "Mon, 23 Mar 2026 13:12:51 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow constructing RunnerMetrics with a custom blocksCountInRange(range) instead of only request ranges"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.3.0",
       "tag": "@subsquid/util-internal-processor-tools_v4.3.0",
       "date": "Wed, 18 Mar 2026 10:55:26 GMT",
