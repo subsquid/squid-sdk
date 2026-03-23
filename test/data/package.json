@@ -2,8 +2,7 @@
   "name": "data-test",
   "version": "0.0.0",
   "scripts": {
-    "build": "rm -rf lib && tsc",
-    "test": "./test.sh"
+    "build": "rm -rf lib && tsc"
   },
   "devDependencies": {
     "@subsquid/http-client": "^1.8.0",

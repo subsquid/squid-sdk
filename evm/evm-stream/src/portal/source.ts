@@ -7,7 +7,7 @@ import {
     ForkException,
     type BlockBatch,
 } from '@subsquid/util-internal-data-source'
-import {applyRangeBound, RangeRequestList, type Range, type RangeRequest} from '@subsquid/util-internal-range'
+import {applyRangeBound, FiniteRange, getSize, RangeRequestList, type Range, type RangeRequest} from '@subsquid/util-internal-range'
 import {Block, FieldSelection, type BlockHeader, type StateDiff, type Trace} from '../data/model'
 import {DataRequest} from '../data/request'
 import assert from 'assert'
@@ -33,6 +33,10 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
 
     getStream(opts?: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
         return this._getStream(opts, false)
+    }
+
+    getBlocksCountInRange(range: FiniteRange): number {
+        return getSize(this.requests.map(r => r.range), range)
     }
 
     private async *_getStream(

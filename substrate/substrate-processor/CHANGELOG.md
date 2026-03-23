@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+This log was last generated on Wed, 18 Mar 2026 10:55:26 GMT and should not be manually modified.
+
+## 8.7.0
+Wed, 18 Mar 2026 10:55:26 GMT
+
+### Minor changes
+
+- add `setPrometheusServer()` method, deprecate `setPrometheusPort()`
 
 ## 8.6.1
 Sat, 09 Aug 2025 06:10:24 GMT

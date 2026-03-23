@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "8.7.0",
+      "tag": "@subsquid/substrate-processor_v8.7.0",
+      "date": "Wed, 18 Mar 2026 10:55:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `setPrometheusServer()` method, deprecate `setPrometheusPort()`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.4.0` to `1.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^4.2.1` to `4.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "8.6.1",
       "tag": "@subsquid/substrate-processor_v8.6.1",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",

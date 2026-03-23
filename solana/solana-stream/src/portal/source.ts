@@ -7,7 +7,7 @@ import {
     ForkException,
     type BlockBatch,
 } from '@subsquid/util-internal-data-source'
-import {applyRangeBound, RangeRequestList, type RangeRequest} from '@subsquid/util-internal-range'
+import {applyRangeBound, FiniteRange, getSize, RangeRequestList, type RangeRequest} from '@subsquid/util-internal-range'
 import {
     Block,
     FieldSelection,
@@ -25,7 +25,7 @@ import assert from 'assert'
 export class PortalDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
     constructor(
         private client: PortalClient,
-        private requests: RangeRequestList<DataRequest>,
+        private requests: RangeRequestList<DataRequest<F>>,
         private opts?: {squidId?: string}
     ) {}
 
@@ -43,6 +43,10 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
 
     getStream(opts?: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
         return this._getStream(opts, false)
+    }
+
+    getBlocksCountInRange(range: FiniteRange): number {
+        return getSize(this.requests.map(r => r.range), range)
     }
 
     private async *_getStream(
@@ -119,7 +123,7 @@ function getHead(number?: number | undefined, hash?: string | undefined): BlockR
 }
 
 function mapRequest<F extends FieldSelection>(
-    req: RangeRequest<DataRequest>,
+    req: RangeRequest<DataRequest<F>>,
     parentBlockHash?: string
 ): solana.Query<MapFieldSelection<F>> {
     return {

@@ -2,6 +2,26 @@
   "name": "@subsquid/tron-processor",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/tron-processor_v0.1.0",
+      "date": "Wed, 18 Mar 2026 10:55:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `setPrometheusServer()` method, deprecate `setPrometheusPort()`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.4.0` to `1.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^4.2.1` to `4.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.5",
       "tag": "@subsquid/tron-processor_v0.0.5",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-http-server
 
-This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+This log was last generated on Tue, 17 Mar 2026 11:47:18 GMT and should not be manually modified.
+
+## 2.0.1
+Tue, 17 Mar 2026 11:47:18 GMT
+
+### Patches
+
+- fix duplicate charset value in prometheus content-type header
 
 ## 2.0.0
 Sun, 17 Mar 2024 23:20:20 GMT

@@ -3,7 +3,7 @@
   "version": "0.9.1",
   "description": "CLI for generating typescript types for solana",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -21,7 +21,7 @@
   "dependencies": {
     "@subsquid/borsh": "^0.3.0",
     "@subsquid/http-client": "^1.8.0",
-    "@subsquid/logger": "^1.4.0",
+    "@subsquid/logger": "^1.5.0",
     "@subsquid/rpc-client": "^4.14.0",
     "@subsquid/util-internal-code-printer": "^1.2.2",
     "@subsquid/util-internal-commander": "^1.4.0",

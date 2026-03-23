@@ -3,7 +3,7 @@ import {augmentBlock} from '@subsquid/evm-objects'
 import {DataSourceBuilder} from '@subsquid/evm-stream'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import * as erc20 from './abi/erc20'
-import {Transfer} from './model'
+import {Account, Transfer} from './model'
 
 
 const CONTRACT = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'.toLowerCase()
@@ -51,11 +51,11 @@ run(dataSource, new TypeormDatabase({supportHotBlocks: true}), async ctx => {
                 let {from, to, value} = erc20.events.Transfer.decode(log)
                 transfers.push(new Transfer({
                     id: log.id,
-                    blockNumber: augmented.header.number,
-                    timestamp: new Date(augmented.header.timestamp),
-                    tx: log.transactionHash!,
-                    from,
-                    to,
+                    blockNumber: block.header.number,
+                    timestamp: new Date(block.header.timestamp),
+                    tx: log.transactionHash,
+                    from: new Account({id: from}),
+                    to: new Account({id: to}),
                     amount: value
                 }))
             }

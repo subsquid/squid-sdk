@@ -1,9 +1,9 @@
 {
   "name": "@subsquid/logger",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Lightweight library for structured logging",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },

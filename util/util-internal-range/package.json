@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "description": "Interval arithmetic for block ranges",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },

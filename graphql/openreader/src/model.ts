@@ -112,6 +112,7 @@ export interface ListPropType {
 export interface FkPropType {
     kind: 'fk'
     entity: Name
+    disableConstraint?: boolean
 }
 
 

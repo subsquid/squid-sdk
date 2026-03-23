@@ -2,7 +2,7 @@ import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
 import {def} from '@subsquid/util-internal'
 import {BlockBatch, BlockRef, DataSource, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
-import {applyRangeBound, mergeRangeRequests, Range, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
+import {applyRangeBound, FiniteRange, mergeRangeRequests, Range, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Block, DEFAULT_FIELDS, FieldSelection} from './data/model'
 import {
@@ -22,7 +22,7 @@ interface BlockRange {
 }
 
 export class DataSourceBuilder<F extends FieldSelection = {}> {
-    private requests: RangeRequest<DataRequest>[] = []
+    private requests: RangeRequest<DataRequest<F>>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
     private archive?: PortalClient | PortalClientOptions
@@ -63,7 +63,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         return this as any
     }
 
-    private add(range: Range | undefined, request: DataRequest): void {
+    private add(range: Range | undefined, request: DataRequest<F>): void {
         this.requests.push({
             range: range || {from: 0},
             request,
@@ -130,7 +130,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         return this
     }
 
-    private getRequests(): RangeRequestList<DataRequest> {
+    private getRequests(): RangeRequestList<DataRequest<any>> {
         function concat<T>(a?: T[], b?: T[]): T[] | undefined {
             let result: T[] = []
             if (a) {
@@ -156,7 +156,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
 
         let fields = addDefaultFields(this.fields)
 
-        requests = requests.map(({range, request}) => {
+        let rangeRequests = requests.map(({range, request}) => {
             return {
                 range,
                 request: {
@@ -166,7 +166,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
             }
         })
 
-        return applyRangeBound(requests, this.blockRange)
+        return applyRangeBound(rangeRequests, this.blockRange)
     }
 
     build(): DataSource<Block<F>> {
@@ -211,7 +211,7 @@ function mergeDefaultFields<Props extends string>(
 export type GetDataSourceBlock<T> = T extends DataSource<infer B> ? B : never
 
 export class SolanaDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
-    constructor(private requests: RangeRequestList<DataRequest>, private portal: PortalClient) {}
+    constructor(private requests: RangeRequestList<DataRequest<F>>, private portal: PortalClient) {}
 
     getHead(): Promise<BlockRef | undefined> {
         return this.createArchive().getHead()
@@ -227,6 +227,10 @@ export class SolanaDataSource<F extends FieldSelection> implements DataSource<Bl
 
     getStream(opts?: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
         return this._getStream(opts, false)
+    }
+
+    getBlocksCountInRange(range: FiniteRange): number {
+        return this.createArchive().getBlocksCountInRange(range)
     }
 
     private _getStream(opts?: DataSourceStreamOptions, finalized?: boolean): AsyncIterable<BlockBatch<Block<F>>> {

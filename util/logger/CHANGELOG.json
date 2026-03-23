@@ -2,6 +2,18 @@
   "name": "@subsquid/logger",
   "entries": [
     {
+      "version": "1.5.0",
+      "tag": "@subsquid/logger_v1.5.0",
+      "date": "Wed, 18 Mar 2026 10:55:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add support for pino-like sinks"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.4.0",
       "tag": "@subsquid/logger_v1.4.0",
       "date": "Mon, 10 Feb 2025 07:46:03 GMT",

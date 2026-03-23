@@ -3,7 +3,7 @@
   "version": "0.0.3",
   "description": "Augmented Starknet data model",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },

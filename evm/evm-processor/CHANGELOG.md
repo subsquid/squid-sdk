@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Wed, 21 Jan 2026 13:21:57 GMT and should not be manually modified.
+This log was last generated on Wed, 18 Mar 2026 10:55:26 GMT and should not be manually modified.
+
+## 1.29.0
+Wed, 18 Mar 2026 10:55:26 GMT
+
+### Minor changes
+
+- add `setPrometheusServer()` method, deprecate `setPrometheusPort()`
 
 ## 1.28.0
 Wed, 21 Jan 2026 13:21:57 GMT

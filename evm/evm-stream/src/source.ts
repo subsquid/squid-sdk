@@ -2,7 +2,7 @@ import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
 import {def} from '@subsquid/util-internal'
 import {BlockBatch, BlockRef, DataSource, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
-import {applyRangeBound, mergeRangeRequests, Range, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
+import {applyRangeBound, FiniteRange, getSize, mergeRangeRequests, Range, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {PortalDataSource} from './portal/source'
 import {Block, DEFAULT_FIELDS, FieldSelection} from './data/model'
@@ -199,6 +199,10 @@ export class EVMDataSource<F extends FieldSelection> implements DataSource<Block
 
     getStream(opts?: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
         return this._getStream(opts, false)
+    }
+
+    getBlocksCountInRange(range: FiniteRange): number {
+        return this.createArchive().getBlocksCountInRange(range)
     }
 
     private _getStream(opts?: DataSourceStreamOptions, finalized?: boolean): AsyncIterable<BlockBatch<Block<F>>> {
