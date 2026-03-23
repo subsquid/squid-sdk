@@ -1,5 +1,5 @@
 import {Progress, Speed} from '@subsquid/util-internal-counters'
-import {Gauge} from 'prom-client'
+import {Gauge, Registry} from 'prom-client'
 import {timeInterval} from './util'
 
 
@@ -70,34 +70,40 @@ export class Metrics {
         `eta: ${timeInterval(this.getSyncEtaSeconds())}`
     }
 
-    install(): void {
+    install(registry?: Registry): void {
+        let registers = registry ? [registry] : undefined
         new Gauge({
             name: 'sqd_processor_chain_height',
             help: 'Chain height of the data source',
+            registers,
             collect: collect(() => this.getChainHeight())
         })
 
         new Gauge({
             name: 'sqd_processor_last_block',
             help: 'Last processed block',
+            registers,
             collect: collect(() => this.getLastProcessedBlock())
         })
 
         new Gauge({
             name: 'sqd_processor_mapping_blocks_per_second',
             help: 'Mapping performance',
+            registers,
             collect: collect(() => this.getMappingSpeed())
         })
 
         new Gauge({
             name: 'sqd_processor_sync_eta_seconds',
             help: 'Estimated time until all required blocks will be processed or until the chain height will be reached',
+            registers,
             collect: collect(() => this.getSyncEtaSeconds())
         })
 
         new Gauge({
             name: 'sqd_processor_sync_ratio',
             help: 'Percentage of processed blocks',
+            registers,
             collect: collect(() => this.getSyncRatio())
         })
     }

@@ -1,0 +1,178 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@subsquid/logger':
+        specifier: ^1.5.0
+        version: 1.5.0
+      '@subsquid/util-internal':
+        specifier: ^3.2.0
+        version: 3.2.0
+      '@subsquid/util-internal-counters':
+        specifier: ^1.3.2
+        version: 1.3.2
+      '@subsquid/util-internal-processor-tools':
+        specifier: ^4.3.0
+        version: 4.3.0
+      '@subsquid/util-internal-range':
+        specifier: ^0.3.0
+        version: 0.3.0
+      prom-client:
+        specifier: ^14.2.0
+        version: 14.2.0
+    devDependencies:
+      '@types/node':
+        specifier: ^18.18.14
+        version: 18.19.130
+      typescript:
+        specifier: ~5.5.4
+        version: 5.5.4
+
+packages:
+
+  '@subsquid/logger@1.5.0':
+    resolution: {integrity: sha512-UQvMk7eUen83S11cukNpPXUmOYkSYWSV3wvA0wuJQqdMWxRxQrAwfFgPBN4DYlCSAMxzik1W2aN6+NyBrb9wmg==}
+
+  '@subsquid/util-internal-binary-heap@1.0.0':
+    resolution: {integrity: sha512-88auuc8yNFmCZugmJSTYzS7WM/nN2obKGQCgrl8Jty5rJUFbqazGSi8icqftKhv6MPtUMJ3PSTRLiTFXAUGnAA==}
+
+  '@subsquid/util-internal-counters@1.3.2':
+    resolution: {integrity: sha512-GxpOIL36JXSo0KdOT7k6CsI4DY804rn/X7pTdfKhych0ReHaDghnwNyvgb7Njv9euEHWUt4MxXbfQ9YrbpPDng==}
+
+  '@subsquid/util-internal-hex@1.2.2':
+    resolution: {integrity: sha512-E43HVqf23jP5hvtWF9GsiN8luANjnJ1daR2SVTwaIUAYU/uNjv1Bi6tHz2uexlflBhyxAgBDmHgunXZ45wQTIw==}
+
+  '@subsquid/util-internal-http-server@2.0.1':
+    resolution: {integrity: sha512-qDR1k+vCoLTtQX0O9cXg5kFmBqHf4708EKQLqH3IaQ4XiK1d/QFBQy8cDNZxXA6WxmkwJy4u9jaCZcpd2BrBQw==}
+
+  '@subsquid/util-internal-json@1.2.3':
+    resolution: {integrity: sha512-H5qW5kG20IzVMpb7GhPbVRxGuACEf1DPIXE1+LNXYxt8t/GX4zQREQWHRvCB3lck+RORLJD3WJbQUtxN5UYB3Q==}
+
+  '@subsquid/util-internal-processor-tools@4.3.0':
+    resolution: {integrity: sha512-FzlZwuxh2Q0lUOu3ViTT6FIilrFhOEGf+4HauUP6BFMwhDcXNYfg2By0qkasr9sEd6gkqzB66QBHOxbbvDA1hA==}
+
+  '@subsquid/util-internal-prometheus-server@1.3.0':
+    resolution: {integrity: sha512-E/ch5mxBg1CIGPsuAqUAQ7vVln2oTPm+Rl+0WYweH8JeZ81rD01XAmxhDuZzZnMMMzfZd9W4NlE4mCXbhSY1Ug==}
+    peerDependencies:
+      prom-client: ^14.2.0
+
+  '@subsquid/util-internal-range@0.3.0':
+    resolution: {integrity: sha512-5/oDNW0TS66o4vWRzYSYXEfNnFRZsAzoi4pZNdPn7n1l+xV7ZTa0Y57XA6cP5hrWCaIYav4z1zECPngLDV/qeQ==}
+
+  '@subsquid/util-internal-squid-id@0.0.0':
+    resolution: {integrity: sha512-LyVZIGUbC87r+3VFBRiNOEycxvpkOEEjt5enY02iGl6MneLwq3m17D44xAkwfFj/U+t7GA76eeHIoI2ZkiQKog==}
+
+  '@subsquid/util-internal@3.2.0':
+    resolution: {integrity: sha512-foNCjOmZaP8MKMa9sNe2GXTjFSDM9UqA0I0C0/ZvCxM1lCmG3mxZb70f8Wyi7TePXC/eV8eARbIqFyz0GjQmzA==}
+
+  '@types/node@18.19.130':
+    resolution: {integrity: sha512-GRaXQx6jGfL8sKfaIDD6OupbIHBr9jv7Jnaml9tB7l4v068PAOXqfcujMMo5PhbIs6ggR1XODELqahT2R8v0fg==}
+
+  bintrees@1.0.2:
+    resolution: {integrity: sha512-VOMgTMwjAaUG580SXn3LacVgjurrbMme7ZZNYGSSV7mmtY6QQRh0Eg3pwIcntQ77DErK1L0NxkbetjcoXzVwKw==}
+
+  has-flag@4.0.0:
+    resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
+    engines: {node: '>=8'}
+
+  prom-client@14.2.0:
+    resolution: {integrity: sha512-sF308EhTenb/pDRPakm+WgiN+VdM/T1RaHj1x+MvAuT8UiQP8JmOEbxVqtkbfR4LrvOg5n7ic01kRBDGXjYikA==}
+    engines: {node: '>=10'}
+
+  stoppable@1.1.0:
+    resolution: {integrity: sha512-KXDYZ9dszj6bzvnEMRYvxgeTHU74QBFL54XKtP3nyMuJ81CFYtABZ3bAzL2EdFUaEwJOBOgENyFj3R7oTzDyyw==}
+    engines: {node: '>=4', npm: '>=6'}
+
+  supports-color@8.1.1:
+    resolution: {integrity: sha512-MpUEN2OodtUzxvKQl72cUF7RQ5EiHsGvSsVG0ia9c5RbWGL2CI4C7EpPS8UTBIplnlzZiNuV56w+FuNxy3ty2Q==}
+    engines: {node: '>=10'}
+
+  tdigest@0.1.2:
+    resolution: {integrity: sha512-+G0LLgjjo9BZX2MfdvPfH+MKLCrxlXSYec5DaPYP1fe6Iyhf0/fSmJ0bFiZ1F8BT6cGXl2LpltQptzjXKWEkKA==}
+
+  typescript@5.5.4:
+    resolution: {integrity: sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  undici-types@5.26.5:
+    resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
+
+snapshots:
+
+  '@subsquid/logger@1.5.0':
+    dependencies:
+      '@subsquid/util-internal-hex': 1.2.2
+      '@subsquid/util-internal-json': 1.2.3
+      supports-color: 8.1.1
+
+  '@subsquid/util-internal-binary-heap@1.0.0': {}
+
+  '@subsquid/util-internal-counters@1.3.2': {}
+
+  '@subsquid/util-internal-hex@1.2.2': {}
+
+  '@subsquid/util-internal-http-server@2.0.1':
+    dependencies:
+      '@subsquid/logger': 1.5.0
+      stoppable: 1.1.0
+
+  '@subsquid/util-internal-json@1.2.3':
+    dependencies:
+      '@subsquid/util-internal-hex': 1.2.2
+
+  '@subsquid/util-internal-processor-tools@4.3.0':
+    dependencies:
+      '@subsquid/logger': 1.5.0
+      '@subsquid/util-internal': 3.2.0
+      '@subsquid/util-internal-counters': 1.3.2
+      '@subsquid/util-internal-prometheus-server': 1.3.0(prom-client@14.2.0)
+      '@subsquid/util-internal-range': 0.3.0
+      '@subsquid/util-internal-squid-id': 0.0.0
+      prom-client: 14.2.0
+
+  '@subsquid/util-internal-prometheus-server@1.3.0(prom-client@14.2.0)':
+    dependencies:
+      '@subsquid/util-internal-http-server': 2.0.1
+      prom-client: 14.2.0
+
+  '@subsquid/util-internal-range@0.3.0':
+    dependencies:
+      '@subsquid/util-internal': 3.2.0
+      '@subsquid/util-internal-binary-heap': 1.0.0
+
+  '@subsquid/util-internal-squid-id@0.0.0': {}
+
+  '@subsquid/util-internal@3.2.0': {}
+
+  '@types/node@18.19.130':
+    dependencies:
+      undici-types: 5.26.5
+
+  bintrees@1.0.2: {}
+
+  has-flag@4.0.0: {}
+
+  prom-client@14.2.0:
+    dependencies:
+      tdigest: 0.1.2
+
+  stoppable@1.1.0: {}
+
+  supports-color@8.1.1:
+    dependencies:
+      has-flag: 4.0.0
+
+  tdigest@0.1.2:
+    dependencies:
+      bintrees: 1.0.2
+
+  typescript@5.5.4: {}
+
+  undici-types@5.26.5: {}

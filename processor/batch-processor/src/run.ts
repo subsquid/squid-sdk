@@ -1,12 +1,13 @@
 import {createLogger} from '@subsquid/logger'
 import {last, runProgram, Throttler} from '@subsquid/util-internal'
-import {createPrometheusServer} from '@subsquid/util-internal-prometheus-server'
-import * as prom from 'prom-client'
+import {PrometheusServer} from '@subsquid/util-internal-processor-tools'
+import type {Registry} from 'prom-client'
 import {Database, HashAndHeight} from './database'
 import {DataSource} from './datasource'
 import {Metrics} from './metrics'
 import {formatHead, getItemsCount} from './util'
-import { Registry } from 'prom-client'
+
+export {PrometheusServer}
 
 
 const log = createLogger('sqd:batch-processor')
@@ -33,11 +34,7 @@ interface BlockBase {
 }
 
 interface RunOptions {
-    metricsSink?: MetricsSink
-}
-
-export interface MetricsSink {
-    register(registry: Registry): void | Promise<void>
+    prometheus?: PrometheusServer
 }
 
 
@@ -114,15 +111,17 @@ class Processor<B extends BlockBase, S> {
     private async initMetrics(state: HashAndHeight): Promise<void> {
         await this.updateProgressMetrics(await this.chainHeight.get(), state)
         let port = process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT
-        if (port == null && !this.opts?.metricsSink) return
-        prom.collectDefaultMetrics()
-        this.metrics.install()
-        this.opts?.metricsSink?.register(prom.register);
+        let prometheus = this.opts?.prometheus
+        if (port == null && !prometheus) return
 
-        if (port != null) {
-            let server = await createPrometheusServer(prom.register, port)
-            log.info(`prometheus metrics are served on port ${server.port}`)
-        }
+        let prometheusServer = prometheus ?? new PrometheusServer()
+        prometheusServer.addMetricsSink({
+            register: (registry: Registry) => {
+                this.metrics.install(registry)
+            }
+        })
+        let listening = await prometheusServer.serve()
+        log.info(`prometheus metrics are served on port ${listening.port}`)
     }
 
     private updateProgressMetrics(chainHeight: number, state: HashAndHeight, time?: bigint): void {
