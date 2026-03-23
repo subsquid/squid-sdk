@@ -57,15 +57,15 @@ export function run<Block extends BlockBase, Store>(
     opts?: RunOptions
 ): void {
     runProgram(() => {
-        return new Processor(src, db, dataHandler, opts).run()
+            return new Processor(src, db, dataHandler, opts).run()
     }, err => {
-        log.fatal(err)
+            log.fatal(err)
     })
 }
 
 
 class Processor<B extends BlockBase, S> {
-    private metrics = new RunnerMetrics([{range: {from: 0}}])
+    private metrics: RunnerMetrics
     private chainHeight: Throttler<number>
     private statusReportTimer?: any
     private hasStatusNews = false
@@ -76,6 +76,9 @@ class Processor<B extends BlockBase, S> {
         private handler: (ctx: DataHandlerContext<B, S>) => Promise<void>,
         private readonly opts?: RunOptions
     ) {
+        this.metrics = new RunnerMetrics(
+            src.getBlocksCountInRange?.bind(src) ?? ((range) => Math.max(0, range.to - range.from + 1)),
+        )
         this.chainHeight = new Throttler(() => this.src.getFinalizedHeight(), 30_000)
     }
 
@@ -143,15 +146,15 @@ class Processor<B extends BlockBase, S> {
         let mappingStartTime = process.hrtime.bigint()
 
         await this.db.transact({
-            prevHead,
-            nextHead,
+                prevHead,
+                nextHead,
             isOnTop
         }, store => {
-            return this.handler({
-                store,
-                blocks,
+                return this.handler({
+                    store,
+                    blocks,
                 isHead: isOnTop
-            })
+                })
         })
 
         let mappingEndTime = process.hrtime.bigint()

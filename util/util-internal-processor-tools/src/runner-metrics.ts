@@ -1,6 +1,5 @@
-import {def} from '@subsquid/util-internal'
 import {Progress, Speed} from '@subsquid/util-internal-counters'
-import {assertRangeList, getSize, Range, RangeList} from '@subsquid/util-internal-range'
+import {assertRangeList, FiniteRange, getSize, Range} from '@subsquid/util-internal-range'
 import {timeInterval} from './util'
 
 
@@ -10,8 +9,19 @@ export class RunnerMetrics {
     private mappingSpeed = new Speed({windowSize: 5})
     private mappingItemSpeed = new Speed({windowSize: 5})
     private blockProgress = new Progress({initialValue: 0})
+    private blocksCountInRange: (range: FiniteRange) => number
 
-    constructor(private requests: {range: Range}[]) {}
+    constructor(requests: {range: Range}[])
+    constructor(blocksCountInRange: (range: FiniteRange) => number)
+    constructor(requestsOrCounter: {range: Range}[] | ((range: FiniteRange) => number)) {
+        if (typeof requestsOrCounter === 'function') {
+            this.blocksCountInRange = requestsOrCounter
+        } else {
+            let ranges = requestsOrCounter.map(r => r.range)
+            assertRangeList(ranges)
+            this.blocksCountInRange = range => getSize(ranges, range)
+        }
+    }
 
     setChainHeight(height: number): void {
         this.chainHeight = Math.max(height, this.lastBlock)
@@ -38,25 +48,16 @@ export class RunnerMetrics {
         this.mappingItemSpeed.push(batchItemSize || 1, batchMappingStartTime, batchMappingEndTime)
     }
 
-    @def
-    private getRequestedBlockRanges(): RangeList {
-        let ranges = this.requests.map(req => req.range)
-        assertRangeList(ranges)
-        return ranges
+    private get head(): number {
+        return Math.max(this.chainHeight, this.lastBlock, 0)
     }
 
     getEstimatedTotalBlocksCount(): number {
-        return getSize(this.getRequestedBlockRanges(), {
-            from: 0,
-            to: Math.max(this.chainHeight, this.lastBlock)
-        })
+        return this.blocksCountInRange({from: 0, to: this.head})
     }
 
     getEstimatedBlocksLeft(): number {
-        let count = getSize(this.getRequestedBlockRanges(), {
-            from: this.lastBlock,
-            to: Math.max(this.chainHeight, this.lastBlock)
-        })
+        let count = this.blocksCountInRange({from: Math.max(this.lastBlock, 0), to: this.head})
         return count == 1 ? 0 : count
     }
 
