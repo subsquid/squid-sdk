@@ -6,7 +6,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/batch-processor": "^0.0.0",
+    "@subsquid/batch-processor": "^0.1.0",
     "@subsquid/borsh": "^0.3.0",
     "@subsquid/logger": "^1.5.0",
     "@subsquid/solana-objects": "^0.0.5",
