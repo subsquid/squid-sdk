@@ -11,6 +11,8 @@ export class Metrics {
     private hotBlocksStoredBlocksGauge: Gauge
     private blockLagHistogram: Histogram
     private blockProcessingTimeHistogram: Histogram
+    private queriesCounter: Counter
+    private activeWorkersGauge: Gauge
 
     constructor() {
         this.hotBlocksLastBlockGauge = new Gauge({
@@ -57,6 +59,25 @@ export class Metrics {
             registers: [this.registry]
         });
 
+        this.queriesCounter = new Counter({
+            name: 'sqd_hotblocks_queries_total',
+            help: 'Total number of queries by type',
+            labelNames: ['type'],
+            registers: [this.registry],
+        })
+
+        this.activeWorkersGauge = new Gauge({
+            name: 'sqd_hotblocks_active_workers',
+            help: 'Number of currently active worker threads',
+            registers: [this.registry],
+        })
+
+        // Initialize so metrics appear on /metrics immediately
+        this.queriesCounter.inc({type: 'cache'}, 0)
+        this.queriesCounter.inc({type: 'backfill'}, 0)
+        this.queriesCounter.inc({type: 'error'}, 0)
+        this.activeWorkersGauge.set(0)
+
         collectDefaultMetrics({register: this.registry})
     }
 
@@ -94,6 +115,18 @@ export class Metrics {
     trackProcessingTime(startTime: number) {
         const duration = Date.now() - startTime;
         this.blockProcessingTimeHistogram.observe(duration);
+    }
+
+    incQuery(type: 'cache' | 'backfill' | 'error') {
+        this.queriesCounter.inc({type})
+    }
+
+    incActiveWorkers() {
+        this.activeWorkersGauge.inc()
+    }
+
+    decActiveWorkers() {
+        this.activeWorkersGauge.dec()
     }
 }
 
