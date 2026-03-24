@@ -7,13 +7,13 @@
   },
   "dependencies": {
     "@subsquid/http-client": "^1.8.0",
-    "graphql-ws": "^5.14.2",
+    "graphql-ws": "^5.16.2",
     "expect": "^29.7.0",
-    "ws": "^8.14.2"
+    "ws": "^8.20.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
-    "@types/ws": "^8.5.10",
-    "typescript": "~5.5.4"
+    "@types/node": "~24.0.15",
+    "@types/ws": "^8.18.1",
+    "typescript": "5.5.4"
   }
 }

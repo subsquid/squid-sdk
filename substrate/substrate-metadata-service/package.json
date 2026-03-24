@@ -28,7 +28,7 @@
     "prom-client": "^14.2.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@types/node": "~24.0.15",
+    "typescript": "5.5.4"
   }
 }

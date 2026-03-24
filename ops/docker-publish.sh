@@ -1,51 +1,29 @@
 #!/bin/bash
 
-release=$1
-tag=$2
-custom_tag=$3
-images=("${@:4}")
+set -euo pipefail
 
-function publish() {
-    pkg_path=$1
-    img="$(basename "$pkg_path")"
-    pkg_name="$(node ops/pkg-name.js "$pkg_path")"
-    pkg_version="$(node ops/pkg-version.js "$pkg_path")" || exit 1
-    major=$(echo "$pkg_version" | cut -d '.' -f1) || exit 1
+pkg_path=$1
+img="${2:-$(basename "$pkg_path")}"
 
-    git tag -a "${pkg_name}_v${pkg_version}" -m "${pkg_name} v${pkg_version}" --force
+platform="${PLATFORM:-linux/amd64}"
 
-    tags="-t subsquid/$img:$pkg_version -t subsquid/$img:$major -t subsquid/$img:$tag -t subsquid/$img:$release"
-    
-    if [ -n "$custom_tag" ]; then
-        tags="-t subsquid/$img:$custom_tag"
-    fi
-
-    docker buildx build . --platform "linux/amd64,linux/arm64" \
-        --push \
-        --target "$img" \
-        --label "org.opencontainers.image.url=https://github.com/subsquid/squid-sdk/tree/$(git rev-parse HEAD)/${pkg_path}" \
-        $tags || exit 1
-}
-
-all_images=(
-    "solana/solana-dump"
-    "solana/solana-ingest"
-    "tron/tron-dump"
-    "tron/tron-ingest"
-    "substrate/substrate-dump"
-    "substrate/substrate-ingest"
-    "substrate/substrate-metadata-service"
-    "fuel/fuel-dump"
-    "fuel/fuel-ingest"
-)
-
-if [ ${#images[@]} -eq 0 ]; then
-    images=("${all_images[@]}")
+cache_args=""
+if [ -n "${BUILDX_CACHE_FROM:-}" ]; then
+    cache_args+="--cache-from ${BUILDX_CACHE_FROM} "
+fi
+if [ -n "${BUILDX_CACHE_TO:-}" ]; then
+    cache_args+="--cache-to ${BUILDX_CACHE_TO} "
 fi
 
-for image in "${images[@]}"; do
-    echo "Publishing $image..."
-    publish "$image" || exit 1
-done
+docker buildx build . --platform "$platform" \
+    --target "$img" \
+    --label "org.opencontainers.image.url=https://github.com/subsquid/squid-sdk/tree/$(git rev-parse HEAD)/${pkg_path}" \
+    --output "type=image,name=docker.io/subsquid/$img,push-by-digest=true,name-canonical=true,push=true" \
+    --metadata-file /tmp/metadata.json \
+    $cache_args || exit 1
 
-#git push origin "HEAD:release/${release}" --follow-tags --verbose
+digest=$(jq -r '."containerimage.digest"' /tmp/metadata.json)
+mkdir -p "/tmp/digests/$img"
+touch "/tmp/digests/$img/${digest#sha256:}"
+
+echo "Built $img for $platform: $digest"

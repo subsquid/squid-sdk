@@ -1,6 +1,6 @@
 import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
 import {def} from '@subsquid/util-internal'
-import {BlockBatch, BlockRef, DataSource, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
+import {BlockBatch, BlockRef, DataSource, StreamRequest} from '@subsquid/util-internal-data-source'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, FiniteRange, getSize, mergeRangeRequests, Range, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
@@ -185,30 +185,30 @@ export type GetDataSourceBlock<T> = T extends DataSource<infer B> ? B : never
 export class EVMDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
     constructor(private requests: RangeRequestList<DataRequest<F>>, private portal: PortalClient) {}
 
-    getHead(): Promise<BlockRef | undefined> {
+    getHead(): Promise<BlockRef> {
         return this.createArchive().getHead()
     }
 
-    getFinalizedHead(): Promise<BlockRef | undefined> {
+    getFinalizedHead(): Promise<BlockRef> {
         return this.createArchive().getFinalizedHead()
     }
 
-    getFinalizedStream(opts: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
-        return this._getStream(opts, true)
+    getFinalizedStream(req: StreamRequest): AsyncIterable<BlockBatch<Block<F>>> {
+        return this._getStream(req, true)
     }
 
-    getStream(opts?: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
-        return this._getStream(opts, false)
+    getStream(req: StreamRequest): AsyncIterable<BlockBatch<Block<F>>> {
+        return this._getStream(req, false)
     }
 
     getBlocksCountInRange(range: FiniteRange): number {
         return this.createArchive().getBlocksCountInRange(range)
     }
 
-    private _getStream(opts?: DataSourceStreamOptions, finalized?: boolean): AsyncIterable<BlockBatch<Block<F>>> {
+    private _getStream(req: StreamRequest, finalized?: boolean): AsyncIterable<BlockBatch<Block<F>>> {
         let archive = this.createArchive()
 
-        return finalized ? archive.getFinalizedStream(opts) : archive.getStream(opts)
+        return finalized ? archive.getFinalizedStream(req) : archive.getStream(req)
     }
 
     @def

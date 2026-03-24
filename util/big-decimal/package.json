@@ -14,6 +14,6 @@
   "main": "bigdecimal.js",
   "types": "bigdecimal.d.ts",
   "dependencies": {
-    "big.js":"~6.2.1"
+    "big.js": "~6.2.2"
   }
 }

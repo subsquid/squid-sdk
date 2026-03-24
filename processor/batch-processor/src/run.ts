@@ -117,7 +117,8 @@ class Processor<B extends BlockBase, S> {
 
             head = getStateHead(state)
             try {
-                for await (let data of getStream({after: head})) {
+                const req = {from: (head?.number ?? -1) + 1, parentHash: head?.hash}
+                for await (let data of getStream(req)) {
                     state = await this.processBatch(state, data, await chainHeight.get())
                 }
                 break // Stream completed successfully, exit loop

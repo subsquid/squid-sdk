@@ -323,6 +323,7 @@ export class HttpClient {
         }
         if (error instanceof HttpResponse) {
             switch(error.status) {
+                case 408:
                 case 429:
                 case 502:
                 case 503:
@@ -475,7 +476,11 @@ export function isHttpConnectionError(err: unknown): boolean {
     return nodeFetch.isLoaded
         && err instanceof nodeFetch.FetchError
         && err.type == 'system'
-        && (err.message.startsWith('request to') || err.code == 'ERR_STREAM_PREMATURE_CLOSE')
+        && (
+            err.message.startsWith('request to') ||
+            err.code == 'ERR_STREAM_PREMATURE_CLOSE' ||
+            err.code == 'ECONNRESET'
+        )
 }
 
 

@@ -20,10 +20,10 @@
     "@subsquid/util-internal-hex": "^1.2.2"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
-    "ethers": "^6.9.0",
-    "typescript": "~5.5.4",
-    "viem": "^2.8.14",
-    "vitest": "^1.4.0"
+    "@types/node": "~24.0.15",
+    "ethers": "^6.16.0",
+    "typescript": "5.5.4",
+    "viem": "^2.47.6",
+    "vitest": "^1.6.1"
   }
 }

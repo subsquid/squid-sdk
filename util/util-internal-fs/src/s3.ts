@@ -4,6 +4,7 @@ import {
     ListObjectsV2Command,
     ObjectIdentifier,
     PutObjectCommand,
+    RequestPayer,
     S3Client
 } from '@aws-sdk/client-s3'
 import assert from 'assert'
@@ -17,6 +18,7 @@ export interface S3FsOptions {
     root: string
     client: S3Client
     eventEmitter?: EventEmitter
+    requestPayer?: RequestPayer
 }
 
 
@@ -24,11 +26,13 @@ export class S3Fs implements Fs {
     public readonly client: S3Client
     private root: string
     private eventEmitter?: EventEmitter
+    private requestPayer?: RequestPayer
 
     constructor(options: S3FsOptions) {
         this.client = options.client
         this.root = Upath.normalizeTrim(options.root)
         this.eventEmitter = options.eventEmitter
+        this.requestPayer = options.requestPayer
         splitPath(this.root)
     }
 
@@ -76,7 +80,8 @@ export class S3Fs implements Fs {
                     Bucket,
                     Prefix,
                     Delimiter: '/',
-                    ContinuationToken
+                    ContinuationToken,
+                    RequestPayer: this.requestPayer
                 })
             )
             this.eventEmitter?.emit('S3FsOperation', 'ListObjectsV2')
@@ -167,7 +172,8 @@ export class S3Fs implements Fs {
         let [Bucket, Key] = splitPath(this.resolve([path]))
         let res = await this.client.send(new GetObjectCommand({
             Bucket,
-            Key
+            Key,
+            RequestPayer: this.requestPayer
         }))
         this.eventEmitter?.emit('S3FsOperation', 'GetObject')
         assert(res.Body instanceof Readable)

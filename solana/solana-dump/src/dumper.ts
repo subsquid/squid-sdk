@@ -1,13 +1,22 @@
-import {Block, ingestFinalizedBlocks, Rpc} from '@subsquid/solana-rpc'
-import {def} from '@subsquid/util-internal'
+import {Block as RpcBlock, RemoteRpcPool, SolanaRpcDataSource} from '@subsquid/solana-rpc'
+import {addErrorContext, assertNotNull, def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
-import assert from 'assert'
+
+
+interface Block {
+    hash: string
+    number: number
+    parentNumber: number
+    block: RpcBlock['block']
+}
 
 
 interface Options extends DumperOptions {
     strideConcurrency: number
     strideSize: number
     maxConfirmationAttempts: number
+    assertLogMessagesNotNull: boolean
+    validateChainContinuity: boolean
 }
 
 
@@ -16,16 +25,12 @@ export class SolanaDumper extends Dumper<Block, Options> {
         program.description('Data archiving tool for Solana')
         removeOption(program, 'endpointMaxBatchCallSize')
         removeOption(program, 'endpointCapacity')
+        removeOption(program, 'rateLimit')
         program.option('--stride-size <N>', 'Maximum size of getBlock batch call', positiveInt, 5)
         program.option('--stride-concurrency <N>', 'Maximum number of pending getBlock batch calls', positiveInt, 5)
         program.option('--max-confirmation-attempts <N>', 'Maximum number of confirmation attempts', positiveInt, 10)
-    }
-
-    @def
-    protected options(): Options {
-        let options = this.program().parse().opts<Options>()
-        options.endpointCapacity = options.strideConcurrency + 5
-        return options
+        program.option('--assert-log-messages-not-null', 'Check if tx.meta.logMessages is not null', false)
+        program.option('--validate-chain-continuity', 'Check if block parent hash matches previous block hash', false)
     }
 
     protected fixUnsafeIntegers(): boolean {
@@ -44,7 +49,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
         return 8192
     }
 
-    protected getPrevBlockHash(block: Block): string {
+    protected getParentBlockHash(block: Block): string {
         return block.block.previousBlockhash
     }
 
@@ -52,56 +57,60 @@ export class SolanaDumper extends Dumper<Block, Options> {
         return Number(block.block.blockTime) || 0
     }
 
+    protected validateChainContinuity(): boolean {
+        return this.options().validateChainContinuity
+    }
+
     @def
-    private solanaRpc(): Rpc {
-        return new Rpc(this.rpc(), 0, this.options().maxConfirmationAttempts)
+    private dataSource(): SolanaRpcDataSource {
+        let options = this.options()
+
+        let rpc = new RemoteRpcPool(options.strideConcurrency, {
+            url: options.endpoint,
+            capacity: Number.MAX_SAFE_INTEGER,
+            retryAttempts: Number.MAX_SAFE_INTEGER,
+            requestTimeout: 30_000
+        })
+
+        return new SolanaRpcDataSource({
+            rpc,
+            req: {transactions: true, rewards: true},
+            strideSize: this.options().strideSize,
+            strideConcurrency: this.options().strideConcurrency,
+            maxConfirmationAttempts: this.options().maxConfirmationAttempts,
+            validateChainContinuity: this.options().validateChainContinuity,
+        })
+    }
+
+    protected async getLastFinalizedBlockNumber(): Promise<number> {
+        let head = await this.dataSource().getFinalizedHead()
+        return head.number
     }
 
     protected async* getBlocks(range: Range): AsyncIterable<Block[]> {
-        let blockStream = ingestFinalizedBlocks({
-            rpc: this.solanaRpc(),
-            requests: [{
-                range,
-                request: {
-                    rewards: true,
-                    transactions: true
+        let options = this.options()
+
+        for await (let batch of this.dataSource().getFinalizedStream(range)) {
+            yield batch.blocks.map(block => {
+                if (options.assertLogMessagesNotNull) {
+                    let transactions = assertNotNull(block.block.transactions)
+                    for (let tx of transactions) {
+                        if (tx.meta.err == null && tx.meta.logMessages == null) {
+                            throw addErrorContext(new Error('tx.meta.logMessages is null'), {
+                                blockNumber: block.slot,
+                                blockHash: block.block.blockhash,
+                                transactionHash: tx.transaction.signatures[0]
+                            })
+                        }
+                    }
                 }
-            }],
-            headPollInterval: 10_000,
-            strideSize: this.options().strideSize,
-            strideConcurrency: this.options().strideConcurrency,
-            concurrentFetchThreshold: 100
-        })
-
-        let prev: Block | undefined
-
-        for await (let batch of blockStream) {
-            for (let block of batch) {
-                if (prev) {
-                    assert(block.block.parentSlot === prev.slot)
-                    assert(block.block.previousBlockhash === prev.block.blockhash)
-                    assert(block.height === prev.height + 1)
+                return {
+                    hash: block.block.blockhash,
+                    number: block.slot,
+                    parentNumber: block.block.parentSlot,
+                    block: block.block
                 }
-                prev = block
-                checkLogMessages(block)
-            }
-            yield batch
-        }
-    }
-
-    protected getFinalizedHeight(): Promise<number> {
-        return this.solanaRpc().getFinalizedHeight()
-    }
-}
-
-
-function checkLogMessages(block: Block): void {
-    // Seems there were issues with logging during the ancient times
-    if (block.height < 130000000) return
-
-    for (let tx of block.block.transactions!) {
-        if (tx.meta.logMessages == null && tx.meta.err == null) {
-            throw new Error(`Log message recording was not enabled for transaction ${tx.transaction.signatures[0]} at slot ${block.slot}`)
+            })
         }
     }
 }

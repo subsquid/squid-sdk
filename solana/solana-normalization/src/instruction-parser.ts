@@ -5,6 +5,7 @@ import {Instruction, LogMessage} from './data'
 import {Message, parseLogMessage} from './log-parser'
 import {TransactionContext} from './transaction-context'
 
+
 const PROGRAMS_MISSING_INVOKE_LOG = new Set([
     'AddressLookupTab1e1111111111111111111111111',
     'BPFLoader1111111111111111111111111111111111',
@@ -27,6 +28,7 @@ export class ParsingError {
 
     constructor(public msg: string) {}
 }
+
 
 export class MessageStream {
     private messages: Message[]
@@ -204,7 +206,7 @@ export class InstructionTreeTraversal {
     private takeInstructionMessages(ins: Instruction, pos: number): void {
         while (this.messages.unfinished) {
             let msg = this.messages.current
-            switch (msg.kind) {
+            switch(msg.kind) {
                 case 'log':
                 case 'data':
                 case 'other':
@@ -241,7 +243,7 @@ export class InstructionTreeTraversal {
     private dropNonInvokeMessages(): void {
         while (this.messages.unfinished) {
             let msg = this.messages.current
-            switch (msg.kind) {
+            switch(msg.kind) {
                 case 'log':
                 case 'data':
                 case 'cu':

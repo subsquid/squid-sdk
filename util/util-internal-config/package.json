@@ -17,10 +17,10 @@
   },
   "dependencies": {
     "@exodus/schemasafe": "^1.3.0",
-    "jsonc-parser": "^3.2.0"
+    "jsonc-parser": "^3.3.1"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@types/node": "~24.0.15",
+    "typescript": "5.5.4"
   }
 }

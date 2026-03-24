@@ -19,15 +19,17 @@
     "@subsquid/logger": "^1.5.0",
     "@subsquid/solana-rpc-data": "^0.2.1",
     "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/util-internal-data-source": "^0.0.0",
     "@subsquid/util-internal-range": "^0.3.0",
-    "@subsquid/util-internal-validation": "^0.8.0"
+    "@subsquid/util-internal-validation": "^0.8.0",
+    "@subsquid/util-internal-worker-thread": "^0.0.0"
   },
   "peerDependencies": {
     "@subsquid/rpc-client": "^4.14.0"
   },
   "devDependencies": {
     "@subsquid/rpc-client": "^4.14.0",
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@types/node": "~24.0.15",
+    "typescript": "5.5.4"
   }
 }

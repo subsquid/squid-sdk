@@ -51,7 +51,6 @@
      * The default value is "local".
      */
     // "pnpmStore": "local",
-
     /**
      * If true, then Rush will add the "--strict-peer-dependencies" option when invoking PNPM.
      * This causes "rush install" to fail if there are unsatisfied peer dependencies, which is
@@ -63,7 +62,6 @@
      * It is strongly recommended to set strictPeerDependencies=true.
      */
     // "strictPeerDependencies": true,
-
     /**
      * Configures the strategy used to select versions during installation.
      *
@@ -77,7 +75,6 @@
      * will recalculate all version selections.
      */
     // "resolutionStrategy": "fast",
-
     /**
      * If true, then `rush install` will report an error if manual modifications
      * were made to the PNPM shrinkwrap file without running "rush update" afterwards.
@@ -95,7 +92,6 @@
      * The default value is false.
      */
     // "preventManualShrinkwrapChanges": true,
-
     /**
      * If true, then `rush install` will use the PNPM workspaces feature to perform the
      * install.
@@ -247,14 +243,12 @@
     //   "[^@]+@users\\.noreply\\.github\\.com",
     //   "travis@example\\.org"
     // ],
-
     /**
      * When Rush reports that the address is malformed, the notice can include an example
      * of a recommended email.  Make sure it conforms to one of the allowedEmailRegExps
      * expressions.
      */
     // "sampleEmail": "mrexample@users.noreply.github.com",
-
     /**
      * The commit message to use when committing changes during 'rush publish'.
      *
@@ -263,7 +257,6 @@
      * in the commit message, and then customize Rush's message to contain that string.
      */
     // "versionBumpCommitMessage": "Bump versions [skip ci]",
-
     /**
      * The commit message to use when committing changes during 'rush version'.
      *
@@ -420,6 +413,60 @@
     //   // "versionPolicyName": ""
     // },
     {
+      "packageName": "@subsquid/bitcoin-dump",
+      "projectFolder": "bitcoin/bitcoin-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-ingest",
+      "projectFolder": "bitcoin/bitcoin-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-rpc",
+      "projectFolder": "bitcoin/bitcoin-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-normalization",
+      "projectFolder": "bitcoin/bitcoin-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-data-service",
+      "projectFolder": "bitcoin/bitcoin-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-dump",
+      "projectFolder": "evm/evm-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-ingest",
+      "projectFolder": "evm/evm-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "projectFolder": "evm/evm-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-normalization",
+      "projectFolder": "evm/evm-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-processor",
       "projectFolder": "evm/evm-processor",
       "shouldPublish": true,
@@ -452,6 +499,12 @@
     {
       "packageName": "@subsquid/evm-typegen",
       "projectFolder": "evm/evm-typegen",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-data-service",
+      "projectFolder": "evm/evm-data-service",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -498,6 +551,12 @@
     {
       "packageName": "@subsquid/borsh",
       "projectFolder": "solana/borsh",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-data-service",
+      "projectFolder": "solana/solana-data-service",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -706,6 +765,54 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/hyperliquid-fills-data",
+      "projectFolder": "hyperliquid/hyperliquid-fills-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-data-service",
+      "projectFolder": "hyperliquid/hyperliquid-fills-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-ingest",
+      "projectFolder": "hyperliquid/hyperliquid-fills-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-normalization",
+      "projectFolder": "hyperliquid/hyperliquid-fills-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-data",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-data-service",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-ingest",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-normalization",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/typeorm-codegen",
       "projectFolder": "typeorm/typeorm-codegen",
       "shouldPublish": true,
@@ -760,11 +867,6 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "raw-archive-validator",
-      "projectFolder": "util/raw-archive-validator",
-      "shouldPublish": false
-    },
-    {
       "packageName": "@subsquid/rpc-client",
       "projectFolder": "util/rpc-client",
       "shouldPublish": true,
@@ -773,12 +875,6 @@
     {
       "packageName": "@subsquid/util-internal",
       "projectFolder": "util/util-internal",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/util-internal-data-source",
-      "projectFolder": "util/util-internal-data-source",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -821,6 +917,18 @@
     {
       "packageName": "@subsquid/util-internal-counters",
       "projectFolder": "util/util-internal-counters",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-data-service",
+      "projectFolder": "util/util-internal-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-data-source",
+      "projectFolder": "util/util-internal-data-source",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -915,6 +1023,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-worker-thread",
+      "projectFolder": "util/util-internal-worker-thread",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-naming",
       "projectFolder": "util/util-naming",
       "shouldPublish": true,
@@ -977,21 +1091,21 @@
       "projectFolder": "test/solana-example",
       "shouldPublish": false
     },
-//    {
-//      "packageName": "fuel-indexer",
-//      "projectFolder": "test/fuel-indexer",
-//      "shouldPublish": false
-//    },
-//    {
-//      "packageName": "karura-erc20",
-//      "projectFolder": "test/karura-erc20",
-//      "shouldPublish": false
-//    },
-//    {
-//      "packageName": "gear-nft",
-//      "projectFolder": "test/gear-nft",
-//      "shouldPublish": false
-//    },
+    // {
+    //   "packageName": "fuel-indexer",
+    //   "projectFolder": "test/fuel-indexer",
+    //   "shouldPublish": false
+    // },
+    //    {
+    //      "packageName": "karura-erc20",
+    //      "projectFolder": "test/karura-erc20",
+    //      "shouldPublish": false
+    //    },
+    //    {
+    //      "packageName": "gear-nft",
+    //      "projectFolder": "test/gear-nft",
+    //      "shouldPublish": false
+    //    },
     {
       "packageName": "astar-erc20",
       "projectFolder": "test/astar-erc20",

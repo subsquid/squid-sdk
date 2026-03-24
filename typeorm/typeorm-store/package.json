@@ -22,16 +22,16 @@
     "@subsquid/util-internal": "^3.2.0"
   },
   "peerDependencies": {
-    "typeorm": "^0.3.17",
+    "typeorm": "^0.3.28",
     "@subsquid/big-decimal": "^1.0.0"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.7",
-    "@types/node": "^18.18.14",
-    "@types/pg": "^8.10.9",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "~24.0.15",
+    "@types/pg": "^8.20.0",
     "expect": "^29.7.0",
-    "mocha": "^10.7.0",
-    "pg": "^8.11.3",
-    "typescript": "~5.5.4"
+    "mocha": "^10.8.2",
+    "pg": "^8.20.0",
+    "typescript": "5.5.4"
   }
 }

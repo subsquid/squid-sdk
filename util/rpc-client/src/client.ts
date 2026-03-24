@@ -1,6 +1,6 @@
 import {HttpError, HttpTimeoutError, isHttpConnectionError} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
-import {addErrorContext, def, last, splitParallelWork, wait} from '@subsquid/util-internal'
+import {addErrorContext, def, last, removeArrayItem, splitParallelWork, wait} from '@subsquid/util-internal'
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
@@ -61,7 +61,6 @@ export interface RpcClientOptions {
     headers?: HttpHeaders
     log?: Logger | null
 }
-
 
 export interface RpcMetrics {
     url: string
@@ -220,7 +219,7 @@ export class RpcClient {
     }
 
     removeNotificationListener(cb: (msg: RpcNotification) => void): void {
-        removeItem(this.notificationListeners, cb)
+        removeArrayItem(this.notificationListeners, cb)
     }
 
     addResetListener(cb: (reason: Error) => void): void {
@@ -228,7 +227,7 @@ export class RpcClient {
     }
 
     removeResetListener(cb: (reason: Error) => void): void {
-        removeItem(this.resetListeners, cb)
+        removeArrayItem(this.resetListeners, cb)
     }
 
     subscribe<T>(sub: Subscription<T>): SubscriptionHandle {
@@ -396,7 +395,6 @@ export class RpcClient {
         promise.then(result => {
             const responseTimeSeconds = (Date.now() - startTime) / 1000
             this.totalResponseTime += responseTimeSeconds
-            
             this.requestsServed += 1
             if (this.backoffEpoch == backoffEpoch) {
                 this.connectionErrorsInRow = 0
@@ -521,6 +519,7 @@ export class RpcClient {
         if (err instanceof HttpTimeoutError) return true
         if (err instanceof HttpError) {
             switch(err.response.status) {
+                case 408:
                 case 429:
                 case 502:
                 case 503:
@@ -591,12 +590,9 @@ function isExecutionTimeoutError(err: unknown): boolean {
     return err instanceof RpcError && /execution timeout/i.test(err.message)
 }
 
+
 function isRequestTimedOutError(err: unknown): boolean {
     return err instanceof RpcError && /request.*timed out/i.test(err.message)
 }
 
-function removeItem<T>(arr: T[], item: T): void {
-    let index = arr.indexOf(item)
-    if (index < 0) return
-    arr.splice(index, 1)
-}
+

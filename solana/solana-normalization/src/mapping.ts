@@ -1,26 +1,28 @@
 import type * as rpc from '@subsquid/solana-rpc-data'
-import type {Base58Bytes} from '@subsquid/solana-rpc-data'
-import {addErrorContext, unexpectedCase} from '@subsquid/util-internal'
+import {addErrorContext, assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Balance, Block, BlockHeader, Instruction, LogMessage, Reward, TokenBalance, Transaction} from './data'
-import {InvokeMessage, InvokeResultMessage, LogTruncatedMessage, Message, parseLogMessage} from './log-parser'
-import {Journal, TransactionContext} from './transaction-context'
 import {InstructionTreeTraversal, MessageStream, ParsingError} from './instruction-parser'
+import {LogTruncatedMessage} from './log-parser'
+import {Journal, TransactionContext} from './transaction-context'
 
 
-export function mapRpcBlock(src: rpc.Block, journal: Journal): Block {
+export {Journal}
+
+
+export function mapRpcBlock(slot: number, src: rpc.GetBlock, journal: Journal): Block {
     let header: BlockHeader = {
-        hash: src.hash,
-        height: src.height,
-        number: src.slot,
-        parentNumber: src.block.parentSlot,
-        parentHash: src.block.previousBlockhash,
-        timestamp: src.block.blockTime ?? 0
+        hash: src.blockhash,
+        height: assertNotNull(src.blockHeight, '.blockHeight is not available'),
+        number: slot,
+        parentNumber: src.parentSlot,
+        parentHash: src.previousBlockhash,
+        timestamp: src.blockTime ?? 0
     }
 
-    let items = new ItemMapping(journal, src.block)
+    let items = new ItemMapping(journal, src)
 
-    let rewards = src.block.rewards?.map(s => {
+    let rewards = src.rewards?.map(s => {
         let reward: Reward = {
             pubkey: s.pubkey,
             lamports: BigInt(s.lamports),
@@ -152,6 +154,7 @@ function mapTransaction(transactionIndex: number, src: rpc.Transaction): Transac
         signatures: src.transaction.signatures,
         err: src.meta.err,
         computeUnitsConsumed: BigInt(src.meta.computeUnitsConsumed ?? 0),
+        costUnits: BigInt(src.meta.costUnits ?? 0),
         fee: BigInt(src.meta.fee),
         loadedAddresses: src.meta.loadedAddresses ?? {readonly: [], writable: []},
         hasDroppedLogMessages: false

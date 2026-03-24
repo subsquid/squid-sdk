@@ -3,8 +3,8 @@ import {maybeLast} from '@subsquid/util-internal'
 import {
     BlockRef,
     DataSource,
-    DataSourceStreamOptions,
     ForkException,
+    StreamRequest,
     type BlockBatch,
 } from '@subsquid/util-internal-data-source'
 import {applyRangeBound, FiniteRange, getSize, RangeRequestList, type RangeRequest} from '@subsquid/util-internal-range'
@@ -29,20 +29,24 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
         private opts?: {squidId?: string}
     ) {}
 
-    getHead(): Promise<BlockRef | undefined> {
-        return this.client.getHead({headers: this.getHeaders()})
+    async getHead(): Promise<BlockRef> {
+        let head = await this.client.getHead({headers: this.getHeaders()})
+        assert(head != null, 'head is not available')
+        return head
     }
 
-    getFinalizedHead(): Promise<BlockRef | undefined> {
-        return this.client.getFinalizedHead({headers: this.getHeaders()})
+    async getFinalizedHead(): Promise<BlockRef> {
+        let head = await this.client.getFinalizedHead({headers: this.getHeaders()})
+        assert(head != null, 'finalized head is not available')
+        return head
     }
 
-    getFinalizedStream(opts?: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
-        return this._getStream(opts, true)
+    getFinalizedStream(req: StreamRequest): AsyncIterable<BlockBatch<Block<F>>> {
+        return this._getStream(req, true)
     }
 
-    getStream(opts?: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
-        return this._getStream(opts, false)
+    getStream(req: StreamRequest): AsyncIterable<BlockBatch<Block<F>>> {
+        return this._getStream(req, false)
     }
 
     getBlocksCountInRange(range: FiniteRange): number {
@@ -50,14 +54,16 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
     }
 
     private async *_getStream(
-        opts?: DataSourceStreamOptions,
+        streamReq: StreamRequest,
         finalized?: boolean
     ): AsyncIterable<BlockBatch<Block<F>>> {
-        let requests = applyRangeBound(this.requests, opts?.after ? {from: opts?.after.number + 1} : undefined)
+        let requests = applyRangeBound(this.requests, {from: streamReq.from})
         if (requests.length === 0) return
 
         let streamOptions = {request: {headers: this.getHeaders()}}
-        let parentBlock = opts?.after
+        let parentBlock: BlockRef | undefined = streamReq.parentHash
+            ? {number: streamReq.from - 1, hash: streamReq.parentHash}
+            : undefined
 
         for (let i = 0; i < requests.length; i++) {
             let req = requests[i]

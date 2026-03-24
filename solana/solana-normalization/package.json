@@ -13,7 +13,8 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "node --test lib/mapping.test.js"
   },
   "dependencies": {
     "@subsquid/solana-rpc-data": "^0.2.1",
@@ -21,7 +22,9 @@
     "@subsquid/util-internal-validation": "^0.8.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@subsquid/util-internal-json": "^1.2.3",
+    "@subsquid/util-internal-json-fix-unsafe-integers": "^0.0.0",
+    "@types/node": "~24.0.15",
+    "typescript": "5.5.4"
   }
 }

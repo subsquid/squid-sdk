@@ -8,9 +8,10 @@ export interface BlockRef {
 }
 
 
-export interface DataSourceStreamOptions {
-    after?: BlockRef
-    stopOnHead?: boolean
+export interface StreamRequest {
+    from: number
+    to?: number
+    parentHash?: string
 }
 
 
@@ -20,15 +21,17 @@ export interface BlockBatch<B> {
 }
 
 
+export type BlockStream<B> = AsyncIterable<BlockBatch<B>>
+
+
 export interface DataSource<B> {
-    getHead(): Promise<BlockRef | undefined>
+    getFinalizedHead(): Promise<BlockRef>
 
-    getFinalizedHead(): Promise<BlockRef | undefined>
+    getFinalizedStream(req: StreamRequest): BlockStream<B>
 
-    // FIXME: maybe it's better to pass it ias an option to `getStream`
-    getFinalizedStream(req: DataSourceStreamOptions): AsyncIterable<BlockBatch<B>>
+    getHead(): Promise<BlockRef>
 
-    getStream(req: DataSourceStreamOptions): AsyncIterable<BlockBatch<B>>
+    getStream(req: StreamRequest): BlockStream<B>
 
     getBlocksCountInRange?(range: FiniteRange): number
 }
