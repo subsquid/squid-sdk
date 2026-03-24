@@ -39,6 +39,7 @@ export interface ServerOptions {
     validationMaxErrors?: number
     dumbCache?: DumbRedisCacheOptions | DumbInMemoryCacheOptions
     dialect?: Dialect
+    isolationLevel?: 'SERIALIZABLE' | 'REPEATABLE READ' | 'READ COMMITTED'
 }
 
 
@@ -244,6 +245,7 @@ export class Server {
                     pool,
                     pool,
                     this.options.subscriptionPollInterval,
+                    this.options.isolationLevel,
                     this.options.log
                 )
             }
