@@ -70,6 +70,7 @@ export function createHttpApp(service: DataService): HttpApp {
 
             if (res.head || res.tail?.length) {
                 ctx.response.setHeader('content-encoding', useZstd ? 'zstd' : 'gzip')
+                ctx.response.setHeader('vary', 'Accept-Encoding')
             }
 
             if (res.head) {
