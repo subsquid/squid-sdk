@@ -31,7 +31,7 @@
     "@subsquid/util-internal-worker-thread": "^0.0.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "~24.0.0",
     "typescript": "5.5.4"
   }
 }
