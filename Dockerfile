@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG node=node:22-slim
+ARG node=node:24-slim
 FROM ${node} AS node
 
 

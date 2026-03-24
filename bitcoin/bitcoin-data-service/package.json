@@ -33,7 +33,7 @@
     "source-map-support": "^0.5.21"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "~24.0.0",
     "@types/source-map-support": "^0.5.10",
     "typescript": "5.5.4"
   }
