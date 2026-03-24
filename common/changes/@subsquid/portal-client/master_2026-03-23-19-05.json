@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "ignore finalized head regression on portal stream",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}
