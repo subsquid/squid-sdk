@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-stream",
+      "comment": "init",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-stream"
+}
