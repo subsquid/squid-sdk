@@ -21,6 +21,7 @@ runProgram(async () => {
     program.option('--max-response-size <nodes>', 'max response size measured in nodes', nat)
     program.option('--sql-statement-timeout <ms>', 'sql statement timeout in ms', nat)
     program.option('--validation-max-errors <count>', 'max validation errors', nat)
+    program.addOption(new Option('--isolation-level <level>', 'transaction isolation level').choices(['SERIALIZABLE', 'REPEATABLE READ', 'READ COMMITTED']))
     program.option('--subscriptions', 'enable gql subscriptions')
     program.option('--subscription-poll-interval <ms>', 'subscription poll interval in ms', nat, 5000)
     program.option('--subscription-max-response-size <nodes>', 'max response size measured in nodes', nat)
@@ -46,6 +47,7 @@ runProgram(async () => {
         validationMaxErrors?: number
         tsNode?: boolean
         dialect?: Dialect
+        isolationLevel: 'SERIALIZABLE' | 'REPEATABLE READ' | 'READ COMMITTED'
     }
 
     await registerTsNodeIfRequired()

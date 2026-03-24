@@ -36,6 +36,7 @@ export interface ServerOptions {
     subscriptionMaxResponseNodes?: number
     validationMaxErrors?: number
     cache?: KeyValueCache
+    isolationLevel?: 'SERIALIZABLE' | 'REPEATABLE READ' | 'READ COMMITTED'
 }
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
@@ -54,12 +55,15 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
     let schemaBuilder = await getSchemaBuilder(options)
     let schema = schemaBuilder.build()
 
+    let isolationLevel = options.isolationLevel ?? 'SERIALIZABLE'
+
     let context = () => {
         let openreader: OpenreaderContext = new PoolOpenreaderContext(
             dbType,
             connection,
             subscriptionConnection,
             subscriptionPollInterval,
+            isolationLevel,
             log
         )
 
