@@ -19,7 +19,7 @@ function acceptsZstd(acceptEncoding?: string): boolean {
 
 async function toGzip(block: Block): Promise<Uint8Array> {
     let raw = await zstdDecompress(block.jsonLineZstd)
-    return gzip(raw, {level: 3})
+    return gzip(raw, {level: 1})
 }
 
 

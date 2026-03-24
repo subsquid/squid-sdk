@@ -1,6 +1,5 @@
-import {Logger, createLogger} from '@subsquid/logger'
-import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
-import {RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
+import { Logger, createLogger } from '@subsquid/logger'
+import { CallOptions, RetryError, RpcClient, RpcError, RpcProtocolError } from '@subsquid/rpc-client'
 import {
     array,
     BYTES,
@@ -11,7 +10,7 @@ import {
     object,
     Validator
 } from '@subsquid/util-internal-validation'
-import {assertNotNull, groupBy, last} from '@subsquid/util-internal'
+import { addErrorContext, groupBy, last } from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     GetBlock,
@@ -24,9 +23,9 @@ import {
     Transaction,
     Log
 } from './rpc-data'
-import {Block, DataRequest, Qty, Bytes, Bytes32} from './types'
-import {qty2Int, toQty, getTxHash} from './util'
-import {ChainUtils} from './chain-utils'
+import { Block, DataRequest, Qty, Bytes, Bytes32 } from './types'
+import { qty2Int, toQty, getTxHash } from './util'
+import { ChainUtils } from './chain-utils'
 
 
 export type Commitment = 'finalized' | 'latest'
@@ -40,6 +39,7 @@ export interface RpcOptions {
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
     verifyLogsBloom?: boolean
+    useGasUsedForReceiptsRoot?: boolean
 }
 
 
@@ -51,6 +51,7 @@ export class Rpc {
     private verifyTxRoot?: boolean
     private verifyReceiptsRoot?: boolean
     private verifyLogsBloom?: boolean
+    private useGasUsedForReceiptsRoot?: boolean
     private log: Logger
     private receiptsMethod?: GetReceiptsMethod
     private chainUtils?: ChainUtils
@@ -63,6 +64,7 @@ export class Rpc {
         this.verifyTxRoot = options.verifyTxRoot
         this.verifyReceiptsRoot = options.verifyReceiptsRoot
         this.verifyLogsBloom = options.verifyLogsBloom
+        this.useGasUsedForReceiptsRoot = options.useGasUsedForReceiptsRoot
         this.log = createLogger('sqd:evm-rpc')
     }
 
@@ -70,11 +72,11 @@ export class Rpc {
         return this.client.getConcurrency()
     }
 
-    call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
+    call<T = any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
         return this.client.call(method, params, options)
     }
 
-    batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions<T>): Promise<T[]> {
+    batchCall<T = any>(batch: { method: string, params?: any[] }[], options?: CallOptions<T>): Promise<T[]> {
         return this.client.batchCall(batch, options)
     }
 
@@ -120,9 +122,6 @@ export class Rpc {
 
         await this.addRequestedData(chain, req)
 
-        for (let i = 0; i < chain.length; i++) {
-            if (chain[i]._isInvalid) return chain.slice(0, i)
-        }
         return chain
     }
 
@@ -135,8 +134,8 @@ export class Rpc {
         let results = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: info => {
-                // Avalanche
-                if (/cannot query unfinalized data/i.test(info.message)) return null
+                if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
                 throw new RpcError(info)
             }
         })
@@ -148,35 +147,51 @@ export class Rpc {
             if (block == null) {
                 blocks[i] = null
             } else {
-                if (this.verifyBlockHash) {
-                    assert(block.hash == utils.calculateBlockHash(block))
-                }
-
-                if (this.verifyTxRoot && withTransactions) {
-                    let transactions = block.transactions as Transaction[]
-                    let txRoot = await utils.calculateTransactionsRoot(transactions)
-                    assert(block.transactionsRoot == txRoot)
-                }
-
-                if (this.verifyTxSender && withTransactions) {
-                    for (let tx of block.transactions) {
-                        let transaction = tx as Transaction
-                        let sender = utils.recoverTxSender(transaction)
-                        if (sender != null) {
-                            assert(sender == transaction.from)
-                        }
-                    }
-                }
-
-                blocks[i] = {
-                    number: qty2Int(block.number),
-                    hash: block.hash,
-                    block
+                try {
+                    blocks[i] = await this.mapBlock(block, withTransactions, utils)
+                } catch (err: any) {
+                    throw addErrorContext(err, {
+                        blockNumber: qty2Int(block.number),
+                        blockHash: block.hash
+                    })
                 }
             }
         }
 
         return blocks
+    }
+
+    private async mapBlock(block: GetBlock, withTransactions: boolean, utils: ChainUtils): Promise<Block> {
+        if (this.verifyBlockHash) {
+            let blockHash = utils.calculateBlockHash(block)
+            assert.equal(block.hash, blockHash, 'failed to verify block hash')
+        }
+
+        if (this.verifyTxRoot && withTransactions) {
+            let txRoot = await utils.calculateTransactionsRoot(block)
+            assert.equal(block.transactionsRoot, txRoot, 'failed to verify transactions root')
+        }
+
+        if (this.verifyTxSender && withTransactions) {
+            for (let tx of block.transactions) {
+                let transaction = tx as Transaction
+                try {
+                    let sender = utils.recoverTxSender(transaction)
+                    if (sender == null) continue
+                    assert.equal(transaction.from, sender, 'failed to verify transaction sender')
+                } catch (err: any) {
+                    throw addErrorContext(err, {
+                        transactionIndex: qty2Int(transaction.transactionIndex),
+                        transactionHash: transaction.hash
+                    })
+                }
+            }
+        }
+        return {
+            number: qty2Int(block.number),
+            hash: block.hash,
+            block
+        }
     }
 
     private async addRequestedData(blocks: Block[], req?: DataRequest) {
@@ -221,8 +236,21 @@ export class Rpc {
             let block = blocks[i]
             let logs = logsByBlock.get(block.hash) || []
 
-            if (this.verifyLogsBloom) {
-                assert(block.block.logsBloom == utils.calculateLogsBloom(block.block, logs))
+            try {
+                let logIndex = 0
+                for (let log of logs) {
+                    assert.equal(qty2Int(log.logIndex), logIndex++)
+                }
+
+                if (this.verifyLogsBloom) {
+                    let logsBloom = utils.calculateLogsBloom(block.block, logs)
+                    assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
+                }
+            } catch (err: any) {
+                throw addErrorContext(err, {
+                    blockNumber: block.number,
+                    blockHash: block.hash
+                })
             }
 
             block.logs = logs
@@ -243,7 +271,7 @@ export class Rpc {
 
     private async addReceipts(blocks: Block[]) {
         let method = await this.getReceiptsMethod()
-        switch(method) {
+        switch (method) {
             case 'eth_getBlockReceipts':
                 return this.addReceiptsByBlock(blocks)
             default:
@@ -258,7 +286,11 @@ export class Rpc {
         }))
 
         let results = await this.reduceBatchOnRetry(call, {
-            validateResult: getResultValidator(nullable(array(Receipt)))
+            validateResult: getResultValidator(nullable(array(Receipt))),
+            validateError: info => {
+                if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
+                throw new RpcError(info)
+            }
         })
 
         let utils = await this.getChainUtils()
@@ -267,6 +299,7 @@ export class Rpc {
             let receipts = results[i]
             if (receipts == null) {
                 block._isInvalid = true
+                block._errorMessage = 'eth_getBlockReceipts returned null'
                 continue
             }
 
@@ -277,20 +310,35 @@ export class Rpc {
                 logs.push(...receipt.logs)
                 if (receipt.blockHash !== block.block.hash) {
                     block._isInvalid = true
+                    block._errorMessage = 'eth_getBlockReceipts returned receipts for a different block'
                 }
             }
 
-            if (this.verifyLogsBloom) {
-                assert(block.block.logsBloom == utils.calculateLogsBloom(block.block, logs))
-            }
+            try {
+                let logIndex = 0
+                for (let log of logs) {
+                    assert.equal(qty2Int(log.logIndex), logIndex++)
+                }
 
-            if (this.verifyReceiptsRoot) {
-                let root = await utils.calculateReceiptsRoot(receipts)
-                assert(block.block.receiptsRoot == root)
+                if (this.verifyLogsBloom) {
+                    let logsBloom = utils.calculateLogsBloom(block.block, logs)
+                    assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
+                }
+
+                if (this.verifyReceiptsRoot) {
+                    let root = await utils.calculateReceiptsRoot(block.block, receipts)
+                    assert.equal(block.block.receiptsRoot, root, 'failed to verify receipts root')
+                }
+            } catch (err: any) {
+                throw addErrorContext(err, {
+                    blockNumber: block.number,
+                    blockHash: block.hash
+                })
             }
 
             if (block.block.transactions.length !== receipts.length) {
                 block._isInvalid = true
+                block._errorMessage = 'got invalid number of receipts from eth_getBlockReceipts'
             }
         }
     }
@@ -318,20 +366,34 @@ export class Rpc {
         let utils = await this.getChainUtils()
         for (let block of blocks) {
             let receipts = receiptsByBlock.get(block.hash) || []
+            let logs = receipts.flatMap(r => r.logs)
 
             if (receipts.length !== block.block.transactions.length) {
                 block._isInvalid = true
+                block._errorMessage = 'failed to get receipts for all transactions'
                 continue
             }
 
-            if (this.verifyLogsBloom) {
-                let logs = receipts.flatMap(r => r.logs)
-                assert(block.block.logsBloom == utils.calculateLogsBloom(block.block, logs))
-            }
+            try {
+                let logIndex = 0
+                for (let log of logs) {
+                    assert.equal(qty2Int(log.logIndex), logIndex++)
+                }
 
-            if (this.verifyReceiptsRoot) {
-                let root = await utils.calculateReceiptsRoot(receipts)
-                assert(block.block.receiptsRoot == root)
+                if (this.verifyLogsBloom) {
+                    let logsBloom = utils.calculateLogsBloom(block.block, logs)
+                    assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
+                }
+
+                if (this.verifyReceiptsRoot) {
+                    let root = await utils.calculateReceiptsRoot(block.block, receipts)
+                    assert.equal(block.block.receiptsRoot, root, 'failed to verify receipts root')
+                }
+            } catch (err: any) {
+                throw addErrorContext(err, {
+                    blockNumber: block.number,
+                    blockHash: block.hash
+                })
             }
 
             block.receipts = receipts
@@ -339,6 +401,7 @@ export class Rpc {
     }
 
     private async addTraces(blocks: Block[], req: DataRequest) {
+        blocks = blocks.filter(block => block.number != 0) // genesis is not traceable
         let tasks = []
         let replayTraces: TraceReplayTraces = {}
 
@@ -386,6 +449,7 @@ export class Rpc {
             if (frames.length == 0) {
                 if (block.block.transactions.length > 0) {
                     block._isInvalid = true
+                    block._errorMessage = 'missing traces for some transactions'
                 }
                 continue
             }
@@ -393,6 +457,7 @@ export class Rpc {
             for (let frame of frames) {
                 if (frame.blockHash !== block.block.hash) {
                     block._isInvalid = true
+                    block._errorMessage = 'trace_block returned a trace of a different block'
                     break
                 }
 
@@ -429,7 +494,11 @@ export class Rpc {
 
         let results = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(array(DebugStateDiffResult)),
-            validateError: captureNotFound
+            validateError: info => {
+                if (info.message.includes('not found')) return null
+                if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                throw new RpcError(info)
+            }
         })
 
         let utils = await this.getChainUtils()
@@ -438,6 +507,7 @@ export class Rpc {
             let diffs = results[i]
             if (diffs == null) {
                 block._isInvalid = true
+                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
             } else if (block.block.transactions.length === diffs.length) {
                 block.debugStateDiffs = diffs
             } else {
@@ -469,13 +539,17 @@ export class Rpc {
                     // Moonbeam quirk
                     for (let i = 0; i < result.length; i++) {
                         if (!('result' in result[i])) {
-                            result[i] = {result: result[i]}
+                            result[i] = { result: result[i] }
                         }
                     }
                 }
                 return validateFrameResult(result)
             },
-            validateError: captureNotFound
+            validateError: info => {
+                if (info.message.includes('not found')) return null
+                if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                throw new RpcError(info)
+            }
         })
 
         let utils = await this.getChainUtils()
@@ -484,6 +558,7 @@ export class Rpc {
             let frames = results[i]
             if (frames == null) {
                 block._isInvalid = true
+                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
             } else if (block.block.transactions.length === frames.length) {
                 block.debugFrames = frames
             } else {
@@ -492,7 +567,7 @@ export class Rpc {
         }
     }
 
-    private matchDebugTrace<T extends {txHash?: Bytes | null}>(
+    private matchDebugTrace<T extends { txHash?: Bytes | null }>(
         type: string,
         block: Block,
         trace: T[],
@@ -549,12 +624,13 @@ export class Rpc {
                         assert(txHash == null || txHash === frame.transactionHash)
                         txHash = txHash || frame.transactionHash
                     }
-                    assert(txHash, "Can't match transaction replay with its transaction")
+                    assert(txHash, "can't match transaction replay with its transaction")
                     rep.transactionHash = txHash
                 }
 
                 if (!txs.has(rep.transactionHash)) {
                     block._isInvalid = true
+                    block._errorMessage = 'trace_replayBlockTransactions returned a trace of a different block'
                 }
             }
 
@@ -562,11 +638,11 @@ export class Rpc {
         }
     }
 
-    private async reduceBatchOnRetry<T=any>(batch: {method: string, params?: any[]}[], options: CallOptions<T>): Promise<T[]>  {
+    private async reduceBatchOnRetry<T = any>(batch: { method: string, params?: any[] }[], options: CallOptions<T>): Promise<T[]> {
         if (batch.length <= 1) return this.batchCall(batch, options)
 
-        let result = await this.batchCall(batch, {...options, retryAttempts: 0}).catch(err => {
-            if (this.client.isConnectionError(err) || err instanceof RpcProtocolError) {
+        let result = await this.batchCall(batch, { ...options, retryAttempts: 0 }).catch(err => {
+            if (this.isRetryableError(err)) {
                 this.log.warn(err, 'will retry request with reduced batch')
             } else {
                 throw err
@@ -586,7 +662,20 @@ export class Rpc {
     private async getChainUtils(): Promise<ChainUtils> {
         if (this.chainUtils) return this.chainUtils
         let chainId: Qty = await this.call('eth_chainId')
-        return this.chainUtils = new ChainUtils(chainId)
+        return this.chainUtils = new ChainUtils(chainId, {
+            useGasUsedForReceiptsRoot: this.useGasUsedForReceiptsRoot
+        })
+    }
+
+    isRetryableError(err: any): boolean {
+        if (this.client.isConnectionError(err)) return true
+        if (err instanceof RpcProtocolError) return true
+        if (err instanceof RpcError && err.message == 'response too large') return true
+        if (err instanceof RpcError && err.code == 429) return true
+        if (err instanceof RpcError && err.code == -32000) return true
+        // Goldsky will sometimes respond with HTTP 200 and error inside response.error.data
+        if (err instanceof RpcError && err.data && typeof err.data === 'string' && err.data.includes('429 Too Many Requests')) return true
+        return false
     }
 }
 
@@ -604,7 +693,7 @@ type GetReceiptsMethod = 'eth_getTransactionReceipt' | 'eth_getBlockReceipts'
 
 
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
-    return function(result: unknown) {
+    return function (result: unknown) {
         let err = validator.validate(result)
         if (err) {
             throw new DataValidationError(`server returned unexpected result: ${err.toString()}`)
@@ -612,12 +701,6 @@ function getResultValidator<V extends Validator>(validator: V): (result: unknown
             return result as any
         }
     }
-}
-
-
-function captureNotFound(info: RpcErrorInfo): null {
-    if (info.message.includes('not found')) return null
-    throw new RpcError(info)
 }
 
 

@@ -132,6 +132,7 @@ export class ChainFixer {
                     this.ingest.commitment,
                     this.ingest.req,
                     range,
+                    this.ingest.validateChainContinuity,
                     this.ingest.maxConfirmationAttempts
                 )
                 return {blocks}
@@ -152,7 +153,7 @@ export class ChainFixer {
         for (let i = offset; i < batch.blocks.length; i++) {
             let b = batch.blocks[i]
             if (this.from > b.block.parentSlot) {
-                if (this.parentHash && this.parentHash !== b.block.previousBlockhash) throw new ForkException(
+                if (this.ingest.validateChainContinuity && this.parentHash && this.parentHash !== b.block.previousBlockhash) throw new ForkException(
                     this.parentHash,
                     getBlockRef(b),
                     [{

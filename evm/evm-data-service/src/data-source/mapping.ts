@@ -12,7 +12,9 @@ const zstdCompress = promisify(zlib.zstdCompress)
 
 export class Mapping implements DataSource<Block> {
     constructor(
-        private inner: DataSource<RpcBlock>
+        private inner: DataSource<RpcBlock>,
+        private withTraces?: boolean,
+        private withStateDiffs?: boolean,
     ) {}
 
     getHead(): Promise<BlockRef> {
@@ -51,7 +53,7 @@ export class Mapping implements DataSource<Block> {
     }
 
     private async mapRpcBlock(block: RpcBlock): Promise<Block> {
-        let normalized = mapRpcBlock(block)
+        let normalized = mapRpcBlock(block, this.withTraces, this.withStateDiffs)
         let jsonLine = JSON.stringify(toJSON(normalized)) + '\n'
         let jsonLineZstd = await zstdCompress(Buffer.from(jsonLine), {
             params: {[zlib.constants.ZSTD_c_compressionLevel]: 1}

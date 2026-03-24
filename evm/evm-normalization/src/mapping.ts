@@ -6,8 +6,16 @@ import {
     Block,
     BlockHeader,
     Transaction,
-    Access,
+    AccessListItem,
     EIP7702Authorization,
+    TempoCall,
+    TempoPrimitiveSignature,
+    TempoKeychainSignature,
+    TempoSignature,
+    TempoSignedAuthorization,
+    TempoTokenLimit,
+    TempoSignedKeyAuthorization,
+    TempoFeePayerSignature,
     Log,
     Trace,
     TraceCreateAction,
@@ -19,6 +27,12 @@ import {
     TraceCallResult
 } from './data'
 import {RawBlock} from './raw'
+
+
+function safeQty2Int(qty: string): number | undefined {
+    let i = parseInt(qty, 16)
+    return Number.isSafeInteger(i) ? i : undefined
+}
 
 
 function* traverseDebugFrame(frame: rpc.DebugFrame, traceAddress: number[]): Iterable<{
@@ -55,13 +69,14 @@ function* mapDebugFrame(
 
         switch(frame.type) {
             case 'CREATE':
+            case 'create':
             case 'CREATE2': {
                 trace = {
                     ...base,
                     type: 'create',
                     action: {
-                        from: frame.from,
-                        value: assertNotNull(frame.value),
+                        from: frame.from.toLowerCase(),
+                        value: frame.value ?? undefined,
                         gas: frame.gas,
                         init: frame.input,
                     },
@@ -75,7 +90,7 @@ function* mapDebugFrame(
                     result.code = frame.output
                 }
                 if (frame.to) {
-                    result.address = frame.to
+                    result.address = frame.to.toLowerCase()
                 }
                 if (!isEmpty(result)) {
                     assertNotNull(result.gasUsed)
@@ -84,8 +99,10 @@ function* mapDebugFrame(
                 break
             }
             case 'CALL':
+            case 'call':
             case 'CALLCODE':
             case 'DELEGATECALL':
+            case 'delegateCall':
             case 'STATICCALL':
             case 'INVALID': {
                 trace = {
@@ -93,8 +110,8 @@ function* mapDebugFrame(
                     type: 'call',
                     action: {
                         callType: frame.type.toLowerCase(),
-                        from: frame.from,
-                        to: assertNotNull(frame.to),
+                        from: frame.from.toLowerCase(),
+                        to: assertNotNull(frame.to).toLowerCase(),
                         value: frame.value ?? undefined,
                         gas: frame.gas,
                         input: frame.input,
@@ -118,8 +135,8 @@ function* mapDebugFrame(
                     ...base,
                     type: 'selfdestruct',
                     action: {
-                        address: frame.to ?? undefined,
-                        refundAddress: frame.from,
+                        address: frame.to ? frame.to.toLowerCase() : undefined,
+                        refundAddress: frame.from.toLowerCase(),
                         balance: frame.value ?? undefined
                     }
                 }
@@ -198,7 +215,7 @@ function makeDebugStateDiffRecord(
 ): StateDiff {
     let base = {
         transactionIndex,
-        address,
+        address: address.toLowerCase(),
         key
     }
 
@@ -233,7 +250,7 @@ function makeStateDiffFromReplay(
 ): StateDiff {
     let base = {
         transactionIndex,
-        address,
+        address: address.toLowerCase(),
         key
     }
 
@@ -288,7 +305,7 @@ function* mapReplayStateDiff(
 function mapAction(action: rpc.TraceActionCreate | rpc.TraceActionCall | rpc.TraceActionReward | rpc.TraceActionSelfdestruct): TraceCreateAction | TraceCallAction | TraceRewardAction | TraceSelfdestructAction {
     if ('init' in action) {
         return {
-            from: action.from,
+            from: action.from.toLowerCase(),
             value: action.value,
             gas: action.gas,
             init: action.init,
@@ -297,8 +314,8 @@ function mapAction(action: rpc.TraceActionCreate | rpc.TraceActionCall | rpc.Tra
     }
     if ('callType' in action) {
         return {
-            from: action.from,
-            to: action.to,
+            from: action.from.toLowerCase(),
+            to: action.to.toLowerCase(),
             value: action.value,
             gas: action.gas,
             input: action.input,
@@ -307,14 +324,14 @@ function mapAction(action: rpc.TraceActionCreate | rpc.TraceActionCall | rpc.Tra
     }
     if ('rewardType' in action) {
         return {
-            author: action.author,
+            author: action.author.toLowerCase(),
             value: action.value,
             rewardType: action.rewardType
         }
     }
     return {
-        address: action.address,
-        refundAddress: action.refundAddress,
+        address: action.address.toLowerCase(),
+        refundAddress: action.refundAddress.toLowerCase(),
         balance: action.balance
     }
 }
@@ -333,7 +350,7 @@ function mapResult(result: rpc.TraceResultCall | rpc.TraceResultCreate | undefin
     return {
         gasUsed: result.gasUsed,
         code: result.code,
-        address: result.address
+        address: result.address.toLowerCase()
     }
 }
 
@@ -376,27 +393,134 @@ function mapLog(src: rpc.Log): Log {
         logIndex: qty2Int(src.logIndex),
         transactionIndex: qty2Int(src.transactionIndex),
         transactionHash: src.transactionHash,
-        address: src.address,
+        address: src.address.toLowerCase(),
         data: src.data,
         topics: src.topics
     }
 }
 
 
-function mapAccess(src: rpc.Access): Access {
+function mapAccessListItem(src: rpc.AccessListItem): AccessListItem {
+    let storageKeys = 'storageKeys' in src ? src.storageKeys : src.storage_keys
     return {
         address: src.address,
-        storageKeys: src.storageKeys
+        storageKeys
     }
 }
 
 
-function mapEIP7702Authorization(src: rpc.EIP7702Authorization): EIP7702Authorization {
+function mapEIP7702Authorization(src: rpc.EIP7702AuthorizationItem): EIP7702Authorization {
+    if ('chain_id' in src) {
+        return {
+            chainId: toQty(src.chain_id),
+            address: src.address,
+            nonce: BigInt(src.nonce),
+            yParity: src.signature.odd_y_parity ? 1 : 0,
+            r: src.signature.r,
+            s: src.signature.s
+        }
+    }
+
     return {
         chainId: src.chainId,
         address: src.address,
-        nonce: qty2Int(src.nonce),
+        nonce: BigInt(src.nonce),
         yParity: qty2Int(src.yParity),
+        r: src.r,
+        s: src.s
+    }
+}
+
+
+function mapTempoCall(src: rpc.TempoCall): TempoCall {
+    return {
+        to: src.to ? src.to.toLowerCase() : undefined,
+        value: src.value,
+        input: src.input
+    }
+}
+
+
+function mapTempoPrimitiveSignature(src: rpc.TempoPrimitiveSignature): TempoPrimitiveSignature {
+    switch (src.type) {
+        case 'secp256k1':
+            return {
+                type: 'secp256k1',
+                r: src.r,
+                s: src.s,
+                yParity: src.yParity != null ? qty2Int(src.yParity) : undefined,
+                v: src.v != null ? qty2Int(src.v) : undefined,
+            }
+        case 'p256':
+            return {
+                type: 'p256',
+                r: src.r,
+                s: src.s,
+                pubKeyX: src.pubKeyX,
+                pubKeyY: src.pubKeyY,
+                preHash: src.preHash,
+            }
+        case 'webAuthn':
+            return {
+                type: 'webAuthn',
+                r: src.r,
+                s: src.s,
+                pubKeyX: src.pubKeyX,
+                pubKeyY: src.pubKeyY,
+                webauthnData: src.webauthnData,
+            }
+        default:
+            throw unexpectedCase((src as any).type)
+    }
+}
+
+
+function mapTempoSignature(src: rpc.TempoSignatureObject): TempoSignature {
+    if ('userAddress' in src) {
+        let result: TempoKeychainSignature = {
+            userAddress: src.userAddress.toLowerCase(),
+            signature: mapTempoPrimitiveSignature(src.signature)
+        }
+        if (src.version != null) result.version = src.version
+        return result
+    }
+    return mapTempoPrimitiveSignature(src as rpc.TempoPrimitiveSignature)
+}
+
+
+function mapTempoSignedAuthorization(src: rpc.TempoSignedAuthorization): TempoSignedAuthorization {
+    return {
+        chainId: src.chainId,
+        address: src.address.toLowerCase(),
+        nonce: qty2Int(src.nonce),
+        signature: mapTempoSignature(src.signature),
+    }
+}
+
+
+function mapTempoTokenLimit(src: rpc.TempoTokenLimit): TempoTokenLimit {
+    return {
+        token: src.token.toLowerCase(),
+        limit: src.limit,
+    }
+}
+
+
+function mapTempoSignedKeyAuthorization(src: rpc.TempoSignedKeyAuthorization): TempoSignedKeyAuthorization {
+    return {
+        chainId: src.chainId,
+        keyType: src.keyType,
+        keyId: src.keyId.toLowerCase(),
+        expiry: src.expiry ?? undefined,
+        limits: src.limits?.map(mapTempoTokenLimit),
+        signature: mapTempoPrimitiveSignature(src.signature),
+    }
+}
+
+
+function mapTempoFeePayerSignature(src: {v: string, r: string, s: string}): TempoFeePayerSignature {
+    return {
+        v: qty2Int(src.v),
         r: src.r,
         s: src.s
     }
@@ -408,11 +532,11 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         transactionIndex: qty2Int(src.transactionIndex),
         hash: src.hash,
         nonce: qty2Int(src.nonce),
-        from: src.from,
-        to: src.to ?? undefined,
-        input: src.input,
-        value: src.value,
-        type: qty2Int(src.type),
+        from: src.from.toLowerCase(),
+        to: src.to ? src.to.toLowerCase() : undefined,
+        input: src.input ?? undefined,
+        value: src.value ?? undefined,
+        type: src.type ? qty2Int(src.type) : undefined,
         gas: src.gas,
         gasPrice: src.gasPrice ?? undefined,
         maxFeePerGas: src.maxFeePerGas ?? undefined,
@@ -421,21 +545,30 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         r: src.r ?? undefined,
         s: src.s ?? undefined,
         yParity: src.yParity ? qty2Int(src.yParity) : undefined,
-        accessList: src.accessList?.map(mapAccess),
-        chainId: src.chainId ? qty2Int(src.chainId) : undefined,
+        accessList: src.accessList?.map(mapAccessListItem),
+        chainId: src.chainId ? safeQty2Int(src.chainId) : undefined,
         maxFeePerBlobGas: src.maxFeePerBlobGas ?? undefined,
         blobVersionedHashes: src.blobVersionedHashes ?? undefined,
         authorizationList: src.authorizationList?.map(mapEIP7702Authorization),
-        contractAddress: receipt?.contractAddress ?? undefined,
+        calls: src.calls?.map(mapTempoCall),
+        nonceKey: src.nonceKey ?? undefined,
+        signature: src.signature ? mapTempoSignature(src.signature) : undefined,
+        feeToken: src.feeToken ? src.feeToken.toLowerCase() : undefined,
+        feePayerSignature: src.feePayerSignature ? mapTempoFeePayerSignature(src.feePayerSignature) : undefined,
+        validBefore: src.validBefore ?? undefined,
+        validAfter: src.validAfter ?? undefined,
+        aaAuthorizationList: src.aaAuthorizationList?.map(mapTempoSignedAuthorization),
+        keyAuthorization: src.keyAuthorization ? mapTempoSignedKeyAuthorization(src.keyAuthorization) : undefined,
+        contractAddress: receipt?.contractAddress ? receipt?.contractAddress.toLowerCase() : undefined,
         cumulativeGasUsed: receipt?.cumulativeGasUsed,
-        effectiveGasPrice: receipt?.effectiveGasPrice,
+        effectiveGasPrice: receipt?.effectiveGasPrice ?? undefined,
         gasUsed: receipt?.gasUsed,
         status: receipt?.status ? qty2Int(receipt.status) : undefined,
         l1BaseFeeScalar: receipt?.l1BaseFeeScalar ? qty2Int(receipt.l1BaseFeeScalar) : undefined,
         l1BlobBaseFee: receipt?.l1BlobBaseFee ?? undefined,
         l1BlobBaseFeeScalar: receipt?.l1BlobBaseFeeScalar ? qty2Int(receipt.l1BlobBaseFeeScalar) : undefined,
         l1Fee: receipt?.l1Fee ?? undefined,
-        l1FeeScalar: receipt?.l1FeeScalar ? parseInt(receipt.l1FeeScalar) : undefined,
+        l1FeeScalar: receipt?.l1FeeScalar ? toFloat(receipt.l1FeeScalar) : undefined,
         l1GasPrice: receipt?.l1GasPrice ?? undefined,
         l1GasUsed: receipt?.l1GasUsed ?? undefined,
     }
@@ -470,23 +603,28 @@ function mapBlockHeader(src: rpc.GetBlock): BlockHeader {
         excessBlobGas: src.excessBlobGas ?? undefined,
         parentBeaconBlockRoot: src.parentBeaconBlockRoot ?? undefined,
         requestsHash: src.requestsHash ?? undefined,
-        l1BlockNumber: src.l1BlockNumber ? qty2Int(src.l1BlockNumber) : undefined
+        l1BlockNumber: src.l1BlockNumber ? qty2Int(src.l1BlockNumber) : undefined,
+        mainBlockGeneralGasLimit: src.mainBlockGeneralGasLimit ?? undefined,
+        sharedGasLimit: src.sharedGasLimit ?? undefined,
+        timestampMillisPart: src.timestampMillisPart ?? undefined,
     }
 }
 
 
-export function mapRpcBlock(src: rpc.Block): Block {
+export function mapRpcBlock(src: rpc.Block, withTraces?: boolean, withStateDiffs?: boolean): Block {
     let block: Block = {
         header: mapBlockHeader(src.block),
         transactions: [],
         logs: [],
-        traces: [],
-        stateDiffs: []
+        traces: withTraces ? [] : undefined,
+        stateDiffs: withStateDiffs ? [] : undefined,
     }
 
+    let txIndex = new Map()
     for (let i = 0; i < src.block.transactions.length; i++) {
         let tx = src.block.transactions[i] as rpc.Transaction
         assert(typeof tx !== 'string')
+        txIndex.set(getTxHash(tx), i)
         let receipt = src.receipts?.[i]
         if (receipt) {
             assert(tx.hash == receipt.transactionHash)
@@ -512,47 +650,48 @@ export function mapRpcBlock(src: rpc.Block): Block {
         }
     }
 
-    if (src.traceReplays) {
-        let txIndex = new Map(src.block.transactions.map((tx, idx) => {
-            return [getTxHash(tx), idx]
-        }))
-        for (let rep of src.traceReplays) {
-            let transactionHash = assertNotNull(rep.transactionHash)
-            let transactionIndex = assertNotNull(txIndex.get(transactionHash))
-            if (rep.trace) {
-                for (let frame of rep.trace) {
-                    block.traces.push(mapTrace(frame, transactionIndex))
+    if (withTraces) {
+        if (src.debugFrames) {
+            for (let i = 0; i < src.debugFrames.length; i++) {
+                let frame = src.debugFrames[i]
+                if (frame == null) continue
+                for (let trace of mapDebugFrame(i, frame)) {
+                    block.traces!.push(trace)
                 }
             }
-
-            if (rep.stateDiff) {
-                for (let diff of mapReplayStateDiff(rep.stateDiff, transactionIndex)) {
-                    if (diff.kind != '=') {
-                        block.stateDiffs.push(diff)
+        } else if (src.traceReplays) {
+            for (let rep of src.traceReplays) {
+                let transactionHash = assertNotNull(rep.transactionHash)
+                let transactionIndex = assertNotNull(txIndex.get(transactionHash))
+                if (rep.trace) {
+                    for (let frame of rep.trace) {
+                        block.traces!.push(mapTrace(frame, transactionIndex))
                     }
                 }
             }
         }
     }
 
-    if (src.debugFrames) {
-        assert(block.traces.length == 0)
-        for (let i = 0; i < src.debugFrames.length; i++) {
-            let frame = src.debugFrames[i]
-            if (frame == null) continue
-            for (let trace of mapDebugFrame(i, frame)) {
-                block.traces.push(trace)
+    if (withStateDiffs) {
+        if (src.debugStateDiffs) {
+            for (let i = 0; i < src.debugStateDiffs.length; i++) {
+                let diffs = src.debugStateDiffs[i]
+                if (diffs == null) continue
+                for (let diff of mapDebugStateDiff(i, diffs)) {
+                    block.stateDiffs!.push(diff)
+                }
             }
-        }
-    }
-
-    if (src.debugStateDiffs) {
-        assert(block.stateDiffs.length == 0)
-        for (let i = 0; i < src.debugStateDiffs.length; i++) {
-            let diffs = src.debugStateDiffs[i]
-            if (diffs == null) continue
-            for (let diff of mapDebugStateDiff(i, diffs)) {
-                block.stateDiffs.push(diff)
+        } else if (src.traceReplays) {
+            for (let rep of src.traceReplays) {
+                let transactionHash = assertNotNull(rep.transactionHash)
+                let transactionIndex = assertNotNull(txIndex.get(transactionHash))
+                if (rep.stateDiff) {
+                    for (let diff of mapReplayStateDiff(rep.stateDiff, transactionIndex)) {
+                        if (diff.kind != '=') {
+                            block.stateDiffs!.push(diff)
+                        }
+                    }
+                }
             }
         }
     }
@@ -561,52 +700,55 @@ export function mapRpcBlock(src: rpc.Block): Block {
 }
 
 
-export function mapRawBlock(raw: RawBlock): Block {
+export function mapRawBlock(raw: RawBlock, withTraces?: boolean, withStateDiffs?: boolean): Block {
     let block: Block = {
         header: mapBlockHeader(raw),
         transactions: [],
         logs: [],
-        traces: [],
-        stateDiffs: []
+        traces: withTraces ? [] : undefined,
+        stateDiffs: withStateDiffs ? [] : undefined
     }
 
-    for (let tx of raw.transactions) {
+    // It's a workaround for incorrect sorting in etherlink mainnet 38021770 block
+    let sortedTransactions = [...raw.transactions]
+    sortedTransactions.sort((a, b) => qty2Int(a.transactionIndex) - qty2Int(b.transactionIndex))
+
+    let logIndex = 0
+    for (let tx of sortedTransactions) {
         let transactionIndex = qty2Int(tx.transactionIndex)
         block.transactions.push(mapTransaction(tx, tx.receipt_))
 
         if (tx.receipt_) {
             for (let log of tx.receipt_.logs) {
-                block.logs.push(mapLog(log))
+                let normalized = mapLog(log)
+                assert.equal(normalized.logIndex, logIndex++)
+                block.logs.push(normalized)
             }
         }
 
-        if (tx.traceReplay_) {
-            if (tx.traceReplay_.trace) {
+        if (withTraces) {
+            if (tx.debugFrame_) {
+                for (let frame of mapDebugFrame(transactionIndex, tx.debugFrame_)) {
+                    block.traces!.push(frame)
+                }
+            } else if (tx.traceReplay_?.trace) {
                 for (let frame of tx.traceReplay_.trace) {
-                    block.traces.push(mapTrace(frame, transactionIndex))
+                    block.traces!.push(mapTrace(frame, transactionIndex))
                 }
             }
+        }
 
-            if (tx.traceReplay_.stateDiff) {
+        if (withStateDiffs) {
+            if (tx.debugStateDiff_) {
+                for (let diff of mapDebugStateDiff(transactionIndex, tx.debugStateDiff_)) {
+                    block.stateDiffs!.push(diff)
+                }
+            } else if (tx.traceReplay_?.stateDiff) {
                 for (let diff of mapReplayStateDiff(tx.traceReplay_.stateDiff, transactionIndex)) {
                     if (diff.kind != '=') {
-                        block.stateDiffs.push(diff)
+                        block.stateDiffs!.push(diff)
                     }
                 }
-            }
-        }
-
-        if (tx.debugFrame_) {
-            assert(!tx.traceReplay_?.trace?.length)
-            for (let frame of mapDebugFrame(transactionIndex, tx.debugFrame_)) {
-                block.traces.push(frame)
-            }
-        }
-
-        if (tx.debugStateDiff_) {
-            assert(!tx.traceReplay_?.stateDiff)
-            for (let diff of mapDebugStateDiff(transactionIndex, tx.debugStateDiff_)) {
-                block.stateDiffs.push(diff)
             }
         }
     }
@@ -614,7 +756,9 @@ export function mapRawBlock(raw: RawBlock): Block {
     if (raw.logs_) {
         assert(block.logs.length == 0)
         for (let log of raw.logs_) {
-            block.logs.push(mapLog(log))
+            let normalized = mapLog(log)
+            assert.equal(normalized.logIndex, logIndex++)
+            block.logs.push(normalized)
         }
     }
 
@@ -627,4 +771,11 @@ function isEmpty(obj: object): boolean {
         return false
     }
     return true
+}
+
+
+function toFloat(val: string) {
+    let float = parseFloat(val)
+    assert(!Number.isNaN(float))
+    return float
 }

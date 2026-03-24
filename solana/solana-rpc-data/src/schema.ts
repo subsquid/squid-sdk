@@ -84,6 +84,7 @@ export type Reward = GetSrcType<typeof Reward>
 
 export const TransactionMeta = object({
     computeUnitsConsumed: option(ANY_NAT),
+    costUnits: option(ANY_NAT),
     err: ANY,
     fee: ANY_NAT,
     preBalances: array(ANY_NAT),

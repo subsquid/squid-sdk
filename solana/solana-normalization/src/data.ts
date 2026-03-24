@@ -28,6 +28,7 @@ export interface Transaction {
     // meta fields
     err: null | object
     computeUnitsConsumed: bigint
+    costUnits: bigint
     fee: bigint
     loadedAddresses: {
         readonly: Base58Bytes[]

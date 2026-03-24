@@ -20,19 +20,33 @@ import {
 import {Bytes} from './types'
 
 
-export const Access = object({
+export const AccessItem = object({
     address: BYTES,
-    storageKeys: array(BYTES)
+    storageKeys: array(BYTES),
 })
 
 
-export type Access = GetSrcType<typeof Access>
+export type AccessItem = GetSrcType<typeof AccessItem>
+
+
+export const FrontierAccessItem = object({
+    address: BYTES,
+    // at least bittensor network has snake_case intead of camelCase
+    // potentially other frontier networks can be affected
+    storage_keys: array(BYTES)
+})
+
+
+export type FrontierAccessItem = GetSrcType<typeof FrontierAccessItem>
+
+
+export type AccessListItem = AccessItem | FrontierAccessItem
 
 
 export const EIP7702Authorization = object({
     chainId: QTY,
     address: BYTES,
-    nonce: SMALL_QTY,
+    nonce: QTY,
     yParity: SMALL_QTY,
     r: BYTES,
     s: BYTES
@@ -42,30 +56,186 @@ export const EIP7702Authorization = object({
 export type EIP7702Authorization = GetSrcType<typeof EIP7702Authorization>
 
 
+// Frontier-based nodes (like Bittensor) return EIP-7702 authorization list items
+// in snake_case format with a nested signature object instead of flat yParity/r/s
+export const FrontierEIP7702Authorization = object({
+    chain_id: NAT,
+    address: BYTES,
+    nonce: SMALL_QTY,
+    signature: object({
+        odd_y_parity: BOOLEAN,
+        r: BYTES,
+        s: BYTES
+    })
+})
+
+
+export type FrontierEIP7702Authorization = GetSrcType<typeof FrontierEIP7702Authorization>
+
+
+export type EIP7702AuthorizationItem = EIP7702Authorization | FrontierEIP7702Authorization
+
+// Tempo 0x76 transaction call entry
+// https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
+export const TempoCall = object({
+    to: option(BYTES),
+    value: QTY,
+    input: BYTES,
+})
+
+
+export type TempoCall = GetSrcType<typeof TempoCall>
+
+
+// Tempo 0x76 primitive signatures — tagged by "type" field
+// https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tt_signature.rs
+export const TempoSecp256k1Signature = object({
+    type: constant('secp256k1'),
+    r: BYTES,
+    s: BYTES,
+    yParity: option(SMALL_QTY),
+    v: option(SMALL_QTY),
+})
+
+
+export type TempoSecp256k1Signature = GetSrcType<typeof TempoSecp256k1Signature>
+
+
+export const TempoP256Signature = object({
+    type: constant('p256'),
+    r: BYTES,
+    s: BYTES,
+    pubKeyX: BYTES,
+    pubKeyY: BYTES,
+    preHash: BOOLEAN,
+})
+
+
+export type TempoP256Signature = GetSrcType<typeof TempoP256Signature>
+
+
+export const TempoWebAuthnSignature = object({
+    type: constant('webAuthn'),
+    r: BYTES,
+    s: BYTES,
+    pubKeyX: BYTES,
+    pubKeyY: BYTES,
+    webauthnData: BYTES,
+})
+
+
+export type TempoWebAuthnSignature = GetSrcType<typeof TempoWebAuthnSignature>
+
+
+export const TempoPrimitiveSignature = oneOf({
+    secp256k1: TempoSecp256k1Signature,
+    p256: TempoP256Signature,
+    webAuthn: TempoWebAuthnSignature,
+})
+
+
+export type TempoPrimitiveSignature =
+    | TempoSecp256k1Signature
+    | TempoP256Signature
+    | TempoWebAuthnSignature
+
+
+// Tempo 0x76 Keychain signature — wraps a primitive signature with user address
+// JSON shape: { userAddress, signature: { type, r, s, ... }, keyId?, version? }
+// https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tt_signature.rs
+export const TempoKeychainSignature = object({
+    userAddress: BYTES,
+    signature: TempoPrimitiveSignature,
+    // version is optional (defaults to V1 when absent)
+    version: option(STRING),
+})
+
+
+export type TempoKeychainSignature = GetSrcType<typeof TempoKeychainSignature>
+
+
+// Tempo 0x76 transaction signature (untagged: primitive or Keychain)
+// https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tt_signature.rs
+export const TempoSignatureObject = oneOf({
+    primitive: TempoPrimitiveSignature,
+    keychain: TempoKeychainSignature,
+})
+
+
+export type TempoSignatureObject = TempoPrimitiveSignature | TempoKeychainSignature
+
+
+// Tempo EIP-7702-style signed authorization with AA signature support
+// https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tt_authorization.rs
+export const TempoSignedAuthorization = object({
+    chainId: QTY,
+    address: BYTES,
+    nonce: SMALL_QTY,
+    signature: TempoSignatureObject,
+})
+
+
+export type TempoSignedAuthorization = GetSrcType<typeof TempoSignedAuthorization>
+
+
+// Tempo token spending limit for access keys
+// https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/key_authorization.rs
+export const TempoTokenLimit = object({
+    token: BYTES,
+    limit: QTY,
+})
+
+
+export type TempoTokenLimit = GetSrcType<typeof TempoTokenLimit>
+
+
+// Tempo signed key authorization for provisioning access keys
+// https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/key_authorization.rs
+export const TempoSignedKeyAuthorization = object({
+    chainId: QTY,
+    keyType: STRING,
+    keyId: BYTES,
+    expiry: option(QTY),
+    limits: option(array(TempoTokenLimit)),
+    signature: TempoPrimitiveSignature,
+})
+
+
+export type TempoSignedKeyAuthorization = GetSrcType<typeof TempoSignedKeyAuthorization>
+
+
 export const Transaction = object({
     blockNumber: SMALL_QTY,
     blockHash: BYTES,
     hash: BYTES,
     transactionIndex: SMALL_QTY,
-    chainId: option(SMALL_QTY),
+    chainId: option(QTY),
     from: BYTES,
     to: option(BYTES),
     gas: QTY,
-    gasPrice: QTY,
-    input: BYTES,
+    gasPrice: option(QTY),
+    // Optional for Tempo 0x76 transactions which use batched `calls` instead of `input`
+    input: option(BYTES),
     maxFeePerGas: option(QTY),
     maxPriorityFeePerGas: option(QTY),
     nonce: SMALL_QTY,
-    v: QTY,
-    r: BYTES,
-    s: BYTES,
-    type: SMALL_QTY,
-    value: QTY,
+    v: option(QTY),
+    r: option(BYTES),
+    s: option(BYTES),
+    type: option(SMALL_QTY),
+    // Optional for Tempo 0x76 transactions which use batched `calls`
+    value: option(QTY),
     yParity: option(SMALL_QTY),
-    accessList: option(array(Access)),
+    accessList: option(array(oneOf({
+        evm: AccessItem,
+        frontier: FrontierAccessItem,
+    }))),
     maxFeePerBlobGas: option(QTY),
     blobVersionedHashes: option(array(BYTES)),
-    authorizationList: option(array(EIP7702Authorization)),
+    authorizationList: option(array(oneOf({
+        evm: EIP7702Authorization,
+        frontier: FrontierEIP7702Authorization,
+    }))),
     requestId: option(BYTES),
     ticketId: option(BYTES),
     refundTo: option(BYTES),
@@ -79,7 +249,25 @@ export const Transaction = object({
     maxSubmissionFee: option(QTY),
     retryData: option(BYTES),
     sourceHash: option(BYTES),
-    mint: option(QTY)
+    mint: option(QTY),
+    // Tempo 0x76 transaction fields
+    // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
+    calls: option(array(TempoCall)),
+    nonceKey: option(BYTES),
+    signature: option(TempoSignatureObject),
+    feeToken: option(BYTES),
+    // fee_payer_signature is always a standard secp256k1 Signature (not a TempoSignature)
+    feePayerSignature: option(object({
+        v: SMALL_QTY,
+        r: BYTES,
+        s: BYTES,
+    })),
+    validBefore: option(QTY),
+    validAfter: option(QTY),
+    // Tempo EIP-7702-style authorization list with AA signature support
+    aaAuthorizationList: option(array(TempoSignedAuthorization)),
+    // Optional key authorization for provisioning a new access key
+    keyAuthorization: option(TempoSignedKeyAuthorization),
 })
 
 
@@ -122,11 +310,11 @@ export const Receipt = object({
     cumulativeGasUsed: QTY,
     from: BYTES,
     gasUsed: QTY,
-    effectiveGasPrice: QTY,
+    effectiveGasPrice: option(QTY),
     logs: array(Log),
     logsBloom: BYTES,
     status: SMALL_QTY,
-    to: nullable(BYTES),
+    to: option(BYTES),
     type: SMALL_QTY,
     l1Fee: option(QTY),
     l1FeeScalar: option(STRING_FLOAT),
@@ -415,7 +603,12 @@ export const GetBlock = object({
     withdrawals: option(array(Withdrawal)),
     withdrawalsRoot: option(BYTES),
     requestsHash: option(BYTES),
-    l1BlockNumber: option(SMALL_QTY)
+    l1BlockNumber: option(SMALL_QTY),
+    // Tempo-specific block header fields
+    // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/header.rs
+    mainBlockGeneralGasLimit: option(QTY),
+    sharedGasLimit: option(QTY),
+    timestampMillisPart: option(QTY),
 })
 
 

@@ -14,10 +14,11 @@ export interface DataSourceOptions {
     httpRpcStrideSize?: number
     httpRpcStrideConcurrency?: number
     httpRpcRateLimit?: number,
+    httpRpcTimeout: number,
     finalityConfirmation?: number,
-    traces?: boolean,
-    diffs?: boolean,
-    receipts?: boolean,
+    withReceipts?: boolean,
+    withTraces?: boolean,
+    withStatediffs?: boolean,
     useTraceApi?: boolean,
     useDebugApiForStateDiffs?: boolean
     verifyBlockHash?: boolean
@@ -25,6 +26,7 @@ export interface DataSourceOptions {
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
     verifyLogsBloom?: boolean
+    useGasUsedForReceiptsRoot?: boolean
 }
 
 
@@ -34,7 +36,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         maxBatchCallSize: options.httpRpcMaxBatchCallSize,
         capacity: Number.MAX_SAFE_INTEGER,
         rateLimit: options.httpRpcRateLimit,
-        requestTimeout: 10000,
+        requestTimeout: options.httpRpcTimeout,
         retryAttempts: 5,
         log
     })
@@ -45,21 +47,23 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         verifyTxRoot: options.verifyTxRoot,
         verifyTxSender: options.verifyTxSender,
         verifyReceiptsRoot: options.verifyReceiptsRoot,
-        verifyLogsBloom: options.verifyLogsBloom
+        verifyLogsBloom: options.verifyLogsBloom,
+        useGasUsedForReceiptsRoot: options.useGasUsedForReceiptsRoot
     })
     let rpcSource = new EvmRpcDataSource({
         rpc: httpRpc,
         req: {
             transactions: true,
-            logs: !options.receipts,
-            receipts: options.receipts,
-            traces: options.traces,
-            stateDiffs: options.diffs,
+            logs: !options.withReceipts,
+            receipts: options.withReceipts,
+            traces: options.withTraces,
+            stateDiffs: options.withStatediffs,
             useTraceApi: options.useTraceApi,
             useDebugApiForStateDiffs: options.useDebugApiForStateDiffs,
+            debugTraceTimeout: '60s',
         },
         strideSize: options.httpRpcStrideSize,
         strideConcurrency: options.httpRpcStrideConcurrency
     })
-    return new Mapping(rpcSource)
+    return new Mapping(rpcSource, options.withTraces, options.withStatediffs)
 }

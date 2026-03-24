@@ -1,6 +1,6 @@
 import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
-import {positiveInt, positiveReal, Url} from '@subsquid/util-internal-commander'
+import {nat, positiveInt, positiveReal, Url} from '@subsquid/util-internal-commander'
 import {Block, BlockStream, DataSource, runDataService, StreamRequest} from '@subsquid/util-internal-data-service'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
 import {Command} from 'commander'
@@ -20,12 +20,13 @@ runProgram(async () => {
     program.option('--http-rpc-stride-size <number>', 'The size of ingestion stride', positiveInt, 5)
     program.option('--http-rpc-stride-concurrency <number>', 'Max number of concurrent ingestion strides', positiveInt, 5)
     program.option('--http-rpc-rate-limit <rps>', 'Maximum RPC rate in requests per second', positiveReal)
+    program.option('--http-rpc-timeout <ms>', 'RPC client request timeout in ms', nat, 10000)
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
-    program.option('--finality-confirmation', 'Finality offset from the head of a chain', positiveInt)
-    program.option('--traces', 'Force enable traces')
-    program.option('--diffs', 'Force enable diffs')
-    program.option('--receipts', 'Force enable receipts')
+    program.option('--finality-confirmation <number>', 'Finality offset from the head of a chain', positiveInt)
+    program.option('--with-receipts', 'Fetch transaction receipt data')
+    program.option('--with-traces', 'Fetch EVM call traces')
+    program.option('--with-statediffs', 'Fetch EVM state updates')
     program.option('--use-trace-api', 'Use trace_* API for statediffs and call traces')
     program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
     program.option('--verify-block-hash', 'Verify block header against block hash')
@@ -33,6 +34,7 @@ runProgram(async () => {
     program.option('--verify-tx-root', 'Verify block transactions against transactions root')
     program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
     program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
+    program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
     program.parse()
 
     let args = program.opts() as {
@@ -41,12 +43,13 @@ runProgram(async () => {
         httpRpcStrideSize: number
         httpRpcStrideConcurrency: number
         httpRpcRateLimit?: number
+        httpRpcTimeout: number
         blockCacheSize: number
         port: number
         finalityConfirmation?: number
-        traces?: boolean
-        diffs?: boolean
-        receipts?: boolean
+        withReceipts?: boolean
+        withTraces?: boolean
+        withStatediffs?: boolean
         useTraceApi?: boolean
         useDebugApiForStatediffs?: boolean
         verifyBlockHash?: boolean
@@ -54,6 +57,7 @@ runProgram(async () => {
         verifyTxRoot?: boolean
         verifyReceiptsRoot?: boolean
         verifyLogsBloom?: boolean
+        useGasUsedForReceiptsRoot?: boolean
     }
 
     let dataSourceOptions: DataSourceOptions = {
@@ -62,17 +66,19 @@ runProgram(async () => {
         httpRpcStrideSize: args.httpRpcStrideSize,
         httpRpcStrideConcurrency: args.httpRpcStrideConcurrency,
         httpRpcRateLimit: args.httpRpcRateLimit,
+        httpRpcTimeout: args.httpRpcTimeout,
         finalityConfirmation: args.finalityConfirmation,
-        traces: args.traces,
-        diffs: args.diffs,
-        receipts: args.receipts,
+        withReceipts: args.withReceipts,
+        withTraces: args.withTraces,
+        withStatediffs: args.withStatediffs,
         useTraceApi: args.useTraceApi,
         useDebugApiForStateDiffs: args.useDebugApiForStatediffs,
         verifyBlockHash: args.verifyBlockHash,
         verifyTxSender: args.verifyTxSender,
         verifyTxRoot: args.verifyTxRoot,
         verifyReceiptsRoot: args.verifyReceiptsRoot,
-        verifyLogsBloom: args.verifyLogsBloom
+        verifyLogsBloom: args.verifyLogsBloom,
+        useGasUsedForReceiptsRoot: args.useGasUsedForReceiptsRoot
     }
 
     let mainWorker = new WorkerClient(dataSourceOptions)

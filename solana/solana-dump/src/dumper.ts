@@ -1,5 +1,5 @@
 import {Block as RpcBlock, RemoteRpcPool, SolanaRpcDataSource} from '@subsquid/solana-rpc'
-import {def} from '@subsquid/util-internal'
+import {addErrorContext, assertNotNull, def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, positiveInt, Range, removeOption} from '@subsquid/util-internal-dump-cli'
 
 
@@ -15,6 +15,8 @@ interface Options extends DumperOptions {
     strideConcurrency: number
     strideSize: number
     maxConfirmationAttempts: number
+    assertLogMessagesNotNull: boolean
+    validateChainContinuity: boolean
 }
 
 
@@ -27,6 +29,8 @@ export class SolanaDumper extends Dumper<Block, Options> {
         program.option('--stride-size <N>', 'Maximum size of getBlock batch call', positiveInt, 5)
         program.option('--stride-concurrency <N>', 'Maximum number of pending getBlock batch calls', positiveInt, 5)
         program.option('--max-confirmation-attempts <N>', 'Maximum number of confirmation attempts', positiveInt, 10)
+        program.option('--assert-log-messages-not-null', 'Check if tx.meta.logMessages is not null', false)
+        program.option('--validate-chain-continuity', 'Check if block parent hash matches previous block hash', false)
     }
 
     protected fixUnsafeIntegers(): boolean {
@@ -53,6 +57,9 @@ export class SolanaDumper extends Dumper<Block, Options> {
         return Number(block.block.blockTime) || 0
     }
 
+    protected validateChainContinuity(): boolean {
+        return this.options().validateChainContinuity
+    }
 
     @def
     private dataSource(): SolanaRpcDataSource {
@@ -71,6 +78,7 @@ export class SolanaDumper extends Dumper<Block, Options> {
             strideSize: this.options().strideSize,
             strideConcurrency: this.options().strideConcurrency,
             maxConfirmationAttempts: this.options().maxConfirmationAttempts,
+            validateChainContinuity: this.options().validateChainContinuity,
         })
     }
 
@@ -80,8 +88,22 @@ export class SolanaDumper extends Dumper<Block, Options> {
     }
 
     protected async* getBlocks(range: Range): AsyncIterable<Block[]> {
+        let options = this.options()
+
         for await (let batch of this.dataSource().getFinalizedStream(range)) {
             yield batch.blocks.map(block => {
+                if (options.assertLogMessagesNotNull) {
+                    let transactions = assertNotNull(block.block.transactions)
+                    for (let tx of transactions) {
+                        if (tx.meta.err == null && tx.meta.logMessages == null) {
+                            throw addErrorContext(new Error('tx.meta.logMessages is null'), {
+                                blockNumber: block.slot,
+                                blockHash: block.block.blockhash,
+                                transactionHash: tx.transaction.signatures[0]
+                            })
+                        }
+                    }
+                }
                 return {
                     hash: block.block.blockhash,
                     number: block.slot,

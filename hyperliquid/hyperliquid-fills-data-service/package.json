@@ -1,0 +1,38 @@
+{
+  "name": "@subsquid/hyperliquid-fills-data-service",
+  "version": "0.0.1",
+  "description": "Hot block data service for Hyperliquid fills",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "start": "node lib/main.js"
+  },
+  "dependencies": {
+    "commander": "^11.1.0",
+    "@subsquid/hyperliquid-fills-data": "^0.0.1",
+    "@subsquid/hyperliquid-fills-normalization": "^0.0.1",
+    "@subsquid/logger": "^1.4.0",
+    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/util-internal-commander": "^1.4.0",
+    "@subsquid/rpc-client": "^4.11.0",
+    "@subsquid/util-internal-data-service": "^0.0.0",
+    "@subsquid/util-internal-worker-thread": "^0.0.0",
+    "@subsquid/util-internal-http-server": "^2.0.0",
+    "@subsquid/util-internal-validation": "^0.7.0",
+    "@subsquid/util-internal-data-source": "^0.0.0",
+    "@subsquid/util-internal-range": "^0.3.0",
+    "@subsquid/util-internal-json": "^1.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^18.18.14",
+    "typescript": "5.5.4"
+  }
+}

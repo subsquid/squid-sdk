@@ -51,7 +51,6 @@
      * The default value is "local".
      */
     // "pnpmStore": "local",
-
     /**
      * If true, then Rush will add the "--strict-peer-dependencies" option when invoking PNPM.
      * This causes "rush install" to fail if there are unsatisfied peer dependencies, which is
@@ -63,7 +62,6 @@
      * It is strongly recommended to set strictPeerDependencies=true.
      */
     // "strictPeerDependencies": true,
-
     /**
      * Configures the strategy used to select versions during installation.
      *
@@ -77,7 +75,6 @@
      * will recalculate all version selections.
      */
     // "resolutionStrategy": "fast",
-
     /**
      * If true, then `rush install` will report an error if manual modifications
      * were made to the PNPM shrinkwrap file without running "rush update" afterwards.
@@ -95,7 +92,6 @@
      * The default value is false.
      */
     // "preventManualShrinkwrapChanges": true,
-
     /**
      * If true, then `rush install` will use the PNPM workspaces feature to perform the
      * install.
@@ -247,14 +243,12 @@
     //   "[^@]+@users\\.noreply\\.github\\.com",
     //   "travis@example\\.org"
     // ],
-
     /**
      * When Rush reports that the address is malformed, the notice can include an example
      * of a recommended email.  Make sure it conforms to one of the allowedEmailRegExps
      * expressions.
      */
     // "sampleEmail": "mrexample@users.noreply.github.com",
-
     /**
      * The commit message to use when committing changes during 'rush publish'.
      *
@@ -263,7 +257,6 @@
      * in the commit message, and then customize Rush's message to contain that string.
      */
     // "versionBumpCommitMessage": "Bump versions [skip ci]",
-
     /**
      * The commit message to use when committing changes during 'rush version'.
      *
@@ -290,7 +283,7 @@
      * your PR branch, and in this situation "rush change" will also automatically invoke "git fetch"
      * to retrieve the latest activity for the remote master branch.
      */
-     "url": "https://github.com/subsquid/squid-sdk"
+    "url": "https://github.com/subsquid/squid-sdk"
 
     /**
      * The default branch name. This tells "rush change" which remote branch to compare against.
@@ -420,6 +413,36 @@
     //   // "versionPolicyName": ""
     // },
     {
+      "packageName": "@subsquid/bitcoin-dump",
+      "projectFolder": "bitcoin/bitcoin-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-ingest",
+      "projectFolder": "bitcoin/bitcoin-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-rpc",
+      "projectFolder": "bitcoin/bitcoin-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-normalization",
+      "projectFolder": "bitcoin/bitcoin-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-data-service",
+      "projectFolder": "bitcoin/bitcoin-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-dump",
       "projectFolder": "evm/evm-dump",
       "shouldPublish": true,
@@ -543,12 +566,12 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-//    {
-//      "packageName": "@subsquid/solana-objects",
-//      "projectFolder": "solana/solana-objects",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
+    //    {
+    //      "packageName": "@subsquid/solana-objects",
+    //      "projectFolder": "solana/solana-objects",
+    //      "shouldPublish": true,
+    //      "versionPolicyName": "npm"
+    //    },
     {
       "packageName": "@subsquid/solana-rpc",
       "projectFolder": "solana/solana-rpc",
@@ -567,12 +590,12 @@
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
-//    {
-//      "packageName": "@subsquid/solana-stream",
-//      "projectFolder": "solana/solana-stream",
-//      "shouldPublish": true,
-//      "versionPolicyName": "npm"
-//    },
+    //    {
+    //      "packageName": "@subsquid/solana-stream",
+    //      "projectFolder": "solana/solana-stream",
+    //      "shouldPublish": true,
+    //      "versionPolicyName": "npm"
+    //    },
     {
       "packageName": "@subsquid/solana-typegen",
       "projectFolder": "solana/solana-typegen",
@@ -726,6 +749,54 @@
     {
       "packageName": "@subsquid/fuel-stream",
       "projectFolder": "fuel/fuel-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-data",
+      "projectFolder": "hyperliquid/hyperliquid-fills-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-data-service",
+      "projectFolder": "hyperliquid/hyperliquid-fills-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-ingest",
+      "projectFolder": "hyperliquid/hyperliquid-fills-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-normalization",
+      "projectFolder": "hyperliquid/hyperliquid-fills-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-data",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-data-service",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-ingest",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-normalization",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-normalization",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -1007,16 +1078,16 @@
       "projectFolder": "test/fuel-indexer",
       "shouldPublish": false
     },
-//    {
-//      "packageName": "karura-erc20",
-//      "projectFolder": "test/karura-erc20",
-//      "shouldPublish": false
-//    },
-//    {
-//      "packageName": "gear-nft",
-//      "projectFolder": "test/gear-nft",
-//      "shouldPublish": false
-//    },
+    //    {
+    //      "packageName": "karura-erc20",
+    //      "projectFolder": "test/karura-erc20",
+    //      "shouldPublish": false
+    //    },
+    //    {
+    //      "packageName": "gear-nft",
+    //      "projectFolder": "test/gear-nft",
+    //      "shouldPublish": false
+    //    },
     {
       "packageName": "astar-erc20",
       "projectFolder": "test/astar-erc20",

@@ -26,6 +26,7 @@ export interface IngestOptions {
     range: Range
     strideSize: number
     strideConcurrency: number
+    validateChainContinuity: boolean
     maxConfirmationAttempts: number
 }
 
@@ -42,6 +43,7 @@ export function ingest(args: IngestOptions): AsyncIterable<IngestBatch> {
         req,
         strideConcurrency,
         strideSize,
+        validateChainContinuity,
         maxConfirmationAttempts
     } = args
 
@@ -59,6 +61,7 @@ export function ingest(args: IngestOptions): AsyncIterable<IngestBatch> {
         req,
         from: args.range.from,
         strideSize,
+        validateChainContinuity,
         maxConfirmationAttempts,
         confirmationPauseMs: 100
     })
@@ -82,7 +85,8 @@ export function ingest(args: IngestOptions): AsyncIterable<IngestBatch> {
                             'finalized',
                             req,
                             range,
-                            maxConfirmationAttempts
+                            validateChainContinuity,
+                            maxConfirmationAttempts,
                         ).then(async blocks => {
                             let finalized = await finalizedHeadTracker.get()
                             if (finalized.number < fh.number) {
