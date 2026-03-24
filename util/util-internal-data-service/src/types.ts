@@ -12,7 +12,7 @@ export interface BlockHeader extends BlockRef {
 
 
 export interface Block extends BlockHeader {
-    jsonLineGzip: Uint8Array
+    jsonLineZstd: Uint8Array
 }
 
 

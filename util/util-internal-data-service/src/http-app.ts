@@ -1,9 +1,26 @@
 import {waitDrain} from '@subsquid/util-internal'
 import {HttpApp} from '@subsquid/util-internal-http-server'
 import {NAT, object, option, STRING, ValidationFailure} from '@subsquid/util-internal-validation'
+import {promisify} from 'node:util'
+import * as zlib from 'node:zlib'
 import {DataService} from './data-service'
-import {InvalidBaseBlock} from './types'
-import { getBlockIngestionTimestamp } from './metrics'
+import {Block, InvalidBaseBlock} from './types'
+import {getBlockIngestionTimestamp} from './metrics'
+
+
+const gzip = promisify(zlib.gzip)
+const zstdDecompress = promisify(zlib.zstdDecompress)
+
+
+function acceptsZstd(acceptEncoding?: string): boolean {
+    return !!acceptEncoding?.includes('zstd')
+}
+
+
+async function toGzip(block: Block): Promise<Uint8Array> {
+    let raw = await zstdDecompress(block.jsonLineZstd)
+    return gzip(raw, {level: 3})
+}
 
 
 export function createHttpApp(service: DataService): HttpApp {
@@ -44,10 +61,15 @@ export function createHttpApp(service: DataService): HttpApp {
                 return ctx.send(204)
             }
 
+            let useZstd = acceptsZstd(ctx.request.headers['accept-encoding'] as string)
+            let getPayload = useZstd
+                ? (block: Block) => Promise.resolve(block.jsonLineZstd)
+                : (block: Block) => toGzip(block)
+
             ctx.response.setHeader('content-type', 'text/plain; charset=UTF-8')
 
             if (res.head || res.tail?.length) {
-                ctx.response.setHeader('content-encoding', 'gzip')
+                ctx.response.setHeader('content-encoding', useZstd ? 'zstd' : 'gzip')
             }
 
             if (res.head) {
@@ -59,7 +81,7 @@ export function createHttpApp(service: DataService): HttpApp {
                             }
                             await waitDrain(ctx.response)
                         }
-                        ctx.response.write(block.jsonLineGzip)
+                        ctx.response.write(await getPayload(block))
                     }
                     // check after each batch to ensure,
                     // that time limits are checked in case of slow arriving tiny batches
@@ -77,7 +99,7 @@ export function createHttpApp(service: DataService): HttpApp {
                         }
                         await waitDrain(ctx.response)
                     }
-                    ctx.response.write(block.jsonLineGzip)
+                    ctx.response.write(await getPayload(block))
                 }
             }
 

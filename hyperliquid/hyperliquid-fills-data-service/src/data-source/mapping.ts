@@ -1,5 +1,5 @@
-import {Block as RpcBlock} from '@subsquid/evm-rpc'
-import {mapRpcBlock} from '@subsquid/evm-normalization'
+import {Block as RawBlock} from '@subsquid/hyperliquid-fills-data'
+import {mapRawBlock} from '@subsquid/hyperliquid-fills-normalization'
 import {withErrorContext} from '@subsquid/util-internal'
 import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
 import {toJSON} from '@subsquid/util-internal-json'
@@ -11,9 +11,7 @@ const zstdCompress = promisify(zlib.zstdCompress)
 
 
 export class Mapping implements DataSource<Block> {
-    constructor(
-        private inner: DataSource<RpcBlock>
-    ) {}
+    constructor(private inner: DataSource<RawBlock>) {}
 
     getHead(): Promise<BlockRef> {
         return this.inner.getHead()
@@ -31,7 +29,7 @@ export class Mapping implements DataSource<Block> {
         return this.mapRpcStream(this.inner.getStream(req))
     }
 
-    private async *mapRpcStream(stream: BlockStream<RpcBlock>): BlockStream<Block> {
+    private async *mapRpcStream(stream: BlockStream<RawBlock>): BlockStream<Block> {
         for await (let batch of stream) {
             let {blocks, ...props} = batch
             yield {
@@ -41,28 +39,27 @@ export class Mapping implements DataSource<Block> {
         }
     }
 
-    private mapRpcBatch(blocks: RpcBlock[]): Promise<Block[]> {
+    private mapRpcBatch(blocks: RawBlock[]): Promise<Block[]> {
         return Promise.all(blocks.map(block => {
             return this.mapRpcBlock(block).catch(withErrorContext({
-                blockNumber: block.number,
-                blockHash: block.hash
+                blockNumber: block.block_number,
             }))
         }))
     }
 
-    private async mapRpcBlock(block: RpcBlock): Promise<Block> {
-        let normalized = mapRpcBlock(block)
+    private async mapRpcBlock(block: RawBlock): Promise<Block> {
+        let normalized = mapRawBlock(block)
         let jsonLine = JSON.stringify(toJSON(normalized)) + '\n'
         let jsonLineZstd = await zstdCompress(Buffer.from(jsonLine), {
             params: {[zlib.constants.ZSTD_c_compressionLevel]: 1}
         })
 
         return {
-            number: block.number,
-            hash: block.block.hash,
-            parentNumber: block.number - 1,
-            parentHash: block.block.parentHash,
-            timestamp: parseInt(block.block.timestamp, 16) * 1000,
+            number: block.block_number,
+            hash: normalized.header.hash,
+            parentNumber: block.block_number - 1,
+            parentHash: normalized.header.parentHash,
+            timestamp: Date.parse(block.block_time),
             jsonLineZstd
         }
     }

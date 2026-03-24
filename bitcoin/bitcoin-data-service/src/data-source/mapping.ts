@@ -1,9 +1,9 @@
-import {Block as RpcBlock} from '@subsquid/evm-rpc'
-import {mapRpcBlock} from '@subsquid/evm-normalization'
-import {withErrorContext} from '@subsquid/util-internal'
-import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
-import {toJSON} from '@subsquid/util-internal-json'
-import {promisify} from 'node:util'
+import { BlockWithTx, Block as RpcBlock } from '@subsquid/bitcoin-rpc'
+import { mapRpcBlock } from '@subsquid/bitcoin-normalization'
+import { withErrorContext } from '@subsquid/util-internal'
+import { Block, BlockRef, BlockStream, DataSource, StreamRequest } from '@subsquid/util-internal-data-service'
+import { toJSON } from '@subsquid/util-internal-json'
+import { promisify } from 'node:util'
 import * as zlib from 'node:zlib'
 
 
@@ -12,8 +12,8 @@ const zstdCompress = promisify(zlib.zstdCompress)
 
 export class Mapping implements DataSource<Block> {
     constructor(
-        private inner: DataSource<RpcBlock>
-    ) {}
+        private inner: DataSource<RpcBlock>,
+    ) { }
 
     getHead(): Promise<BlockRef> {
         return this.inner.getHead()
@@ -33,7 +33,7 @@ export class Mapping implements DataSource<Block> {
 
     private async *mapRpcStream(stream: BlockStream<RpcBlock>): BlockStream<Block> {
         for await (let batch of stream) {
-            let {blocks, ...props} = batch
+            let { blocks, ...props } = batch
             yield {
                 blocks: await this.mapRpcBatch(blocks),
                 ...props
@@ -51,7 +51,7 @@ export class Mapping implements DataSource<Block> {
     }
 
     private async mapRpcBlock(block: RpcBlock): Promise<Block> {
-        let normalized = mapRpcBlock(block)
+        let normalized = mapRpcBlock(block.block as BlockWithTx)
         let jsonLine = JSON.stringify(toJSON(normalized)) + '\n'
         let jsonLineZstd = await zstdCompress(Buffer.from(jsonLine), {
             params: {[zlib.constants.ZSTD_c_compressionLevel]: 1}
@@ -61,8 +61,8 @@ export class Mapping implements DataSource<Block> {
             number: block.number,
             hash: block.block.hash,
             parentNumber: block.number - 1,
-            parentHash: block.block.parentHash,
-            timestamp: parseInt(block.block.timestamp, 16) * 1000,
+            parentHash: normalized.header.parentHash,
+            timestamp: block.block.time * 1000,
             jsonLineZstd
         }
     }
