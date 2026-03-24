@@ -53,15 +53,30 @@ export class DataService {
     }
 
     async query(from: number, parentHash?: string): Promise<DataResponse | InvalidBaseBlock> {
-        if (from <= this.chain.firstBlock().parentNumber) {
-            return this.belowQuery(from, parentHash)
-        } else {
-            let res = this.chain.query(from, parentHash)
-            if (res instanceof InvalidBaseBlock) return res
-            if (res.tail) return res
-            await this.waitForBlock(from)
-            return this.chain.query(from, parentHash)
+        let result: DataResponse | InvalidBaseBlock
+        try {
+            if (from <= this.chain.firstBlock().parentNumber) {
+                result = await this.belowQuery(from, parentHash)
+                this.metrics.incQuery(result instanceof InvalidBaseBlock ? 'error' : 'backfill')
+            } else {
+                let res = this.chain.query(from, parentHash)
+                if (res instanceof InvalidBaseBlock) {
+                    this.metrics.incQuery('error')
+                    return res
+                }
+                if (res.tail) {
+                    this.metrics.incQuery('cache')
+                    return res
+                }
+                await this.waitForBlock(from)
+                result = this.chain.query(from, parentHash)
+                this.metrics.incQuery(result instanceof InvalidBaseBlock ? 'error' : 'cache')
+            }
+        } catch(err) {
+            this.metrics.incQuery('error')
+            throw err
         }
+        return result
     }
 
     private async belowQuery(from: number, parentHash?: string): Promise<DataResponse | InvalidBaseBlock> {
