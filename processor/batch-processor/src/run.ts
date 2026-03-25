@@ -198,11 +198,46 @@ class Processor<B extends BlockBase, S> {
 
         let mappingStartTime = process.hrtime.bigint()
 
-        // All new blocks are finalized
-        if (unfinalizedIndex < 0) {
-            const finalizedRef = blocks[blocks.length - 1].header
-            state.finalizedHead = {number: finalizedRef.number, hash: finalizedRef.hash}
-            state.unfinalizedHeads = []
+        if (this.db.supportsHotBlocks) {
+            let finalizedRef: BlockRef | undefined
+            if (unfinalizedIndex < 0) {
+                finalizedRef = blocks[blocks.length - 1].header
+            } else {
+                finalizedRef = blocks[unfinalizedIndex - 1]?.header
+                if (finalizedHeadData != null) {
+                    finalizedRef = {hash: finalizedHeadData.hash, number: finalizedHeadData.number}
+                }
+            }
+            let finalizedHead = maxBlockRef(finalizedRef, state.finalizedHead)
+            await this.db.transactHot2(
+                {
+                    finalizedHead: toHashAndHeight(finalizedHead),
+                    baseHead: toHashAndHeight(prevHead),
+                    newBlocks: blocks.map((b) => toHashAndHeight(b.header)),
+                },
+                (store, start, end) => {
+                    return this.handler({
+                        store,
+                        blocks: (start === 0 && end === blocks.length) ? blocks : blocks.slice(start, end),
+                        isHead: isOnTop,
+                    })
+                }
+            )
+
+            if (finalizedHead) {
+                state.finalizedHead = finalizedHead
+            }
+            if (state.finalizedHead) {
+                let idx = state.unfinalizedHeads.findIndex((h) => h.number > state.finalizedHead!.number)
+                state.unfinalizedHeads = idx < 0 ? [] : state.unfinalizedHeads.slice(idx)
+            }
+            if (unfinalizedIndex >= 0) {
+                for (let i = unfinalizedIndex; i < blocks.length; i++) {
+                    state.unfinalizedHeads.push({number: blocks[i].header.number, hash: blocks[i].header.hash})
+                }
+            }
+        } else {
+            assert(unfinalizedIndex < 0, 'non-hot database received unfinalized blocks')
 
             await this.db.transact(
                 {
@@ -218,40 +253,9 @@ class Processor<B extends BlockBase, S> {
                     })
                 }
             )
-        } else {
-            assert(this.db.supportsHotBlocks)
 
-            let finalizedRef: BlockRef | undefined = blocks[unfinalizedIndex - 1]?.header
-            if (finalizedHeadData?.hash && finalizedHeadData?.number != null) {
-                finalizedRef = {hash: finalizedHeadData.hash, number: finalizedHeadData.number}
-            }
-            state.finalizedHead = finalizedRef ?? state.finalizedHead
-
-            // Finalize all hot heads that are older than the cold head
-            if (state.finalizedHead) {
-                let finalizeIndex = state.unfinalizedHeads.findIndex((h) => h.number > state.finalizedHead!.number)
-                state.unfinalizedHeads = finalizeIndex < 0 ? [] : state.unfinalizedHeads.slice(finalizeIndex)
-            }
-
-            // Process unfinalized blocks
-            for (let i = unfinalizedIndex; i < blocks.length; i++) {
-                state.unfinalizedHeads.push({number: blocks[i].header.number, hash: blocks[i].header.hash})
-            }
-
-            await this.db.transactHot2(
-                {
-                    finalizedHead: toHashAndHeight(finalizedHeadData ?? state.finalizedHead),
-                    baseHead: toHashAndHeight(prevHead ?? state.finalizedHead),
-                    newBlocks: blocks.map((b) => toHashAndHeight(b.header)),
-                },
-                (store, start, end) => {
-                    return this.handler({
-                        store,
-                        blocks: blocks.slice(start, end),
-                        isHead: isOnTop,
-                    })
-                }
-            )
+            state.finalizedHead = {number: nextHead.number, hash: nextHead.hash}
+            state.unfinalizedHeads = []
         }
 
         let mappingEndTime = process.hrtime.bigint()
@@ -321,7 +325,8 @@ function findRollbackIndex(currentChain: BlockRef[], forkChain: BlockRef[]): num
     return lastCommonIndex
 }
 
-function toHashAndHeight(ref: BlockRef): HashAndHeight {
+function toHashAndHeight(ref: BlockRef | undefined): HashAndHeight {
+    if (ref == null) return {height: -1, hash: '0x'}
     return {height: ref.number, hash: ref.hash}
 }
 
@@ -331,4 +336,10 @@ function toBlockRef(hashAndHeight: HashAndHeight): BlockRef {
 
 function getStateHead(state: ProcessorState): BlockRef | undefined {
     return maybeLast(state.unfinalizedHeads) ?? state.finalizedHead
+}
+
+function maxBlockRef(a: BlockRef | undefined, b: BlockRef | undefined): BlockRef | undefined {
+    if (a == null) return b
+    if (b == null) return a
+    return a.number >= b.number ? a : b
 }
