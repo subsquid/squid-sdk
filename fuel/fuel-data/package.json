@@ -24,7 +24,7 @@
     "@subsquid/util-internal-validation": "^0.8.0"
   },
   "peerDependencies": {
-    "@subsquid/http-client": "^1.6.1"
+    "@subsquid/http-client": "^1.8.0"
   },
   "devDependencies": {
     "@types/node": "^18.18.14",
