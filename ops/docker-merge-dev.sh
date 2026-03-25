@@ -29,20 +29,12 @@ all_images=(
     "hyperliquid/hyperliquid-replica-cmds-data-service"
 )
 
-function docker_target() {
-    local base="$(basename "$1")"
-    case "$base" in
-        solana-data-service) echo "solana-hotblocks-service" ;;
-        *) echo "$base" ;;
-    esac
-}
-
 if [ ${#images[@]} -eq 0 ]; then
     images=("${all_images[@]}")
 fi
 
 for image in "${images[@]}"; do
-    img="$(docker_target "$image")"
+    img="$(basename "$image")"
     digests_dir="/tmp/digests/$img"
 
     if [ ! -d "$digests_dir" ]; then

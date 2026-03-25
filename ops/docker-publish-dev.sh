@@ -29,14 +29,6 @@ all_images=(
     "hyperliquid/hyperliquid-replica-cmds-data-service"
 )
 
-function docker_target() {
-    local base="$(basename "$1")"
-    case "$base" in
-        solana-data-service) echo "solana-hotblocks-service" ;;
-        *) echo "$base" ;;
-    esac
-}
-
 if [ ${#images[@]} -eq 0 ]; then
     images=("${all_images[@]}")
 fi
@@ -47,7 +39,7 @@ bake_json='{"target":{'
 first=true
 
 for image in "${images[@]}"; do
-    img="$(docker_target "$image")"
+    img="$(basename "$image")"
     output="type=image,name=docker.io/subsquid/$img,push-by-digest=true,name-canonical=true,push=true"
     label="org.opencontainers.image.url=https://github.com/subsquid/squid-sdk/tree/${commit_sha}/${image}"
 
@@ -87,7 +79,7 @@ docker buildx bake \
 rm -f "$override_file"
 
 for image in "${images[@]}"; do
-    img="$(docker_target "$image")"
+    img="$(basename "$image")"
     digest=$(jq -r ".\"$img\".\"containerimage.digest\"" /tmp/bake-metadata.json)
     mkdir -p "/tmp/digests/$img"
     touch "/tmp/digests/$img/${digest#sha256:}"

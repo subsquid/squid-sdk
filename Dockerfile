@@ -87,12 +87,12 @@ COPY --from=solana-ingest-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/solana/solana-ingest/bin/run.js"]
 
 
-FROM deps AS solana-hotblocks-service-builder
+FROM deps AS solana-data-service-builder
 RUN node common/scripts/install-run-rush.js build --to @subsquid/solana-data-service
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/solana-data-service
 
-FROM node AS solana-hotblocks-service
-COPY --from=solana-hotblocks-service-builder /squid/common/deploy /squid
+FROM node AS solana-data-service
+COPY --from=solana-data-service-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/solana/solana-data-service/lib/main.js"]
 
 

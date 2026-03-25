@@ -8,7 +8,7 @@ group "default" {
     "evm-data-service",
     "solana-dump",
     "solana-ingest",
-    "solana-hotblocks-service",
+    "solana-data-service",
     "substrate-dump",
     "substrate-ingest",
     "substrate-metadata-service",
@@ -68,9 +68,9 @@ target "solana-ingest" {
   target   = "solana-ingest"
 }
 
-target "solana-hotblocks-service" {
+target "solana-data-service" {
   inherits = ["_common"]
-  target   = "solana-hotblocks-service"
+  target   = "solana-data-service"
 }
 
 target "substrate-dump" {
