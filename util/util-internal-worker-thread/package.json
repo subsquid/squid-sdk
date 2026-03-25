@@ -1,7 +1,7 @@
 {
-  "name": "@subsquid/evm-objects",
-  "version": "0.0.1",
-  "description": "Augmented EVM data model",
+  "name": "@subsquid/util-internal-worker-thread",
+  "version": "0.0.0",
+  "description": "RPC implementation for node.js worker threads",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
@@ -16,14 +16,11 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
+    "@subsquid/logger": "^1.5.0",
     "@subsquid/util-internal": "^3.2.0"
   },
-  "peerDependencies": {
-    "@subsquid/evm-stream": "^0.0.0"
-  },
   "devDependencies": {
-    "@subsquid/evm-stream": "^0.0.0",
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@types/node": "~24.0.15",
+    "typescript": "5.5.4"
   }
 }
