@@ -184,6 +184,10 @@ class Processor<B extends BlockBase, S> {
             throw new Error('Data is not continuous')
         }
 
+        if (finalizedHeadData != null && state.finalizedHead != null && finalizedHeadData.number <= state.finalizedHead.number) {
+            finalizedHeadData = state.finalizedHead
+        }
+
         let unfinalizedIndex = 0
         if (finalizedHeadData != null) {
             unfinalizedIndex = blocks.findIndex((b) => b.header.number > finalizedHeadData!.number)
