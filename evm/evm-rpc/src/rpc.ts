@@ -162,15 +162,25 @@ export class Rpc {
     }
 
     private async mapBlock(block: GetBlock, withTransactions: boolean, utils: ChainUtils): Promise<Block> {
-        // Cronos (Ethermint-based) block 0x198d contains a transaction that was
+        // Cronos block 0x198d contains only one transaction (0x5395ae..) that was
         // included at the Cosmos consensus layer but ran out of block gas before
-        // the EVM could execute it. The same transaction was successfully executed
-        // in the next block (0x198e). Since the EVM never ran this transaction in
-        // block 0x198d, no receipt exists for it, and calling eth_getBlockReceipts
-        // crashes the RPC node due to a bug in Ethermint's KV tx-hash index.
-        // We strip the transaction here so the rest of the pipeline never sees a
-        // transaction without a corresponding receipt.
-        // Upstream fix: https://github.com/crypto-org-chain/ethermint/pull/870
+        // the EVM could execute it. The same transaction (0x5395ae..) was successfully
+        // executed in the next block (0x198e). So it effectively appears in both blocks.
+        // 
+        // Originally it was discovered that calling eth_getBlockReceipts for block 0x198d crashes the RPC node.
+        // That is happening because Ethermint uses a KV indexer that maps tx_hash → block_height.
+        // When block 0x198e was indexed, it overrode the entry for tx 0x5395ae.. (so it became 0x5395ae.. → 0x198e).
+        // Calling eth_getBlockReceipts triggers a path that looks up the transaction hash (0x5395ae..)
+        // in the KV index → gets height 0x198e (the overwritten entry) and then tries to access block.Block.Txs[res.TxIndex]
+        // using the block data from 0x198d but with a tx index from 0x198e, resulting in an out-of-bounds panic.
+        // (see related upstream fix: https://github.com/crypto-org-chain/ethermint/pull/870)
+        //
+        // On the other hand if we call eth_getTransactionReceipt for tx 0x5395ae.., the same KV index lookup
+        // takes place and we end up getting a receipt from block 0x198e (which obviously doesn't belong to block 0x198d).
+        //
+        // So the solution is to strip the 0x5395ae.. transaction completely from block 0x198d to avoid
+        // passing the inconsistent data further down the pipeline (otherwise we either end up with a transaction with no receipt
+        // or a transaction with a receipt that comes from another block)
         if (utils.isCronosMainnet && block.number === '0x198d') {
             block.transactions = []
         }
