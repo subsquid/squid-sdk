@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { loadBlock, loadReceipts } from './helpers/fixture-loader'
+import { getChainId, loadBlock, loadReceipts } from './helpers/fixture-loader'
 import { MockRpcClient } from './helpers/mock-rpc-client'
 import { Rpc } from '../src/rpc'
 import { toQty } from '../src/util'
@@ -192,6 +192,91 @@ describe('Rpc Class Integration', () => {
             const blocks = await rpc.getBlockBatch([6000178], { transactions: true })
             expect(blocks).toBeTruthy()
             expect(blocks.length).toEqual(1)
+        })
+
+        describe('Cronos block 0x198d workaround', () => {
+            // See description of the issue in evm/evm-rpc/src/rpc.ts (inside `mapBlock`)
+
+            it('strips phantom transaction from Cronos block 0x198d', async () => {
+                const fixtureBlock = loadBlock('cronos', 6541)
+                // The original block has 1 transaction
+                expect(fixtureBlock.transactions.length).toEqual(1)
+
+                const mockClient = new MockRpcClient()
+                mockClient.setFixture('eth_chainId', undefined, '0x19')
+                mockClient.setFixture('eth_getBlockByNumber', [toQty(6541), true], fixtureBlock)
+
+                const rpc = new Rpc({ client: mockClient as any })
+
+                const blocks = await rpc.getBlockBatch([6541], { transactions: true })
+                expect(blocks).toHaveLength(1)
+                // The transaction is stripped — block appears empty
+                expect(blocks[0].block.transactions).toEqual([])
+            })
+
+            it('does not strip transactions from normal Cronos blocks', async () => {
+                const fixtureBlock = loadBlock('cronos', 10000)
+
+                const mockClient = new MockRpcClient()
+                mockClient.setFixture('eth_chainId', undefined, '0x19')
+                mockClient.setFixture('eth_getBlockByNumber', [toQty(10000), true], fixtureBlock)
+
+                const rpc = new Rpc({ client: mockClient as any })
+
+                const blocks = await rpc.getBlockBatch([10000], { transactions: true })
+                expect(blocks).toHaveLength(1)
+                expect(blocks[0].block.transactions.length).toBeGreaterThan(0)
+                expect(blocks[0].block.transactions.length).toEqual(fixtureBlock.transactions.length)
+            })
+
+            it('handles mixed batch (blocks 6541-6542)', async () => {
+                const brokenBlock = loadBlock('cronos', 6541)
+                const normalBlock = loadBlock('cronos', 6542)
+                const normalReceipts = loadReceipts('cronos', 6542)
+
+                const mockClient = new MockRpcClient()
+                mockClient.setFixture('eth_chainId', undefined, '0x19')
+                mockClient.setFixture('eth_getBlockByNumber', [toQty(6541), true], brokenBlock)
+                mockClient.setFixture('eth_getBlockByNumber', [toQty(6542), true], normalBlock)
+                mockClient.setFixture('eth_getBlockReceipts', ['latest'], normalReceipts)
+                mockClient.setFixture('eth_getBlockReceipts', [toQty(6542)], normalReceipts)
+
+                const rpc = new Rpc({ client: mockClient as any })
+
+                const blocks = await rpc.getBlockBatch([6541, 6542], { receipts: true, transactions: true })
+                expect(blocks).toHaveLength(2)
+
+                // block 6541: phantom tx stripped, no receipts
+                expect(blocks[0].number).toEqual(6541)
+                expect(blocks[0].block.transactions).toEqual([])
+                expect(blocks[0].receipts).toBe(undefined)
+
+                // block 6542: normal processing
+                expect(blocks[1].number).toEqual(6542)
+                expect(blocks[1].block.transactions.length).toBeGreaterThan(0)
+                expect(blocks[1].block.transactions.length).toEqual(normalBlock.transactions.length)
+                expect(blocks[1].receipts?.length).toEqual(normalBlock.transactions.length)
+            })
+
+            it('does not apply workaround on non-Cronos chains for block 6541', async () => {
+                const fixtureBlock = loadBlock('tempoModerato', 6541)
+                const fixtureReceipts = loadReceipts('tempoModerato', 6541)
+
+                const mockClient = new MockRpcClient()
+                mockClient.setFixture('eth_chainId', undefined, getChainId('tempoModerato'))
+                mockClient.setFixture('eth_getBlockByNumber', [toQty(6541), true], fixtureBlock)
+                mockClient.setFixture('eth_getBlockReceipts', ['latest'], fixtureReceipts)
+                mockClient.setFixture('eth_getBlockReceipts', [toQty(6541)], fixtureReceipts)
+
+                const rpc = new Rpc({ client: mockClient as any })
+
+                const blocks = await rpc.getBlockBatch([6541], { receipts: true, transactions: true })
+                expect(blocks).toHaveLength(1)
+                expect(blocks[0].number).toEqual(6541)
+                expect(blocks[0].block.transactions.length).toBeGreaterThan(0)
+                expect(blocks[0].block.transactions.length).toEqual(fixtureBlock.transactions.length)
+                expect(blocks[0].receipts?.length).toEqual(fixtureBlock.transactions.length)
+            })
         })
 
     })

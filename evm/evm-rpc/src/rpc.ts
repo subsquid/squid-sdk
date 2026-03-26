@@ -159,6 +159,19 @@ export class Rpc {
     }
 
     private async mapBlock(block: GetBlock, withTransactions: boolean, utils: ChainUtils): Promise<Block> {
+        // Cronos (Ethermint-based) block 0x198d contains a transaction that was
+        // included at the Cosmos consensus layer but ran out of block gas before
+        // the EVM could execute it. The same transaction was successfully executed
+        // in the next block (0x198e). Since the EVM never ran this transaction in
+        // block 0x198d, no receipt exists for it, and calling eth_getBlockReceipts
+        // crashes the RPC node due to a bug in Ethermint's KV tx-hash index.
+        // We strip the transaction here so the rest of the pipeline never sees a
+        // transaction without a corresponding receipt.
+        // Upstream fix: https://github.com/crypto-org-chain/ethermint/pull/870
+        if (utils.isCronosMainnet && block.number === '0x198d') {
+            block.transactions = []
+        }
+
         if (this.verifyBlockHash) {
             let blockHash = utils.calculateBlockHash(block)
             assert.equal(block.hash, blockHash, 'failed to verify block hash')
@@ -184,6 +197,7 @@ export class Rpc {
                 }
             }
         }
+
         return {
             number: qty2Int(block.number),
             hash: block.hash,
@@ -269,8 +283,15 @@ export class Rpc {
     private async addReceipts(blocks: Block[]) {
         let method = await this.getReceiptsMethod()
         switch (method) {
-            case 'eth_getBlockReceipts':
+            case 'eth_getBlockReceipts': {
+                let utils = await this.getChainUtils()
+                if (utils.isCronosMainnet) {
+                    // Also skip the eth_getBlockReceipts call for block 0x198d,
+                    // because it crashes the RPC node (see comment in mapBlock)
+                    blocks = blocks.filter(b => b.number !== 0x198d)
+                }
                 return this.addReceiptsByBlock(blocks)
+            }
             default:
                 return this.addReceiptsByTx(blocks)
         }
