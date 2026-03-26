@@ -29,6 +29,12 @@ import {
 import {RawBlock} from './raw'
 
 
+function safeQty2Int(qty: string): number | undefined {
+    let i = parseInt(qty, 16)
+    return Number.isSafeInteger(i) ? i : undefined
+}
+
+
 function* traverseDebugFrame(frame: rpc.DebugFrame, traceAddress: number[]): Iterable<{
     traceAddress: number[]
     subtraces: number
@@ -403,11 +409,22 @@ function mapAccessListItem(src: rpc.AccessListItem): AccessListItem {
 }
 
 
-function mapEIP7702Authorization(src: rpc.EIP7702Authorization): EIP7702Authorization {
+function mapEIP7702Authorization(src: rpc.EIP7702AuthorizationItem): EIP7702Authorization {
+    if ('chain_id' in src) {
+        return {
+            chainId: toQty(src.chain_id),
+            address: src.address,
+            nonce: BigInt(src.nonce),
+            yParity: src.signature.odd_y_parity ? 1 : 0,
+            r: src.signature.r,
+            s: src.signature.s
+        }
+    }
+
     return {
         chainId: src.chainId,
         address: src.address,
-        nonce: qty2Int(src.nonce),
+        nonce: BigInt(src.nonce),
         yParity: qty2Int(src.yParity),
         r: src.r,
         s: src.s
@@ -529,7 +546,7 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         s: src.s ?? undefined,
         yParity: src.yParity ? qty2Int(src.yParity) : undefined,
         accessList: src.accessList?.map(mapAccessListItem),
-        chainId: src.chainId ? qty2Int(src.chainId) : undefined,
+        chainId: src.chainId ? safeQty2Int(src.chainId) : undefined,
         maxFeePerBlobGas: src.maxFeePerBlobGas ?? undefined,
         blobVersionedHashes: src.blobVersionedHashes ?? undefined,
         authorizationList: src.authorizationList?.map(mapEIP7702Authorization),
@@ -692,8 +709,12 @@ export function mapRawBlock(raw: RawBlock, withTraces?: boolean, withStateDiffs?
         stateDiffs: withStateDiffs ? [] : undefined
     }
 
+    // It's a workaround for incorrect sorting in etherlink mainnet 38021770 block
+    let sortedTransactions = [...raw.transactions]
+    sortedTransactions.sort((a, b) => qty2Int(a.transactionIndex) - qty2Int(b.transactionIndex))
+
     let logIndex = 0
-    for (let tx of raw.transactions) {
+    for (let tx of sortedTransactions) {
         let transactionIndex = qty2Int(tx.transactionIndex)
         block.transactions.push(mapTransaction(tx, tx.receipt_))
 

@@ -2,6 +2,7 @@ import {BlockBatch, BlockStream, DataSource, StreamRequest} from '@subsquid/util
 import {ListeningServer} from '@subsquid/util-internal-http-server'
 import {DataService} from './data-service'
 import {createHttpApp} from './http-app'
+import {Metrics} from './metrics'
 import {Block, BlockHeader, BlockRef} from './types'
 
 
@@ -12,6 +13,7 @@ export {
     BlockRef,
     BlockStream,
     DataSource,
+    Metrics,
     StreamRequest
 }
 
@@ -23,7 +25,7 @@ export interface DataServiceOptions {
 }
 
 
-export async function runDataService(args: DataServiceOptions): Promise<ListeningServer & {started: Promise<void>}> {
+export async function runDataService(args: DataServiceOptions): Promise<ListeningServer & {started: Promise<void>, metrics: Metrics}> {
     let service = new DataService(args.source, args.blockCacheSize ?? 1000)
     let app = createHttpApp(service)
 
@@ -34,6 +36,7 @@ export async function runDataService(args: DataServiceOptions): Promise<Listenin
 
     return {
         started: service.started(),
+        metrics: service.metrics,
         port: server.port,
         close(): Promise<void> {
             service.stop()

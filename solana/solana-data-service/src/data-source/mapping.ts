@@ -9,7 +9,7 @@ import {promisify} from 'node:util'
 import * as zlib from 'node:zlib'
 
 
-const gzip = promisify(zlib.gzip)
+const zstdCompress = promisify(zlib.zstdCompress)
 
 
 export class Mapping implements DataSource<Block> {
@@ -71,8 +71,8 @@ export class Mapping implements DataSource<Block> {
 
         let json = archive.toArchiveBlock(normalized)
         let jsonLine = JSON.stringify(toJSON(json)) + '\n'
-        let jsonLineGzip = await gzip(jsonLine, {
-            level: zlib.constants.Z_BEST_SPEED
+        let jsonLineZstd = await zstdCompress(Buffer.from(jsonLine), {
+            params: {[zlib.constants.ZSTD_c_compressionLevel]: 1}
         })
 
         return {
@@ -81,7 +81,7 @@ export class Mapping implements DataSource<Block> {
             parentNumber: block.block.parentSlot,
             parentHash: block.block.previousBlockhash,
             timestamp: block.block.blockTime && block.block.blockTime * 1000 || undefined,
-            jsonLineGzip
+            jsonLineZstd
         }
     }
 }

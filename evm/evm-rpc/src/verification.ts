@@ -5,7 +5,20 @@ import {RLP} from '@ethereumjs/rlp'
 import {bigIntToUnpaddedBytes, concatBytes, setLengthLeft, hexToBytes, PrefixedHexString} from '@ethereumjs/util'
 import {keccak256} from 'ethereum-cryptography/keccak'
 import secp256k1 from 'secp256k1'
-import {Transaction, AccessListItem, EIP7702Authorization, TempoCall, TempoSignatureObject, TempoPrimitiveSignature, TempoKeychainSignature, TempoSignedAuthorization, TempoSignedKeyAuthorization, GetBlock, Log, Receipt} from './rpc-data'
+import {
+    Transaction,
+    AccessListItem,
+    EIP7702AuthorizationItem,
+    TempoCall,
+    TempoSignatureObject,
+    TempoPrimitiveSignature,
+    TempoKeychainSignature,
+    TempoSignedAuthorization,
+    TempoSignedKeyAuthorization,
+    GetBlock,
+    Log,
+    Receipt,
+} from './rpc-data'
 import {qty2Int} from './util'
 import {Bytes20, Bytes32, Qty} from './types'
 
@@ -102,15 +115,28 @@ function decodeAccessList(accessList: AccessListItem[]) {
 }
 
 
-function decodeAuthorizationList(authorizationList: EIP7702Authorization[]) {
-    return authorizationList.map(item => [
-        BigInt(item.chainId),
-        decodeHex(item.address),
-        BigInt(item.nonce),
-        BigInt(item.yParity),
-        BigInt(item.r),
-        BigInt(item.s)
-    ])
+function decodeAuthorizationList(authorizationList: EIP7702AuthorizationItem[]) {
+    return authorizationList.map(item => {
+        if ('chain_id' in item) {
+            return [
+                BigInt(item.chain_id),
+                decodeHex(item.address),
+                BigInt(item.nonce),
+                BigInt(item.signature.odd_y_parity ? 1 : 0),
+                BigInt(item.signature.r),
+                BigInt(item.signature.s)
+            ]
+        }
+
+        return [
+            BigInt(item.chainId),
+            decodeHex(item.address),
+            BigInt(item.nonce),
+            BigInt(item.yParity),
+            BigInt(item.r),
+            BigInt(item.s)
+        ]
+    })
 }
 
 
@@ -552,8 +578,8 @@ function decodeLogs(logs: Log[]) {
 export interface ReceiptEncodingOptions {
     /**
      * Use gasUsed instead of cumulativeGasUsed when encoding receipts.
-     * This is needed for chains like Stable (chain ID 988) that deviate from
-     * the Ethereum standard by using per-transaction gas instead of cumulative.
+     * Some RPC providers (Cosmos EVM) deviate from the Ethereum standard by using
+     * per-transaction gas instead of cumulative.
      */
     useGasUsed?: boolean
 }
@@ -562,7 +588,6 @@ export interface ReceiptEncodingOptions {
 function encodeReceipt(receipt: Receipt, options?: ReceiptEncodingOptions): Buffer {
     let type = receipt.type == '0x0' ? Buffer.alloc(0) : RLP.encode(qty2Int(receipt.type))
     let payload: Uint8Array
-    // Use gasUsed instead of cumulativeGasUsed for certain chains (e.g., Stable)
     let gasField = options?.useGasUsed ? receipt.gasUsed : receipt.cumulativeGasUsed
     if (receipt.type == '0x7e') {
         // https://github.com/ethereum-optimism/specs/blob/main/specs/protocol/deposits.md#deposit-receipt

@@ -3516,6 +3516,12 @@ packages:
       undici-types: 6.21.0
     dev: false
 
+  /@types/node@24.0.15:
+    resolution: {integrity: sha512-oaeTSbCef7U/z7rDeJA138xpG3NuKc64/rZ2qmUFkFJmnMsAPaluIifqyWd8hSSMxyP9oie3dLAqYPblag9KgA==}
+    dependencies:
+      undici-types: 7.8.0
+    dev: false
+
   /@types/pg@8.10.9:
     resolution: {integrity: sha512-UksbANNE/f8w0wOMxVKKIrLCbEMV+oM1uKejmwXr39olg4xqcfBDbXxObJAt6XxHbDa4XTKOlUEcEltXDX+XLQ==}
     dependencies:
@@ -7265,6 +7271,10 @@ packages:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
     dev: false
 
+  /undici-types@7.8.0:
+    resolution: {integrity: sha512-9UJ2xGDvQ43tYyVMpuHlsgApydB8ZKfVYTsLDhXkFL/6gfkp+U8xTGdh8pMJv1SpZna0zxG1DwsKZsreLbXBxw==}
+    dev: false
+
   /unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
     engines: {node: '>= 0.8'}
@@ -7952,11 +7962,11 @@ packages:
     dev: false
 
   file:projects/bitcoin-data-service.tgz:
-    resolution: {integrity: sha512-3ScLupyVdKDTDxBwajsytu55t/7ED2nvoHkW5oWaKTNfCDssAUHWQuu3DVLTOFeuoxl6ktIlKB8VOhzp/0YA8w==, tarball: file:projects/bitcoin-data-service.tgz}
+    resolution: {integrity: sha512-sTWuQJCYanGOaJeirpB7Ya9nyYNKQ8LN/FfUikLqaLEKz6J4AvlqJ7C49d4Z2XJ4x94c0/yNOCu6laEOzyXi4A==, tarball: file:projects/bitcoin-data-service.tgz}
     name: '@rush-temp/bitcoin-data-service'
     version: 0.0.0
     dependencies:
-      '@types/node': 18.19.0
+      '@types/node': 24.0.15
       '@types/source-map-support': 0.5.10
       commander: 11.1.0
       source-map-support: 0.5.21
@@ -8152,11 +8162,11 @@ packages:
     dev: false
 
   file:projects/evm-data-service.tgz:
-    resolution: {integrity: sha512-jnViCNgohMHiQSxPC0ZQ/O9zZf9Ci+msdkIpOzSaXYc0nICbAoVkM+Fy338ImgUzgSFS6DnDJdjELwOBVm7zcg==, tarball: file:projects/evm-data-service.tgz}
+    resolution: {integrity: sha512-zh6Uzg7+BCSaPNzFvtzYThGs12v08SaprBMoQxOgUoJFTSlInRYqQC99DTGYueHu2qtKfGPPqp4/MBx1Gn8pxA==, tarball: file:projects/evm-data-service.tgz}
     name: '@rush-temp/evm-data-service'
     version: 0.0.0
     dependencies:
-      '@types/node': 18.19.0
+      '@types/node': 24.0.15
       '@types/source-map-support': 0.5.10
       commander: 11.1.0
       source-map-support: 0.5.21
@@ -8435,11 +8445,11 @@ packages:
     dev: false
 
   file:projects/hyperliquid-fills-data-service.tgz:
-    resolution: {integrity: sha512-LmcexkYvH9tA1AeaV3QN4UfdSpwbkK4dujMBGhKWtqW0jBZDwyOtrvs27yEc7oUtzt5wSOKDvS69puoE0nYrPA==, tarball: file:projects/hyperliquid-fills-data-service.tgz}
+    resolution: {integrity: sha512-/K74R1vp6IFtve0/l9i+uqzi7Vp5s4BsS0RoGIL4RUdw8iFrnEf9sb7WhNFCvVYa3KmISxXyCohfqiCUB/I6yQ==, tarball: file:projects/hyperliquid-fills-data-service.tgz}
     name: '@rush-temp/hyperliquid-fills-data-service'
     version: 0.0.0
     dependencies:
-      '@types/node': 18.19.0
+      '@types/node': 24.0.15
       commander: 11.1.0
       typescript: 5.5.4
     dev: false
@@ -8477,11 +8487,11 @@ packages:
     dev: false
 
   file:projects/hyperliquid-replica-cmds-data-service.tgz:
-    resolution: {integrity: sha512-/Gdb8z2ah051cCrzvWyc/WAo9KQWophTKMF2cAR/XeV+vq01/DnvjV3pPB2RkpRUk0uGmpCGjc/zVqdEVbG0gg==, tarball: file:projects/hyperliquid-replica-cmds-data-service.tgz}
+    resolution: {integrity: sha512-hxqqALhbRb25hIdOzkD3RN0ZprdEja8JozgMKsvbvZjyJ9B60fRsmkYvgW+jXuNns39FHP1pHaKX3M+M6XVpxQ==, tarball: file:projects/hyperliquid-replica-cmds-data-service.tgz}
     name: '@rush-temp/hyperliquid-replica-cmds-data-service'
     version: 0.0.0
     dependencies:
-      '@types/node': 18.19.0
+      '@types/node': 24.0.15
       commander: 11.1.0
       typescript: 5.5.4
     dev: false
@@ -8698,11 +8708,11 @@ packages:
     dev: false
 
   file:projects/solana-data-service.tgz:
-    resolution: {integrity: sha512-jf8aFJSzId3PBWUWq+5RWdQGHPV6ntpuOeekGUc869y0/BuwrlsTpShctcrea/yupY5nV74oFcQhmQbbmI/gnQ==, tarball: file:projects/solana-data-service.tgz}
+    resolution: {integrity: sha512-w7I1uUHy2GQRzS2xeqffnzCYXdM8dTJfelh564nKMsl1b7AEmLv03R/yD56otA4vk0ETacvzeZ4Kqz/voRjJ5w==, tarball: file:projects/solana-data-service.tgz}
     name: '@rush-temp/solana-data-service'
     version: 0.0.0
     dependencies:
-      '@types/node': 18.19.0
+      '@types/node': 24.0.15
       bs58: 5.0.0
       commander: 11.1.0
       typescript: 5.5.4
@@ -9265,11 +9275,11 @@ packages:
     dev: false
 
   file:projects/util-internal-data-service.tgz:
-    resolution: {integrity: sha512-nfkYiT1KVUf/bsMh/xaLu6YG77+hhWc2pC5aiprOR25vDdVVEAebZaW+OTjzxOIHrMRnL69XsFo3kae/8wCMBw==, tarball: file:projects/util-internal-data-service.tgz}
+    resolution: {integrity: sha512-hYK5+sCKs5/kFISPktzHeMkcbr2ksIYEUDDZLjSuAAKTkSwGseoswFlXGWpWTWh1JPPwc6S+8a2tJ/p1dXmg0g==, tarball: file:projects/util-internal-data-service.tgz}
     name: '@rush-temp/util-internal-data-service'
     version: 0.0.0
     dependencies:
-      '@types/node': 20.19.6
+      '@types/node': 24.0.15
       prom-client: 14.2.0
       typescript: 5.5.4
     dev: false

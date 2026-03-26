@@ -13,6 +13,11 @@ import {
 import {getTxHash} from './util'
 
 
+export interface ChainUtilsOptions {
+    useGasUsedForReceiptsRoot?: boolean
+}
+
+
 export class ChainUtils {
     public isPolygonMainnet: boolean
     public isHyperliquidMainnet: boolean
@@ -20,8 +25,9 @@ export class ChainUtils {
     public isStable: boolean
     public isTempo: boolean
     public isCronosMainnet: boolean
+    public useGasUsedForReceiptsRoot: boolean
 
-    constructor(chainId: Qty) {
+    constructor(chainId: Qty, options?: ChainUtilsOptions) {
         this.isPolygonMainnet = chainId == '0x89'
         this.isHyperliquidMainnet = chainId == '0x3e7'
         this.isHyperliquidTestnet = chainId == '0x3e6'
@@ -32,6 +38,7 @@ export class ChainUtils {
         // https://drpc.org/chainlist/tempo-testnet-rpc
         this.isTempo = chainId == '0x1079' || chainId == '0xa5bf' || chainId == '0xa5bd'
         this.isCronosMainnet = chainId == '0x19' // Chain ID 25
+        this.useGasUsedForReceiptsRoot = options?.useGasUsedForReceiptsRoot ?? false
     }
 
     calculateBlockHash(block: GetBlock) {
@@ -101,8 +108,7 @@ export class ChainUtils {
             receipts = receipts.filter(receipt => !isHyperliquidSystemReceipt(receipt))
         }
 
-        // Stable chain uses gasUsed instead of cumulativeGasUsed in receipts root
-        if (this.isStable) {
+        if (this.useGasUsedForReceiptsRoot) {
             return receiptsRoot(receipts, {useGasUsed: true})
         }
 
@@ -112,6 +118,12 @@ export class ChainUtils {
     recoverTxSender(transaction: Transaction) {
         if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
             if (isHyperliquidSystemTx(transaction)) return
+        }
+
+        // Stable system transactions are legacy txs with a fake signature (r=0, s=0)
+        // sent from the zero address to system contracts. They cannot be ECDSA-recovered.
+        if (this.isStable) {
+            if (isStableSystemTx(transaction)) return
         }
 
         // Tempo system transactions are legacy txs with a fake signature (r=0, s=0)
@@ -136,6 +148,12 @@ function isTempoSystemTx(tx: Transaction) {
     // Tempo system transactions are legacy (type 0x0) with a fake signature (r=0, s=0).
     // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/envelope.rs
     return tx.type == '0x0' && tx.r == '0x0' && tx.s == '0x0'
+}
+
+
+function isStableSystemTx(tx: Transaction) {
+    // Stable system txs have a fake signature (r=0, s=0) and can be legacy (0x0) or EIP-1559 (0x2)
+    return tx.r == '0x0' && tx.s == '0x0'
 }
 
 

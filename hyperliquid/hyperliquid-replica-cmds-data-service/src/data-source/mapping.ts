@@ -7,7 +7,7 @@ import {promisify} from 'node:util'
 import * as zlib from 'node:zlib'
 
 
-const gzip = promisify(zlib.gzip)
+const zstdCompress = promisify(zlib.zstdCompress)
 
 
 export class Mapping implements DataSource<Block> {
@@ -50,8 +50,8 @@ export class Mapping implements DataSource<Block> {
     private async mapRpcBlock(block: RawBlock): Promise<Block> {
         let normalized = mapRawBlock(block)
         let jsonLine = JSON.stringify(toJSON(normalized)) + '\n'
-        let jsonLineGzip = await gzip(jsonLine, {
-            level: zlib.constants.Z_BEST_COMPRESSION
+        let jsonLineZstd = await zstdCompress(Buffer.from(jsonLine), {
+            params: {[zlib.constants.ZSTD_c_compressionLevel]: 1}
         })
 
         return {
@@ -60,7 +60,7 @@ export class Mapping implements DataSource<Block> {
             parentNumber: block.height - 1,
             parentHash: normalized.header.parentHash,
             timestamp: Date.parse(block.block.abci_block.time),
-            jsonLineGzip
+            jsonLineZstd
         }
     }
 }
