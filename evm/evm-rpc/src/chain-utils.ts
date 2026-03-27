@@ -24,6 +24,7 @@ export class ChainUtils {
     public isHyperliquidTestnet: boolean
     public isStable: boolean
     public isTempo: boolean
+    public isCronosMainnet: boolean
     public useGasUsedForReceiptsRoot: boolean
 
     constructor(chainId: Qty, options?: ChainUtilsOptions) {
@@ -36,6 +37,7 @@ export class ChainUtils {
         // https://drpc.org/chainlist/tempo-moderato-testnet-rpc
         // https://drpc.org/chainlist/tempo-testnet-rpc
         this.isTempo = chainId == '0x1079' || chainId == '0xa5bf' || chainId == '0xa5bd'
+        this.isCronosMainnet = chainId == '0x19' // Chain ID 25
         this.useGasUsedForReceiptsRoot = options?.useGasUsedForReceiptsRoot ?? false
     }
 
