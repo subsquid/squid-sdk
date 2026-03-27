@@ -35,6 +35,7 @@ runProgram(async () => {
     program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
     program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
     program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
+    program.option('--auto-adjust-finalized-head', 'Automatically adjust finalized head when block cache is full and finalized head is not in the new range')
     program.parse()
 
     let args = program.opts() as {
@@ -58,6 +59,7 @@ runProgram(async () => {
         verifyReceiptsRoot?: boolean
         verifyLogsBloom?: boolean
         useGasUsedForReceiptsRoot?: boolean
+        autoAdjustFinalizedHead?: boolean
     }
 
     let dataSourceOptions: DataSourceOptions = {
@@ -108,7 +110,8 @@ runProgram(async () => {
     service = await runDataService({
         source: dataSource,
         blockCacheSize: args.blockCacheSize,
-        port: args.port
+        port: args.port,
+        autoAdjustFinalizedHead: args.autoAdjustFinalizedHead
     })
 
     log.info(`listening on port ${service.port}`)

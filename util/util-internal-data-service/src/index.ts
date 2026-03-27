@@ -22,11 +22,12 @@ export interface DataServiceOptions {
     source: DataSource<Block>
     blockCacheSize?: number
     port?: number
+    autoAdjustFinalizedHead?: boolean
 }
 
 
 export async function runDataService(args: DataServiceOptions): Promise<ListeningServer & {started: Promise<void>, metrics: Metrics}> {
-    let service = new DataService(args.source, args.blockCacheSize ?? 1000)
+    let service = new DataService(args.source, args.blockCacheSize ?? 1000, args.autoAdjustFinalizedHead)
     let app = createHttpApp(service)
 
     await service.init()

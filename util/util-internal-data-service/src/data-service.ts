@@ -26,6 +26,7 @@ export class DataService {
     constructor(
         private source: DataSource<Block>,
         private bufferSize: number,
+        private autoAdjustFinalizedHead?: boolean,
         readonly log = createLogger('sqd:data-service')
     ) {
         this.firstBlockIngestedFuture.promise().catch(() => {})
@@ -161,7 +162,7 @@ export class DataService {
             to: head.number
         })) {
             assert(batch.blocks.length === 1)
-            this.#chain = new Chain(batch.blocks[0], this.bufferSize)
+            this.#chain = new Chain(batch.blocks[0], this.bufferSize, this.autoAdjustFinalizedHead)
             this.triggerUpdate()
         }
     }

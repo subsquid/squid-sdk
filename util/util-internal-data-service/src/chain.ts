@@ -1,3 +1,4 @@
+import {createLogger, Logger} from '@subsquid/logger'
 import {bisect, last} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Block, BlockHeader, BlockRef, DataResponse, InvalidBaseBlock} from './types'
@@ -7,17 +8,28 @@ import {isChain} from './util'
 export class Chain {
     private blocks: Block[]
     private finalizedHead: number
+    private log: Logger
 
-    constructor(base: Block, private maxSize: number) {
+    constructor(base: Block, private maxSize: number, private autoAdjustFinalizedHead: boolean = false) {
         assert(this.maxSize > 0)
         this.blocks = [base]
         this.finalizedHead = 0
+        this.log = createLogger('sqd:data-service:chain')
     }
 
     compact(): boolean {
         let extra = this.blocks.length - this.maxSize
         if (extra <= 0) return true
         let ok = this.finalizedHead >= extra
+        if (!ok && this.autoAdjustFinalizedHead) {
+            let newLastBlock = this.blocks[extra - 1]
+            this.log.warn(
+                {block: {number: newLastBlock.number, hash: newLastBlock.hash}},
+                `finalized head was adjusted automatically to block #${newLastBlock.number}`
+            )
+            this.finalizedHead = extra
+            ok = true
+        }
         let trim = Math.min(extra, this.finalizedHead)
         this.blocks = this.blocks.slice(trim)
         this.finalizedHead -= trim
