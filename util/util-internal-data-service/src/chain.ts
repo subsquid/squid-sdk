@@ -31,6 +31,11 @@ export class Chain {
             ok = true
         }
         let trim = Math.min(extra, this.finalizedHead)
+        // Null-fill trimmed slots before replacing the array.
+        // This allows V8 to collect the dropped Block objects in the next young-gen
+        // scavenge rather than promoting them to old-gen, preventing heap segment
+        // accumulation across repeated spike→trim cycles.
+        for (let i = 0; i < trim; i++) (this.blocks as any)[i] = null
         this.blocks = this.blocks.slice(trim)
         this.finalizedHead -= trim
         return ok
@@ -50,6 +55,9 @@ export class Chain {
         // rollback
         let prev = this.blocks[pos]
         assert(isChain(prev, newBlock))
+        // Null-fill dropped slots so V8 can scavenge the evicted Block objects
+        // before they get promoted to old-gen (same rationale as in compact()).
+        for (let i = pos + 1; i < this.blocks.length; i++) (this.blocks as any)[i] = null
         this.blocks = this.blocks.slice(0, pos + 1)
         this.blocks.push(newBlock)
     }
