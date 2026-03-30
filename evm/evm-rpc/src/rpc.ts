@@ -162,6 +162,44 @@ export class Rpc {
     }
 
     private async mapBlock(block: GetBlock, withTransactions: boolean, utils: ChainUtils): Promise<Block> {
+        // Cronos block 0x198d contains a contract creation transaction (0x5395ae..) that
+        // failed with "contract creation code storage out of gas" in the EVM, causing all state,
+        // including the nonce increment, to be reverted.
+        //
+        // However, due to a bug in an older ethermint version, this error was not correctly
+        // propagated to the Cosmos layer, so the tx got code=0 (success) despite the EVM failure.
+        //
+        // Because the nonce wasn't incremented, the same transaction (0x5395ae..) was allowed to be
+        // re-tried in the next block (0x198e) where it successfully executed. The reason why it
+        // didn't fail this time was because there were other transactions in block 0x198e that
+        // pre-warmed the storage slots used by transaction 0x5395ae.., reducing its gas costs just
+        // enough so that they didn't exceed the transaction gas budget anymore.
+        //
+        // The transaction thus effectively appears in both blocks, but only the one in block 0x198e
+        // actually affected the EVM state.
+        //
+        // Originally the issue was discovered, because calling eth_getBlockReceipts for block
+        // 0x198d would crash the RPC node. The reason for that was that Ethermint uses a KV indexer
+        // that maps tx_hash → block_height. When block 0x198e was indexed, it overrode the entry
+        // for tx 0x5395ae.. (so it became 0x5395ae.. → 0x198e). Calling eth_getBlockReceipts
+        // triggers a path that looks up the transaction hash (0x5395ae..) in the KV index → gets
+        // height 0x198e (the overwritten entry) and then tries to access
+        // block.Block.Txs[res.TxIndex] using the block data from 0x198d but with a tx index from
+        // 0x198e, resulting in an out-of-bounds panic.
+        // (see related upstream fix: https://github.com/crypto-org-chain/ethermint/pull/870)
+        //
+        // On the other hand if we call eth_getTransactionReceipt for tx 0x5395ae.., the same KV
+        // index lookup takes place and we end up getting a receipt from block 0x198e (which
+        // obviously doesn't belong to block 0x198d).
+        //
+        // So the solution is to strip the 0x5395ae.. transaction completely from block 0x198d to
+        // avoid passing the inconsistent data further down the pipeline (otherwise we either end up
+        // with a transaction with no receipt or a transaction with a receipt that comes from
+        // another block)
+        if (utils.isCronosMainnet && block.number === '0x198d') {
+            block.transactions = []
+        }
+
         if (this.verifyBlockHash) {
             let blockHash = utils.calculateBlockHash(block)
             assert.equal(block.hash, blockHash, 'failed to verify block hash')
@@ -187,6 +225,7 @@ export class Rpc {
                 }
             }
         }
+
         return {
             number: qty2Int(block.number),
             hash: block.hash,
@@ -272,8 +311,15 @@ export class Rpc {
     private async addReceipts(blocks: Block[]) {
         let method = await this.getReceiptsMethod()
         switch (method) {
-            case 'eth_getBlockReceipts':
+            case 'eth_getBlockReceipts': {
+                let utils = await this.getChainUtils()
+                if (utils.isCronosMainnet) {
+                    // Also skip the eth_getBlockReceipts call for block 0x198d,
+                    // because it crashes the RPC node (see comment in mapBlock)
+                    blocks = blocks.filter(b => b.number !== 0x198d)
+                }
                 return this.addReceiptsByBlock(blocks)
+            }
             default:
                 return this.addReceiptsByTx(blocks)
         }
