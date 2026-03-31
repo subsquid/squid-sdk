@@ -29,8 +29,8 @@ export interface RpcClientOptions {
     /**
      * Error tolerance
      * 
-     * Standard - treat all commonly retriable errors as retriable, crash on internal server errors.
-     * High - treat all commonly retriable errors + internal HTTP / RPC errors as retriable.
+     * Standard - retry on commonly retriable errors, crash on internal server errors.
+     * High - retry on commonly retriable errors + internal HTTP / RPC errors.
      */
     errorTolerance?: ErrorTolerance
     /**
