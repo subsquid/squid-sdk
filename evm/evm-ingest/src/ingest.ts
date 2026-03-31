@@ -7,6 +7,7 @@ import {toJSON} from '@subsquid/util-internal-json'
 interface Options extends IngestOptions {
     withTraces?: boolean
     withStatediffs?: boolean
+    assertLogIndex?: boolean
 }
 
 
@@ -28,16 +29,18 @@ export class EvmIngest extends Ingest<Options> {
         })
         program.option('--with-traces', 'Include EVM call traces')
         program.option('--with-statediffs', 'Include EVM state updates')
+        program.option('--assert-log-index', 'Assert that log indices within a block are sequential')
     }
 
     protected async *getBlocks(range: Range): AsyncIterable<object[]> {
-        let withTraces = this.options().withTraces
-        let withStateDiffs = this.options().withStatediffs
-
         for await (let batch of this.archive().getRawBlocks<RawBlock>(range)) {
             yield batch.map(raw => {
                 try {
-                    let block = mapRawBlock(raw, withTraces, withStateDiffs)
+                    let block = mapRawBlock(raw, {
+                        withTraces: this.options().withTraces,
+                        withStateDiffs: this.options().withStatediffs,
+                        assertLogIndex: this.options().assertLogIndex,
+                    })
                     return toJSON(block)
                 } catch(err: any) {
                     throw addErrorContext(err, {

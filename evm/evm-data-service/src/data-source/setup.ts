@@ -26,6 +26,7 @@ export interface DataSourceOptions {
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
     verifyLogsBloom?: boolean
+    assertLogIndex?: boolean
     useGasUsedForReceiptsRoot?: boolean
 }
 
@@ -48,6 +49,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         verifyTxSender: options.verifyTxSender,
         verifyReceiptsRoot: options.verifyReceiptsRoot,
         verifyLogsBloom: options.verifyLogsBloom,
+        assertLogIndex: options.assertLogIndex,
         useGasUsedForReceiptsRoot: options.useGasUsedForReceiptsRoot
     })
     let rpcSource = new EvmRpcDataSource({
@@ -65,5 +67,9 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         strideSize: options.httpRpcStrideSize,
         strideConcurrency: options.httpRpcStrideConcurrency
     })
-    return new Mapping(rpcSource, options.withTraces, options.withStatediffs)
+    return new Mapping(rpcSource, {
+        withTraces: options.withTraces,
+        withStateDiffs: options.withStatediffs,
+        assertLogIndex: options.assertLogIndex,
+    })
 }

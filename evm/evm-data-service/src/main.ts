@@ -34,6 +34,7 @@ runProgram(async () => {
     program.option('--verify-tx-root', 'Verify block transactions against transactions root')
     program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
     program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
+    program.option('--assert-log-index', 'Assert that log indices within a block are sequential')
     program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
     program.option('--auto-adjust-finalized-head', 'Automatically adjust finalized head when block cache is full and finalized head is not in the new range')
     program.parse()
@@ -58,6 +59,7 @@ runProgram(async () => {
         verifyTxRoot?: boolean
         verifyReceiptsRoot?: boolean
         verifyLogsBloom?: boolean
+        assertLogIndex?: boolean
         useGasUsedForReceiptsRoot?: boolean
         autoAdjustFinalizedHead?: boolean
     }
@@ -80,6 +82,7 @@ runProgram(async () => {
         verifyTxRoot: args.verifyTxRoot,
         verifyReceiptsRoot: args.verifyReceiptsRoot,
         verifyLogsBloom: args.verifyLogsBloom,
+        assertLogIndex: args.assertLogIndex,
         useGasUsedForReceiptsRoot: args.useGasUsedForReceiptsRoot
     }
 

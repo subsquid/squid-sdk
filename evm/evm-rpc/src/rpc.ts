@@ -39,6 +39,7 @@ export interface RpcOptions {
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
     verifyLogsBloom?: boolean
+    assertLogIndex?: boolean
     useGasUsedForReceiptsRoot?: boolean
 }
 
@@ -51,6 +52,7 @@ export class Rpc {
     private verifyTxRoot?: boolean
     private verifyReceiptsRoot?: boolean
     private verifyLogsBloom?: boolean
+    private assertLogIndex?: boolean
     private useGasUsedForReceiptsRoot?: boolean
     private log: Logger
     private receiptsMethod?: GetReceiptsMethod
@@ -64,6 +66,7 @@ export class Rpc {
         this.verifyTxRoot = options.verifyTxRoot
         this.verifyReceiptsRoot = options.verifyReceiptsRoot
         this.verifyLogsBloom = options.verifyLogsBloom
+        this.assertLogIndex = options.assertLogIndex
         this.useGasUsedForReceiptsRoot = options.useGasUsedForReceiptsRoot
         this.log = createLogger('sqd:evm-rpc')
     }
@@ -276,9 +279,11 @@ export class Rpc {
             let logs = logsByBlock.get(block.hash) || []
 
             try {
-                let logIndex = 0
-                for (let log of logs) {
-                    assert.equal(qty2Int(log.logIndex), logIndex++)
+                if (this.assertLogIndex) {
+                    let logIndex = 0
+                    for (let log of logs) {
+                        assert.equal(qty2Int(log.logIndex), logIndex++)
+                    }
                 }
 
                 if (this.verifyLogsBloom) {
@@ -361,9 +366,11 @@ export class Rpc {
             }
 
             try {
-                let logIndex = 0
-                for (let log of logs) {
-                    assert.equal(qty2Int(log.logIndex), logIndex++)
+                if (this.assertLogIndex) {
+                    let logIndex = 0
+                    for (let log of logs) {
+                        assert.equal(qty2Int(log.logIndex), logIndex++)
+                    }
                 }
 
                 if (this.verifyLogsBloom) {
@@ -421,9 +428,11 @@ export class Rpc {
             }
 
             try {
-                let logIndex = 0
-                for (let log of logs) {
-                    assert.equal(qty2Int(log.logIndex), logIndex++)
+                if (this.assertLogIndex) {
+                    let logIndex = 0
+                    for (let log of logs) {
+                        assert.equal(qty2Int(log.logIndex), logIndex++)
+                    }
                 }
 
                 if (this.verifyLogsBloom) {

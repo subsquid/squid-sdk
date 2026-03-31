@@ -611,13 +611,20 @@ function mapBlockHeader(src: rpc.GetBlock): BlockHeader {
 }
 
 
-export function mapRpcBlock(src: rpc.Block, withTraces?: boolean, withStateDiffs?: boolean): Block {
+export interface MappingOptions {
+    withTraces?: boolean
+    withStateDiffs?: boolean
+    assertLogIndex?: boolean
+}
+
+
+export function mapRpcBlock(src: rpc.Block, options?: MappingOptions): Block {
     let block: Block = {
         header: mapBlockHeader(src.block),
         transactions: [],
         logs: [],
-        traces: withTraces ? [] : undefined,
-        stateDiffs: withStateDiffs ? [] : undefined,
+        traces: options?.withTraces ? [] : undefined,
+        stateDiffs: options?.withStateDiffs ? [] : undefined,
     }
 
     let txIndex = new Map()
@@ -650,7 +657,7 @@ export function mapRpcBlock(src: rpc.Block, withTraces?: boolean, withStateDiffs
         }
     }
 
-    if (withTraces) {
+    if (options?.withTraces) {
         if (src.debugFrames) {
             for (let i = 0; i < src.debugFrames.length; i++) {
                 let frame = src.debugFrames[i]
@@ -672,7 +679,7 @@ export function mapRpcBlock(src: rpc.Block, withTraces?: boolean, withStateDiffs
         }
     }
 
-    if (withStateDiffs) {
+    if (options?.withStateDiffs) {
         if (src.debugStateDiffs) {
             for (let i = 0; i < src.debugStateDiffs.length; i++) {
                 let diffs = src.debugStateDiffs[i]
@@ -700,33 +707,27 @@ export function mapRpcBlock(src: rpc.Block, withTraces?: boolean, withStateDiffs
 }
 
 
-export function mapRawBlock(raw: RawBlock, withTraces?: boolean, withStateDiffs?: boolean): Block {
+export function mapRawBlock(raw: RawBlock, options?: MappingOptions): Block {
     let block: Block = {
         header: mapBlockHeader(raw),
         transactions: [],
         logs: [],
-        traces: withTraces ? [] : undefined,
-        stateDiffs: withStateDiffs ? [] : undefined
+        traces: options?.withTraces ? [] : undefined,
+        stateDiffs: options?.withStateDiffs ? [] : undefined
     }
 
-    // It's a workaround for incorrect sorting in etherlink mainnet 38021770 block
-    let sortedTransactions = [...raw.transactions]
-    sortedTransactions.sort((a, b) => qty2Int(a.transactionIndex) - qty2Int(b.transactionIndex))
-
-    let logIndex = 0
-    for (let tx of sortedTransactions) {
+    for (let tx of raw.transactions) {
         let transactionIndex = qty2Int(tx.transactionIndex)
         block.transactions.push(mapTransaction(tx, tx.receipt_))
 
         if (tx.receipt_) {
             for (let log of tx.receipt_.logs) {
                 let normalized = mapLog(log)
-                assert.equal(normalized.logIndex, logIndex++)
                 block.logs.push(normalized)
             }
         }
 
-        if (withTraces) {
+        if (options?.withTraces) {
             if (tx.debugFrame_) {
                 for (let frame of mapDebugFrame(transactionIndex, tx.debugFrame_)) {
                     block.traces!.push(frame)
@@ -738,7 +739,7 @@ export function mapRawBlock(raw: RawBlock, withTraces?: boolean, withStateDiffs?
             }
         }
 
-        if (withStateDiffs) {
+        if (options?.withStateDiffs) {
             if (tx.debugStateDiff_) {
                 for (let diff of mapDebugStateDiff(transactionIndex, tx.debugStateDiff_)) {
                     block.stateDiffs!.push(diff)
@@ -757,8 +758,14 @@ export function mapRawBlock(raw: RawBlock, withTraces?: boolean, withStateDiffs?
         assert(block.logs.length == 0)
         for (let log of raw.logs_) {
             let normalized = mapLog(log)
-            assert.equal(normalized.logIndex, logIndex++)
             block.logs.push(normalized)
+        }
+    }
+
+    if (options?.assertLogIndex) {
+        let logIndex = 0
+        for (let log of block.logs) {
+            assert.equal(log.logIndex, logIndex++)
         }
     }
 

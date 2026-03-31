@@ -1,5 +1,5 @@
 import {Block as RpcBlock} from '@subsquid/evm-rpc'
-import {mapRpcBlock} from '@subsquid/evm-normalization'
+import {mapRpcBlock, MappingOptions} from '@subsquid/evm-normalization'
 import {withErrorContext} from '@subsquid/util-internal'
 import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
 import {toJSON} from '@subsquid/util-internal-json'
@@ -11,11 +11,11 @@ const zstdCompress = promisify(zlib.zstdCompress)
 
 
 export class Mapping implements DataSource<Block> {
-    constructor(
-        private inner: DataSource<RpcBlock>,
-        private withTraces?: boolean,
-        private withStateDiffs?: boolean,
-    ) {}
+    private options?: MappingOptions
+
+    constructor(private inner: DataSource<RpcBlock>, options?: MappingOptions) {
+        this.options = options
+    }
 
     getHead(): Promise<BlockRef> {
         return this.inner.getHead()
@@ -53,7 +53,7 @@ export class Mapping implements DataSource<Block> {
     }
 
     private async mapRpcBlock(block: RpcBlock): Promise<Block> {
-        let normalized = mapRpcBlock(block, this.withTraces, this.withStateDiffs)
+        let normalized = mapRpcBlock(block, this.options)
         let jsonLine = JSON.stringify(toJSON(normalized)) + '\n'
         let jsonLineZstd = await zstdCompress(Buffer.from(jsonLine), {
             params: {[zlib.constants.ZSTD_c_compressionLevel]: 1}
