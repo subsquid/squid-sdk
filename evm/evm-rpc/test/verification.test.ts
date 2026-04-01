@@ -6,10 +6,6 @@ import {GetBlock, Transaction} from '../src/rpc-data'
 
 describe('Verification Functions', () => {
     for (const fixture of listFixtures()) {
-        if (fixture.chain === 'cronos') {
-            // Skip verifications for Cronos, as it's a Cosmos SDK chain, so doesn't pass most of them anyway
-            continue
-        }
         describe(`${fixture.chain} block ${fixture.blockNumber}`, () => {
             it('schema validation', () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
@@ -17,10 +13,14 @@ describe('Verification Functions', () => {
                 expect(err).toBeUndefined()
             })
 
-            it('blockHash verification', async () => {
+            
+
+            it.skipIf(
                 // Cosmos/Tendermint EVM chains use SHA-256 Merkle trees, not Keccak-256
-                if (fixture.chain === 'stable') return
-                if (fixture.chain === 'bittensor-testnet') return
+                fixture.chain === 'stable' ||
+                fixture.chain === 'bittensor-testnet' ||
+                fixture.chain === 'cronos'
+            )('blockHash verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 const chainId = getChainId(fixture.chain)
                 const utils = new ChainUtils(chainId)
@@ -28,7 +28,10 @@ describe('Verification Functions', () => {
                 expect(computed).toEqual(block.hash)
             })
 
-            it('transactionsRoot verification', async () => {
+            it.skipIf(
+                // Cosmos/Tendermint EVM chains use a different algorithm for the transactions root
+                fixture.chain === 'cronos'
+            )('transactionsRoot verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 if (!block.transactions || block.transactions.length === 0) return
 
@@ -39,7 +42,10 @@ describe('Verification Functions', () => {
             })
 
             if (hasReceipts(fixture.chain, fixture.blockNumber)) {
-                it('receiptsRoot verification', async () => {
+                it.skipIf(
+                    // Cosmos/Tendermint EVM chains usually use a different algorithm for the receipts root
+                    fixture.chain === 'cronos'
+                )('receiptsRoot verification', async () => {
                     const block = loadBlock(fixture.chain, fixture.blockNumber)
                     const receipts = loadReceipts(fixture.chain, fixture.blockNumber)
                     const chainId = getChainId(fixture.chain)
@@ -48,7 +54,10 @@ describe('Verification Functions', () => {
                     expect(computed).toEqual(block.receiptsRoot)
                 })
 
-                it('logsBloom verification', async () => {
+                it.skipIf(
+                    // Block 6541 (0x198d) on Cronos has a known duplicate transaction bug which breaks this verification
+                    fixture.chain === 'cronos' && fixture.blockNumber === 6541
+                )('logsBloom verification', async () => {
                     const block = loadBlock(fixture.chain, fixture.blockNumber)
                     const receipts = loadReceipts(fixture.chain, fixture.blockNumber)
                     const logs = receipts.flatMap(r => r.logs || [])

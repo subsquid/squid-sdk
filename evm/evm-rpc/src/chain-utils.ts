@@ -1,4 +1,5 @@
 import {assertNotNull} from '@subsquid/util-internal'
+import {decodeHex} from '@subsquid/util-internal-hex'
 import {GetBlock, Log, Receipt, Transaction} from './rpc-data'
 import {Qty} from './types'
 import {
@@ -10,7 +11,7 @@ import {
     transactionsRoot,
     calculateStateSyncTxHash
 } from './verification'
-import {getTxHash} from './util'
+import {getTxHash, qty2Int} from './util'
 
 
 export interface ChainUtilsOptions {
@@ -95,7 +96,20 @@ export class ChainUtils {
             })
         }
 
-        return logsBloom(logs)
+        let computed = logsBloom(logs)
+
+        // Cronos mainnet blocks before the v0.7.0 upgrade (height 2,693,800) may have
+        // extra bits in the header bloom due to an Ethermint bug where logs from failed
+        // transactions were included in the bloom computation before the EVM revert.
+        // Accept the header bloom if it's a superset of the computed bloom
+        // (i.e. all legitimate log bits are still present).
+        if (this.isCronosMainnet && qty2Int(block.number) < 2_693_800) {
+            if (computed !== block.logsBloom && isBloomSuperset(block.logsBloom, computed)) {
+                return block.logsBloom
+            }
+        }
+
+        return computed
     }
 
     calculateReceiptsRoot(block: GetBlock, receipts: Receipt[]) {
@@ -160,4 +174,14 @@ function isStableSystemTx(tx: Transaction) {
 function isHyperliquidSystemReceipt(receipt: Receipt) {
     // https://github.com/hl-archive-node/nanoreth/blob/732f8c574db2dde90344a29b0292189a5cddd2d1/src/addons/hl_node_compliance.rs#L365
     return receipt.cumulativeGasUsed == '0x0'
+}
+
+
+function isBloomSuperset(superset: string, subset: string): boolean {
+    let superBuf = decodeHex(superset)
+    let subBuf = decodeHex(subset)
+    for (let i = 0; i < superBuf.length; i++) {
+        if ((superBuf[i] & subBuf[i]) !== subBuf[i]) return false
+    }
+    return true
 }
