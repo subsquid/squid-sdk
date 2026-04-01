@@ -10,10 +10,6 @@ import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
 import {WsConnection} from './transport/ws'
 
-export enum ErrorTolerance {
-    Standard = 1,
-    High = 2
-}
 
 export interface RpcClientOptions {
     /**
@@ -26,13 +22,6 @@ export interface RpcClientOptions {
      * Batch call is counted as a single request.
      */
     capacity?: number
-    /**
-     * Error tolerance
-     * 
-     * Standard - retry on commonly retriable errors, crash on internal server errors.
-     * High - retry on commonly retriable errors + internal HTTP / RPC errors.
-     */
-    errorTolerance?: ErrorTolerance
     /**
      * Maximum number of calls per second
      *
@@ -120,7 +109,6 @@ export class RpcClient {
     public readonly url: string
     private con: Connection
     private maxBatchCallSize: number
-    private errorTolerance: ErrorTolerance
     private requestTimeout: number
     private retrySchedule: number[]
     private retryAttempts: number
@@ -146,7 +134,6 @@ export class RpcClient {
         this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false, options.headers)
         this.maxBatchCallSize = options.maxBatchCallSize ?? Number.MAX_SAFE_INTEGER
         this.capacity = this.maxCapacity = options.capacity || 10
-        this.errorTolerance = options.errorTolerance ?? ErrorTolerance.Standard
         this.requestTimeout = options.requestTimeout ?? 0
         this.retryAttempts = options.retryAttempts ?? 0
         this.retrySchedule = options.retrySchedule ?? [10, 100, 500, 2000, 10000, 20000]
@@ -531,13 +518,6 @@ export class RpcClient {
         if (err instanceof RpcConnectionError) return true
         if (isHttpConnectionError(err)) return true
         if (err instanceof HttpTimeoutError) return true
-        if (err instanceof RpcError) {
-            switch(err.code) {
-                case -32000: // generic "catch-all" code
-                case -32603: // internal error
-                    return this.errorTolerance > ErrorTolerance.Standard
-            }
-        }
         if (err instanceof HttpError) {
             switch(err.response.status) {
                 case 408:
@@ -546,8 +526,6 @@ export class RpcClient {
                 case 503:
                 case 504:
                     return true
-                case 500:
-                    return this.errorTolerance > ErrorTolerance.Standard
                 default:
                     return false
             }
@@ -605,12 +583,7 @@ function trimCredentials(url: string): string {
 
 
 function isRateLimitError(err: unknown): boolean {
-    if (!(err instanceof RpcError)) return false
-    return (
-        /rate limit|too many requests/i.test(err.message) ||
-        err.code === -32005 || // Blockchain RPC convention error code for rate-limit exceeded error
-        err.code === 429 // RPC error with HTTP rate-limit error code
-    )
+    return err instanceof RpcError && /rate limit/i.test(err.message)
 }
 
 

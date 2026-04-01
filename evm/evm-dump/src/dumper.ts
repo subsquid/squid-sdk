@@ -1,10 +1,11 @@
-import {Rpc, EvmRpcDataSource} from '@subsquid/evm-rpc'
+import {Rpc, EvmRpcDataSource, EvmRpcClient} from '@subsquid/evm-rpc'
 import {RawBlock, toRawBlock} from '@subsquid/evm-normalization'
 import {def} from '@subsquid/util-internal'
 import {Command, Dumper, DumperOptions, Range, positiveInt} from '@subsquid/util-internal-dump-cli'
 
 
 interface Options extends DumperOptions {
+    retryInternalServerErrors?: boolean
     finalityConfirmation?: number
     withReceipts?: boolean
     withTraces?: boolean
@@ -23,6 +24,7 @@ interface Options extends DumperOptions {
 export class EvmDumper extends Dumper<RawBlock, Options> {
     protected setUpProgram(program: Command): void {
         program.description('Data archiving tool for EVM-based chains')
+        program.option('--retry-internal-server-errors', 'If set, the internal server errors from the RPC endpoint will be treated as retryable')
         program.option('--finality-confirmation <number>', 'Finality offset from the head of a chain', positiveInt)
         program.option('--with-receipts', 'Fetch transaction receipt data')
         program.option('--with-traces', 'Fetch EVM call traces')
@@ -47,6 +49,21 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
 
     protected getBlockTimestamp(block: RawBlock): number {
         return Number(block.timestamp) || 0
+    }
+
+    @def
+    protected rpc(): EvmRpcClient {
+        let options = this.options()
+        return new EvmRpcClient({
+            url: options.endpoint,
+            capacity: options.endpointCapacity || 10,
+            maxBatchCallSize: options.endpointMaxBatchCallSize,
+            rateLimit: options.endpointRateLimit,
+            requestTimeout: 180_000,
+            retryAttempts: Number.MAX_SAFE_INTEGER,
+            fixUnsafeIntegers: this.fixUnsafeIntegers(),
+            retryInternalServerErrors: options.retryInternalServerErrors
+        })
     }
 
     @def

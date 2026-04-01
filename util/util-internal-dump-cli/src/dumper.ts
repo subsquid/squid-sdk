@@ -1,5 +1,5 @@
 import {createLogger, Logger} from '@subsquid/logger'
-import {ErrorTolerance, RpcClient} from '@subsquid/rpc-client'
+import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, def, last, runProgram, Throttler, waitDrain} from '@subsquid/util-internal'
 import {
     ArchiveLayout,
@@ -9,7 +9,6 @@ import {
     RawBlock
 } from '@subsquid/util-internal-archive-layout'
 import {FileOrUrl, nat, positiveInt, positiveReal, Url} from '@subsquid/util-internal-commander'
-import {InvalidArgumentError} from 'commander'
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
@@ -23,7 +22,6 @@ export interface DumperOptions {
     endpointCapacity?: number
     endpointRateLimit?: number
     endpointMaxBatchCallSize?: number
-    endpointErrorTolerance?: number
     dest?: string
     firstBlock?: number
     lastBlock?: number
@@ -86,7 +84,6 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         program.option('-c, --endpoint-capacity <number>', 'Maximum number of pending RPC requests allowed', positiveInt, 10)
         program.option('-r, --endpoint-rate-limit <rps>', 'Maximum RPC rate in requests per second', positiveReal)
         program.option('-b, --endpoint-max-batch-call-size <number>', 'Maximum size of RPC batch call', positiveInt)
-        program.option('-t, --endpoint-error-tolerance <number>', 'RPC endpoint error tolerance (1=standard, 2=high)', errorTolerance, 1)
         program.option('--dest <archive>', 'Either local dir or s3:// url where to store the dumped data', FileOrUrl(['s3:']))
         program.option('--first-block <number>', 'First block to dump', nat)
         program.option('--last-block <number>', 'Last block to dump', nat)
@@ -136,7 +133,6 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         return new RpcClient({
             url: options.endpoint,
             capacity: options.endpointCapacity || 10,
-            errorTolerance: options.endpointErrorTolerance ?? ErrorTolerance.Standard,
             maxBatchCallSize: options.endpointMaxBatchCallSize,
             rateLimit: options.endpointRateLimit,
             requestTimeout: 180_000,
@@ -298,11 +294,4 @@ export class ErrorMessage extends Error {
     constructor(msg: string) {
         super(msg)
     }
-}
-
-
-function errorTolerance(s: string): number {
-    let n = parseInt(s, 10)
-    if (n === 1 || n === 2) return n
-    throw new InvalidArgumentError('Expected 1 (standard) or 2 (high)')
 }
