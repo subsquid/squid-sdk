@@ -21,6 +21,7 @@ runProgram(async () => {
     program.option('--http-rpc-stride-concurrency <number>', 'Max number of concurrent ingestion strides', positiveInt, 5)
     program.option('--http-rpc-rate-limit <rps>', 'Maximum RPC rate in requests per second', positiveReal)
     program.option('--http-rpc-timeout <ms>', 'RPC client request timeout in ms', nat, 10000)
+    program.option('--http-retry-internal-server-errors', 'If set, the internal server errors from the RPC endpoint will be treated as retryable')
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
     program.option('--finality-confirmation <number>', 'Finality offset from the head of a chain', positiveInt)
@@ -46,6 +47,7 @@ runProgram(async () => {
         httpRpcStrideConcurrency: number
         httpRpcRateLimit?: number
         httpRpcTimeout: number
+        httpRetryInternalServerErrors?: boolean
         blockCacheSize: number
         port: number
         finalityConfirmation?: number

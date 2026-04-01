@@ -1,5 +1,4 @@
-import {RpcClient} from '@subsquid/rpc-client'
-import {Rpc, EvmRpcDataSource} from '@subsquid/evm-rpc'
+import {Rpc, EvmRpcDataSource, EvmRpcClient} from '@subsquid/evm-rpc'
 import {Block, DataSource} from '@subsquid/util-internal-data-service'
 import {createLogger} from '@subsquid/logger';
 import {Mapping} from './mapping';
@@ -15,6 +14,7 @@ export interface DataSourceOptions {
     httpRpcStrideConcurrency?: number
     httpRpcRateLimit?: number,
     httpRpcTimeout: number,
+    httpRetryInternalServerErrors?: boolean
     finalityConfirmation?: number,
     withReceipts?: boolean,
     withTraces?: boolean,
@@ -32,13 +32,14 @@ export interface DataSourceOptions {
 
 
 export function createDataSource(options: DataSourceOptions): DataSource<Block> {
-    let httpRpcClient = new RpcClient({
+    let httpRpcClient = new EvmRpcClient({
         url: options.httpRpc,
         maxBatchCallSize: options.httpRpcMaxBatchCallSize,
         capacity: Number.MAX_SAFE_INTEGER,
         rateLimit: options.httpRpcRateLimit,
         requestTimeout: options.httpRpcTimeout,
         retryAttempts: 5,
+        retryInternalServerErrors: options.httpRetryInternalServerErrors,
         log
     })
     let httpRpc = new Rpc({

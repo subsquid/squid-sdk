@@ -32,10 +32,12 @@
     "ethereum-cryptography": "3.2.0"
   },
   "peerDependencies": {
-    "@subsquid/rpc-client": "^4.11.0"
+    "@subsquid/rpc-client": "^4.11.0",
+    "@subsquid/http-client": "^1.6.0"
   },
   "devDependencies": {
     "@subsquid/rpc-client": "^4.11.0",
+    "@subsquid/http-client": "^1.6.0",
     "@types/node": "^20.10.0",
     "@types/secp256k1": "4.0.6",
     "tsx": "^4.7.0",

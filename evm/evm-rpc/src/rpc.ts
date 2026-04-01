@@ -1,5 +1,5 @@
 import { Logger, createLogger } from '@subsquid/logger'
-import { CallOptions, RetryError, RpcClient, RpcError, RpcProtocolError } from '@subsquid/rpc-client'
+import { CallOptions, RetryError, RpcError, RpcProtocolError } from '@subsquid/rpc-client'
 import {
     array,
     BYTES,
@@ -26,13 +26,14 @@ import {
 import { Block, DataRequest, Qty, Bytes, Bytes32 } from './types'
 import { qty2Int, toQty, getTxHash } from './util'
 import { ChainUtils } from './chain-utils'
+import { EvmRpcClient } from './rpc-client'
 
 
 export type Commitment = 'finalized' | 'latest'
 
 
 export interface RpcOptions {
-    client: RpcClient,
+    client: EvmRpcClient,
     finalityConfirmation?: number
     verifyBlockHash?: boolean
     verifyTxSender?: boolean
@@ -45,7 +46,7 @@ export interface RpcOptions {
 
 
 export class Rpc {
-    private client: RpcClient
+    private client: EvmRpcClient
     private finalityConfirmation?: number
     private verifyBlockHash?: boolean
     private verifyTxSender?: boolean
@@ -697,7 +698,7 @@ export class Rpc {
         if (batch.length <= 1) return this.batchCall(batch, options)
 
         let result = await this.batchCall(batch, { ...options, retryAttempts: 0 }).catch(err => {
-            if (this.isRetryableError(err)) {
+            if (this.isBatchRetryableError(err)) {
                 this.log.warn(err, 'will retry request with reduced batch')
             } else {
                 throw err
@@ -722,14 +723,11 @@ export class Rpc {
         })
     }
 
-    isRetryableError(err: any): boolean {
+    isBatchRetryableError(err: any): boolean {
         if (this.client.isConnectionError(err)) return true
         if (err instanceof RpcProtocolError) return true
         if (err instanceof RpcError && err.message == 'response too large') return true
-        if (err instanceof RpcError && err.code == 429) return true
         if (err instanceof RpcError && err.code == -32000) return true
-        // Goldsky will sometimes respond with HTTP 200 and error inside response.error.data
-        if (err instanceof RpcError && err.data && typeof err.data === 'string' && err.data.includes('429 Too Many Requests')) return true
         return false
     }
 }

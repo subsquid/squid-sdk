@@ -1,5 +1,6 @@
 export * from './data-source'
 export * from './rpc'
+export * from './rpc-client'
 export * from './rpc-data'
 // export * from './subscribe-new-blocks'
 export * from './types'
