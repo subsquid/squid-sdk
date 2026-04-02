@@ -54,10 +54,7 @@ describe('Verification Functions', () => {
                     expect(computed).toEqual(block.receiptsRoot)
                 })
 
-                it.skipIf(
-                    // Block 6541 (0x198d) on Cronos has a known duplicate transaction bug which breaks this verification
-                    fixture.chain === 'cronos' && fixture.blockNumber === 6541
-                )('logsBloom verification', async () => {
+                it('logsBloom verification', async () => {
                     const block = loadBlock(fixture.chain, fixture.blockNumber)
                     const receipts = loadReceipts(fixture.chain, fixture.blockNumber)
                     const logs = receipts.flatMap(r => r.logs || [])

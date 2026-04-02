@@ -166,43 +166,6 @@ export class Rpc {
     }
 
     private async mapBlock(block: GetBlock, withTransactions: boolean, utils: ChainUtils): Promise<Block> {
-        // Cronos block 0x198d contains a contract creation transaction (0x5395ae..) that
-        // failed with "contract creation code storage out of gas" in the EVM, causing all state,
-        // including the nonce increment, to be reverted.
-        //
-        // However, due to a bug in an older ethermint version, this error was not correctly
-        // propagated to the Cosmos layer, so the tx got code=0 (success) despite the EVM failure.
-        //
-        // Because the nonce wasn't incremented, the same transaction (0x5395ae..) was allowed to be
-        // re-tried in the next block (0x198e) where it successfully executed. The reason why it
-        // didn't fail this time was because there were other transactions in block 0x198e that
-        // pre-warmed the storage slots used by transaction 0x5395ae.., reducing its gas costs just
-        // enough so that they didn't exceed the transaction gas budget anymore.
-        //
-        // The transaction thus effectively appears in both blocks, but only the one in block 0x198e
-        // actually affected the EVM state.
-        //
-        // Originally the issue was discovered, because calling eth_getBlockReceipts for block
-        // 0x198d would crash the RPC node. The reason for that was that Ethermint uses a KV indexer
-        // that maps tx_hash → block_height. When block 0x198e was indexed, it overrode the entry
-        // for tx 0x5395ae.. (so it became 0x5395ae.. → 0x198e). Calling eth_getBlockReceipts
-        // triggers a path that looks up the transaction hash (0x5395ae..) in the KV index → gets
-        // height 0x198e (the overwritten entry) and then tries to access
-        // block.Block.Txs[res.TxIndex] using the block data from 0x198d but with a tx index from
-        // 0x198e, resulting in an out-of-bounds panic.
-        // (see related upstream fix: https://github.com/crypto-org-chain/ethermint/pull/870)
-        //
-        // On the other hand if we call eth_getTransactionReceipt for tx 0x5395ae.., the same KV
-        // index lookup takes place and we end up getting a receipt from block 0x198e (which
-        // obviously doesn't belong to block 0x198d).
-        //
-        // So the solution is to strip the 0x5395ae.. transaction completely from block 0x198d to
-        // avoid passing the inconsistent data further down the pipeline (otherwise we either end up
-        // with a transaction with no receipt or a transaction with a receipt that comes from
-        // another block)
-        if (utils.isCronosMainnet && block.number === '0x198d') {
-            block.transactions = []
-        }
 
         if (this.verifyBlockHash) {
             let blockHash = utils.calculateBlockHash(block)
@@ -317,15 +280,8 @@ export class Rpc {
     private async addReceipts(blocks: Block[]) {
         let method = await this.getReceiptsMethod()
         switch (method) {
-            case 'eth_getBlockReceipts': {
-                let utils = await this.getChainUtils()
-                if (utils.isCronosMainnet) {
-                    // Also skip the eth_getBlockReceipts call for block 0x198d,
-                    // because it crashes the RPC node (see comment in mapBlock)
-                    blocks = blocks.filter(b => b.number !== 0x198d)
-                }
+            case 'eth_getBlockReceipts':
                 return this.addReceiptsByBlock(blocks)
-            }
             default:
                 return this.addReceiptsByTx(blocks)
         }
@@ -391,10 +347,97 @@ export class Rpc {
             }
 
             if (block.block.transactions.length !== receipts.length) {
+                if (utils.isCronosMainnet && receipts.length < block.block.transactions.length) {
+                    let stripped = await this.stripPhantomTransactions(block, receipts)
+                    if (stripped) {
+                        continue
+                    }
+                }
+                
                 block._isInvalid = true
-                block._errorMessage = 'got invalid number of receipts from eth_getBlockReceipts'
+                block._errorMessage = `got invalid number of receipts from eth_getBlockReceipts`
             }
         }
+    }
+
+    /**
+     * Strips "phantom transactions" from Cronos (Ethermint) blocks.
+     *
+     * Due to a bug in older Ethermint versions, certain transactions that failed
+     * during EVM execution (with "contract creation code storage out of gas") were
+     * included in CometBFT blocks but never got EVM receipts created for them.
+     * These phantom txs had no EVM state effect (nonce unchanged, no mutations persisted).
+     * (related Ethermint fix: https://github.com/evmos/ethermint/pull/809)
+     *
+     * This method detects phantom txs by matching receipts to transactions by hash,
+     * verifies that each unmatched tx didn't increment the sender's nonce, then
+     * strips them and renumbers transaction indices to be contiguous.
+     */
+    private async stripPhantomTransactions(block: Block, receipts: Receipt[]): Promise<boolean> {
+        let transactions = block.block.transactions as Transaction[]
+        let receiptHashes = new Set(receipts.map(r => r.transactionHash))
+
+        let phantomTxs: Transaction[] = []
+        for (let tx of transactions) {
+            if (!receiptHashes.has(tx.hash)) {
+                phantomTxs.push(tx)
+            }
+        }
+
+        if (phantomTxs.length === 0) return false
+        if (phantomTxs.length + receipts.length !== transactions.length) {
+            this.log.warn(
+                { blockNumber: block.number, txCount: transactions.length, receiptCount: receipts.length, phantomTxCount: phantomTxs.length },
+                'number of phantom transactions does not match receipt shortfall - refusing to strip'
+            )
+            return false
+        }
+
+        // Verify that phantom txs didn't advance the sender's nonce.
+        // If eth_getTransactionCount(sender, block) <= tx.nonce, the tx was
+        // never committed by the EVM (nonce wasn't consumed).
+        let nonces: Qty[] = await this.batchCall(phantomTxs.map(tx => ({
+            method: 'eth_getTransactionCount',
+            params: [tx.from, block.block.number]
+        })))
+
+        for (let i = 0; i < phantomTxs.length; i++) {
+            if (qty2Int(nonces[i]) > qty2Int(phantomTxs[i].nonce)) {
+                this.log.warn(
+                    { blockNumber: block.number, transactionHash: phantomTxs[i].hash, sender: phantomTxs[i].from, txNonce: phantomTxs[i].nonce, finalNonce: nonces[i] },
+                    `phantom transaction has nonce < sender's final nonce at block ${block.number} - refusing to strip`
+                )
+                return false
+            }
+        }
+
+        let phantomHashes = new Set(phantomTxs.map(tx => tx.hash))
+
+        this.log.warn({
+            blockNumber: block.number,
+            phantomTxHashes: phantomTxs.map(tx => tx.hash)
+        }, 'stripping phantom transactions from Cronos block')
+
+        block.block.transactions = transactions.filter(tx => !phantomHashes.has(tx.hash))
+
+        // Renumber transaction indices to be contiguous
+        for (let i = 0; i < block.block.transactions.length; i++) {
+            let tx = block.block.transactions[i] as Transaction
+            tx.transactionIndex = toQty(i)
+        }
+
+        for (let i = 0; i < receipts.length; i++) {
+            let transactionIndex = block.block.transactions.findIndex(tx => tx.hash === receipts[i].transactionHash)
+            if (transactionIndex === -1) {
+                return false
+            }
+            receipts[i].transactionIndex = toQty(transactionIndex)
+            for (let log of receipts[i].logs) {
+                log.transactionIndex = toQty(transactionIndex)
+            }
+        }
+
+        return true
     }
 
     private async addReceiptsByTx(blocks: Block[]) {
