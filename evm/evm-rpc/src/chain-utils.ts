@@ -102,24 +102,9 @@ export class ChainUtils {
         let computed = logsBloom(logs)
 
         // Cronos mainnet header blooms may contain extra bits due to Ethermint bugs
-        // where logs from reverted EVM execution leak into the bloom:
-        //
-        // 1. Phantom transactions (observed on early blocks, e.g. 0x10a78, 0x20189):
-        //    CometBFT blocks may contain EVM transactions that failed during DeliverTx
-        //    (e.g. "contract creation code storage out of gas"). These "phantom" txs have
-        //    no EVM receipt and are invisible to eth_getBlockReceipts, but their init code
-        //    may have emitted EVM logs before the failure. Those logs were recorded as
-        //    Cosmos-level `tx_log` events and included in the bloom computation, even though
-        //    the EVM state (including the logs) was reverted.
-        //    (verified: the CometBFT `block_results` for block 0x10a78 shows 14 `tx_log`
-        //    events from a phantom tx whose bloom bits account for all 48 extra header bits)
-        //
-        // 2. PostTxProcessing hook failures (observed on later blocks, e.g. 11,446,765):
-        //    when a transaction succeeds in the EVM but fails in the Cosmos PostTxProcessing
-        //    hook (used for CRC-20 auto-conversion), the bloom is computed from the pre-revert
-        //    logs and written to the store before the hook runs. If the hook fails, the tx is
-        //    reverted (receipt gets status=0x0, empty logs), but the bloom bits from the
-        //    pre-revert logs are never cleared.
+        // where logs from reverted EVM execution leak into the bloom.
+        // 
+        // Example affected blocks: 0x10a78, 0xaea9ed.
         //
         // In both cases the header bloom is a superset of the correct bloom (all legitimate
         // log bits are present, plus extra bits from reverted logs). Accept it as valid.
