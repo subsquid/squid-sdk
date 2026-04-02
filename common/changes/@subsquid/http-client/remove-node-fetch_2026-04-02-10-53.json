@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "replace `node-fetch` with native `fetch` API",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}
