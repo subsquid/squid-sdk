@@ -11,7 +11,8 @@ import {
     transactionsRoot,
     calculateStateSyncTxHash
 } from './verification'
-import {getTxHash, qty2Int} from './util'
+import {getTxHash} from './util'
+import { createLogger, Logger } from '@subsquid/logger'
 
 
 export interface ChainUtilsOptions {
@@ -27,6 +28,7 @@ export class ChainUtils {
     public isTempo: boolean
     public isCronosMainnet: boolean
     public useGasUsedForReceiptsRoot: boolean
+    private log: Logger
 
     constructor(chainId: Qty, options?: ChainUtilsOptions) {
         this.isPolygonMainnet = chainId == '0x89'
@@ -40,6 +42,7 @@ export class ChainUtils {
         this.isTempo = chainId == '0x1079' || chainId == '0xa5bf' || chainId == '0xa5bd'
         this.isCronosMainnet = chainId == '0x19' // Chain ID 25
         this.useGasUsedForReceiptsRoot = options?.useGasUsedForReceiptsRoot ?? false
+        this.log = createLogger('sqd:evm-rpc:chain-utils')
     }
 
     calculateBlockHash(block: GetBlock) {
@@ -98,13 +101,19 @@ export class ChainUtils {
 
         let computed = logsBloom(logs)
 
-        // Cronos mainnet blocks before the v0.7.0 upgrade (height 2,693,800) may have
-        // extra bits in the header bloom due to an Ethermint bug where logs from failed
-        // transactions were included in the bloom computation before the EVM revert.
-        // Accept the header bloom if it's a superset of the computed bloom
-        // (i.e. all legitimate log bits are still present).
-        if (this.isCronosMainnet && qty2Int(block.number) < 2_693_800) {
+        // Cronos mainnet header blooms may contain extra bits due to Ethermint bugs
+        // where logs from reverted EVM execution leak into the bloom.
+        // 
+        // Example affected blocks: 0x10a78, 0xaea9ed.
+        //
+        // In both cases the header bloom is a superset of the correct bloom (all legitimate
+        // log bits are present, plus extra bits from reverted logs). Accept it as valid.
+        if (this.isCronosMainnet) {
             if (computed !== block.logsBloom && isBloomSuperset(block.logsBloom, computed)) {
+                this.log.warn(
+                    { blockNumber: block.number, headerBloom: block.logsBloom, computedBloom: computed },
+                    `header logs bloom includes extra bits - accepting as valid due to known Ethermint issues`
+                )
                 return block.logsBloom
             }
         }
