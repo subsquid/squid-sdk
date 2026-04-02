@@ -1,10 +1,8 @@
 import type {Logger} from '@subsquid/logger'
 import {createLogger} from '@subsquid/logger'
 import {addErrorContext, ensureError, wait} from '@subsquid/util-internal'
-import type {Headers, RequestInit, Response} from 'node-fetch'
 import {AgentProvider, defaultAgentProvider} from './agent'
 import {HttpBody} from './body'
-import {nodeFetch} from './request'
 
 
 export {HttpBody}
@@ -46,10 +44,12 @@ export interface GraphqlRequestOptions extends RequestOptions {
 }
 
 
-export interface FetchRequest extends RequestInit {
+export interface FetchRequest {
     id: number
     url: string
+    method?: string
     headers: Headers
+    body?: any
     timeout?: number
     signal?: AbortSignal
     stream?: boolean
@@ -187,15 +187,12 @@ export class HttpClient {
         url: string,
         options: RequestOptions & HttpBody
     ): Promise<FetchRequest> {
-        await nodeFetch.load()
-
         let req: FetchRequest = {
             id: this.requestCounter++,
             method,
-            headers: new nodeFetch.Headers(options.headers),
+            headers: new Headers(options.headers),
             url: this.getAbsUrl(url),
             signal: options.abort,
-            compress: true,
             timeout: options.httpTimeout ?? this.httpTimeout,
             stream: options.stream
         }
@@ -210,8 +207,6 @@ export class HttpClient {
                 req.url += '?' + qs
             }
         }
-
-        req.agent = this.agent.getNativeAgent(req.url)
 
         if (options.content !== undefined) {
             if (typeof options.content == 'string') {
@@ -231,6 +226,10 @@ export class HttpClient {
             if (!req.headers.has('content-type')) {
                 req.headers.set('content-type', 'application/json')
             }
+        }
+
+        if (!req.headers.has('accept-encoding')) {
+            req.headers.set('accept-encoding', await getAcceptEncoding())
         }
 
         for (let name in this.headers) {
@@ -286,7 +285,7 @@ export class HttpClient {
     }
 
     private async performRequest(req: FetchRequest): Promise<HttpResponse> {
-        let res = await nodeFetch.request(req.url, req)
+        let res = await fetch(req.url, req)
         this.afterResponseHeaders(req, res.url, res.status, res.headers)
         let httpResponse
         if (req.stream && res.ok) {
@@ -472,10 +471,24 @@ export class GraphqlError extends Error {
 
 
 export function isHttpConnectionError(err: unknown): boolean {
-    return nodeFetch.isLoaded
-        && err instanceof nodeFetch.FetchError
-        && err.type == 'system'
-        && (err.message.startsWith('request to') || err.code == 'ERR_STREAM_PREMATURE_CLOSE')
+    if (!(err instanceof TypeError)) return false
+    let cause = (err as any).cause
+    if (cause == null || typeof cause !== 'object') return false
+    let code: unknown = cause.code
+    if (typeof code === 'string') {
+        switch (code) {
+            case 'ECONNREFUSED':
+            case 'ECONNRESET':
+            case 'ENOTFOUND':
+            case 'EPIPE':
+            case 'ETIMEDOUT':
+            case 'ERR_STREAM_PREMATURE_CLOSE':
+            case 'UND_ERR_CONNECT_TIMEOUT':
+            case 'UND_ERR_SOCKET':
+                return true
+        }
+    }
+    return false
 }
 
 
@@ -494,3 +507,15 @@ export function asRetryAfterPause(res: HttpResponse | Error): number | undefined
 }
 
 const HTTP_DATE_REGEX = /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), (\d{2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4}) (\d{2}):(\d{2}):(\d{2}) GMT$/;
+
+let acceptEncodingPromise: Promise<string> | undefined
+
+function getAcceptEncoding(): Promise<string> {
+    if (acceptEncodingPromise) return acceptEncodingPromise
+    return acceptEncodingPromise = import('zlib').then((zlib: any) => {
+        if (typeof zlib.createZstdDecompress === 'function') {
+            return 'zstd, gzip, deflate, br'
+        }
+        return 'gzip, deflate, br'
+    }).catch(() => 'gzip, deflate, br')
+}
