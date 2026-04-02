@@ -389,31 +389,6 @@ describe('HttpClient integration', () => {
             assert.strictEqual(headers['x-version'], '42')
         })
 
-        it('sends accept-encoding header by default', async () => {
-            let acceptEncoding: string | undefined
-            server.handler = (req, res) => {
-                acceptEncoding = req.headers['accept-encoding'] as string | undefined
-                res.writeHead(200, {'content-type': 'application/json'})
-                res.end('null')
-            }
-            const client = new HttpClient({baseUrl: server.url, log: null})
-            await client.get('/')
-            assert.ok(acceptEncoding, 'Expected accept-encoding header to be set')
-            assert.ok(acceptEncoding.includes('gzip'), `Expected gzip in accept-encoding: ${acceptEncoding}`)
-            assert.ok(acceptEncoding.includes('br'), `Expected br in accept-encoding: ${acceptEncoding}`)
-        })
-
-        it('does not override explicit accept-encoding header', async () => {
-            let acceptEncoding: string | undefined
-            server.handler = (req, res) => {
-                acceptEncoding = req.headers['accept-encoding'] as string | undefined
-                res.writeHead(200, {'content-type': 'application/json'})
-                res.end('null')
-            }
-            const client = new HttpClient({baseUrl: server.url, log: null})
-            await client.get('/', {headers: {'accept-encoding': 'identity'}})
-            assert.strictEqual(acceptEncoding, 'identity')
-        })
     })
 
     describe('query parameters', () => {

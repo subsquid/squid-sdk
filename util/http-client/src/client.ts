@@ -92,7 +92,7 @@ export class HttpClient {
         url: string,
         options: RequestOptions & HttpBody = {},
     ): Promise<HttpResponse<T>> {
-        let req = await this.prepareRequest(method, url, options)
+        let req = this.prepareRequest(method, url, options)
 
         this.beforeRequest(req)
 
@@ -182,11 +182,11 @@ export class HttpClient {
         }
     }
 
-    protected async prepareRequest(
+    protected prepareRequest(
         method: string,
         url: string,
         options: RequestOptions & HttpBody
-    ): Promise<FetchRequest> {
+    ): FetchRequest {
         let req: FetchRequest = {
             id: this.requestCounter++,
             method,
@@ -228,8 +228,8 @@ export class HttpClient {
             }
         }
 
-        if (!req.headers.has('accept-encoding')) {
-            req.headers.set('accept-encoding', await getAcceptEncoding())
+        if (ACCEPT_ENCODING && !req.headers.has('accept-encoding')) {
+            req.headers.set('accept-encoding', ACCEPT_ENCODING)
         }
 
         for (let name in this.headers) {
@@ -508,14 +508,14 @@ export function asRetryAfterPause(res: HttpResponse | Error): number | undefined
 
 const HTTP_DATE_REGEX = /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), (\d{2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4}) (\d{2}):(\d{2}):(\d{2}) GMT$/;
 
-let acceptEncodingPromise: Promise<string> | undefined
+const ACCEPT_ENCODING = detectAcceptEncoding()
 
-function getAcceptEncoding(): Promise<string> {
-    if (acceptEncodingPromise) return acceptEncodingPromise
-    return acceptEncodingPromise = import('zlib').then((zlib: any) => {
-        if (typeof zlib.createZstdDecompress === 'function') {
-            return 'zstd, gzip, deflate, br'
-        }
-        return 'gzip, deflate, br'
-    }).catch(() => 'gzip, deflate, br')
+function detectAcceptEncoding(): string | undefined {
+    let v = (typeof process !== 'undefined' && process.versions) as Record<string, string> | undefined
+    if (!v?.undici) return undefined
+    let undiciMajor = parseInt(v.undici)
+    let encodings = 'gzip, deflate'
+    if (v.brotli) encodings += ', br'
+    if (v.zstd && undiciMajor >= 7) encodings += ', zstd'
+    return encodings
 }
