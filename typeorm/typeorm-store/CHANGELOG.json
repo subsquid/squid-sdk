@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "1.8.0",
+      "tag": "@subsquid/typeorm-store_v1.8.0",
+      "date": "Sun, 05 Apr 2026 22:03:07 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add template registry persistence"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.7.0",
       "tag": "@subsquid/typeorm-store_v1.7.0",
       "date": "Thu, 05 Feb 2026 16:31:55 GMT",

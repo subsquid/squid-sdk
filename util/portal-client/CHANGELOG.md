@@ -1,6 +1,13 @@
 # Change Log - @subsquid/portal-client
 
-This log was last generated on Fri, 12 Dec 2025 12:00:23 GMT and should not be manually modified.
+This log was last generated on Sun, 05 Apr 2026 22:03:07 GMT and should not be manually modified.
+
+## 0.5.0
+Sun, 05 Apr 2026 22:03:07 GMT
+
+### Minor changes
+
+- ignore finalized head regression on portal stream
 
 ## 0.4.0
 Fri, 12 Dec 2025 12:00:23 GMT

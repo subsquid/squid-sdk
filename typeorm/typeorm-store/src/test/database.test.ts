@@ -1,5 +1,6 @@
 import expect from 'expect'
 import {TypeormDatabase} from '../database'
+import type {TemplateMutation} from '../templates'
 import {Data} from './lib/model'
 import {getEntityManager, useDatabase} from './util'
 
@@ -231,6 +232,212 @@ describe('TypeormDatabase', function() {
                 {height: 1, hash: 'a-1'},
                 {height: 2, hash: 'd-2'}
             ]
+        })
+    })
+
+    describe('templates', function() {
+        it('.transact() persists templates', async function() {
+            await db.connect()
+
+            let mutations: TemplateMutation[] = [
+                {type: 'add', key: 'contract', value: '0xabc', blockNumber: 5},
+                {type: 'add', key: 'contract', value: '0xdef', blockNumber: 8},
+            ]
+
+            await db.transact({
+                prevHead: {height: -1, hash: '0x'},
+                nextHead: {height: 10, hash: '0x10'}
+            }, async () => {
+                return {templates: mutations}
+            })
+
+            await db.disconnect()
+
+            let state = await db.connect()
+            expect(state.height).toBe(10)
+            expect(state.templates).toEqual(mutations)
+        })
+
+        it('.transact() with no templates returns empty array', async function() {
+            await db.connect()
+
+            await db.transact({
+                prevHead: {height: -1, hash: '0x'},
+                nextHead: {height: 10, hash: '0x10'}
+            }, async () => {})
+
+            await db.disconnect()
+
+            let state = await db.connect()
+            expect(state.templates).toEqual([])
+        })
+
+        it('.transactHot2() persists templates per hot block', async function() {
+            await db.connect()
+
+            let blocks = [
+                {height: 0, hash: '0x0'},
+                {height: 1, hash: '0x1'},
+            ]
+
+            await db.transactHot2({
+                baseHead: {height: -1, hash: '0x'},
+                finalizedHead: {height: -1, hash: '0x'},
+                newBlocks: blocks,
+            }, async (store, beg, end) => {
+                let b = blocks[beg]
+                if (b.height === 0) {
+                    return {templates: [{type: 'add', key: 'token', value: '0xaaa', blockNumber: 0}]}
+                }
+                if (b.height === 1) {
+                    return {templates: [{type: 'add', key: 'token', value: '0xbbb', blockNumber: 1}]}
+                }
+            })
+
+            await db.disconnect()
+
+            let state = await db.connect()
+            expect(state.top).toEqual([
+                {height: 0, hash: '0x0', templates: [{type: 'add', key: 'token', value: '0xaaa', blockNumber: 0}]},
+                {height: 1, hash: '0x1', templates: [{type: 'add', key: 'token', value: '0xbbb', blockNumber: 1}]},
+            ])
+            expect(state.templates).toEqual([])
+        })
+
+        it('hot block rollback removes its templates', async function() {
+            await db.connect()
+
+            let blocks = [
+                {height: 0, hash: '0x0'},
+                {height: 1, hash: '0x1'},
+            ]
+
+            await db.transactHot2({
+                baseHead: {height: -1, hash: '0x'},
+                finalizedHead: {height: -1, hash: '0x'},
+                newBlocks: blocks,
+            }, async (store, beg, end) => {
+                let b = blocks[beg]
+                if (b.height === 0) {
+                    return {templates: [{type: 'add', key: 'token', value: '0xaaa', blockNumber: 0}]}
+                }
+                if (b.height === 1) {
+                    return {templates: [{type: 'add', key: 'token', value: '0xbbb', blockNumber: 1}]}
+                }
+            })
+
+            await db.transactHot2({
+                baseHead: {height: 0, hash: '0x0'},
+                finalizedHead: {height: -1, hash: '0x'},
+                newBlocks: [
+                    {height: 1, hash: '0x1-fork'},
+                ]
+            }, async () => {
+                return {templates: [{type: 'add', key: 'token', value: '0xccc', blockNumber: 1}]}
+            })
+
+            await db.disconnect()
+
+            let state = await db.connect()
+            expect(state.top).toEqual([
+                {height: 0, hash: '0x0', templates: [{type: 'add', key: 'token', value: '0xaaa', blockNumber: 0}]},
+                {height: 1, hash: '0x1-fork', templates: [{type: 'add', key: 'token', value: '0xccc', blockNumber: 1}]},
+            ])
+        })
+
+        it('finalization moves hot templates into finalized state', async function() {
+            await db.connect()
+
+            let blocks = [
+                {height: 0, hash: '0x0'},
+                {height: 1, hash: '0x1'},
+            ]
+
+            await db.transactHot2({
+                baseHead: {height: -1, hash: '0x'},
+                finalizedHead: {height: -1, hash: '0x'},
+                newBlocks: blocks,
+            }, async (store, beg, end) => {
+                let b = blocks[beg]
+                if (b.height === 0) {
+                    return {templates: [{type: 'add', key: 'token', value: '0xaaa', blockNumber: 0}]}
+                }
+                if (b.height === 1) {
+                    return {templates: [{type: 'add', key: 'token', value: '0xbbb', blockNumber: 1}]}
+                }
+            })
+
+            await db.transactHot2({
+                baseHead: {height: 1, hash: '0x1'},
+                finalizedHead: {height: 1, hash: '0x1'},
+                newBlocks: []
+            }, async () => {})
+
+            await db.disconnect()
+
+            let state = await db.connect()
+            expect(state.templates).toEqual([
+                {type: 'add', key: 'token', value: '0xaaa', blockNumber: 0},
+                {type: 'add', key: 'token', value: '0xbbb', blockNumber: 1},
+            ])
+            expect(state.top).toEqual([])
+        })
+
+        it('.transact() rolls back hot templates and persists only new ones', async function() {
+            await db.connect()
+
+            let blocks = [
+                {height: 0, hash: '0x0'},
+                {height: 1, hash: '0x1'},
+            ]
+
+            await db.transactHot2({
+                baseHead: {height: -1, hash: '0x'},
+                finalizedHead: {height: -1, hash: '0x'},
+                newBlocks: blocks,
+            }, async (store, beg, end) => {
+                let b = blocks[beg]
+                if (b.height === 0) {
+                    return {templates: [{type: 'add', key: 'token', value: '0xaaa', blockNumber: 0}]}
+                }
+            })
+
+            await db.transact({
+                prevHead: {height: -1, hash: '0x'},
+                nextHead: {height: 5, hash: '0x5'}
+            }, async () => {
+                return {templates: [{type: 'add', key: 'pool', value: '0xfff', blockNumber: 3}]}
+            })
+
+            await db.disconnect()
+
+            let state = await db.connect()
+            expect(state.templates).toEqual([
+                {type: 'add', key: 'pool', value: '0xfff', blockNumber: 3},
+            ])
+            expect(state.top).toEqual([])
+        })
+
+        it('delete mutations are ordered before add at same block_number', async function() {
+            await db.connect()
+
+            await db.transact({
+                prevHead: {height: -1, hash: '0x'},
+                nextHead: {height: 10, hash: '0x10'}
+            }, async () => {
+                return {templates: [
+                    {type: 'add', key: 'token', value: '0xaaa', blockNumber: 5},
+                    {type: 'delete', key: 'token', value: '0xaaa', blockNumber: 5},
+                ]}
+            })
+
+            await db.disconnect()
+
+            let state = await db.connect()
+            expect(state.templates).toEqual([
+                {type: 'delete', key: 'token', value: '0xaaa', blockNumber: 5},
+                {type: 'add', key: 'token', value: '0xaaa', blockNumber: 5},
+            ])
         })
     })
 })
