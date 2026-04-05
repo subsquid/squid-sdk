@@ -196,7 +196,7 @@ class Processor<B extends BlockBase, S> {
         while (true) {
             try {
                 for await (let data of getStream({
-                    from: this.state.head?.number ?? 0,
+                    from: (this.state.head?.number ?? -1) + 1,
                     parentHash: this.state.head?.hash,
                     templateRegistry: this.state,
                 })) {
