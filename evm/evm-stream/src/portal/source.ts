@@ -53,15 +53,15 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
         opts?: DataSourceStreamOptions,
         finalized?: boolean
     ): AsyncIterable<BlockBatch<Block<F>>> {
-        let requests = applyRangeBound(this.resolveRequests(opts?.templateRegistry), opts?.after ? {from: opts?.after.number + 1} : undefined)
+        let requests = applyRangeBound(this.resolveRequests(opts?.templateRegistry), opts?.from != null ? {from: opts.from} : undefined)
         if (requests.length === 0) return
 
         let streamOptions = {request: {headers: this.getHeaders()}}
-        let parentBlock = opts?.after
+        let parentHash = opts?.parentHash
 
         for (let i = 0; i < requests.length; i++) {
             let req = requests[i]
-            let query = mapRequest(req, parentBlock?.hash)
+            let query = mapRequest(req, parentHash)
 
             try {
                 for await (let {blocks, meta} of this.client.getStream(query, streamOptions, finalized)) {
@@ -72,7 +72,7 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
 
                     let lastBlock = maybeLast(blocks)?.header
                     if (lastBlock != null) {
-                        parentBlock = {number: lastBlock.number, hash: lastBlock.hash}
+                        parentHash = lastBlock.hash
                     }
                 }
 
@@ -84,19 +84,19 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
                 if (gapRange.from === gapRange.to) continue
 
                 for await (let {blocks, meta} of this.client.getStream(
-                    mapRequest({range: gapRange, request: {fields: req.request.fields}}, parentBlock?.hash),
+                    mapRequest({range: gapRange, request: {fields: req.request.fields}}, parentHash),
                     streamOptions,
                     finalized
                 )) {
                     let finalizedHead = getHead(meta.finalizedHeadNumber, meta.finalizedHeadHash)
                     if (finalizedHead && req.range.to <= finalizedHead.number) {
-                        parentBlock = undefined
+                        parentHash = undefined
                         break
                     }
 
                     let lastBlock = maybeLast(blocks)?.header
                     if (lastBlock != null) {
-                        parentBlock = {number: lastBlock.number, hash: lastBlock.hash}
+                        parentHash = lastBlock.hash
                     }
                 }
             } catch (e: unknown) {
