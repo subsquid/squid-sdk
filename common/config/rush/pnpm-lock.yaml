@@ -77,6 +77,9 @@ dependencies:
   '@rush-temp/evm-stream':
     specifier: file:./projects/evm-stream.tgz
     version: file:projects/evm-stream.tgz
+  '@rush-temp/evm-template-registry':
+    specifier: file:./projects/evm-template-registry.tgz
+    version: file:projects/evm-template-registry.tgz(supports-color@8.1.1)(ts-node@10.9.2)
   '@rush-temp/evm-typegen':
     specifier: file:./projects/evm-typegen.tgz
     version: file:projects/evm-typegen.tgz
@@ -356,9 +359,6 @@ dependencies:
   '@subsquid/apollo-server-express':
     specifier: ^3.14.1
     version: 3.14.1(express@4.18.2)(graphql@15.8.0)
-  '@subsquid/batch-processor':
-    specifier: ^0.0.0
-    version: 0.0.0
   '@subsquid/graphiql-console':
     specifier: ^0.3.0
     version: 0.3.0
@@ -7133,10 +7133,11 @@ packages:
     dev: false
 
   file:projects/batch-processor.tgz:
-    resolution: {integrity: sha512-97DW1/1737U0vrNyjkBFPI4mZ14JM71lFJfKRy0NK7y07SA8cgIWepJTo/brP4429vVE3xVKVv1lqyFu/D4PnQ==, tarball: file:projects/batch-processor.tgz}
+    resolution: {integrity: sha512-BYSQUm5aGXdSe063DYFNyNABWV/dut/6xuqzZ9jBPiU+9JjEMxWgT1rsv8fnTNi6ijDtLEzFQbJ+PPTLSEX/5g==, tarball: file:projects/batch-processor.tgz}
     name: '@rush-temp/batch-processor'
     version: 0.0.0
     dependencies:
+      '@types/mocha': 10.0.8
       '@types/node': 18.19.0
       prom-client: 14.2.0
       typescript: 5.5.4
@@ -7204,7 +7205,7 @@ packages:
     dev: false
 
   file:projects/erc20-transfers.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-GMxIrxWIN6Cy0Qgsuj071JZVwRsW7hqaccEIvlBrg/xnsGCjaM71ASFq8z7LF+RXLdE+G4zWfDW/JrMV3iYJaA==, tarball: file:projects/erc20-transfers.tgz}
+    resolution: {integrity: sha512-S829xGcTKPKgKrmreI0h8bQDYX8KDlmhv0Q8z6NFpyNkQ9QgG31veujWLPYS98uYIecM59gqrBSaaa40XXQmfw==, tarball: file:projects/erc20-transfers.tgz}
     id: file:projects/erc20-transfers.tgz
     name: '@rush-temp/erc20-transfers'
     version: 0.0.0
@@ -7318,13 +7319,47 @@ packages:
     dev: false
 
   file:projects/evm-stream.tgz:
-    resolution: {integrity: sha512-cd5aK6yMruIIZeaBrqGNPT5VBsSH37tCBUGN5AJBvSOrgYSh/Dld7fDDF1eFT1CFBMgzgqkA1MyEbbCHxx60dw==, tarball: file:projects/evm-stream.tgz}
+    resolution: {integrity: sha512-SUy8wd8N2aprvZZlBHglY8OKBnLtgivj5qfJGm3B3BOvwNDU33lctNjcVPDQ9V29uW4KBag6t0jBaJL+WhOBUA==, tarball: file:projects/evm-stream.tgz}
     name: '@rush-temp/evm-stream'
     version: 0.0.0
     dependencies:
       '@subsquid/portal-client': 0.3.2
       '@types/node': 18.19.0
       typescript: 5.5.4
+    dev: false
+
+  file:projects/evm-template-registry.tgz(supports-color@8.1.1)(ts-node@10.9.2):
+    resolution: {integrity: sha512-oras5eqTvB3Zr2V1a1cgAI9bw9RfB4au9Cu4brF/dbYh+sfPCfhFujKh1PRt9UnzIwBxvKqECcFl5BJe6YBAzg==, tarball: file:projects/evm-template-registry.tgz}
+    id: file:projects/evm-template-registry.tgz
+    name: '@rush-temp/evm-template-registry'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 18.19.0
+      dotenv: 16.3.1
+      ethers: 6.9.0
+      pg: 8.11.3
+      typeorm: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
+      typescript: 5.5.4
+    transitivePeerDependencies:
+      - '@google-cloud/spanner'
+      - '@sap/hana-client'
+      - better-sqlite3
+      - bufferutil
+      - hdb-pool
+      - ioredis
+      - mongodb
+      - mssql
+      - mysql2
+      - oracledb
+      - pg-native
+      - pg-query-stream
+      - redis
+      - sql.js
+      - sqlite3
+      - supports-color
+      - ts-node
+      - typeorm-aurora-data-api-driver
+      - utf-8-validate
     dev: false
 
   file:projects/evm-typegen.tgz:
@@ -8281,11 +8316,13 @@ packages:
     dev: false
 
   file:projects/util-internal-data-source.tgz:
-    resolution: {integrity: sha512-PuYDFCN4sBaNLmIa58trph93D7emIrpvWkyjLHqCLdq7ru0QARNowM0IlmqqG76prXSdhHKluEmjRBdWWgvOpQ==, tarball: file:projects/util-internal-data-source.tgz}
+    resolution: {integrity: sha512-qyqU2hA9FnG/ZvTUtZN0ORsu1U1i1oSWmLZjlJsZZJIZT9hn0KBI5r7G83hL/UY+X84QOqIvjWzzyUTKAK9C5w==, tarball: file:projects/util-internal-data-source.tgz}
     name: '@rush-temp/util-internal-data-source'
     version: 0.0.0
     dependencies:
+      '@types/mocha': 10.0.8
       '@types/node': 18.19.0
+      mocha: 10.7.3
       typescript: 5.5.4
     dev: false
 

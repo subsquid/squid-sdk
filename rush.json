@@ -953,6 +953,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "evm-template-registry",
+      "projectFolder": "test/evm-template-registry",
+      "shouldPublish": false
+    },
+    {
       "packageName": "gql-test-client",
       "projectFolder": "test/gql-client",
       "shouldPublish": false
