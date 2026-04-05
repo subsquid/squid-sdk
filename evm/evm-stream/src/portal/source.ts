@@ -5,17 +5,23 @@ import {
     DataSource,
     DataSourceStreamOptions,
     ForkException,
+    TemplateRegistry,
     type BlockBatch,
 } from '@subsquid/util-internal-data-source'
 import {applyRangeBound, FiniteRange, getSize, RangeRequestList, type Range, type RangeRequest} from '@subsquid/util-internal-range'
 import {Block, FieldSelection, type BlockHeader, type StateDiff, type Trace} from '../data/model'
 import {DataRequest} from '../data/request'
+import {mergeItems, LOG_FILTER_KEYS, TX_FILTER_KEYS, TRACE_FILTER_KEYS, STATE_DIFF_FILTER_KEYS} from './merge'
 import assert from 'assert'
+
+export type RangeRequestResolver<F extends FieldSelection> =
+    | RangeRequestList<DataRequest<F>>
+    | ((registry?: TemplateRegistry) => RangeRequestList<DataRequest<F>>)
 
 export class PortalDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
     constructor(
         private client: PortalClient,
-        private requests: RangeRequestList<DataRequest<F>>,
+        private requests: RangeRequestResolver<F>,
         private opts?: {squidId?: string}
     ) {}
 
@@ -36,14 +42,18 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
     }
 
     getBlocksCountInRange(range: FiniteRange): number {
-        return getSize(this.requests.map(r => r.range), range)
+        return getSize(this.resolveRequests().map(r => r.range), range)
+    }
+
+    private resolveRequests(registry?: TemplateRegistry): RangeRequestList<DataRequest<F>> {
+        return typeof this.requests === 'function' ? this.requests(registry) : this.requests
     }
 
     private async *_getStream(
         opts?: DataSourceStreamOptions,
         finalized?: boolean
     ): AsyncIterable<BlockBatch<Block<F>>> {
-        let requests = applyRangeBound(this.requests, opts?.after ? {from: opts?.after.number + 1} : undefined)
+        let requests = applyRangeBound(this.resolveRequests(opts?.templateRegistry), opts?.after ? {from: opts?.after.number + 1} : undefined)
         if (requests.length === 0) return
 
         let streamOptions = {request: {headers: this.getHeaders()}}
@@ -115,6 +125,10 @@ function mapRequest<F extends FieldSelection>(
     req: RangeRequest<DataRequest<F>>,
     parentBlockHash?: string
 ): evm.Query<MapFieldSelection<F>> {
+    let logs = req.request.logs?.map((log) => ({...log.where, ...log.include}))
+    let transactions = req.request.transactions?.map((tx) => ({...tx.where, ...tx.include}))
+    let traces = req.request.traces?.map((trace) => ({...trace.where, ...trace.include}))
+    let stateDiffs = req.request.stateDiffs?.map((sd) => ({...sd.where, ...sd.include}))
     return {
         type: 'evm',
         fromBlock: req.range.from,
@@ -122,10 +136,10 @@ function mapRequest<F extends FieldSelection>(
         parentBlockHash: parentBlockHash,
         fields: mapFieldSelection(req.request.fields),
         includeAllBlocks: req.request.includeAllBlocks,
-        logs: req.request.logs?.map((log) => ({...log.where, ...log.include})),
-        transactions: req.request.transactions?.map((transaction) => ({...transaction.where, ...transaction.include})),
-        traces: req.request.traces?.map((trace) => ({...trace.where, ...trace.include})),
-        stateDiffs: req.request.stateDiffs?.map((stateDiff) => ({...stateDiff.where, ...stateDiff.include})),
+        logs: logs && mergeItems(logs, LOG_FILTER_KEYS),
+        transactions: transactions && mergeItems(transactions, TX_FILTER_KEYS),
+        traces: traces && mergeItems(traces, TRACE_FILTER_KEYS),
+        stateDiffs: stateDiffs && mergeItems(stateDiffs, STATE_DIFF_FILTER_KEYS),
     }
 }
 
