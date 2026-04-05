@@ -1,14 +1,29 @@
 import {createLogger} from '@subsquid/logger'
 import {last, maybeLast, runProgram, Throttler} from '@subsquid/util-internal'
-import {HashAndHeight, Database} from './database'
-import {DataSource, isForkException, BlockRef, type BlockBatch} from '@subsquid/util-internal-data-source'
+import {
+    Database,
+    DatabaseTransactResult,
+    FinalDatabaseState,
+    HashAndHeight,
+    HotDatabaseState,
+    TemplateMutation,
+} from './database'
+import {
+    DataSource,
+    isForkException,
+    BlockRef,
+    type BlockBatch,
+    type TemplateRegistry as ITemplateRegistry,
+    type TemplateValue,
+} from '@subsquid/util-internal-data-source'
+import {type TemplateManager, TemplateRegistry} from './template-registry'
+import type {FiniteRange} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {PrometheusServer, RunnerMetrics} from '@subsquid/util-internal-processor-tools'
 import {formatHead, getItemsCount} from './util'
 
-
 export {PrometheusServer}
-
+export type {TemplateManager} from './template-registry'
 
 const log = createLogger('sqd:batch-processor')
 
@@ -25,6 +40,10 @@ export interface DataHandlerContext<Block, Store> {
      * Signals, that the processor is near the head of the chain.
      */
     isHead: boolean
+    /**
+     * Templates manager to add and remove templates
+     */
+    templates: TemplateManager
 }
 
 
@@ -33,13 +52,7 @@ export interface BlockBase {
 }
 
 
-interface ProcessorState {
-    finalizedHead: BlockRef | undefined
-    unfinalizedHeads: BlockRef[]
-}
-
-
-interface RunOptions {
+export interface RunOptions {
     prometheus?: PrometheusServer
 }
 
@@ -60,21 +73,95 @@ interface RunOptions {
  */
 export function run<Block extends BlockBase, Store>(
     src: DataSource<Block>,
+    db: Database<Store> & {supportsTemplates: true},
+    dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<void>,
+    opts?: RunOptions
+): void
+export function run<Block extends BlockBase, Store>(
+    src: DataSource<Block>,
+    db: Database<Store>,
+    dataHandler: (ctx: Omit<DataHandlerContext<Block, Store>, 'templates'>) => Promise<void>,
+    opts?: RunOptions
+): void
+export function run<Block extends BlockBase, Store>(
+    src: DataSource<Block>,
     db: Database<Store>,
     dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<void>,
     opts?: RunOptions
 ): void {
     runProgram(() => {
-        return new Processor(src, db, dataHandler, opts).run()
+            return new Processor(src, db, dataHandler, opts).run()
     }, err => {
-        log.fatal(err)
+            log.fatal(err)
     })
+}
+
+interface ProcessorStateInit {
+    finalizedHead?: BlockRef
+    unfinalizedHeads?: (BlockRef & {templates?: TemplateMutation[]})[]
+    templates?: TemplateMutation[]
+}
+
+
+class ProcessorState implements ITemplateRegistry {
+    finalizedHead: BlockRef | undefined = undefined
+    unfinalizedHeads: BlockRef[] = []
+    private templates = new TemplateRegistry()
+
+    get head(): BlockRef | undefined {
+        return maybeLast(this.unfinalizedHeads) ?? this.finalizedHead
+    }
+
+    get(key: string): TemplateValue[] {
+        return this.templates.get(key)
+    }
+
+    init(state: ProcessorStateInit): void {
+        this.finalizedHead = state.finalizedHead
+        this.unfinalizedHeads = state.unfinalizedHeads ?? []
+
+        let hotBlockTemplates = state.unfinalizedHeads
+            ?.filter((b) => b.templates?.length)
+            .map((b) => ({blockNumber: b.number, templates: b.templates!}))
+
+        if (state.templates?.length || hotBlockTemplates?.length) {
+            log.info('loading persisted templates')
+            this.templates.init(state.templates ?? [], hotBlockTemplates)
+        }
+    }
+
+    handleFork(previousBlocks: BlockRef[]): void {
+        let chain = this.finalizedHead ? [this.finalizedHead, ...this.unfinalizedHeads] : this.unfinalizedHeads
+        let rollbackIndex = findRollbackIndex(chain, previousBlocks)
+        if (rollbackIndex === -1) {
+            if (this.finalizedHead != null) throw new Error('Unable to process fork')
+            this.unfinalizedHeads = []
+            this.templates.rollbackTo(-1)
+        } else {
+            let rollbackHead = chain[rollbackIndex]
+            log.info(`navigating a fork on a common base ${formatHead(rollbackHead)}`)
+            this.unfinalizedHeads = chain.slice(1, rollbackIndex + 1)
+            this.templates.rollbackTo(rollbackHead.number)
+        }
+    }
+
+    prune(blockNumber: number): void {
+        this.templates.prune(blockNumber)
+    }
+
+    async transact(
+        range: FiniteRange,
+        fn: (templates: TemplateManager) => Promise<void>,
+    ): Promise<{data: TemplateMutation[]; changed: boolean}> {
+        return this.templates.transact(range, fn)
+    }
 }
 
 class Processor<B extends BlockBase, S> {
     private metrics: RunnerMetrics
     private statusReportTimer?: any
     private hasStatusNews = false
+    private state = new ProcessorState()
 
     constructor(
         private src: DataSource<B>,
@@ -88,23 +175,15 @@ class Processor<B extends BlockBase, S> {
     }
 
     async run(): Promise<void> {
-        let getHead = this.db.supportsHotBlocks ? this.src.getHead.bind(this.src) : this.src.getFinalizedHead.bind(this.src)
+        let getHead = this.db.supportsHotBlocks
+            ? this.src.getHead.bind(this.src)
+            : this.src.getFinalizedHead.bind(this.src)
         let chainHeight = new Throttler(() => getHead()?.then((r) => r?.number ?? -1), 10_000)
 
-        let state: ProcessorState = {
-            finalizedHead: undefined,
-            unfinalizedHeads: [],
-        }
-        if (this.db.supportsHotBlocks) {
-            let dbState = await this.db.connect()
-            state.finalizedHead = dbState.height < 0 ? undefined : toBlockRef(dbState)
-            state.unfinalizedHeads = dbState.top.map(toBlockRef)
-        } else {
-            let dbState = await this.db.connect()
-            state.finalizedHead = dbState.height < 0 ? undefined : toBlockRef(dbState)
-        }
+        let dbState = await this.db.connect()
+        this.state.init(toProcessorStateInit(dbState))
 
-        let head = getStateHead(state)
+        let head = this.state.head
         if (head != null) {
             log.info(`last processed block was ${head.number}`)
         }
@@ -115,29 +194,41 @@ class Processor<B extends BlockBase, S> {
             : this.src.getFinalizedStream.bind(this.src)
 
         while (true) {
-            head = getStateHead(state)
             try {
-                for await (let data of getStream({after: head})) {
-                    state = await this.processBatch(state, data, await chainHeight.get())
+                for await (let data of getStream({
+                    from: this.state.head?.number ?? 0,
+                    parentHash: this.state.head?.hash,
+                    templateRegistry: this.state,
+                })) {
+                    await this.processBatch(
+                        data,
+                        await chainHeight.get(),
+                        async (store: S, sliceBlocks: B[], isOnTop: boolean) => {
+                            let batchRange = {from: sliceBlocks[0].header.number, to: last(sliceBlocks).header.number}
+
+                            const {data: newTemplates, changed} = await this.state.transact(
+                                batchRange,
+                                async (templates) => {
+                                    await this.handler({store, blocks: sliceBlocks, isHead: isOnTop, templates})
+                                },
+                            )
+
+                            if (changed) {
+                                throw new TemplateRegistryChanged()
+                            }
+
+                            return {templates: newTemplates}
+                    })
                 }
-                break // Stream completed successfully, exit loop
+                break
             } catch (e) {
-                if (!isForkException(e) || !this.db.supportsHotBlocks) throw e
-
-                // Handle fork and continue loop to retry
-                let chain = state.finalizedHead
-                    ? [state.finalizedHead, ...state.unfinalizedHeads]
-                    : state.unfinalizedHeads
-                let rollbackIndex = findRollbackIndex(chain, e.previousBlocks)
-                if (rollbackIndex === -1) {
-                    if (state.finalizedHead != null) throw new Error('Unable to process fork')
-                    state.unfinalizedHeads = []
-                } else {
-                    const rollbackHead = chain[rollbackIndex]
-                    log.info(`navigating a fork on a common base ${formatHead(rollbackHead)}`)
-
-                    state.unfinalizedHeads = chain.slice(1, rollbackIndex + 1)
+                if (isTemplateRegistryChanged(e)) {
+                    log.info('template registry updated, re-fetching stream with new filters')
+                    continue
                 }
+
+                if (!isForkException(e) || !this.db.supportsHotBlocks) throw e
+                this.state.handleFork(e.previousBlocks)
             }
         }
 
@@ -169,34 +260,35 @@ class Processor<B extends BlockBase, S> {
     }
 
     private async processBatch(
-        state: ProcessorState,
         data: BlockBatch<B>,
-        chainHeight: number
-    ): Promise<ProcessorState> {
+        chainHeight: number,
+        map: (store: S, blocks: B[], isOnTop: boolean) => Promise<DatabaseTransactResult | void>
+    ): Promise<void> {
         let {blocks, finalizedHead: finalizedHeadData} = data
 
-        if (blocks.length === 0) return state
+        if (blocks.length === 0) return
 
-        let prevHead = getStateHead(state)
+        let prevHead = this.state.head
 
-        // Validate data continuity
         if (prevHead && prevHead.number >= blocks[0].header.number) {
             throw new Error('Data is not continuous')
         }
 
-        if (finalizedHeadData != null && state.finalizedHead != null && finalizedHeadData.number <= state.finalizedHead.number) {
-            finalizedHeadData = state.finalizedHead
+        if (
+            finalizedHeadData != null &&
+            this.state.finalizedHead != null &&
+            finalizedHeadData.number <= this.state.finalizedHead.number
+        ) {
+            finalizedHeadData = this.state.finalizedHead
         }
 
-        let unfinalizedIndex = finalizedHeadData == null
-            ? 0
-            : blocks.findIndex((b) => b.header.number > finalizedHeadData.number)
+        let unfinalizedIndex =
+            finalizedHeadData == null ? 0 : blocks.findIndex((b) => b.header.number > finalizedHeadData!.number)
 
         let nextHead = last(blocks).header
         let isOnTop = nextHead.number >= chainHeight
 
         let mappingStartTime = process.hrtime.bigint()
-        let nextState: ProcessorState
 
         if (this.db.supportsHotBlocks) {
             let finalizedRef: BlockRef | undefined
@@ -205,24 +297,25 @@ class Processor<B extends BlockBase, S> {
             } else {
                 finalizedRef = finalizedHeadData ?? blocks[unfinalizedIndex - 1]?.header
             }
-            let finalizedHead = maxBlockRef(finalizedRef, state.finalizedHead)
+            let finalizedHead = maxBlockRef(finalizedRef, this.state.finalizedHead)
             await this.db.transactHot2(
                 {
                     finalizedHead: toHashAndHeight(finalizedHead),
                     baseHead: toHashAndHeight(prevHead),
                     newBlocks: blocks.map((b) => toHashAndHeight(b.header)),
                 },
-                (store, start, end) => {
-                    return this.handler({
-                        store,
-                        blocks: (start === 0 && end === blocks.length) ? blocks : blocks.slice(start, end),
-                        isHead: isOnTop,
-                    })
+                async (store, start, end) => {
+                    let sliceBlocks = start === 0 && end === blocks.length ? blocks : blocks.slice(start, end)
+                    if (sliceBlocks.length === 0) return
+                    return map(store, sliceBlocks, isOnTop)
                 }
             )
 
-            let newFinalizedHead = finalizedHead ?? state.finalizedHead
-            let unfinalizedHeads = state.unfinalizedHeads
+            let newFinalizedHead = finalizedHead ?? this.state.finalizedHead
+            if (newFinalizedHead) {
+                this.state.prune(newFinalizedHead.number)
+            }
+            let unfinalizedHeads = this.state.unfinalizedHeads
             if (newFinalizedHead) {
                 let idx = unfinalizedHeads.findIndex((h) => h.number > newFinalizedHead!.number)
                 unfinalizedHeads = idx < 0 ? [] : unfinalizedHeads.slice(idx)
@@ -233,7 +326,8 @@ class Processor<B extends BlockBase, S> {
                     ...blocks.slice(unfinalizedIndex).map((b) => ({number: b.header.number, hash: b.header.hash})),
                 ]
             }
-            nextState = {finalizedHead: newFinalizedHead, unfinalizedHeads}
+            this.state.finalizedHead = newFinalizedHead
+            this.state.unfinalizedHeads = unfinalizedHeads
         } else {
             assert(unfinalizedIndex < 0, 'non-hot database received unfinalized blocks')
 
@@ -243,16 +337,12 @@ class Processor<B extends BlockBase, S> {
                     nextHead: toHashAndHeight(nextHead),
                     isOnTop,
                 },
-                (store) => {
-                    return this.handler({
-                        store,
-                        blocks,
-                        isHead: isOnTop,
-                    })
-                }
+                (store) => map(store, blocks, isOnTop)
             )
 
-            nextState = {finalizedHead: nextHead, unfinalizedHeads: []}
+            this.state.prune(nextHead.number)
+            this.state.finalizedHead = nextHead
+            this.state.unfinalizedHeads = []
         }
 
         let mappingEndTime = process.hrtime.bigint()
@@ -261,8 +351,6 @@ class Processor<B extends BlockBase, S> {
         this.metrics.registerBatch(blocks.length, getItemsCount(blocks), mappingStartTime, mappingEndTime)
 
         this.reportStatus()
-
-        return nextState
     }
 
     private reportStatus(): void {
@@ -327,16 +415,30 @@ function toHashAndHeight(ref: BlockRef | undefined): HashAndHeight {
     return {height: ref.number, hash: ref.hash}
 }
 
-function toBlockRef(hashAndHeight: HashAndHeight): BlockRef {
-    return {number: hashAndHeight.height, hash: hashAndHeight.hash}
+function toBlockRef(hh: HashAndHeight): BlockRef {
+    return {number: hh.height, hash: hh.hash}
 }
 
-function getStateHead(state: ProcessorState): BlockRef | undefined {
-    return maybeLast(state.unfinalizedHeads) ?? state.finalizedHead
+function toProcessorStateInit(dbState: FinalDatabaseState | HotDatabaseState): ProcessorStateInit {
+    let top = 'top' in dbState ? dbState.top : undefined
+    return {
+        finalizedHead: dbState.height < 0 ? undefined : toBlockRef(dbState),
+        unfinalizedHeads: top?.map(b => ({...toBlockRef(b), templates: b.templates})),
+        templates: dbState.templates,
+    }
 }
 
 function maxBlockRef(a: BlockRef | undefined, b: BlockRef | undefined): BlockRef | undefined {
     if (a == null) return b
     if (b == null) return a
     return a.number >= b.number ? a : b
+}
+
+export class TemplateRegistryChanged extends Error {
+    readonly isTemplateRegistryChanged = true
+    readonly name = 'TemplateRegistryChanged'
+}
+
+export function isTemplateRegistryChanged(err: unknown): err is TemplateRegistryChanged {
+    return err instanceof TemplateRegistryChanged
 }
