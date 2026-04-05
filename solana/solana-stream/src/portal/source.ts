@@ -6,6 +6,7 @@ import {
     DataSourceStreamOptions,
     ForkException,
     type BlockBatch,
+    TemplateRegistry,
 } from '@subsquid/util-internal-data-source'
 import {applyRangeBound, FiniteRange, getSize, RangeRequestList, type RangeRequest} from '@subsquid/util-internal-range'
 import {
@@ -20,12 +21,25 @@ import {
     type Transaction,
 } from '../data/model'
 import {DataRequest} from '../data/request'
+import {
+    mergeItems,
+    TX_FILTER_KEYS,
+    INSTRUCTION_FILTER_KEYS,
+    LOG_FILTER_KEYS,
+    BALANCE_FILTER_KEYS,
+    TOKEN_BALANCE_FILTER_KEYS,
+    REWARD_FILTER_KEYS,
+} from './merge'
 import assert from 'assert'
+
+export type RangeRequestResolver<F extends FieldSelection> =
+    | RangeRequestList<DataRequest<F>>
+    | ((registry?: TemplateRegistry) => RangeRequestList<DataRequest<F>>)
 
 export class PortalDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
     constructor(
         private client: PortalClient,
-        private requests: RangeRequestList<DataRequest<F>>,
+        private requests: RangeRequestResolver<F>,
         private opts?: {squidId?: string}
     ) {}
 
@@ -46,14 +60,18 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
     }
 
     getBlocksCountInRange(range: FiniteRange): number {
-        return getSize(this.requests.map(r => r.range), range)
+        return getSize(this.resolveRequests().map(r => r.range), range)
+    }
+
+    private resolveRequests(registry?: TemplateRegistry): RangeRequestList<DataRequest<F>> {
+        return typeof this.requests === 'function' ? this.requests(registry) : this.requests
     }
 
     private async *_getStream(
         opts?: DataSourceStreamOptions,
         finalized?: boolean
     ): AsyncIterable<BlockBatch<Block<F>>> {
-        let requests = applyRangeBound(this.requests, opts?.after ? {from: opts?.after.number + 1} : undefined)
+        let requests = applyRangeBound(this.resolveRequests(opts?.templateRegistry), opts?.after ? {from: opts?.after.number + 1} : undefined)
         if (requests.length === 0) return
 
         let streamOptions = {request: {headers: this.getHeaders()}}
@@ -126,6 +144,12 @@ function mapRequest<F extends FieldSelection>(
     req: RangeRequest<DataRequest<F>>,
     parentBlockHash?: string
 ): solana.Query<MapFieldSelection<F>> {
+    let transactions = req.request.transactions?.map((tx) => ({...tx.where, ...tx.include}))
+    let instructions = req.request.instructions?.map((ix) => ({...ix.where, ...ix.include}))
+    let logs = req.request.logs?.map((log) => ({...log.where, ...log.include}))
+    let balances = req.request.balances?.map((b) => ({...b.where, ...b.include}))
+    let tokenBalances = req.request.tokenBalances?.map((tb) => ({...tb.where, ...tb.include}))
+    let rewards = req.request.rewards?.map((r) => r.where || {})
     return {
         type: 'solana',
         fromBlock: req.range.from,
@@ -133,21 +157,12 @@ function mapRequest<F extends FieldSelection>(
         parentBlockHash: parentBlockHash,
         fields: mapFieldSelection(req.request.fields),
         includeAllBlocks: req.request.includeAllBlocks,
-        transactions: req.request.transactions?.map((transaction) => ({
-            ...transaction.where,
-            ...transaction.include,
-        })),
-        instructions: req.request.instructions?.map((instruction) => ({
-            ...instruction.where,
-            ...instruction.include,
-        })),
-        logs: req.request.logs?.map((log) => ({...log.where, ...log.include})),
-        balances: req.request.balances?.map((balance) => ({...balance.where, ...balance.include})),
-        tokenBalances: req.request.tokenBalances?.map((tokenBalance) => ({
-            ...tokenBalance.where,
-            ...tokenBalance.include,
-        })),
-        rewards: req.request.rewards?.map((reward) => reward.where || {}),
+        transactions: transactions && mergeItems(transactions, TX_FILTER_KEYS),
+        instructions: instructions && mergeItems(instructions, INSTRUCTION_FILTER_KEYS),
+        logs: logs && mergeItems(logs, LOG_FILTER_KEYS),
+        balances: balances && mergeItems(balances, BALANCE_FILTER_KEYS),
+        tokenBalances: tokenBalances && mergeItems(tokenBalances, TOKEN_BALANCE_FILTER_KEYS),
+        rewards: rewards && mergeItems(rewards, REWARD_FILTER_KEYS),
     }
 }
 
