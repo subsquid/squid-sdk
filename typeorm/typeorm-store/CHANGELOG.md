@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Thu, 05 Feb 2026 16:31:55 GMT and should not be manually modified.
+This log was last generated on Sun, 05 Apr 2026 22:03:07 GMT and should not be manually modified.
+
+## 1.8.0
+Sun, 05 Apr 2026 22:03:07 GMT
+
+### Minor changes
+
+- add template registry persistence
 
 ## 1.7.0
 Thu, 05 Feb 2026 16:31:55 GMT
