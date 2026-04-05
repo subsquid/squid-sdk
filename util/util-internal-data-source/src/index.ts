@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {FiniteRange} from '@subsquid/util-internal-range'
+import type {FiniteRange, Range} from '@subsquid/util-internal-range'
 
 
 export interface BlockRef {
@@ -9,8 +9,10 @@ export interface BlockRef {
 
 
 export interface DataSourceStreamOptions {
-    after?: BlockRef
-    stopOnHead?: boolean
+    from: number
+    to?: number
+    parentHash?: string
+    templateRegistry?: TemplateRegistry
 }
 
 
@@ -31,6 +33,17 @@ export interface DataSource<B> {
     getStream(req: DataSourceStreamOptions): AsyncIterable<BlockBatch<B>>
 
     getBlocksCountInRange?(range: FiniteRange): number
+}
+
+
+export interface TemplateValue {
+    value: string
+    range: Range
+}
+
+
+export interface TemplateRegistry {
+    get(key: string): TemplateValue[]
 }
 
 
