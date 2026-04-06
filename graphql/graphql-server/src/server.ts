@@ -15,7 +15,7 @@ import {isTsNode} from '@subsquid/util-internal-ts-node'
 import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from '@subsquid/apollo-server-core'
 import responseCachePlugin from 'apollo-server-plugin-response-cache'
 import assert from 'assert'
-import {GraphQLInt, GraphQLObjectType, GraphQLSchema, GraphQLString} from 'graphql'
+import {GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLSchema, GraphQLString} from 'graphql'
 import Keyv from 'keyv'
 import * as path from 'path'
 import {Pool} from 'pg'
@@ -117,6 +117,7 @@ export class Server {
 
         if (this.options.squidStatus !== false) {
             schemas.push(this.squidStatusSchema())
+            schemas.push(this.squidTemplatesSchema())
         }
 
         let customResolvers = await this.customResolvers()
@@ -183,6 +184,54 @@ export class Server {
                         }),
                         resolve(source, args, context: Context) {
                             return context.openreader.executeQuery(statusQuery)
+                        }
+                    }
+                }
+            })
+        })
+    }
+
+    @def
+    private squidTemplatesSchema(): GraphQLSchema {
+        let templatesQuery = {
+            sql: `SELECT template_key, template_value, from_block, to_block FROM squid_processor.template_registry`,
+            params: [],
+            map(rows: any[][]): {key: string; value: string; fromBlock: number; toBlock: number | null}[] {
+                return rows.map(row => ({
+                    key: row[0],
+                    value: row[1],
+                    fromBlock: parseInt(row[2], 10),
+                    toBlock: row[3] != null ? parseInt(row[3], 10) : null,
+                }))
+            },
+        }
+
+        let templateType = new GraphQLObjectType({
+            name: 'SquidTemplate',
+            fields: {
+                key: {
+                    type: new GraphQLNonNull(GraphQLString),
+                },
+                value: {
+                    type: new GraphQLNonNull(GraphQLString),
+                },
+                fromBlock: {
+                    type: new GraphQLNonNull(GraphQLInt),
+                },
+                toBlock: {
+                    type: GraphQLInt,
+                },
+            }
+        })
+
+        return new GraphQLSchema({
+            query: new GraphQLObjectType({
+                name: 'Query',
+                fields: {
+                    squidTemplates: {
+                        type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(templateType))),
+                        resolve(source, args, context: Context) {
+                            return context.openreader.executeQuery(templatesQuery)
                         }
                     }
                 }

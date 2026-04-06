@@ -1,23 +1,16 @@
-import {HttpAgent, HttpClient} from '@subsquid/http-client'
-import {BlockInfo} from '@subsquid/solana-rpc'
-import {Base58Bytes} from '@subsquid/solana-rpc-data'
-import {addErrorContext, def, last} from '@subsquid/util-internal'
-import {ArchiveClient} from '@subsquid/util-internal-archive-client'
-import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
+import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
+import {def} from '@subsquid/util-internal'
 import {
-    applyRangeBound,
-    FiniteRange,
-    getSize,
-    mergeRangeRequests,
-    Range,
-    RangeRequest,
-    RangeRequestList
-} from '@subsquid/util-internal-range'
+    BlockBatch,
+    BlockRef,
+    DataSource,
+    DataSourceStreamOptions,
+    TemplateRegistry,
+} from '@subsquid/util-internal-data-source'
+import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
+import {applyRangeBound, FiniteRange, mergeRangeRequests, Range, rangeIntersection, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
-import {SolanaArchive} from './archive/source'
-import {getFields} from './data/fields'
-import {Block, BlockHeader, FieldSelection} from './data/model'
-import {PartialBlock} from './data/partial'
+import {Block, DEFAULT_FIELDS, FieldSelection} from './data/model'
 import {
     BalanceRequest,
     DataRequest,
@@ -25,93 +18,43 @@ import {
     LogRequest,
     RewardRequest,
     TokenBalanceRequest,
-    TransactionRequest
+    TransactionRequest,
 } from './data/request'
-import {SolanaRpcClient} from './rpc/client'
-import {RpcDataSource} from './rpc/source'
-
-
-export interface GatewaySettings {
-    /**
-     * Subsquid Network Gateway url
-     */
-    url: string
-    /**
-     * Request timeout in ms
-     */
-    requestTimeout?: number
-}
-
-
-export interface RpcSettings {
-    /**
-     * RPC client
-     */
-    client: SolanaRpcClient
-    /**
-     * `getBlock` batch call size.
-     *
-     * Default is `5`.
-     */
-    strideSize?: number
-    /**
-     * Maximum number of concurrent `getBlock` batch calls.
-     *
-     * Default is `10`
-     */
-    strideConcurrency?: number
-    /**
-     * Minimum distance from finalized head below which concurrent
-     * fetch procedure is allowed.
-     *
-     * Default is `50` blocks.
-     *
-     * Concurrent fetch procedure can perform multiple `getBlock` batch calls simultaneously and is faster,
-     * but assumes consistent behaviour of RPC endpoint.
-     *
-     * The latter might not be the case due to load balancing,
-     * when one request is sent to node `A` with head slot `X` and
-     * another to node `B` with head slot `X - 10`.
-     */
-    concurrentFetchThreshold?: number
-}
-
+import type {Selector} from './data/type-util'
+import {PortalDataSource} from './portal/source'
 
 interface BlockRange {
     range?: Range
 }
 
+interface TemplateSpec<F extends FieldSelection> {
+    key: string
+    range?: Range
+    resolve(value: string): DataRequest<F>
+}
 
 export class DataSourceBuilder<F extends FieldSelection = {}> {
-    private requests: RangeRequest<DataRequest>[] = []
+    private requests: RangeRequest<DataRequest<F>>[] = []
+    private templates: TemplateSpec<F>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
-    private archive?: GatewaySettings
-    private rpc?: RpcSettings
+    private archive?: PortalClient | PortalClientOptions
 
     /**
-     * Set Subsquid Network Gateway endpoint (ex Archive).
+     * Set SQD Network Portal endpoint.
      *
-     * Subsquid Network allows to get data from finalized blocks up to
+     * SQD Network allows to get data from blocks up to
      * infinite times faster and more efficient than via regular RPC.
      *
      * @example
-     * source.setGateway('https://v2.archive.subsquid.io/network/solana-mainnet')
+     * source.setPortal('https://portal.sqd.dev/datasets/solana-mainnet')
      */
-    setGateway(url: string | GatewaySettings): this {
-        if (typeof url == 'string') {
-            this.archive = {url}
+    setPortal(portal: string | PortalClientOptions | PortalClient): this {
+        if (typeof portal == 'string') {
+            this.archive = {url: portal}
         } else {
-            this.archive = url
+            this.archive = portal
         }
-        return this
-    }
-
-    /**
-     * Set up RPC data ingestion
-     */
-    setRpc(settings?: RpcSettings): this {
-        this.rpc = settings
         return this
     }
 
@@ -133,10 +76,10 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         return this as any
     }
 
-    private add(range: Range | undefined, request: DataRequest): void {
+    private add(range: Range | undefined, request: DataRequest<F>): void {
         this.requests.push({
             range: range || {from: 0},
-            request
+            request,
         })
     }
 
@@ -152,55 +95,98 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         return this
     }
 
-    addTransaction(options: TransactionRequest & BlockRange): this {
-        let {range, ...req} = options
-        this.add(range, {
-            transactions: [req]
-        })
+    addTransaction(options: TransactionRequest & BlockRange): this
+    addTransaction(key: string, options: TransactionRequest & BlockRange): this
+    addTransaction(keyOrOptions: string | (TransactionRequest & BlockRange), options?: TransactionRequest & BlockRange): this {
+        if (typeof keyOrOptions === 'string') {
+            let {range, ...transaction} = options!
+            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
+                transactions: [{...transaction, where: {...transaction.where, feePayer: [value]}}],
+            })})
+            return this
+        }
+        let {range, ...req} = keyOrOptions
+        this.add(range, {transactions: [req]})
         return this
     }
 
-    addInstruction(options: InstructionRequest & BlockRange): this {
-        let {range, ...req} = options
-        this.add(range, {
-            instructions: [req]
-        })
+    addInstruction(options: InstructionRequest & BlockRange): this
+    addInstruction(key: string, options: InstructionRequest & BlockRange): this
+    addInstruction(keyOrOptions: string | (InstructionRequest & BlockRange), options?: InstructionRequest & BlockRange): this {
+        if (typeof keyOrOptions === 'string') {
+            let {range, ...instruction} = options!
+            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
+                instructions: [{...instruction, where: {...instruction.where, programId: [value]}}],
+            })})
+            return this
+        }
+        let {range, ...req} = keyOrOptions
+        this.add(range, {instructions: [req]})
         return this
     }
 
-    addLog(options: LogRequest & BlockRange): this {
-        let {range, ...req} = options
-        this.add(range, {
-            logs: [req]
-        })
+    addLog(options: LogRequest & BlockRange): this
+    addLog(key: string, options: LogRequest & BlockRange): this
+    addLog(keyOrOptions: string | (LogRequest & BlockRange), options?: LogRequest & BlockRange): this {
+        if (typeof keyOrOptions === 'string') {
+            let {range, ...log} = options!
+            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
+                logs: [{...log, where: {...log.where, programId: [value]}}],
+            })})
+            return this
+        }
+        let {range, ...req} = keyOrOptions
+        this.add(range, {logs: [req]})
         return this
     }
 
-    addBalance(options: BalanceRequest & BlockRange): this {
-        let {range, ...req} = options
-        this.add(range, {
-            balances: [req]
-        })
+    addBalance(options: BalanceRequest & BlockRange): this
+    addBalance(key: string, options: BalanceRequest & BlockRange): this
+    addBalance(keyOrOptions: string | (BalanceRequest & BlockRange), options?: BalanceRequest & BlockRange): this {
+        if (typeof keyOrOptions === 'string') {
+            let {range, ...balance} = options!
+            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
+                balances: [{...balance, where: {...balance.where, account: [value]}}],
+            })})
+            return this
+        }
+        let {range, ...req} = keyOrOptions
+        this.add(range, {balances: [req]})
         return this
     }
 
-    addTokenBalance(options: TokenBalanceRequest & BlockRange): this {
-        let {range, ...req} = options
-        this.add(range, {
-            tokenBalances: [req]
-        })
+    addTokenBalance(options: TokenBalanceRequest & BlockRange): this
+    addTokenBalance(key: string, options: TokenBalanceRequest & BlockRange): this
+    addTokenBalance(keyOrOptions: string | (TokenBalanceRequest & BlockRange), options?: TokenBalanceRequest & BlockRange): this {
+        if (typeof keyOrOptions === 'string') {
+            let {range, ...tokenBalance} = options!
+            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
+                tokenBalances: [{...tokenBalance, where: {...tokenBalance.where, account: [value]}}],
+            })})
+            return this
+        }
+        let {range, ...req} = keyOrOptions
+        this.add(range, {tokenBalances: [req]})
         return this
     }
 
-    addReward(options: RewardRequest & BlockRange): this {
-        let {range, ...req} = options
-        this.add(range, {
-            rewards: [req]
-        })
+    addReward(options: RewardRequest & BlockRange): this
+    addReward(key: string, options: RewardRequest & BlockRange): this
+    addReward(keyOrOptions: string | (RewardRequest & BlockRange), options?: RewardRequest & BlockRange): this {
+        if (typeof keyOrOptions === 'string') {
+            let {range, ...reward} = options!
+            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
+                rewards: [{...reward, where: {...reward.where, pubkey: [value]}}],
+            })})
+            return this
+        }
+        let {range, ...req} = keyOrOptions
+        this.add(range, {rewards: [req]})
         return this
     }
 
-    private getRequests(): RangeRequestList<DataRequest> {
+    private getRequests(registry: TemplateRegistry | undefined): RangeRequestList<DataRequest<any>> {
+
         function concat<T>(a?: T[], b?: T[]): T[] | undefined {
             let result: T[] = []
             if (a) {
@@ -212,7 +198,19 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
             return result.length == 0 ? undefined : result
         }
 
-        let requests = mergeRangeRequests(this.requests, (a, b) => {
+        let mergedInputs: RangeRequest<DataRequest<F>>[] = this.requests.slice()
+
+        if (registry) {
+            for (let spec of this.templates) {
+                for (let entry of registry.get(spec.key)) {
+                    let range = rangeIntersection(spec.range ?? {from: 0}, entry.range)
+                    if (!range) continue
+                    mergedInputs.push({range, request: spec.resolve(entry.value)})
+                }
+            }
+        }
+
+        let requests = mergeRangeRequests(mergedInputs, (a, b) => {
             return {
                 includeAllBlocks: a.includeAllBlocks || b.includeAllBlocks,
                 transactions: concat(a.transactions, b.transactions),
@@ -220,169 +218,96 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
                 logs: concat(a.logs, b.logs),
                 balances: concat(a.balances, b.balances),
                 tokenBalances: concat(a.tokenBalances, b.tokenBalances),
-                rewards: concat(a.rewards, b.rewards)
+                rewards: concat(a.rewards, b.rewards),
             }
         })
 
-        let fields = getFields(this.fields)
+        let fields = addDefaultFields(this.fields)
 
-        requests = requests.map(({range, request}) => {
+        let rangeRequests = requests.map(({range, request}) => {
             return {
                 range,
                 request: {
                     fields,
-                    ...request
-                }
+                    ...request,
+                },
             }
         })
 
-        return applyRangeBound(requests, this.blockRange)
+        return applyRangeBound(rangeRequests, this.blockRange)
     }
 
-    build(): DataSource<Block<F>> {
+    build(): SolanaDataSource<F> {
+        assert(this.archive, 'Portal settings not set')
+
+        let portal = this.archive instanceof PortalClient ? this.archive : new PortalClient(this.archive)
         return new SolanaDataSource(
-            this.getRequests(),
-            this.archive,
-            this.rpc
-        ) as DataSource<Block<F>>
+            (reg) => this.getRequests(reg),
+            portal
+        )
     }
 }
 
-
-export interface DataSource<Block> {
-    getFinalizedHeight(): Promise<number>
-    getBlockHash(height: number): Promise<Base58Bytes | undefined>
-    getBlocksCountInRange(range: FiniteRange): number
-    getBlockStream(fromBlockHeight?: number): AsyncIterable<Block[]>
+function addDefaultFields(fields?: FieldSelection): FieldSelection {
+    return {
+        block: mergeDefaultFields(DEFAULT_FIELDS.block, fields?.block),
+        transaction: mergeDefaultFields(DEFAULT_FIELDS.transaction, fields?.transaction),
+        instruction: mergeDefaultFields(DEFAULT_FIELDS.instruction, fields?.instruction),
+        log: mergeDefaultFields(DEFAULT_FIELDS.log, fields?.log),
+        balance: mergeDefaultFields(DEFAULT_FIELDS.balance, fields?.balance),
+        tokenBalance: mergeDefaultFields(DEFAULT_FIELDS.tokenBalance, fields?.tokenBalance),
+        reward: mergeDefaultFields(DEFAULT_FIELDS.reward, fields?.reward),
+    }
 }
 
+function mergeDefaultFields<Props extends string>(
+    defaults: Selector<Props>,
+    selection?: Selector<Props>
+): Selector<Props> {
+    let result: Selector<Props> = {...defaults}
+    for (let key in selection) {
+        if (selection[key] != null) {
+            if (selection[key]) {
+                result[key] = true
+            } else {
+                delete result[key]
+            }
+        }
+    }
+    return result
+}
 
 export type GetDataSourceBlock<T> = T extends DataSource<infer B> ? B : never
 
-
-class SolanaDataSource implements DataSource<PartialBlock> {
-    private rpc?: RpcDataSource
-    private isConsistent?: boolean
-    private ranges: Range[]
-
+export class SolanaDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
     constructor(
-        private requests: RangeRequestList<DataRequest>,
-        private archiveSettings?: GatewaySettings,
-        rpcSettings?: RpcSettings
-    ) {
-        assert(this.archiveSettings || rpcSettings, 'either archive or RPC should be provided')
-        if (rpcSettings) {
-            this.rpc = new RpcDataSource(rpcSettings)
-        }
-        this.ranges = this.requests.map(req => req.range)
+        private _resolveRequests: (registry: TemplateRegistry | undefined) => RangeRequestList<DataRequest<F>>,
+        private portal: PortalClient,
+    ) {}
+
+    getHead(): Promise<BlockRef | undefined> {
+        return this.createArchive().getHead()
     }
 
-    getFinalizedHeight(): Promise<number> {
-        if (this.rpc) {
-            return this.rpc.getFinalizedHeight()
-        } else {
-            return this.createArchive().getFinalizedHeight()
-        }
+    getFinalizedHead(): Promise<BlockRef | undefined> {
+        return this.createArchive().getFinalizedHead()
     }
 
-    async getBlockHash(height: number): Promise<Base58Bytes | undefined> {
-        await this.assertConsistency()
-        if (this.archiveSettings == null) {
-            assert(this.rpc)
-            return this.rpc.getBlockHash(height)
-        } else {
-            let archive = this.createArchive()
-            let head = await archive.getFinalizedHeight()
-            if (head >= height) return archive.getBlockHash(height)
-            if (this.rpc) return this.rpc.getBlockHash(height)
-        }
+    getFinalizedStream(opts: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
+        return this.createArchive().getFinalizedStream(opts)
     }
 
-    private async assertConsistency(): Promise<void> {
-        if (this.isConsistent || this.archiveSettings == null || this.rpc == null) return
-        let blocks = await this.performConsistencyCheck().catch(err => {
-            throw addErrorContext(
-                new Error(`Failed to check consistency between Subsquid Gateway and RPC endpoints`),
-                {reason: err}
-            )
-        })
-        if (blocks == null) {
-            this.isConsistent = true
-        } else {
-            throw addErrorContext(
-                new Error(`Provided Subsquid Gateway and RPC endpoints don't agree on slot ${blocks.archiveBlock.slot}`),
-                blocks
-            )
-        }
-    }
-
-    private async performConsistencyCheck(): Promise<{
-        archiveBlock: BlockHeader
-        rpcBlock: BlockInfo | null
-    } | undefined> {
-        let archive = this.createArchive()
-        let height = await archive.getFinalizedHeight()
-        let archiveBlock = await archive.getBlockHeader(height)
-        let rpcBlock = await this.rpc!.getBlockInfo(archiveBlock.slot)
-        if (rpcBlock?.blockhash === archiveBlock.hash && rpcBlock.blockHeight === archiveBlock.height) return
-        return {archiveBlock, rpcBlock: rpcBlock || null}
+    getStream(opts?: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
+        return this.createArchive().getStream(opts)
     }
 
     getBlocksCountInRange(range: FiniteRange): number {
-        return getSize(this.ranges, range)
+        return this.createArchive().getBlocksCountInRange(range)
     }
 
-    async *getBlockStream(fromBlockHeight?: number): AsyncIterable<PartialBlock[]> {
-        await this.assertConsistency()
-
-        let requests = fromBlockHeight == null
-            ? this.requests
-            : applyRangeBound(this.requests, {from: fromBlockHeight})
-
-        if (requests.length == 0) return
-
-        if (this.archiveSettings) {
-            let agent = new HttpAgent({keepAlive: true})
-            try {
-                let archive = this.createArchive(agent)
-                let height = await archive.getFinalizedHeight()
-                let from = requests[0].range.from
-                if (height > from || !this.rpc) {
-                    for await (let batch of archive.getBlockStream(requests, !!this.rpc)) {
-                        yield batch
-                        from = last(batch).header.height + 1
-                    }
-                    requests = applyRangeBound(requests, {from})
-                }
-            } finally {
-                agent.close()
-            }
-        }
-
-        if (requests.length == 0) return
-
-        assert(this.rpc)
-
-        yield* this.rpc.getBlockStream(requests)
-    }
-
-    private createArchive(agent?: HttpAgent): SolanaArchive {
-        assert(this.archiveSettings)
-
-        let http = new HttpClient({
-            headers: {
-                'x-squid-id': this.getSquidId()
-            },
-            agent
-        })
-
-        return new SolanaArchive(
-            new ArchiveClient({
-                http,
-                url: this.archiveSettings.url,
-                queryTimeout: this.archiveSettings.requestTimeout,
-            })
-        )
+    @def
+    private createArchive() {
+        return new PortalDataSource(this.portal, this._resolveRequests.bind(this), {squidId: this.getSquidId()})
     }
 
     @def

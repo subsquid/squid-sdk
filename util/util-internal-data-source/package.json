@@ -1,0 +1,28 @@
+{
+  "name": "@subsquid/util-internal-data-source",
+  "version": "0.0.0",
+  "description": "Definition of DataSource abstraction",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "test": "mocha lib/**/*.test.js"
+  },
+  "dependencies": {
+    "@subsquid/util-internal-range": "^0.3.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.7",
+    "@types/node": "^18.18.14",
+    "mocha": "^10.7.0",
+    "typescript": "~5.5.4"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-objects",
+      "comment": "init",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-objects"
+}

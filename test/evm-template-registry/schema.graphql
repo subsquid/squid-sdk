@@ -1,0 +1,32 @@
+enum DexType {
+    SUSHISWAP
+    UNISWAP
+}
+
+type Account @entity {
+    id: ID!
+    swapsAsSender: [Swap!] @derivedFrom(field: "sender")
+    swapsAsRecipient: [Swap!] @derivedFrom(field: "to")
+}
+
+type Swap @entity {
+    id: ID!
+    dexType: DexType!
+    blockNumber: Int!
+    timestamp: DateTime!
+    tx: String!
+    sender: Account @disableForeignKeyConstraint
+    to: Account @disableForeignKeyConstraint
+    amount0In: BigInt!
+    amount1In: BigInt!
+    amount0Out: BigInt!
+    amount1Out: BigInt!
+}
+
+type TrackedPair @entity {
+    id: ID!
+    dexType: DexType!
+    token0: String!
+    token1: String!
+    discoveredAtBlock: Int!
+}
