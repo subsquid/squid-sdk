@@ -1,118 +1,30 @@
-import {run, type DataHandlerContext} from '@subsquid/batch-processor'
-import {augmentBlock, type Log as _Log} from '@subsquid/evm-objects'
-import {DataSourceBuilder, GetDataSourceBlock, Block as DataSourceBlock} from '@subsquid/evm-stream'
-import {TypeormDatabase, type Store} from '@subsquid/typeorm-store'
-import * as factory from './abi/uniswap-v2-factory'
-import * as pair from './abi/uniswap-v2-pair'
-import {Account, DexType, Swap, TrackedPair} from './model'
+import {run, withContext} from '@subsquid/batch-processor'
+import {augmentBlock} from '@subsquid/evm-objects'
+import {TypeormDatabase} from '@subsquid/typeorm-store'
+import {provideStore, provideTemplates} from './hooks'
+import {dataSource, type Block, type Log} from './source'
+import {handleSushi} from './sushi'
+import {handleUni} from './uniswap'
 
-const FACTORY_SUSHI = '0xc35dadb65012ec5796536bd9864ed8773abc74c4'
-const FACTORY_UNI = '0xf1d7cc64fb4452f05c498126312ebe29f30fbcf9'
+export type LogHandler = (log: Log, blockNumber: number) => Promise<void>
 
-const TEMPLATE_SUSHI_PAIR = 'PairSushi'
-const TEMPLATE_UNI_PAIR = 'PairUniswap'
+const handlers: LogHandler[] = [handleSushi, handleUni]
 
-const dataSource = new DataSourceBuilder()
-    .setPortal({
-        url: 'https://portal.sqd.dev/datasets/arbitrum-one',
-        http: {retryAttempts: 10},
-    })
-    .setBlockRange({from: 190000000})
-    .setFields({
-        block: {
-            timestamp: true,
-            size: true,
-        },
-        log: {
-            transactionHash: true,
-            address: true,
-            topics: true,
-            data: true,
-        },
-    })
-    .addLog({
-        where: {
-            address: [FACTORY_SUSHI, FACTORY_UNI],
-            topic0: [factory.events.PairCreated.topic],
-        },
-    })
-    .addLog(TEMPLATE_SUSHI_PAIR, {
-        where: {
-            topic0: [pair.events.Swap.topic],
-        },
-    })
-    .addLog(TEMPLATE_UNI_PAIR, {
-        where: {
-            topic0: [pair.events.Swap.topic],
-        },
-    })
-    .build()
-
-export type Fields = GetDataSourceBlock<typeof dataSource> extends DataSourceBlock<infer F> ? F : never
-export type Log = _Log<Fields>
-
-function createSwap(log: Log, type: DexType) {
-    const {sender, to, amount0In, amount1In, amount0Out, amount1Out} = pair.events.Swap.decode(log)
-    return new Swap({
-        id: log.id,
-        dexType: type,
-        blockNumber: log.block.number,
-        timestamp: new Date(log.block.timestamp),
-        tx: log.transactionHash,
-        sender: new Account({id: sender}),
-        to: new Account({id: to}),
-        amount0In,
-        amount1In,
-        amount0Out,
-        amount1Out,
-    })
-}
-
-run(dataSource, new TypeormDatabase({supportHotBlocks: true}), async (ctx) => {
-    const swaps: Swap[] = []
-    const pairs: TrackedPair[] = []
-
-    for (const block of ctx.blocks) {
+async function processBlocks(blocks: Block[]): Promise<void> {
+    for (const block of blocks) {
         const augmented = augmentBlock(block)
-        const {number: blockNumber, timestamp} = block.header
+        const {number: blockNumber} = block.header
 
         for (const log of augmented.logs) {
-            const addr = log.address.toLowerCase()
-
-            switch (log.topics[0]) {
-                case factory.events.PairCreated.topic: {
-                    const {token0, token1, pair: pairAddr} = factory.events.PairCreated.decode(log)
-                    const pairLc = pairAddr.toLowerCase()
-                    ctx.templates.add(TEMPLATE_SUSHI_PAIR, pairLc, blockNumber)
-                    pairs.push(
-                        new TrackedPair({
-                            id: pairLc,
-                            dexType: DexType.SUSHISWAP,
-                            token0: token0.toLowerCase(),
-                            token1: token1.toLowerCase(),
-                            discoveredAtBlock: blockNumber,
-                        }),
-                    )
-                    break
-                }
-                case pair.events.Swap.topic: {
-                    if (ctx.templates.has(TEMPLATE_SUSHI_PAIR, addr, blockNumber)) {
-                        const swap = createSwap(log, DexType.SUSHISWAP)
-                        swaps.push(swap)
-                    } else if (ctx.templates.has(TEMPLATE_UNI_PAIR, addr, blockNumber)) {
-                        const swap = createSwap(log, DexType.UNISWAP)
-                        swaps.push(swap)
-                    }
-                    break
-                }
+            for (const handler of handlers) {
+                await handler(log, blockNumber)
             }
         }
     }
+}
 
-    if (pairs.length > 0) {
-        await ctx.store.upsert(pairs)
-    }
-    if (swaps.length > 0) {
-        await ctx.store.insert(swaps)
-    }
+run(dataSource, new TypeormDatabase({supportHotBlocks: true}), async (ctx) => {
+    await withContext([provideStore(ctx.store), provideTemplates(ctx.templates)], async () => {
+        await processBlocks(ctx.blocks)
+    })
 })
