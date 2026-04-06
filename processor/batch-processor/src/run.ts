@@ -149,6 +149,10 @@ class ProcessorState implements ITemplateRegistry {
         this.templates.prune(blockNumber)
     }
 
+    commitTemplates(): void {
+        this.templates.commit()
+    }
+
     async transact(
         range: FiniteRange,
         fn: (templates: TemplateManager) => Promise<void>,
@@ -310,6 +314,7 @@ class Processor<B extends BlockBase, S> {
                     return map(store, sliceBlocks, isOnTop)
                 }
             )
+            this.state.commitTemplates()
 
             let newFinalizedHead = finalizedHead ?? this.state.finalizedHead
             if (newFinalizedHead) {
@@ -339,6 +344,7 @@ class Processor<B extends BlockBase, S> {
                 },
                 (store) => map(store, blocks, isOnTop)
             )
+            this.state.commitTemplates()
 
             this.state.prune(nextHead.number)
             this.state.finalizedHead = nextHead

@@ -43,6 +43,7 @@ export class TemplateRegistry implements ITemplateRegistry {
     private baseMutations: TemplateMutation[] = []
     private undoLog: Array<{blockNumber: number, templates: TemplateMutation[]}> = []
     private pendingTemplates: TemplateMutation[] = []
+    private committedIndex: number = 0
 
     /**
      * Rebuild state from finalized mutations and optionally replay hot block
@@ -57,8 +58,13 @@ export class TemplateRegistry implements ITemplateRegistry {
     ): void {
         this.baseMutations = mutations
         this.undoLog = hotBlocks ?? []
+        this.committedIndex = this.undoLog.length
         this.pendingTemplates = []
         this.rebuild()
+    }
+
+    commit(): void {
+        this.committedIndex = this.undoLog.length
     }
 
     get(key: string): TemplateValue[] {
@@ -98,6 +104,8 @@ export class TemplateRegistry implements ITemplateRegistry {
         range: FiniteRange,
         fn: (templates: TemplateManager) => Promise<void>,
     ): Promise<{data: TemplateMutation[]; changed: boolean}> {
+        let previousUncommitted = this.getUncommittedMutationsInRange(range)
+
         let templates = new HandlerTemplates(range, this)
         try {
             await fn(templates)
@@ -111,13 +119,16 @@ export class TemplateRegistry implements ITemplateRegistry {
             this.undoLog.push({blockNumber: range.to, templates: this.pendingTemplates})
         }
         this.pendingTemplates = []
-        return {data: templates.data, changed}
+
+        let data = this.mergeData(templates.data, previousUncommitted)
+        return {data, changed}
     }
 
     rollbackTo(blockNumber: number): void {
         let splitIdx = upperBound(this.undoLog, blockNumber)
         if (splitIdx >= this.undoLog.length) return
         this.undoLog.length = splitIdx
+        this.committedIndex = Math.min(this.committedIndex, splitIdx)
         this.pendingTemplates = []
         this.rebuild()
     }
@@ -128,6 +139,38 @@ export class TemplateRegistry implements ITemplateRegistry {
             this.baseMutations.push(...this.undoLog[i].templates)
         }
         this.undoLog = this.undoLog.slice(splitIdx)
+        this.committedIndex = Math.max(0, this.committedIndex - splitIdx)
+    }
+
+    private getUncommittedMutationsInRange(range: FiniteRange): TemplateMutation[] {
+        let result: TemplateMutation[] = []
+        for (let i = this.committedIndex; i < this.undoLog.length; i++) {
+            for (let m of this.undoLog[i].templates) {
+                if (m.blockNumber >= range.from && m.blockNumber <= range.to) {
+                    result.push(m)
+                }
+            }
+        }
+        return result
+    }
+
+    private mergeData(
+        handlerData: TemplateMutation[],
+        previousUncommitted: TemplateMutation[]
+    ): TemplateMutation[] {
+        if (previousUncommitted.length === 0) return handlerData
+
+        let result = [...previousUncommitted]
+        for (let m of handlerData) {
+            let isDuplicate = previousUncommitted.some(p =>
+                p.type === m.type && p.key === m.key &&
+                p.value === m.value && p.blockNumber === m.blockNumber
+            )
+            if (!isDuplicate) {
+                result.push(m)
+            }
+        }
+        return result
     }
 
     private applyToState({type, key, value, blockNumber}: TemplateMutation): boolean {

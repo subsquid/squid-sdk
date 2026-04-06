@@ -170,6 +170,7 @@ describe('TemplateRegistry', function () {
             await reg.transact(range, async (t) => {
                 t.add('log', '0xabc', 100)
             })
+            reg.commit()
             let result = await reg.transact(range, async () => {})
             assert.strictEqual(result.changed, false)
             assert.deepStrictEqual(result.data, [])
@@ -645,6 +646,185 @@ describe('TemplateRegistry', function () {
             assert.deepStrictEqual(values(reg, 'log'), [
                 {value: '0xabc', from: 100, to: undefined},
                 {value: '0xdef', from: 150, to: undefined},
+            ])
+        })
+    })
+
+    describe('two-pass retry (uncommitted mutations)', function () {
+        it('returns uncommitted mutations when handler produces no new changes', async function () {
+            let reg = new TemplateRegistry()
+            let range = {from: 0, to: 200}
+
+            let r1 = await reg.transact(range, async (t) => {
+                t.add('log', '0xabc', 100)
+            })
+            assert.strictEqual(r1.changed, true)
+
+            let r2 = await reg.transact(range, async () => {})
+            assert.strictEqual(r2.changed, false)
+            assert.deepStrictEqual(r2.data, [
+                {type: 'add', key: 'log', value: '0xabc', blockNumber: 100},
+            ])
+        })
+
+        it('returns uncommitted mutations when handler skips add due to has() guard', async function () {
+            let reg = new TemplateRegistry()
+            let range = {from: 0, to: 200}
+
+            await reg.transact(range, async (t) => {
+                t.add('factory', '0xabc', 100)
+            })
+
+            let r2 = await reg.transact(range, async (t) => {
+                if (!t.has('factory', '0xabc', 100)) {
+                    t.add('factory', '0xabc', 100)
+                }
+            })
+            assert.strictEqual(r2.changed, false)
+            assert.deepStrictEqual(r2.data, [
+                {type: 'add', key: 'factory', value: '0xabc', blockNumber: 100},
+            ])
+        })
+
+        it('merges uncommitted mutations with new handler mutations', async function () {
+            let reg = new TemplateRegistry()
+            let range = {from: 0, to: 300}
+
+            await reg.transact(range, async (t) => {
+                t.add('factory', '0xabc', 100)
+            })
+
+            let r2 = await reg.transact(range, async (t) => {
+                if (!t.has('factory', '0xabc', 100)) {
+                    t.add('factory', '0xabc', 100)
+                }
+                t.add('pool', '0xdef', 200)
+            })
+            assert.strictEqual(r2.changed, true)
+            assert.deepStrictEqual(r2.data, [
+                {type: 'add', key: 'factory', value: '0xabc', blockNumber: 100},
+                {type: 'add', key: 'pool', value: '0xdef', blockNumber: 200},
+            ])
+        })
+
+        it('handles three-pass retry with cascading template discovery', async function () {
+            let reg = new TemplateRegistry()
+            let range = {from: 0, to: 300}
+
+            await reg.transact(range, async (t) => {
+                t.add('factory', '0xabc', 100)
+            })
+
+            await reg.transact(range, async (t) => {
+                if (!t.has('factory', '0xabc', 100)) {
+                    t.add('factory', '0xabc', 100)
+                }
+                t.add('pool', '0xdef', 200)
+            })
+
+            let r3 = await reg.transact(range, async (t) => {
+                if (!t.has('factory', '0xabc', 100)) {
+                    t.add('factory', '0xabc', 100)
+                }
+                if (!t.has('pool', '0xdef', 200)) {
+                    t.add('pool', '0xdef', 200)
+                }
+            })
+            assert.strictEqual(r3.changed, false)
+            assert.deepStrictEqual(r3.data, [
+                {type: 'add', key: 'factory', value: '0xabc', blockNumber: 100},
+                {type: 'add', key: 'pool', value: '0xdef', blockNumber: 200},
+            ])
+        })
+
+        it('commit() clears uncommitted status', async function () {
+            let reg = new TemplateRegistry()
+            let range = {from: 0, to: 200}
+
+            await reg.transact(range, async (t) => {
+                t.add('log', '0xabc', 100)
+            })
+            reg.commit()
+
+            let r2 = await reg.transact(range, async () => {})
+            assert.strictEqual(r2.changed, false)
+            assert.deepStrictEqual(r2.data, [])
+        })
+
+        it('uncommitted mutations are filtered by range', async function () {
+            let reg = new TemplateRegistry()
+
+            await reg.transact({from: 0, to: 200}, async (t) => {
+                t.add('factory', '0xabc', 100)
+                t.add('pool', '0xdef', 200)
+            })
+
+            let r2 = await reg.transact({from: 0, to: 150}, async () => {})
+            assert.strictEqual(r2.changed, false)
+            assert.deepStrictEqual(r2.data, [
+                {type: 'add', key: 'factory', value: '0xabc', blockNumber: 100},
+            ])
+        })
+
+        it('uncommitted mutations survive rollbackTo within committed range', async function () {
+            let reg = new TemplateRegistry()
+
+            await reg.transact({from: 0, to: 100}, async (t) => {
+                t.add('log', '0xabc', 50)
+            })
+            reg.commit()
+
+            await reg.transact({from: 101, to: 200}, async (t) => {
+                t.add('log', '0xdef', 150)
+            })
+
+            reg.rollbackTo(100)
+
+            let result = await reg.transact({from: 101, to: 200}, async (t) => {
+                t.add('log', '0xdef', 150)
+            })
+            assert.strictEqual(result.changed, true)
+            assert.deepStrictEqual(values(reg, 'log'), [
+                {value: '0xabc', from: 50, to: undefined},
+                {value: '0xdef', from: 150, to: undefined},
+            ])
+        })
+
+        it('prune adjusts committedIndex correctly', async function () {
+            let reg = new TemplateRegistry()
+
+            await reg.transact({from: 0, to: 100}, async (t) => {
+                t.add('log', '0xabc', 50)
+            })
+            reg.commit()
+
+            await reg.transact({from: 101, to: 200}, async (t) => {
+                t.add('log', '0xdef', 150)
+            })
+
+            reg.prune(100)
+
+            let r = await reg.transact({from: 101, to: 200}, async () => {})
+            assert.strictEqual(r.changed, false)
+            assert.deepStrictEqual(r.data, [
+                {type: 'add', key: 'log', value: '0xdef', blockNumber: 150},
+            ])
+        })
+
+        it('deduplicates handler data against uncommitted mutations', async function () {
+            let reg = new TemplateRegistry()
+            let range = {from: 0, to: 200}
+
+            await reg.transact(range, async (t) => {
+                t.add('log', '0xabc', 100)
+            })
+
+            let r2 = await reg.transact(range, async (t) => {
+                t.add('log', '0xabc', 100)
+            })
+            assert.strictEqual(r2.changed, false)
+            assert.deepStrictEqual(r2.data, [
+                {type: 'add', key: 'log', value: '0xabc', blockNumber: 100},
             ])
         })
     })
