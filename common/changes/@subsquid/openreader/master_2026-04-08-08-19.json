@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "allow to configure transaction isolation level (SERIALIZABLE, REPEATABLE READ, READ COMMITTED)",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
