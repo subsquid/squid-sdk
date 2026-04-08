@@ -1,39 +1,18 @@
-import * as http from 'http'
-import * as https from 'https'
-
 
 export interface AgentProvider {
-    getNativeAgent(url: string): http.Agent
+    close?(): void
 }
 
 
-export const defaultAgentProvider: AgentProvider = {
-    getNativeAgent(url: string): http.Agent {
-        if (url.startsWith('https://')) {
-            return https.globalAgent
-        } else {
-            return http.globalAgent
-        }
-    }
-}
+export const defaultAgentProvider: AgentProvider = {}
 
 
+/**
+ * @deprecated Built-in fetch manages keep-alive connections internally.
+ * Retained for backward compatibility.
+ */
 export class HttpAgent implements AgentProvider {
-    private http?: http.Agent
-    private https?: https.Agent
+    constructor(_options?: Record<string, any>) {}
 
-    constructor(private options: https.AgentOptions) {}
-
-    getNativeAgent(url: string): http.Agent {
-        if (url.startsWith('https://')) {
-            return this.https || (this.https = new https.Agent(this.options))
-        } else {
-            return this.http || (this.http = new http.Agent(this.options))
-        }
-    }
-
-    close() {
-        this.http?.destroy()
-        this.https?.destroy()
-    }
+    close() {}
 }
