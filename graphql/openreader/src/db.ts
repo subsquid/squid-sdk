@@ -14,6 +14,8 @@ let CTX_COUNTER = 0
 export type DbType = 'postgres' | 'cockroach'
 
 
+export type TransactionIsolationLevel = 'SERIALIZABLE' | 'REPEATABLE READ' | 'READ COMMITTED'
+
 export class PoolOpenreaderContext implements OpenreaderContext {
     public id = (CTX_COUNTER = (CTX_COUNTER + 1) % Number.MAX_SAFE_INTEGER)
     public log?: Logger
@@ -26,6 +28,7 @@ export class PoolOpenreaderContext implements OpenreaderContext {
         pool: Pool,
         subscriptionPool?: Pool,
         private subscriptionPollInterval: number = 1000,
+        private isolationLevel: TransactionIsolationLevel = 'SERIALIZABLE',
         log?: Logger
     ) {
         this.log = log?.child({graphqlCtx: this.id})
@@ -53,7 +56,7 @@ export class PoolOpenreaderContext implements OpenreaderContext {
     private async transact<T>(pool: Pool, cb: (db: Database) => Promise<T>): Promise<T> {
         let client = await pool.connect()
         try {
-            await this.query(client, 'START TRANSACTION ISOLATION LEVEL SERIALIZABLE READ ONLY')
+            await this.query(client, `START TRANSACTION ISOLATION LEVEL ${this.isolationLevel} READ ONLY`)
             try {
                 return await cb(async (sql, parameters) => {
                     let result = await this.query(client, sql, parameters)
