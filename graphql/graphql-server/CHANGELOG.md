@@ -1,6 +1,13 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+This log was last generated on Wed, 08 Apr 2026 08:23:22 GMT and should not be manually modified.
+
+## 4.12.0
+Wed, 08 Apr 2026 08:23:22 GMT
+
+### Minor changes
+
+- allow to configure transaction isolation level via `--isolation-level` option
 
 ## 4.11.0
 Mon, 09 Jun 2025 12:15:37 GMT
