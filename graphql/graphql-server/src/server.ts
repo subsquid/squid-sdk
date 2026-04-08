@@ -3,7 +3,7 @@ import {InMemoryLRUCache} from '@apollo/utils.keyvaluecache'
 import {mergeSchemas} from '@graphql-tools/schema'
 import {Logger} from '@subsquid/logger'
 import {Context, OpenreaderContext} from '@subsquid/openreader/lib/context'
-import {DbType, PoolOpenreaderContext} from '@subsquid/openreader/lib/db'
+import {DbType, PoolOpenreaderContext, TransactionIsolationLevel} from '@subsquid/openreader/lib/db'
 import {Dialect, getSchemaBuilder} from '@subsquid/openreader/lib/dialect'
 import type {Model} from '@subsquid/openreader/lib/model'
 import {addServerCleanup, Dispose, runApollo} from '@subsquid/openreader/lib/server'
@@ -39,7 +39,7 @@ export interface ServerOptions {
     validationMaxErrors?: number
     dumbCache?: DumbRedisCacheOptions | DumbInMemoryCacheOptions
     dialect?: Dialect
-    isolationLevel?: 'SERIALIZABLE' | 'REPEATABLE READ' | 'READ COMMITTED'
+    isolationLevel?: TransactionIsolationLevel
 }
 
 

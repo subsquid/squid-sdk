@@ -48,7 +48,7 @@ GraphQL server for postgres-compatible databases
         subscriptions?: boolean
         subscriptionPollInterval: number
         subscriptionMaxResponseSize?: number
-        isolationLevel: 'SERIALIZABLE' | 'REPEATABLE READ' | 'READ COMMITTED'
+        isolationLevel?: 'SERIALIZABLE' | 'REPEATABLE READ' | 'READ COMMITTED'
     }
 
     let model = loadModel(opts.schema)

@@ -47,7 +47,7 @@ runProgram(async () => {
         validationMaxErrors?: number
         tsNode?: boolean
         dialect?: Dialect
-        isolationLevel: 'SERIALIZABLE' | 'REPEATABLE READ' | 'READ COMMITTED'
+        isolationLevel?: 'SERIALIZABLE' | 'REPEATABLE READ' | 'READ COMMITTED'
     }
 
     await registerTsNodeIfRequired()
