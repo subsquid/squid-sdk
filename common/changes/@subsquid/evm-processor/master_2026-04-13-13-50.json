@@ -1,0 +1,16 @@
+{
+  "changes": [
+    {
+      "comment": "retry on \"not currently canonical\" error from eth_getBlockByHash and debug_traceBlockByHash",
+      "type": "patch",
+      "packageName": "@subsquid/evm-processor"
+    },
+    {
+      "comment": "retry on out-of-range errors from eth_getLogs",
+      "type": "patch",
+      "packageName": "@subsquid/evm-processor"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor",
+  "email": "abelopashentsev@gmail.com"
+}
