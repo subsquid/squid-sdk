@@ -1,6 +1,14 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Wed, 18 Mar 2026 10:55:26 GMT and should not be manually modified.
+This log was last generated on Mon, 13 Apr 2026 13:57:31 GMT and should not be manually modified.
+
+## 1.29.1
+Mon, 13 Apr 2026 13:57:31 GMT
+
+### Patches
+
+- retry on "not currently canonical" error from eth_getBlockByHash and debug_traceBlockByHash
+- retry on out-of-range errors from eth_getLogs
 
 ## 1.29.0
 Wed, 18 Mar 2026 10:55:26 GMT
