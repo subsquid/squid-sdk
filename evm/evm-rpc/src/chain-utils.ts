@@ -20,13 +20,15 @@ export interface ChainUtilsOptions {
 
 
 export class ChainUtils {
-    public isPolygonMainnet: boolean
-    public isHyperliquidMainnet: boolean
-    public isHyperliquidTestnet: boolean
-    public isStable: boolean
-    public isTempo: boolean
-    public isCronosMainnet: boolean
-    public useGasUsedForReceiptsRoot: boolean
+    public readonly isPolygonMainnet: boolean
+    public readonly isHyperliquidMainnet: boolean
+    public readonly isHyperliquidTestnet: boolean
+    public readonly isStable: boolean
+    public readonly isTempo: boolean
+    public readonly isCronosMainnet: boolean
+    public readonly isShibariumMainnet: boolean
+    public readonly isPolygonBased: boolean
+    public readonly useGasUsedForReceiptsRoot: boolean
 
     constructor(chainId: Qty, options?: ChainUtilsOptions) {
         this.isPolygonMainnet = chainId == '0x89'
@@ -39,6 +41,8 @@ export class ChainUtils {
         // https://drpc.org/chainlist/tempo-testnet-rpc
         this.isTempo = chainId == '0x1079' || chainId == '0xa5bf' || chainId == '0xa5bd'
         this.isCronosMainnet = chainId == '0x19' // Chain ID 25
+        this.isShibariumMainnet = chainId == '0x6d'
+        this.isPolygonBased = this.isPolygonMainnet || this.isShibariumMainnet
         this.useGasUsedForReceiptsRoot = options?.useGasUsedForReceiptsRoot ?? false
     }
 
@@ -53,7 +57,7 @@ export class ChainUtils {
     calculateTransactionsRoot(block: GetBlock) {
         let transactions = block.transactions as Transaction[]
 
-        if (this.isPolygonMainnet) {
+        if (this.isPolygonBased) {
             let stateSyncTxHash = calculateStateSyncTxHash(block.number, block.hash)
             let txs = []
             for (let tx of transactions) {
@@ -67,6 +71,7 @@ export class ChainUtils {
                     txs.push(tx)
                 }
             }
+            transactions = txs
         }
 
         if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
@@ -77,7 +82,7 @@ export class ChainUtils {
     }
 
     calculateLogsBloom(block: GetBlock, logs: Log[]) {
-        if (this.isPolygonMainnet) {
+        if (this.isPolygonBased) {
             let transactions = block.transactions as Transaction[]
             let txByHash = new Map(transactions.map(tx => [getTxHash(tx), tx]))
             let stateSyncTxHash = calculateStateSyncTxHash(block.number, block.hash)
@@ -113,7 +118,7 @@ export class ChainUtils {
     }
 
     calculateReceiptsRoot(block: GetBlock, receipts: Receipt[]) {
-        if (this.isPolygonMainnet) {
+        if (this.isPolygonBased) {
             let stateSyncTxHash = calculateStateSyncTxHash(block.number, block.hash)
             receipts = receipts.filter(receipt => receipt.transactionHash != stateSyncTxHash)
         }

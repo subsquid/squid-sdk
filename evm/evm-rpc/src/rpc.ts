@@ -637,7 +637,7 @@ export class Rpc {
             if (rec) {
                 out[i] = rec
             } else {
-                if (utils.isPolygonMainnet) continue
+                if (utils.isPolygonBased) continue
                 throw new Error(`no ${type} for transaction`)
             }
         }
