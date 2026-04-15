@@ -295,7 +295,7 @@ export class Rpc {
         }))
 
         let results = await this.reduceBatchOnRetry(call, {
-            validateResult: getResultValidator(nullable(array(Receipt))),
+            validateResult: getResultValidator(nullable(array(nullable(Receipt)))),
             validateError: info => {
                 if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
                 throw new RpcError(info)
@@ -305,11 +305,36 @@ export class Rpc {
         let utils = await this.getChainUtils()
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
-            let receipts = results[i]
-            if (receipts == null) {
+            let rawReceipts = results[i]
+            if (rawReceipts == null) {
                 block._isInvalid = true
                 block._errorMessage = 'eth_getBlockReceipts returned null'
                 continue
+            }
+
+            // Some RPCs occasionally return null entries inside the receipts
+            // array (e.g. dRPC for Cronos). Drop them here — length-mismatch follow-ups
+            // (phantom-tx handling, per-tx recovery, final invalidity check)
+            // will decide how to deal with the missing ones.
+            let nullCount = 0
+            let receipts: Receipt[] = []
+            for (let r of rawReceipts) {
+                if (r == null) {
+                    nullCount++
+                } else {
+                    receipts.push(r)
+                }
+            }
+            if (nullCount > 0) {
+                this.log.warn(
+                    {
+                        rpcEndpoint: this.client.url,
+                        blockNumber: block.number,
+                        blockHash: block.hash,
+                        nullCount
+                    },
+                    'eth_getBlockReceipts returned null entries in the receipts array - stripping them'
+                )
             }
 
             for (let receipt of receipts) {
