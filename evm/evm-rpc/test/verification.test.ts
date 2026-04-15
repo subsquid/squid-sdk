@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest'
-import {loadBlock, loadReceipts, hasReceipts, listFixtures, getChainId} from './helpers/fixture-loader'
+import {loadBlock, loadReceipts, loadAllReceipts, hasReceipts, listFixtures, getChainId} from './helpers/fixture-loader'
 import {ChainUtils} from '../src/chain-utils'
 import {GetBlock, Transaction} from '../src/rpc-data'
 
@@ -54,9 +54,18 @@ describe('Verification Functions', () => {
                     expect(computed).toEqual(block.receiptsRoot)
                 })
 
-                it('logsBloom verification', async () => {
+                it.skipIf(
+                    // Cronos block 11446765 has leaked logs from a reverted
+                    // transaction — its header bloom cannot be reconstructed
+                    // from the receipt logs alone. Handled by the trace-based
+                    // verification path in the Rpc class, covered in rpc.test.ts.
+                    fixture.chain === 'cronos' && fixture.blockNumber === 11446765
+                )('logsBloom verification', async () => {
                     const block = loadBlock(fixture.chain, fixture.blockNumber)
-                    const receipts = loadReceipts(fixture.chain, fixture.blockNumber)
+                    // Use loadAllReceipts so that Cronos blocks with recovered
+                    // receipts (tx-*-receipt.json) are tested against the full
+                    // receipt set rather than just eth_getBlockReceipts output.
+                    const receipts = loadAllReceipts(fixture.chain, fixture.blockNumber)
                     const logs = receipts.flatMap(r => r.logs || [])
                     const chainId = getChainId(fixture.chain)
                     const utils = new ChainUtils(chainId)

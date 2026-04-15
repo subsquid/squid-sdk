@@ -659,6 +659,21 @@ export function logsBloom(logs: Log[]) {
 }
 
 
+/**
+ * True when every bit set in `subset` is also set in `superset`.
+ * Used to check whether a header logs bloom contains all the bits produced
+ * by the receipt logs we have — possibly with extra, node-side bits on top.
+ */
+export function isBloomSuperset(superset: string, subset: string): boolean {
+    let superBuf = decodeHex(superset)
+    let subBuf = decodeHex(subset)
+    for (let i = 0; i < superBuf.length; i++) {
+        if ((superBuf[i] & subBuf[i]) !== subBuf[i]) return false
+    }
+    return true
+}
+
+
 function serializeTransaction(tx: Transaction): Uint8Array | undefined {
     if (tx.type == '0x0') {
         let fields = [

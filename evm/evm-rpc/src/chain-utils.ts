@@ -1,5 +1,4 @@
 import {assertNotNull} from '@subsquid/util-internal'
-import {decodeHex} from '@subsquid/util-internal-hex'
 import {GetBlock, Log, Receipt, Transaction} from './rpc-data'
 import {Qty} from './types'
 import {
@@ -11,8 +10,14 @@ import {
     transactionsRoot,
     calculateStateSyncTxHash
 } from './verification'
-import {getTxHash} from './util'
-import { createLogger, Logger } from '@subsquid/logger'
+import {getTxHash, qty2Int} from './util'
+
+
+// Cronos (Ethermint) had a cluster of EVM-module bugs (phantom transactions,
+// missing receipts, logs-bloom leakage) that were fixed well before block 20M.
+// Our Cronos-specific RPC fixes are only enabled for blocks below this cutoff
+// so they do not silently paper over new/unrelated bugs on recent data.
+export const CRONOS_ETHERMINT_BUG_LAST_BLOCK = 20_000_000
 
 
 export interface ChainUtilsOptions {
@@ -28,7 +33,6 @@ export class ChainUtils {
     public isTempo: boolean
     public isCronosMainnet: boolean
     public useGasUsedForReceiptsRoot: boolean
-    private log: Logger
 
     constructor(chainId: Qty, options?: ChainUtilsOptions) {
         this.isPolygonMainnet = chainId == '0x89'
@@ -42,7 +46,16 @@ export class ChainUtils {
         this.isTempo = chainId == '0x1079' || chainId == '0xa5bf' || chainId == '0xa5bd'
         this.isCronosMainnet = chainId == '0x19' // Chain ID 25
         this.useGasUsedForReceiptsRoot = options?.useGasUsedForReceiptsRoot ?? false
-        this.log = createLogger('sqd:evm-rpc:chain-utils')
+    }
+
+    /**
+     * True when a block falls within the Cronos mainnet block range affected by
+     * the Ethermint EVM-module bugs that our Cronos fixes compensate for.
+     * Used by both ChainUtils (logs bloom tolerance) and the Rpc class (phantom
+     * tx stripping, missing-receipt recovery) to gate their Cronos-only logic.
+     */
+    isCronosEthermintBugBlock(blockNumber: Qty): boolean {
+        return this.isCronosMainnet && qty2Int(blockNumber) < CRONOS_ETHERMINT_BUG_LAST_BLOCK
     }
 
     calculateBlockHash(block: GetBlock) {
@@ -99,26 +112,7 @@ export class ChainUtils {
             })
         }
 
-        let computed = logsBloom(logs)
-
-        // Cronos mainnet header blooms may contain extra bits due to Ethermint bugs
-        // where logs from reverted EVM execution leak into the bloom.
-        // 
-        // Example affected blocks: 0x10a78, 0xaea9ed.
-        //
-        // In both cases the header bloom is a superset of the correct bloom (all legitimate
-        // log bits are present, plus extra bits from reverted logs). Accept it as valid.
-        if (this.isCronosMainnet) {
-            if (computed !== block.logsBloom && isBloomSuperset(block.logsBloom, computed)) {
-                this.log.warn(
-                    { blockNumber: block.number, headerBloom: block.logsBloom, computedBloom: computed },
-                    `header logs bloom includes extra bits - accepting as valid due to known Ethermint issues`
-                )
-                return block.logsBloom
-            }
-        }
-
-        return computed
+        return logsBloom(logs)
     }
 
     calculateReceiptsRoot(block: GetBlock, receipts: Receipt[]) {
@@ -186,11 +180,3 @@ function isHyperliquidSystemReceipt(receipt: Receipt) {
 }
 
 
-function isBloomSuperset(superset: string, subset: string): boolean {
-    let superBuf = decodeHex(superset)
-    let subBuf = decodeHex(subset)
-    for (let i = 0; i < superBuf.length; i++) {
-        if ((superBuf[i] & subBuf[i]) !== subBuf[i]) return false
-    }
-    return true
-}
