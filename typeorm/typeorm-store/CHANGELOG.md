@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Sun, 05 Apr 2026 22:03:07 GMT and should not be manually modified.
+This log was last generated on Wed, 15 Apr 2026 14:45:11 GMT and should not be manually modified.
+
+## 1.8.1
+Wed, 15 Apr 2026 14:45:11 GMT
+
+### Patches
+
+- re-export `Relation` from typeorm for ESM relation typings
 
 ## 1.8.0
 Sun, 05 Apr 2026 22:03:07 GMT

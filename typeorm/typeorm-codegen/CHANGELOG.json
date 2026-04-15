@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-codegen",
   "entries": [
     {
+      "version": "2.2.0",
+      "tag": "@subsquid/typeorm-codegen_v2.2.0",
+      "date": "Wed, 15 Apr 2026 14:45:11 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "wrap generated entity relation fields with `Relation` type"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.1.0",
       "tag": "@subsquid/typeorm-codegen_v2.1.0",
       "date": "Tue, 17 Mar 2026 11:47:18 GMT",

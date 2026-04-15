@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-migration
 
-This log was last generated on Sun, 24 Dec 2023 20:05:50 GMT and should not be manually modified.
+This log was last generated on Wed, 15 Apr 2026 14:45:11 GMT and should not be manually modified.
+
+## 1.3.1
+Wed, 15 Apr 2026 14:45:11 GMT
+
+### Patches
+
+- fix `generate` emitting `down` queries in wrong order
 
 ## 1.3.0
 Sun, 24 Dec 2023 20:05:50 GMT
