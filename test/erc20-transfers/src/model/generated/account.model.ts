@@ -1,4 +1,4 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "@subsquid/typeorm-store"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_, Relation as Relation_} from "@subsquid/typeorm-store"
 import {Transfer} from "./transfer.model"
 
 @Entity_()
@@ -11,8 +11,8 @@ export class Account {
     id!: string
 
     @OneToMany_(() => Transfer, e => e.from)
-    transfersFrom!: Transfer[]
+    transfersFrom!: Relation_<Transfer[]>
 
     @OneToMany_(() => Transfer, e => e.to)
-    transfersTo!: Transfer[]
+    transfersTo!: Relation_<Transfer[]>
 }

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "re-export `Relation` from typeorm for ESM relation typings",
+      "type": "patch",
+      "packageName": "@subsquid/typeorm-store"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store",
+  "email": "abelopashentsev@gmail.com"
+}
