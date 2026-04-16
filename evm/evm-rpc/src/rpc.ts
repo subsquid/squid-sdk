@@ -27,6 +27,7 @@ import { Block, DataRequest, Qty, Bytes, Bytes32 } from './types'
 import { qty2Int, toQty, getTxHash } from './util'
 import { ChainUtils } from './chain-utils'
 import { EvmRpcClient } from './rpc-client'
+import { isBloomSuperset, logsBloom } from './verification'
 
 
 export type Commitment = 'finalized' | 'latest'
@@ -166,43 +167,6 @@ export class Rpc {
     }
 
     private async mapBlock(block: GetBlock, withTransactions: boolean, utils: ChainUtils): Promise<Block> {
-        // Cronos block 0x198d contains a contract creation transaction (0x5395ae..) that
-        // failed with "contract creation code storage out of gas" in the EVM, causing all state,
-        // including the nonce increment, to be reverted.
-        //
-        // However, due to a bug in an older ethermint version, this error was not correctly
-        // propagated to the Cosmos layer, so the tx got code=0 (success) despite the EVM failure.
-        //
-        // Because the nonce wasn't incremented, the same transaction (0x5395ae..) was allowed to be
-        // re-tried in the next block (0x198e) where it successfully executed. The reason why it
-        // didn't fail this time was because there were other transactions in block 0x198e that
-        // pre-warmed the storage slots used by transaction 0x5395ae.., reducing its gas costs just
-        // enough so that they didn't exceed the transaction gas budget anymore.
-        //
-        // The transaction thus effectively appears in both blocks, but only the one in block 0x198e
-        // actually affected the EVM state.
-        //
-        // Originally the issue was discovered, because calling eth_getBlockReceipts for block
-        // 0x198d would crash the RPC node. The reason for that was that Ethermint uses a KV indexer
-        // that maps tx_hash → block_height. When block 0x198e was indexed, it overrode the entry
-        // for tx 0x5395ae.. (so it became 0x5395ae.. → 0x198e). Calling eth_getBlockReceipts
-        // triggers a path that looks up the transaction hash (0x5395ae..) in the KV index → gets
-        // height 0x198e (the overwritten entry) and then tries to access
-        // block.Block.Txs[res.TxIndex] using the block data from 0x198d but with a tx index from
-        // 0x198e, resulting in an out-of-bounds panic.
-        // (see related upstream fix: https://github.com/crypto-org-chain/ethermint/pull/870)
-        //
-        // On the other hand if we call eth_getTransactionReceipt for tx 0x5395ae.., the same KV
-        // index lookup takes place and we end up getting a receipt from block 0x198e (which
-        // obviously doesn't belong to block 0x198d).
-        //
-        // So the solution is to strip the 0x5395ae.. transaction completely from block 0x198d to
-        // avoid passing the inconsistent data further down the pipeline (otherwise we either end up
-        // with a transaction with no receipt or a transaction with a receipt that comes from
-        // another block)
-        if (utils.isCronosMainnet && block.number === '0x198d') {
-            block.transactions = []
-        }
 
         if (this.verifyBlockHash) {
             let blockHash = utils.calculateBlockHash(block)
@@ -317,15 +281,8 @@ export class Rpc {
     private async addReceipts(blocks: Block[]) {
         let method = await this.getReceiptsMethod()
         switch (method) {
-            case 'eth_getBlockReceipts': {
-                let utils = await this.getChainUtils()
-                if (utils.isCronosMainnet) {
-                    // Also skip the eth_getBlockReceipts call for block 0x198d,
-                    // because it crashes the RPC node (see comment in mapBlock)
-                    blocks = blocks.filter(b => b.number !== 0x198d)
-                }
+            case 'eth_getBlockReceipts':
                 return this.addReceiptsByBlock(blocks)
-            }
             default:
                 return this.addReceiptsByTx(blocks)
         }
@@ -338,7 +295,7 @@ export class Rpc {
         }))
 
         let results = await this.reduceBatchOnRetry(call, {
-            validateResult: getResultValidator(nullable(array(Receipt))),
+            validateResult: getResultValidator(nullable(array(nullable(Receipt)))),
             validateError: info => {
                 if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
                 throw new RpcError(info)
@@ -348,11 +305,59 @@ export class Rpc {
         let utils = await this.getChainUtils()
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
-            let receipts = results[i]
-            if (receipts == null) {
+            let rawReceipts = results[i]
+            if (rawReceipts == null) {
                 block._isInvalid = true
                 block._errorMessage = 'eth_getBlockReceipts returned null'
                 continue
+            }
+
+            // Some RPCs occasionally return null entries inside the receipts
+            // array (e.g. dRPC for Cronos). Drop them here — length-mismatch follow-ups
+            // (phantom-tx handling, per-tx recovery, final invalidity check)
+            // will decide how to deal with the missing ones.
+            let nullCount = 0
+            let receipts: Receipt[] = []
+            for (let r of rawReceipts) {
+                if (r == null) {
+                    nullCount++
+                } else {
+                    receipts.push(r)
+                }
+            }
+            if (nullCount > 0) {
+                this.log.warn(
+                    {
+                        rpcEndpoint: this.client.url,
+                        blockNumber: block.number,
+                        blockHash: block.hash,
+                        nullCount
+                    },
+                    'eth_getBlockReceipts returned null entries in the receipts array - stripping them'
+                )
+            }
+
+            for (let receipt of receipts) {
+                if (receipt.blockHash !== block.block.hash) {
+                    block._isInvalid = true
+                    block._errorMessage = 'eth_getBlockReceipts returned receipts for a different block'
+                }
+            }
+
+            // Handle Cronos (Ethermint) phantom transactions BEFORE any verification.
+            // Phantom txs are stripped from both block.block.transactions and receipts,
+            // so that subsequent checks (bloom, receipts root, count) see a consistent view.
+            // Only runs on blocks affected by the Ethermint bug window — past that cutoff
+            // the chain is fixed and mismatches would indicate a real problem.
+            let phantomTxHashes: Bytes32[] = []
+            if (utils.isCronosEthermintBugBlock(block.block.number) && !block._isInvalid) {
+                phantomTxHashes = await this.handleCronosPhantomTransactions(block, receipts)
+                if (block.block.transactions.length !== receipts.length) {
+                    // Any tx still missing a receipt after phantom handling genuinely
+                    // executed (nonce advanced) but was omitted by eth_getBlockReceipts
+                    // — fall back to eth_getTransactionReceipt per tx.
+                    await this.recoverMissingCronosReceipts(block, receipts)
+                }
             }
 
             block.receipts = receipts
@@ -360,10 +365,6 @@ export class Rpc {
             let logs = []
             for (let receipt of receipts) {
                 logs.push(...receipt.logs)
-                if (receipt.blockHash !== block.block.hash) {
-                    block._isInvalid = true
-                    block._errorMessage = 'eth_getBlockReceipts returned receipts for a different block'
-                }
             }
 
             try {
@@ -375,8 +376,18 @@ export class Rpc {
                 }
 
                 if (this.verifyLogsBloom) {
-                    let logsBloom = utils.calculateLogsBloom(block.block, logs)
-                    assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
+                    let computed = utils.calculateLogsBloom(block.block, logs)
+                    if (computed !== block.block.logsBloom) {
+                        if (utils.isCronosEthermintBugBlock(block.block.number)) {
+                            // Cronos blocks may have extra bits in the header bloom from
+                            // leaked pre-revert logs. Try to verify those extras via tracing.
+                            await this.verifyCronosLeakedLogsBloom(
+                                block, logs, computed, phantomTxHashes, receipts
+                            )
+                        } else {
+                            assert.equal(block.block.logsBloom, computed, 'failed to verify logs bloom')
+                        }
+                    }
                 }
 
                 if (this.verifyReceiptsRoot) {
@@ -392,9 +403,383 @@ export class Rpc {
 
             if (block.block.transactions.length !== receipts.length) {
                 block._isInvalid = true
-                block._errorMessage = 'got invalid number of receipts from eth_getBlockReceipts'
+                block._errorMessage = `got invalid number of receipts from eth_getBlockReceipts`
             }
         }
+    }
+
+    /**
+     * Handles "phantom transactions" in Cronos (Ethermint) blocks.
+     *
+     * Due to bugs in the Ethermint EVM module, some transactions included in
+     * CometBFT blocks had no real effect on the EVM state. Such a tx can appear
+     * in one of two forms as seen over JSON-RPC:
+     *   1. The tx has no receipt at all (e.g. block 0x198d, 0x20189).
+     *   2. The tx has a receipt with status=0x0 and no logs, but its pre-revert
+     *      logs leak into the block's logsBloom (e.g. block 0x10a77).
+     * In both cases the sender's nonce was NOT advanced by the tx, and the same
+     * tx hash may be re-included by CometBFT later — possibly in a subsequent
+     * block or even later within the same block — where it actually executes.
+     * (related Ethermint fix: https://github.com/evmos/ethermint/pull/809)
+     *
+     * Detection uses `eth_getTransactionCount(sender, blockNumber)` as ground truth.
+     * A tx is a candidate phantom if it has no receipt or a status=0x0 receipt.
+     * For each candidate:
+     *   - If `candidate.nonce >= nonceAfter` → the nonce was never consumed,
+     *     so the candidate is definitely phantom.
+     *   - Otherwise the nonce was consumed by some tx in this block. If another
+     *     tx from the same sender with the same nonce has a status=0x1 receipt,
+     *     that one consumed the nonce and the candidate is phantom (re-inclusion
+     *     within the same block). If all txs sharing that nonce are candidates,
+     *     we can't tell which one is phantom — refuse to strip.
+     *   - Otherwise the candidate itself consumed the nonce — it is a normal
+     *     execution failure (revert, out-of-gas, etc.), not a phantom.
+     *
+     * Phantoms are removed from both `block.block.transactions` and the `receipts`
+     * array; remaining tx and receipt indices (including log transactionIndex) are
+     * renumbered to be contiguous.
+     */
+    private async handleCronosPhantomTransactions(block: Block, receipts: Receipt[]): Promise<Bytes32[]> {
+        let transactions = block.block.transactions as Transaction[]
+        let receiptByHash = new Map(receipts.map(r => [r.transactionHash, r]))
+
+        // Collect candidates: txs with no receipt or a status=0x0 receipt.
+        let candidates: Transaction[] = []
+        for (let tx of transactions) {
+            let receipt = receiptByHash.get(tx.hash)
+            if (receipt == null || qty2Int(receipt.status) === 0) {
+                candidates.push(tx)
+            }
+        }
+
+        if (candidates.length === 0) return []
+
+        // Fetch nonceAfter once per unique sender.
+        let uniqueSenders = Array.from(new Set(candidates.map(tx => tx.from)))
+        let nonceResults: Qty[] = await this.batchCall(uniqueSenders.map(sender => ({
+            method: 'eth_getTransactionCount',
+            params: [sender, block.block.number]
+        })))
+        let nonceAfterBySender = new Map<Bytes, number>()
+        for (let i = 0; i < uniqueSenders.length; i++) {
+            nonceAfterBySender.set(uniqueSenders[i], qty2Int(nonceResults[i]))
+        }
+
+        // Group all txs by (sender, nonce) so we can detect multi-tx-per-nonce cases.
+        let txsBySenderNonce = new Map<string, Transaction[]>()
+        for (let tx of transactions) {
+            let key = `${tx.from}:${qty2Int(tx.nonce)}`
+            let list = txsBySenderNonce.get(key)
+            if (list == null) {
+                list = []
+                txsBySenderNonce.set(key, list)
+            }
+            list.push(tx)
+        }
+
+        let phantomHashes = new Set<string>()
+        for (let candidate of candidates) {
+            let nonceAfter = nonceAfterBySender.get(candidate.from)!
+            let txNonce = qty2Int(candidate.nonce)
+
+            if (txNonce >= nonceAfter) {
+                // Nonce not consumed at this block — definitely phantom.
+                phantomHashes.add(candidate.hash)
+                continue
+            }
+
+            // Nonce was consumed — but by which tx?
+            let sameNonceTxs = txsBySenderNonce.get(`${candidate.from}:${txNonce}`)!
+            let successfulCompeter = sameNonceTxs.some(tx => {
+                if (tx.hash === candidate.hash) return false
+                let receipt = receiptByHash.get(tx.hash)
+                return receipt != null && qty2Int(receipt.status) === 1
+            })
+
+            if (successfulCompeter) {
+                // Another tx from same sender with same nonce succeeded — candidate is phantom.
+                phantomHashes.add(candidate.hash)
+                continue
+            }
+
+            let sharedWithOtherCandidate = sameNonceTxs.some(tx => {
+                if (tx.hash === candidate.hash) return false
+                let receipt = receiptByHash.get(tx.hash)
+                return receipt == null || qty2Int(receipt.status) === 0
+            })
+
+            if (sharedWithOtherCandidate) {
+                // Multiple candidates share this nonce and none has a status=0x1 receipt —
+                // can't unambiguously decide which one is phantom.
+                this.log.warn(
+                    {
+                        cronosFix: true,
+                        rpcEndpoint: this.client.url,
+                        blockNumber: block.number,
+                        transactionHash: candidate.hash,
+                        sender: candidate.from,
+                        nonce: candidate.nonce
+                    },
+                    'Cronos fix: multiple phantom candidates share the same nonce - refusing to strip (block will fail validation)'
+                )
+                return []
+            }
+
+            // Candidate.nonce < nonceAfter and no other tx shares this nonce —
+            // candidate consumed the nonce itself, so it's a real execution
+            // failure (revert / OOG / etc.), not a phantom.
+        }
+
+        if (phantomHashes.size === 0) return []
+
+        this.log.warn(
+            {
+                cronosFix: true,
+                rpcEndpoint: this.client.url,
+                blockNumber: block.number,
+                phantomTxHashes: Array.from(phantomHashes)
+            },
+            'Cronos fix: stripping phantom Ethermint transactions (no nonce consumption) from block'
+        )
+
+        // Strip phantom txs from block.block.transactions and renumber indices.
+        block.block.transactions = transactions.filter(tx => !phantomHashes.has(tx.hash))
+        for (let i = 0; i < block.block.transactions.length; i++) {
+            let tx = block.block.transactions[i] as Transaction
+            tx.transactionIndex = toQty(i)
+        }
+
+        // Strip phantom receipts from the receipts array (mutate in place so
+        // callers sharing the reference observe the change).
+        let keptReceipts = receipts.filter(r => !phantomHashes.has(r.transactionHash))
+        receipts.length = 0
+        receipts.push(...keptReceipts)
+
+        // Renumber receipt.transactionIndex and contained log.transactionIndex
+        // to match the new tx positions.
+        let txIndexByHash = new Map<string, number>()
+        for (let i = 0; i < block.block.transactions.length; i++) {
+            let tx = block.block.transactions[i] as Transaction
+            txIndexByHash.set(tx.hash, i)
+        }
+        for (let receipt of receipts) {
+            let newIdx = txIndexByHash.get(receipt.transactionHash)
+            if (newIdx == null) continue
+            receipt.transactionIndex = toQty(newIdx)
+            for (let log of receipt.logs) {
+                log.transactionIndex = toQty(newIdx)
+            }
+        }
+
+        return Array.from(phantomHashes)
+    }
+
+    /**
+     * Recovers receipts for Cronos (Ethermint) transactions that were omitted
+     * by eth_getBlockReceipts but actually executed (nonce advanced).
+     *
+     * We've observed this on Cronos mainnet block 0x10a78 — eth_getBlockReceipts
+     * consistently omits the receipt for tx 0xc453d4... but the tx did execute
+     * (contract deployed, nonce advanced). On some Cronos RPC providers
+     * eth_getTransactionReceipt returns the receipt in this case (dRPC, sometimes);
+     * on others it also returns null (Chainstack).
+     *
+     * If eth_getTransactionReceipt returns a valid receipt pinned to this block,
+     * we splice it into the receipts array in tx-position order and renumber
+     * receipt / log transactionIndex values to match. Otherwise we throw — the
+     * data is simply unavailable from this RPC and the caller should retry later
+     * (e.g. via a service restart).
+     */
+    private async recoverMissingCronosReceipts(block: Block, receipts: Receipt[]): Promise<void> {
+        let transactions = block.block.transactions as Transaction[]
+        let receiptHashes = new Set(receipts.map(r => r.transactionHash))
+
+        let missingTxs: Transaction[] = []
+        for (let tx of transactions) {
+            if (!receiptHashes.has(tx.hash)) {
+                missingTxs.push(tx)
+            }
+        }
+
+        if (missingTxs.length === 0) return
+
+        this.log.warn(
+            {
+                cronosFix: true,
+                rpcEndpoint: this.client.url,
+                blockNumber: block.number,
+                missingTxHashes: missingTxs.map(tx => tx.hash)
+            },
+            'Cronos fix: receipts missing from eth_getBlockReceipts - falling back to eth_getTransactionReceipt for recovery'
+        )
+
+        let recoveredResults = await this.batchCall(
+            missingTxs.map(tx => ({
+                method: 'eth_getTransactionReceipt',
+                params: [tx.hash]
+            })),
+            { validateResult: getResultValidator(nullable(Receipt)) }
+        )
+
+        for (let i = 0; i < missingTxs.length; i++) {
+            let tx = missingTxs[i]
+            let recovered = recoveredResults[i]
+
+            if (recovered == null) {
+                throw addErrorContext(
+                    new Error('Cronos fix: failed to recover missing receipt via eth_getTransactionReceipt - RPC returned null'),
+                    {
+                        cronosFix: true,
+                        rpcEndpoint: this.client.url,
+                        blockNumber: block.number,
+                        transactionHash: tx.hash
+                    }
+                )
+            }
+
+            if (recovered.blockHash !== block.block.hash) {
+                throw addErrorContext(
+                    new Error(`Cronos fix: recovered receipt belongs to a different block (got blockHash=${recovered.blockHash})`),
+                    {
+                        cronosFix: true,
+                        rpcEndpoint: this.client.url,
+                        blockNumber: block.number,
+                        transactionHash: tx.hash
+                    }
+                )
+            }
+
+            receipts.push(recovered)
+        }
+
+        // Sort receipts by tx position in the block and renumber transactionIndex
+        // (on both receipts and their logs) to match.
+        let txIndexByHash = new Map<string, number>()
+        for (let i = 0; i < transactions.length; i++) {
+            txIndexByHash.set(transactions[i].hash, i)
+        }
+        receipts.sort((a, b) =>
+            txIndexByHash.get(a.transactionHash)! - txIndexByHash.get(b.transactionHash)!
+        )
+        for (let receipt of receipts) {
+            let idx = txIndexByHash.get(receipt.transactionHash)!
+            receipt.transactionIndex = toQty(idx)
+            for (let log of receipt.logs) {
+                log.transactionIndex = toQty(idx)
+            }
+        }
+    }
+
+    /**
+     * Verifies a Cronos (Ethermint) block whose header logsBloom does not match
+     * the bloom computed from the visible receipt logs.
+     *
+     * Due to an Ethermint EVM-module bug, phantom and reverted transactions on
+     * Cronos could "leak" their pre-revert logs into the block's logsBloom even
+     * though those logs never appear in any receipt. In that scenario the
+     * header bloom contains *more* bits than the bloom computed from receipts.
+     * To accept a block in that state we must prove:
+     *   1. The header bloom is a superset of the bloom we computed from the
+     *      receipts' logs — i.e. our receipts don't contain spurious logs the
+     *      node didn't account for.
+     *   2. Every extra bit in the header bloom can be attributed to logs that
+     *      *would have been emitted* by phantom or reverted transactions in
+     *      this block, as reconstructed by `debug_traceTransaction` with the
+     *      callTracer + withLog option (which captures logs from every call
+     *      frame, including reverted ones).
+     * If either condition fails the data is inconsistent with the block header
+     * in a way we can't explain via the known Ethermint bug — throw rather
+     * than silently accept it.
+     */
+    private async verifyCronosLeakedLogsBloom(
+        block: Block,
+        logs: Log[],
+        computed: string,
+        phantomTxHashes: Bytes32[],
+        receipts: Receipt[]
+    ): Promise<void> {
+        let errorContext = {
+            cronosFix: true,
+            rpcEndpoint: this.client.url,
+            blockNumber: block.number,
+            blockHash: block.hash,
+            headerBloom: block.block.logsBloom,
+            computedBloom: computed
+        }
+
+        if (!isBloomSuperset(block.block.logsBloom, computed)) {
+            throw addErrorContext(
+                new Error('Cronos fix: bloom computed from receipt logs has bits not present in the header bloom - refusing to accept (receipts likely contain spurious logs)'),
+                errorContext
+            )
+        }
+
+        // Collect transactions whose logs could have leaked into the header
+        // bloom: phantom txs (stripped) and reverted txs (status = 0x0).
+        let leakedTxHashes = new Set<Bytes32>(phantomTxHashes)
+        for (let receipt of receipts) {
+            if (qty2Int(receipt.status) === 0) {
+                leakedTxHashes.add(receipt.transactionHash)
+            }
+        }
+
+        if (leakedTxHashes.size === 0) {
+            throw addErrorContext(
+                new Error('Cronos fix: header logs bloom has extra bits but no phantom or reverted transactions were found to explain them - refusing to accept'),
+                errorContext
+            )
+        }
+
+        // Reconstruct the logs of leaked txs via debug_traceTransaction.
+        // callTracer with withLog=true emits a `logs` array on every frame it
+        // visits, including frames that later reverted.
+        let traceCall = Array.from(leakedTxHashes).map(hash => ({
+            method: 'debug_traceTransaction',
+            params: [hash, {
+                tracer: 'callTracer',
+                tracerConfig: {
+                    onlyTopCall: false,
+                    withLog: true
+                }
+            }]
+        }))
+
+        let traceResults: any[]
+        try {
+            traceResults = await this.batchCall(traceCall)
+        } catch (err: any) {
+            throw addErrorContext(
+                new Error(`Cronos fix: failed to reconstruct leaked logs via debug_traceTransaction: ${err.message}`),
+                {...errorContext, leakedTxHashes: Array.from(leakedTxHashes)}
+            )
+        }
+
+        let tracedLogs: {address: Bytes, topics: Bytes[]}[] = []
+        for (let result of traceResults) {
+            collectFrameLogs(result, tracedLogs)
+        }
+
+        let combinedBloom = logsBloom([...logs, ...tracedLogs] as Log[])
+        if (combinedBloom !== block.block.logsBloom) {
+            throw addErrorContext(
+                new Error('Cronos fix: traced logs from phantom/reverted transactions do not fully explain the extra bits in the header logs bloom - refusing to accept'),
+                {
+                    ...errorContext,
+                    leakedTxHashes: Array.from(leakedTxHashes),
+                    tracedLogCount: tracedLogs.length,
+                    combinedBloom
+                }
+            )
+        }
+
+        this.log.warn(
+            {
+                ...errorContext,
+                leakedTxHashes: Array.from(leakedTxHashes),
+                tracedLogCount: tracedLogs.length
+            },
+            'Cronos fix: header logs bloom mismatch explained by leaked logs from phantom/reverted transactions (verified via debug_traceTransaction)'
+        )
     }
 
     private async addReceiptsByTx(blocks: Block[]) {
@@ -762,4 +1147,29 @@ function isEmpty(obj: object): boolean {
         return false
     }
     return true
+}
+
+
+/**
+ * Recursively collects `logs` arrays from a callTracer frame and all its
+ * nested sub-call frames. Only `address` and `topics` are needed by
+ * `logsBloom`, but we preserve whatever shape the RPC returned (untyped).
+ */
+function collectFrameLogs(
+    frame: any,
+    out: {address: Bytes, topics: Bytes[]}[]
+): void {
+    if (frame == null || typeof frame !== 'object') return
+    if (Array.isArray(frame.logs)) {
+        for (let log of frame.logs) {
+            if (log != null && typeof log === 'object' && typeof log.address === 'string' && Array.isArray(log.topics)) {
+                out.push({address: log.address, topics: log.topics})
+            }
+        }
+    }
+    if (Array.isArray(frame.calls)) {
+        for (let sub of frame.calls) {
+            collectFrameLogs(sub, out)
+        }
+    }
 }

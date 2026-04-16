@@ -50,6 +50,27 @@ export function loadReceipts(chain: string, blockNumber: number): Receipt[] {
 }
 
 
+/**
+ * Loads receipts.json and merges in any per-tx receipt fixtures
+ * (tx-*-receipt.json) produced by the Cronos recovery code path.
+ */
+export function loadAllReceipts(chain: string, blockNumber: number): Receipt[] {
+    const dir = Path.join(FIXTURES_DIR, chain, blockNumber.toString())
+    const receipts = loadReceipts(chain, blockNumber)
+    const seen = new Set(receipts.map(r => r.transactionHash))
+    for (const entry of fs.readdirSync(dir)) {
+        if (entry.startsWith('tx-') && entry.endsWith('-receipt.json')) {
+            const extra: Receipt = JSON.parse(fs.readFileSync(Path.join(dir, entry), 'utf-8'))
+            if (!seen.has(extra.transactionHash)) {
+                receipts.push(extra)
+                seen.add(extra.transactionHash)
+            }
+        }
+    }
+    return receipts
+}
+
+
 export function hasReceipts(chain: string, blockNumber: number): boolean {
     const path = Path.join(FIXTURES_DIR, chain, blockNumber.toString(), 'receipts.json')
     return fs.existsSync(path)
