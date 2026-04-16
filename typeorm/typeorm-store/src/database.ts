@@ -65,33 +65,31 @@ export class TypeormDatabase {
     private async initTransaction(em: EntityManager): Promise<DatabaseState> {
         let schema = this.escapedSchema()
 
-        await em.query(
-            `CREATE SCHEMA IF NOT EXISTS ${schema}`
-        )
+        await em.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`)
         await em.query(
             `CREATE TABLE IF NOT EXISTS ${schema}.status (` +
                 `id int4 primary key, ` +
                 `height int4 not null, ` +
                 `hash text DEFAULT '0x', ` +
-                `nonce int4 DEFAULT 0`+
-            `)`
-        )
-        await em.query( // for databases created by prev version of typeorm store
-            `ALTER TABLE ${schema}.status ADD COLUMN IF NOT EXISTS hash text DEFAULT '0x'`
-        )
-        await em.query( // for databases created by prev version of typeorm store
-            `ALTER TABLE ${schema}.status ADD COLUMN IF NOT EXISTS nonce int DEFAULT 0`
+                `nonce int4 DEFAULT 0` +
+                `)`
         )
         await em.query(
-            `CREATE TABLE IF NOT EXISTS ${schema}.hot_block (height int4 primary key, hash text not null)`
+            // for databases created by prev version of typeorm store
+            `ALTER TABLE ${schema}.status ADD COLUMN IF NOT EXISTS hash text DEFAULT '0x'`
         )
+        await em.query(
+            // for databases created by prev version of typeorm store
+            `ALTER TABLE ${schema}.status ADD COLUMN IF NOT EXISTS nonce int DEFAULT 0`
+        )
+        await em.query(`CREATE TABLE IF NOT EXISTS ${schema}.hot_block (height int4 primary key, hash text not null)`)
         await em.query(
             `CREATE TABLE IF NOT EXISTS ${schema}.hot_change_log (` +
                 `block_height int4 not null references ${schema}.hot_block on delete cascade, ` +
                 `index int4 not null, ` +
                 `change jsonb not null, ` +
                 `PRIMARY KEY (block_height, index)` +
-            `)`
+                `)`
         )
         await em.query(
             `CREATE TABLE IF NOT EXISTS ${schema}.template_registry (` +
@@ -101,90 +99,51 @@ export class TypeormDatabase {
                 `block_number int not null, ` +
                 `height int not null, ` +
                 `PRIMARY KEY (key, value, type, block_number)` +
-            `)`
+                `)`
         )
 
-        return this.getState(em, true)
+        let status: (HashAndHeight & {nonce: number})[] = await em.query(
+            `SELECT height, hash, nonce FROM ${schema}.status WHERE id = 0`
+        )
+        if (status.length == 0) {
+            await em.query(`INSERT INTO ${schema}.status (id, height, hash) VALUES (0, -1, '0x')`)
+            return assertStateInvariants({height: -1, hash: '0x', nonce: 0, top: [], templates: []})
+        }
+
+        let rawTemplates: any[] = await em.query(
+            `SELECT key, value, type, block_number FROM ${schema}.template_registry ` +
+                `WHERE height <= $1 ORDER BY height, block_number, type, key, value`,
+            [status[0].height]
+        )
+        let templates: TemplateMutation[] = rawTemplates.map(mapTemplateMutation)
+
+        let hotBlocks: HashAndHeight[] = await em.query(`SELECT height, hash FROM ${schema}.hot_block ORDER BY height`)
+        let top: HotBlock[] = []
+        for (let block of hotBlocks) {
+            let rawBlockTemplates: any[] = await em.query(
+                `SELECT key, value, type, block_number FROM ${schema}.template_registry ` +
+                    `WHERE height = $1 ORDER BY block_number, type, key, value`,
+                [block.height]
+            )
+            top.push({...block, templates: rawBlockTemplates.map(mapTemplateMutation)})
+        }
+
+        return assertStateInvariants({...status[0], top, templates})
     }
 
-    private async getState(em: EntityManager, loadTemplates?: boolean): Promise<DatabaseState> {
+    private async getState(em: EntityManager): Promise<DatabaseState> {
         let schema = this.escapedSchema()
 
-        let statusSql = loadTemplates ? `
-            SELECT s.height, s.hash, s.nonce,
-                (
-                    SELECT COALESCE(
-                        jsonb_agg(
-                            jsonb_build_object(
-                                'type', CASE t.type WHEN true THEN 'add' ELSE 'delete' END,
-                                'key', t.key,
-                                'value', t.value,
-                                'blockNumber', t.block_number
-                            )
-                            ORDER BY
-                                t.height,
-                                t.block_number,
-                                t.type,
-                                t.key,
-                                t.value
-                        ),
-                        '[]'::jsonb
-                    )
-                    FROM ${schema}.template_registry t
-                    WHERE t.height <= s.height
-                ) AS templates
-            FROM ${schema}.status s
-            WHERE s.id = 0
-        ` : `
-            SELECT height, hash, nonce FROM ${schema}.status WHERE id = 0
-        `
+        let status: (HashAndHeight & {nonce: number})[] = await em.query(
+            `SELECT height, hash, nonce FROM ${schema}.status WHERE id = 0`
+        )
 
-        let statusRows = await em.query(statusSql)
-        if (statusRows.length === 0) {
-            await em.query(`
-                INSERT INTO ${schema}.status (id, height, hash) VALUES (0, -1, '0x')
-                ON CONFLICT (id) DO NOTHING
-            `)
-            return {height: -1, hash: '0x', nonce: 0, top: [], templates: []}
-        }
-        assert(statusRows.length === 1, 'status row missing')
+        assert(status.length == 1)
 
-        let hotRows: HotBlock[] = await em.query(loadTemplates ? `
-            SELECT hb.height, hb.hash,
-                (
-                    SELECT COALESCE(
-                        jsonb_agg(
-                            jsonb_build_object(
-                                'type', CASE tr.type WHEN true THEN 'add' ELSE 'delete' END,
-                                'key', tr.key,
-                                'value', tr.value,
-                                'blockNumber', tr.block_number
-                            )
-                            ORDER BY
-                                tr.block_number,
-                                tr.type,
-                                tr.key,
-                                tr.value
-                        ),
-                        '[]'::jsonb
-                    )
-                    FROM ${schema}.template_registry tr
-                    WHERE tr.height = hb.height
-                ) AS templates
-            FROM ${schema}.hot_block hb
-            ORDER BY hb.height
-        ` : `
-            SELECT height, hash FROM ${schema}.hot_block ORDER BY height
-        `)
+        let rawTop: HashAndHeight[] = await em.query(`SELECT hash, height FROM ${schema}.hot_block ORDER BY height`)
+        let top: HotBlock[] = rawTop.map(b => ({...b, templates: []}))
 
-        let head = statusRows[0]
-        return assertStateInvariants({
-            height: head.height,
-            hash: head.hash,
-            nonce: head.nonce,
-            top: hotRows,
-            templates: head.templates ?? [],
-        })
+        return assertStateInvariants({...status[0], top, templates: []})
     }
 
     transact(
@@ -261,26 +220,32 @@ export class TypeormDatabase {
             }
 
             if (info.newBlocks.length) {
-                let finalizedEnd = info.newBlocks.findIndex(b => b.height > info.finalizedHead.height)
-                if (finalizedEnd < 0) {
-                    finalizedEnd = info.newBlocks.length
+                let unfinalizedStart = info.newBlocks.findIndex(b => b.height > info.finalizedHead.height)
+                if (unfinalizedStart < 0) {
+                    unfinalizedStart = info.newBlocks.length
                 }
-                if (finalizedEnd > 0) {
+                if (unfinalizedStart > 0) {
                     await this.performUpdates(
-                        async (store) => { return map(store, 0, finalizedEnd) },
+                        async (store) => map(store, 0, unfinalizedStart),
                         em,
                         new TemplateRegistryTracker(em, this.statusSchema, info.finalizedHead.height)
                     )
                 }
-                for (let i = finalizedEnd; i < info.newBlocks.length; i++) {
-                    let b = info.newBlocks[i]
-                    await this.insertHotBlock(em, b)
-                    await this.performUpdates(
-                        async (store) => { return map(store, i, i + 1) },
-                        em,
-                        new TemplateRegistryTracker(em, this.statusSchema, b.height),
-                        new ChangeTracker(em, this.statusSchema, b.height),
-                    )
+                if (unfinalizedStart < info.newBlocks.length) {
+                    // To prevent transaction timeouts when handling many unfinalized blocks,
+                    // we group them instead of handling each block individually.
+                    let groupSize = Math.max(1, Math.floor((info.newBlocks.length - unfinalizedStart) / 100))
+                    for (let i = unfinalizedStart; i < info.newBlocks.length; i += groupSize) {
+                        let sliceEnd = Math.min(i + groupSize, info.newBlocks.length)
+                        let lastBlock = info.newBlocks[sliceEnd - 1]
+                        await this.insertHotBlock(em, lastBlock)
+                        await this.performUpdates(
+                            async (store) => map(store, i, sliceEnd),
+                            em,
+                            new TemplateRegistryTracker(em, this.statusSchema, lastBlock.height),
+                            new ChangeTracker(em, this.statusSchema, lastBlock.height),
+                        )
+                    }
                 }
             }
 
@@ -377,6 +342,16 @@ export class TypeormDatabase {
 
 
 const RACE_MSG = 'status table was updated by foreign process, make sure no other processor is running'
+
+
+function mapTemplateMutation(row: any): TemplateMutation {
+    return {
+        type: row.type ? 'add' : 'delete',
+        key: row.key,
+        value: row.value,
+        blockNumber: Number(row.block_number),
+    }
+}
 
 
 function assertStateInvariants(state: DatabaseState): DatabaseState {
