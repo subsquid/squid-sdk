@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Wed, 15 Apr 2026 14:45:11 GMT and should not be manually modified.
+This log was last generated on Thu, 16 Apr 2026 08:15:17 GMT and should not be manually modified.
+
+## 1.9.0
+Thu, 16 Apr 2026 08:15:17 GMT
+
+### Minor changes
+
+- group unfinalized hot blocks to prevent transaction timeouts when processing large batches
 
 ## 1.8.1
 Wed, 15 Apr 2026 14:45:11 GMT

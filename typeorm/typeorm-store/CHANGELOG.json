@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "1.9.0",
+      "tag": "@subsquid/typeorm-store_v1.9.0",
+      "date": "Thu, 16 Apr 2026 08:15:17 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "group unfinalized hot blocks to prevent transaction timeouts when processing large batches"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.8.1",
       "tag": "@subsquid/typeorm-store_v1.8.1",
       "date": "Wed, 15 Apr 2026 14:45:11 GMT",
