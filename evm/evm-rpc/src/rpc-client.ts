@@ -29,10 +29,8 @@ export class EvmRpcClient extends RpcClient {
             if (this.isRpcRateLimitError(err)) {
                 return true
             }
-            switch(err.code) {
-                case -32000: // generic "catch-all" code
-                case -32603: // internal error
-                    return this.retryInternalServerErrors
+            if (this.isRpcInternalError(err)) {
+                return this.retryInternalServerErrors
             }
         }
         if (err instanceof HttpError) {
@@ -41,6 +39,14 @@ export class EvmRpcClient extends RpcClient {
             }
         }
         return false
+    }
+
+    isRpcInternalError(err: RpcError): boolean {
+        return (
+            err.code === -32000 || // generic "catch-all" code
+            err.code === -32603 || // internal error
+            /internal( server)? error/i.test(err.message)
+        )
     }
 
     isRpcRateLimitError(err: RpcError): boolean {
