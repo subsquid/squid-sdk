@@ -15,7 +15,7 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "test": "tsc && node --test 'lib/**/*.test.js'"
+    "test": "node --test 'lib/**/*.test.js'"
   },
   "dependencies": {
     "@subsquid/http-client": "^1.8.0",
