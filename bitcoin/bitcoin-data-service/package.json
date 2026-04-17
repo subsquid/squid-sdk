@@ -29,12 +29,10 @@
     "@subsquid/util-internal-validation": "^0.7.0",
     "@subsquid/util-internal-data-source": "^0.0.0",
     "@subsquid/util-internal-range": "^0.3.0",
-    "@subsquid/util-internal-json": "^1.2.3",
-    "source-map-support": "^0.5.21"
+    "@subsquid/util-internal-json": "^1.2.3"
   },
   "devDependencies": {
     "@types/node": "~24.0.0",
-    "@types/source-map-support": "^0.5.10",
     "typescript": "5.5.4"
   }
 }

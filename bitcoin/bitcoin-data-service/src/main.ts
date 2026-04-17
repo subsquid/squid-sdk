@@ -4,7 +4,6 @@ import { nat, positiveInt, positiveReal, Url } from '@subsquid/util-internal-com
 import { Block, BlockStream, DataSource, runDataService, StreamRequest } from '@subsquid/util-internal-data-service'
 import { waitForInterruption } from '@subsquid/util-internal-http-server'
 import { Command } from 'commander'
-import 'source-map-support/register'
 import { DataSourceOptions } from './data-source/setup'
 import { WorkerClient } from './data-source/worker-client'
 import { DEFAULT_FINALITY_CONFIRMATION } from '@subsquid/bitcoin-rpc'
