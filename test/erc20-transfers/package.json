@@ -7,12 +7,12 @@
     "test": "make test"
   },
   "dependencies": {
-    "@subsquid/graphql-server": "^4.11.0",
-    "@subsquid/batch-processor": "^0.1.0",
+    "@subsquid/graphql-server": "^4.12.0",
+    "@subsquid/evm-processor": "^1.29.1",
+    "@subsquid/typeorm-migration": "^1.3.1",
+    "@subsquid/typeorm-store": "^1.9.0",
     "@subsquid/evm-stream": "^0.0.0",
     "@subsquid/evm-objects": "^0.0.1",
-    "@subsquid/typeorm-migration": "^1.3.0",
-    "@subsquid/typeorm-store": "^1.8.0",
     "dotenv": "^16.3.1",
     "ethers": "^6.9.0",
     "pg": "^8.11.3",
@@ -22,7 +22,7 @@
     "@subsquid/evm-typegen": "^4.6.0",
     "@subsquid/evm-codec": "^0.3.0",
     "@subsquid/evm-abi": "^0.3.1",
-    "@subsquid/typeorm-codegen": "^2.1.0",
+    "@subsquid/typeorm-codegen": "^2.2.0",
     "@types/node": "^18.18.14",
     "typescript": "~5.5.4"
   }

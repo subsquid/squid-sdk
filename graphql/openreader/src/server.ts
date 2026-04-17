@@ -12,7 +12,7 @@ import type {Pool} from 'pg'
 import {WebSocketServer} from 'ws'
 import {Context, OpenreaderContext} from './context'
 import {PoolOpenreaderContext} from './db'
-import type {DbType} from './db'
+import type {DbType, TransactionIsolationLevel} from './db'
 import type {Model} from './model'
 import {openreaderExecute, openreaderSubscribe} from './util/execute'
 import {ResponseSizeLimit} from './util/limit'
@@ -36,6 +36,7 @@ export interface ServerOptions {
     subscriptionMaxResponseNodes?: number
     validationMaxErrors?: number
     cache?: KeyValueCache
+    isolationLevel?: TransactionIsolationLevel
 }
 
 export async function serve(options: ServerOptions): Promise<ListeningServer> {
@@ -54,12 +55,15 @@ export async function serve(options: ServerOptions): Promise<ListeningServer> {
     let schemaBuilder = await getSchemaBuilder(options)
     let schema = schemaBuilder.build()
 
+    let isolationLevel = options.isolationLevel ?? 'SERIALIZABLE'
+
     let context = () => {
         let openreader: OpenreaderContext = new PoolOpenreaderContext(
             dbType,
             connection,
             subscriptionConnection,
             subscriptionPollInterval,
+            isolationLevel,
             log
         )
 

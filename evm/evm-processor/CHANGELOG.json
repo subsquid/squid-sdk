@@ -2,6 +2,21 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.29.1",
+      "tag": "@subsquid/evm-processor_v1.29.1",
+      "date": "Mon, 13 Apr 2026 13:57:31 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "retry on \"not currently canonical\" error from eth_getBlockByHash and debug_traceBlockByHash"
+          },
+          {
+            "comment": "retry on out-of-range errors from eth_getLogs"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.29.0",
       "tag": "@subsquid/evm-processor_v1.29.0",
       "date": "Wed, 18 Mar 2026 10:55:26 GMT",

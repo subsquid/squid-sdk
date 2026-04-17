@@ -54,7 +54,8 @@ runProgram(async () => {
         })
         out.line()
         out.block(`async down(db)`, () => {
-            commands.downQueries.forEach(q => {
+            // Match TypeORM: downQueries align with upQueries by index; undo runs last-to-first.
+            ;[...commands.downQueries].reverse().forEach(q => {
                 out.line(`await db.query${queryTuple(q)}`)
             })
         })

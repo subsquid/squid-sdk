@@ -1,6 +1,13 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Tue, 17 Mar 2026 11:47:18 GMT and should not be manually modified.
+This log was last generated on Wed, 08 Apr 2026 08:23:22 GMT and should not be manually modified.
+
+## 5.5.0
+Wed, 08 Apr 2026 08:23:22 GMT
+
+### Minor changes
+
+- allow to configure transaction isolation level (SERIALIZABLE, REPEATABLE READ, READ COMMITTED)
 
 ## 5.4.0
 Tue, 17 Mar 2026 11:47:18 GMT

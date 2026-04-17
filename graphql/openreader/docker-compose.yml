@@ -10,7 +10,7 @@ services:
     command: ["postgres", "-c", "log_statement=all"]
 
   cockroach:
-    image: cockroachdb/cockroach:v21.2.9
+    image: cockroachdb/cockroach:v23.2.2
     ports:
       - "${DB_PORT_COCKROACH}:26257"
     command: [

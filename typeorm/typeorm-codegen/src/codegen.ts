@@ -406,16 +406,27 @@ function getPropJsType(imports: ImportRegistry, owner: 'entity' | 'object', prop
             break
         case 'fk':
             if (owner === 'entity') {
-                type = prop.type.entity
+                imports.useTypeormStore('Relation')
+                type = `Relation_<${prop.type.entity}>`
             } else {
                 type = 'string'
             }
             break
         case 'lookup':
-            type = prop.type.entity
+            if (owner === 'entity') {
+                imports.useTypeormStore('Relation')
+                type = `Relation_<${prop.type.entity}>`
+            } else {
+                type = prop.type.entity
+            }
             break
         case 'list-lookup':
-            type = prop.type.entity + '[]'
+            if (owner === 'entity') {
+                imports.useTypeormStore('Relation')
+                type = `Relation_<${prop.type.entity}[]>`
+            } else {
+                type = prop.type.entity + '[]'
+            }
             break
         case 'list':
             type = getPropJsType(imports, 'object', prop.type.item)

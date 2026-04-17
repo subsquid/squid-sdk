@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Tue, 17 Mar 2026 11:47:18 GMT and should not be manually modified.
+This log was last generated on Wed, 15 Apr 2026 14:45:11 GMT and should not be manually modified.
+
+## 2.2.0
+Wed, 15 Apr 2026 14:45:11 GMT
+
+### Minor changes
+
+- wrap generated entity relation fields with `Relation` type
 
 ## 2.1.0
 Tue, 17 Mar 2026 11:47:18 GMT
