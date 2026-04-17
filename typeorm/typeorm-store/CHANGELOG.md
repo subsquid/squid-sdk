@@ -1,6 +1,41 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Thu, 09 May 2024 15:10:28 GMT and should not be manually modified.
+This log was last generated on Thu, 16 Apr 2026 08:15:17 GMT and should not be manually modified.
+
+## 1.9.0
+Thu, 16 Apr 2026 08:15:17 GMT
+
+### Minor changes
+
+- group unfinalized hot blocks to prevent transaction timeouts when processing large batches
+
+## 1.8.1
+Wed, 15 Apr 2026 14:45:11 GMT
+
+### Patches
+
+- re-export `Relation` from typeorm for ESM relation typings
+
+## 1.8.0
+Sun, 05 Apr 2026 22:03:07 GMT
+
+### Minor changes
+
+- add template registry persistence
+
+## 1.7.0
+Thu, 05 Feb 2026 16:31:55 GMT
+
+### Minor changes
+
+- relax chain continuity check to support chains with gaps
+
+## 1.6.0
+Fri, 12 Dec 2025 12:00:23 GMT
+
+### Minor changes
+
+- extract datasource creation in TypeormDatabase
 
 ## 1.5.1
 Thu, 09 May 2024 15:10:28 GMT

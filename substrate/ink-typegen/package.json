@@ -3,7 +3,7 @@
   "version": "3.1.0",
   "description": "Generates TypeScript API for decoding ink! events, messages and constructors",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@subsquid/substrate-runtime": "^2.0.1",
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }
 }

@@ -1,9 +1,9 @@
 {
   "name": "@subsquid/substrate-data",
-  "version": "4.2.1",
+  "version": "4.4.4",
   "description": "Data fetcher and parser for substrate based chains",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -27,13 +27,13 @@
     "blake2b": "^2.1.4"
   },
   "peerDependencies": {
-    "@subsquid/rpc-client": "^4.11.0",
+    "@subsquid/rpc-client": "^4.14.0",
     "@subsquid/substrate-runtime": "^2.0.1"
   },
   "devDependencies": {
-    "@subsquid/rpc-client": "^4.11.0",
+    "@subsquid/rpc-client": "^4.14.0",
     "@subsquid/substrate-runtime": "^2.0.1",
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }
 }

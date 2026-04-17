@@ -15,6 +15,9 @@ import {
 } from '@subsquid/util-internal-validation'
 
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+
+
 export function getBlockHeaderProps(fields: FieldSelection['block'], forArchive: boolean) {
     let natural = forArchive ? NAT : SMALL_QTY
     return {
@@ -145,7 +148,7 @@ export function getTraceFrameValidator(fields: FieldSelection['trace'], forArchi
     }, {
         gasUsed: QTY,
         code: withDefault('0x', BYTES),
-        address: withDefault('0x0000000000000000000000000000000000000000', BYTES)
+        address: withDefault(ZERO_ADDRESS, BYTES)
     })
 
     let TraceCreate = object({
@@ -192,7 +195,7 @@ export function getTraceFrameValidator(fields: FieldSelection['trace'], forArchi
         balance: fields?.suicideBalance
     }, {
         address: BYTES,
-        refundAddress: BYTES,
+        refundAddress: withDefault(ZERO_ADDRESS, BYTES),
         balance: QTY
     })
 

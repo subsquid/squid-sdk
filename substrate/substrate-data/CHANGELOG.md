@@ -1,6 +1,48 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Mon, 07 Oct 2024 15:13:33 GMT and should not be manually modified.
+This log was last generated on Wed, 19 Nov 2025 10:21:16 GMT and should not be manually modified.
+
+## 4.4.4
+Wed, 19 Nov 2025 10:21:16 GMT
+
+### Patches
+
+- change SystemOrigin defintion to externalEnum
+
+## 4.4.3
+Sat, 15 Nov 2025 05:59:11 GMT
+
+### Patches
+
+- extend `SystemOrigin` enum definition
+
+## 4.4.2
+Sat, 01 Nov 2025 20:46:33 GMT
+
+### Patches
+
+- handle missing Proxy.ProxyExecuted event
+
+## 4.4.1
+Wed, 17 Sep 2025 03:17:50 GMT
+
+### Patches
+
+- handle EIP7702 transaction
+
+## 4.4.0
+Tue, 18 Mar 2025 10:45:46 GMT
+
+### Minor changes
+
+- add `Revive` pallet extension
+
+## 4.3.0
+Wed, 12 Mar 2025 20:55:26 GMT
+
+### Minor changes
+
+- allow to skip blocks during parsing
 
 ## 4.2.1
 Mon, 07 Oct 2024 15:13:33 GMT

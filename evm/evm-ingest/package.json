@@ -20,14 +20,14 @@
   },
   "dependencies": {
     "@subsquid/evm-normalization": "^0.0.0",
-    "@subsquid/logger": "^1.4.0",
+    "@subsquid/logger": "^1.5.0",
     "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-ingest-cli": "^0.1.1",
+    "@subsquid/util-internal-ingest-cli": "^0.2.0",
     "@subsquid/util-internal-json": "^1.2.3",
-    "@subsquid/util-internal-validation": "^0.7.0"
+    "@subsquid/util-internal-validation": "^0.8.0"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
+    "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }
 }

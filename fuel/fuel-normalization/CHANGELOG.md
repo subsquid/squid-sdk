@@ -1,6 +1,18 @@
 # Change Log - @subsquid/fuel-normalization
 
-This log was last generated on Tue, 03 Dec 2024 11:47:42 GMT and should not be manually modified.
+This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+
+## 1.2.4
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
+
+## 1.2.3
+Fri, 02 May 2025 09:41:23 GMT
+
+### Patches
+
+- handle changed InputCoin.witnessIndex type
 
 ## 1.2.2
 Tue, 03 Dec 2024 11:47:42 GMT

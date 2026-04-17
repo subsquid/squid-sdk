@@ -72,6 +72,15 @@ export interface RpcMetrics {
 }
 
 
+export interface RpcMetrics {
+    url: string
+    requestsServed: number
+    connectionErrors: number
+    notificationsReceived: number
+    avgResponseTime: number
+}
+
+
 export interface CallOptions<R=any> {
     priority?: number
     retryAttempts?: number
@@ -195,7 +204,9 @@ export class RpcClient {
             requestsServed: this.requestsServed,
             connectionErrors: this.connectionErrors,
             notificationsReceived: this.notificationsReceived,
-            avg_response_time: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0
+            // FIXME: only one of these metrics should remain; decide which to keep
+            avg_response_time: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
+            avgResponseTime: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
         }
     }
 

@@ -29,7 +29,8 @@ import {
     EventRequest,
     EvmLogRequest,
     GearMessageQueuedRequest,
-    GearUserMessageSentRequest
+    GearUserMessageSentRequest,
+    ReviveContractEmittedRequest
 } from './interfaces/data-request'
 import {getFieldSelectionValidator} from './selection'
 
@@ -164,7 +165,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private rpcEndpoint?: RpcEndpointSettings
     private rpcIngestSettings?: RpcDataIngestionSettings
     private typesBundle?: OldTypesBundle | OldSpecsBundle
-    private prometheus = new PrometheusServer()
+    private prometheusServer?: PrometheusServer
     private running = false
 
     /**
@@ -384,6 +385,13 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         return this
     }
 
+    addReviveContractEmitted(options: ReviveContractEmittedRequest & BlockRange): this {
+        this.assertNotRunning()
+        let {range, ...req} = options
+        this.add({reviveContractEmitted: [req]}, range)
+        return this
+    }
+
     /**
      * Sets types bundle.
      *
@@ -426,10 +434,27 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
      * By default, the value of `PROMETHEUS_PORT` environment
      * variable is used. When it is not set,
      * the processor will pick up an ephemeral port.
+     *
+     * @deprecated Use {@link .setPrometheusServer()} method for fine customization.
      */
     setPrometheusPort(port: number | string): this {
         this.assertNotRunning()
-        this.prometheus.setPort(port)
+        if (this.prometheusServer) {
+            throw new Error('Prometheus server has already been configured')
+        }
+        this.getPrometheusServer().setPort(port)
+        return this
+    }
+
+    /**
+     * Sets a custom prometheus metrics server.
+     */
+    setPrometheusServer(server: PrometheusServer): this {
+        this.assertNotRunning()
+        if (this.prometheusServer) {
+            throw new Error('Prometheus server has already been configured')
+        }
+        this.prometheusServer = server
         return this
     }
 
@@ -437,6 +462,13 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
         if (this.running) {
             throw new Error('Settings modifications are not allowed after start of processing')
         }
+    }
+
+    private getPrometheusServer(): PrometheusServer {
+        if (!this.prometheusServer) {
+            this.prometheusServer = new PrometheusServer()
+        }
+        return this.prometheusServer
     }
 
     @def
@@ -459,7 +491,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             retryAttempts: Number.MAX_SAFE_INTEGER,
             log: this.getLogger().child('rpc', {rpcUrl: this.rpcEndpoint.url})
         })
-        this.prometheus.addChainRpcMetrics(() => client.getMetrics())
+        this.getPrometheusServer().addChainRpcMetrics(() => client.getMetrics())
         return client
     }
 
@@ -529,7 +561,8 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
                 ethereumTransactions: concat(a.ethereumTransactions, b.ethereumTransactions),
                 contractsEvents: concat(a.contractsEvents, b.contractsEvents),
                 gearMessagesQueued: concat(a.gearMessagesQueued, b.gearMessagesQueued),
-                gearUserMessagesSent: concat(a.gearUserMessagesSent, b.gearUserMessagesSent)
+                gearUserMessagesSent: concat(a.gearUserMessagesSent, b.gearUserMessagesSent),
+                reviveContractEmitted: concat(a.reviveContractEmitted, b.reviveContractEmitted)
             }
         })
 
@@ -602,7 +635,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
                 hotDataSource: this.rpcIngestSettings?.disabled ? undefined : this.getRpcDataSource(),
                 allBlocksAreFinal: this.finalityConfirmation === 0,
                 process: (s, b) => this.processBatch(s, b as any, handler),
-                prometheus: this.prometheus,
+                prometheus: this.getPrometheusServer(),
                 log
             }).run()
         }, err => log.fatal(err))

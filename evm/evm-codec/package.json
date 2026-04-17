@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "description": "EVM encoder/decoder tools",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -20,7 +20,7 @@
     "@subsquid/util-internal-hex": "^1.2.2"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "ethers": "^6.9.0",
     "typescript": "5.5.4",
     "viem": "^2.8.14",

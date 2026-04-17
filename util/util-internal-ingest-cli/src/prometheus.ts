@@ -1,7 +1,6 @@
 import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
 import {collectDefaultMetrics, Counter, Gauge, Registry} from 'prom-client'
 
-
 export class PrometheusServer {
     private registry = new Registry()
     private s3RequestsCounter: Counter

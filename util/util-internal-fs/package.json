@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "description": "Unifying wrapper around local fs and S3",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -20,7 +20,7 @@
     "upath": "^2.0.1"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }
 }

@@ -95,7 +95,7 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
     private blockRange?: Range
     private gateway?: GatewaySettings
     private httpApi?: HttpApiSettings
-    private prometheus = new PrometheusServer()
+    private prometheusServer?: PrometheusServer
     private running = false
 
     /**
@@ -210,10 +210,27 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
      * By default, the value of `PROMETHEUS_PORT` environment
      * variable is used. When it is not set,
      * the processor will pick up an ephemeral port.
+     *
+     * @deprecated Use {@link .setPrometheusServer()} method for fine customization.
      */
     setPrometheusPort(port: number | string): this {
         this.assertNotRunning()
-        this.prometheus.setPort(port)
+        if (this.prometheusServer) {
+            throw new Error('Prometheus server has already been configured')
+        }
+        this.getPrometheusServer().setPort(port)
+        return this
+    }
+
+    /**
+     * Sets a custom prometheus metrics server.
+     */
+    setPrometheusServer(server: PrometheusServer): this {
+        this.assertNotRunning()
+        if (this.prometheusServer) {
+            throw new Error('Prometheus server has already been configured')
+        }
+        this.prometheusServer = server
         return this
     }
 
@@ -221,6 +238,13 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
         if (this.running) {
             throw new Error('Settings modifications are not allowed after start of processing')
         }
+    }
+
+    private getPrometheusServer(): PrometheusServer {
+        if (!this.prometheusServer) {
+            this.prometheusServer = new PrometheusServer()
+        }
+        return this.prometheusServer
     }
 
     @def
@@ -358,7 +382,7 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
                 archive: this.gateway == null ? undefined : this.getGatewayDataSource(),
                 hotDataSource: this.httpApi == null ? undefined : this.getHttpDataSource(),
                 process: (s, b) => this.processBatch(s, b as any, handler),
-                prometheus: this.prometheus,
+                prometheus: this.getPrometheusServer(),
                 log
             }).run()
         }, err => log.fatal(err))

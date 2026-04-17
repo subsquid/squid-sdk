@@ -19,7 +19,8 @@ export class Parser {
     constructor(
         private rpc: Rpc,
         private requests: RangeRequestList<DataRequest>,
-        typesBundle?: OldTypesBundle | OldSpecsBundle
+        typesBundle?: OldTypesBundle | OldSpecsBundle,
+        private skipBlocks?: number[],
     ) {
         this.runtimeTracker = new RuntimeTracker<RawBlock>(
             this.rpc,
@@ -72,6 +73,10 @@ export class Parser {
     private async parseBlock(rawBlock: RawBlock, options?: DataRequest): Promise<void> {
         while (true) {
             try {
+                if (this.skipBlocks?.includes(rawBlock.height)) {
+                    options = disableBlockItems(options)
+                }
+
                 rawBlock.parsed = parseBlock(rawBlock, options ?? {})
                 return
             } catch(err: any) {
@@ -185,6 +190,14 @@ function getRefCtx(ref: HashAndHeight) {
         blockHeight: ref.height,
         blockHash: ref.hash
     }
+}
+
+
+function disableBlockItems(options?: DataRequest): DataRequest {
+    let request = {...options}
+    delete request.events
+    delete request.extrinsics
+    return request
 }
 
 

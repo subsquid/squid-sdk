@@ -27,7 +27,7 @@ export class PrometheusServer {
         log: Logger
     ) {
         let chainHeight = 0
-
+        
         this.chainHeightGauge = new Gauge({
             name: 'sqd_dump_chain_height',
             help: 'Finalized head of a chain',
@@ -85,6 +85,43 @@ export class PrometheusServer {
             registers: [this.registry]
         })
 
+        this.latestReceivedBlockNumberGauge = new Gauge({
+            name: 'sqd_latest_received_block_number',
+            help: 'Latest block number received',
+            registers: [this.registry]
+        })
+
+        this.latestReceivedBlockTimestampGauge = new Gauge({
+            name: 'sqd_latest_received_block_timestamp',
+            help: 'Timestamp of latest received block',
+            registers: [this.registry]
+        })
+
+        this.blocksDeliveryDelayGauge = new Gauge({
+            name: 'sqd_blocks_delivery_delay',
+            help: 'Delay in seconds between block minted and received',
+            registers: [this.registry]
+        })
+
+        // Duplicate metric of sqd_dump_last_written_block for compatibility with archive.py dumper
+        this.latestProcessedBlockNumberGauge = new Gauge({
+            name: 'sqd_latest_processed_block_number',
+            help: 'Latest processed block number',
+            registers: [this.registry]
+        })
+
+        this.latestProcessedBlockTimestampGauge = new Gauge({
+            name: 'sqd_latest_processed_block_timestamp',
+            help: 'Timestamp of the latest processed block',
+            registers: [this.registry]
+        })
+
+        this.blocksProcessingTimeGauge = new Gauge({
+            name: 'sqd_blocks_processing_time',
+            help: 'Time taken to process blocks (in seconds)',
+            registers: [this.registry]
+        })
+
         this.rpcRequestsGauge = new Gauge({
             name: 'sqd_rpc_request_count',
             help: 'Number of rpc requests made',
@@ -112,7 +149,6 @@ export class PrometheusServer {
             registers: [this.registry],
             collect() {
                 const metrics = rpc.getMetrics()
-
                 this.reset()
                 this.inc({
                     url: metrics.url,
@@ -131,6 +167,10 @@ export class PrometheusServer {
                 this.set({
                     url: metrics.url,
                 }, metrics.avg_response_time)
+                
+                this.set({
+                    url: metrics.url,
+                }, metrics.avgResponseTime)
             }
         });
         this.rpcConnectionErrorsTotal = new Counter({
@@ -140,7 +180,6 @@ export class PrometheusServer {
             registers: [this.registry],
             collect() {
                 const metrics = rpc.getMetrics()
-
                 this.reset()
                 this.inc({
                     url: metrics.url,

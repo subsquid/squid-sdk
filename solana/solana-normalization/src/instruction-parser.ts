@@ -19,19 +19,14 @@ const PROGRAMS_MISSING_INVOKE_LOG = new Set([
     'ComputeBudget111111111111111111111111111111',
 ])
 
-
 export class ParsingError {
     instructionIndex?: number
     innerInstructionIndex?: number
     programId?: string
     logMessageIndex?: number
 
-    constructor(
-        public msg: string
-    ) {
-    }
+    constructor(public msg: string) {}
 }
-
 
 export class MessageStream {
     private messages: Message[]
@@ -90,11 +85,7 @@ export class InstructionTreeTraversal {
             this.call(1)
             this.finishLogLess()
         } else {
-            this.assert(
-                this.instructions.length === 1,
-                'failed instructions should not have inner calls',
-                0
-            )
+            this.assert(this.instructions.length === 1, 'failed instructions should not have inner calls', 0)
             this.push(1)
         }
         this.assert(this.ended, 'not all inner instructions where consumed', 0)
@@ -103,11 +94,7 @@ export class InstructionTreeTraversal {
     private call(stackHeight: number): void {
         let ins = this.current
 
-        this.assert(
-            ins.stackHeight == null || ins.stackHeight === stackHeight,
-            'stack height mismatch',
-            this.pos
-        )
+        this.assert(ins.stackHeight == null || ins.stackHeight === stackHeight, 'stack height mismatch', this.pos)
 
         let programId = this.tx.getAccount(ins.programIdIndex)
 
@@ -228,7 +215,7 @@ export class InstructionTreeTraversal {
                         instructionAddress: ins.instructionAddress,
                         programId: ins.programId,
                         kind: msg.kind,
-                        message: msg.message
+                        message: msg.message,
                     })
                     this.messages.advance()
                     break
@@ -237,11 +224,7 @@ export class InstructionTreeTraversal {
                         ins.computeUnitsConsumed = msg.consumed
                         this.messages.advance()
                     } else {
-                        throw this.error(
-                            'unexpected programId in compute unit message',
-                            pos,
-                            this.messages.position
-                        )
+                        throw this.error('unexpected programId in compute unit message', pos, this.messages.position)
                     }
                     break
                 case 'invoke':
@@ -346,7 +329,7 @@ export class InstructionTreeTraversal {
             accounts: ins.accounts.map(a => this.tx.getAccount(a)),
             data: ins.data,
             isCommitted: this.tx.isCommitted,
-            hasDroppedLogMessages: false
+            hasDroppedLogMessages: false,
         }
 
         this.output.push(mapped)

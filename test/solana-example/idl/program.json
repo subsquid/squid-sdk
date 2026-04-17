@@ -873,6 +873,54 @@
             }
           ]
         }
+      },
+      {
+        "name": "RecursiveStruct",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "recursive_field",
+              "type": {
+                "defined": {
+                  "name": "RecursiveStruct"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "CycleStructA",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "recursive_field",
+              "type": {
+                "defined": {
+                  "name": "CycleStructB"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "CycleStructB",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "recursive_field",
+              "type": {
+                "defined": {
+                  "name": "CycleStructA"
+                }
+              }
+            }
+          ]
+        }
       }
     ],
     "constants": [

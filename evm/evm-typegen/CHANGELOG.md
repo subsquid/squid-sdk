@@ -1,6 +1,36 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Thu, 27 Jun 2024 09:24:39 GMT and should not be manually modified.
+This log was last generated on Mon, 26 Jan 2026 19:17:25 GMT and should not be manually modified.
+
+## 4.6.0
+Mon, 26 Jan 2026 19:17:25 GMT
+
+### Minor changes
+
+- use SQD Etherscan proxy by default when no API key is provided
+- deprecate `--etherscan-chain-id` in favor of `--chain-id`
+- support named chain identifiers in `--chain-id` option (e.g., `ethereum`, `polygon`, `arbitrum`)
+
+## 4.5.1
+Thu, 20 Nov 2025 16:46:01 GMT
+
+### Patches
+
+- fix multicall result array flattening
+
+## 4.5.0
+Mon, 17 Nov 2025 08:42:47 GMT
+
+### Minor changes
+
+- support etherscan v2 API
+
+## 4.4.0
+Thu, 24 Apr 2025 15:09:16 GMT
+
+### Minor changes
+
+- concurently fetch multicall pages
 
 ## 4.3.0
 Thu, 27 Jun 2024 09:24:39 GMT

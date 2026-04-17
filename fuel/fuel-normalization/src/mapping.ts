@@ -214,7 +214,7 @@ function mapRawInput(raw: raw.TransactionInput, transactionIndex: number, index:
                 amount: BigInt(raw.amount),
                 assetId: raw.assetId,
                 txPointer: raw.txPointer,
-                witnessIndex: raw.witnessIndex,
+                witnessIndex: toInteger(raw.witnessIndex),
                 predicateGasUsed: BigInt(raw.predicateGasUsed),
                 predicate: raw.predicate,
                 predicateData: raw.predicateData,

@@ -45,7 +45,7 @@ export interface ArrayType {
 
 export interface FixedArrayType {
     kind: TypeKind.FixedArray
-    len: number
+    len: number | GenericType
     type: Type
 }
 

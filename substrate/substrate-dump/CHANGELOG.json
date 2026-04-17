@@ -2,6 +2,23 @@
   "name": "@subsquid/substrate-dump",
   "entries": [
     {
+      "version": "0.6.0",
+      "tag": "@subsquid/substrate-dump_v0.6.0",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add block timestamp extraction method for substrate dumper with mocked timestamp implementation"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^1.0.0` to `1.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.5.1",
       "tag": "@subsquid/substrate-dump_v0.5.1",
       "date": "Mon, 07 Oct 2024 08:48:33 GMT",

@@ -1,10 +1,27 @@
-import {Codec, GetCodecType, Src} from '@subsquid/borsh'
-import {getInstructionData} from '@subsquid/solana-stream'
+import {Codec, GetCodecType, Src, Sink} from '@subsquid/borsh'
 import assert from 'assert'
 
 
-export type Bytes = string
-export type Base58Bytes = string
+export type Bytes = string & {}
+export type Base58Bytes = string & {}
+
+
+export const DATA_SYM = Symbol.for('SQD_SVM_DATA')
+
+
+interface InstructionRecord {
+    accounts: Base58Bytes[]
+    data: Base58Bytes
+    [DATA_SYM]?: Uint8Array
+}
+    
+    
+export function getInstructionData(i: InstructionRecord): Uint8Array {
+    if (i[DATA_SYM]) return i[DATA_SYM]
+    let sink = new Sink()
+    sink.base58(i.data)
+    return i[DATA_SYM] = sink.result()
+}
 
 
 export function instruction<
@@ -76,10 +93,7 @@ class Instruction<A, D> {
         return selection
     }
 
-    decode(ins: {
-        accounts: Base58Bytes[],
-        data: Bytes
-    }): DecodedInstruction<A, D> {
+    decode(ins: InstructionRecord): DecodedInstruction<A, D> {
         return {
             accounts: this.decodeAccounts(ins.accounts),
             data: this.decodeData(getInstructionData(ins))
@@ -143,8 +157,9 @@ class Event<D> {
 
     decode(event: {
         msg: Bytes
-    }): D {
-        return this.decodeData(decodeHex(event.msg))
+    } | Bytes): D {
+        let data = typeof event === 'string' ? event : event.msg
+        return this.decodeData(decodeHex(data))
     }
 
     decodeData(data: Uint8Array): D {
@@ -190,7 +205,7 @@ class Event<D> {
 
 
 function decodeHex(bytes: Bytes): Uint8Array {
-    return Buffer.from(bytes.slice(2), 'hex')
+    return new Uint8Array(Buffer.from(bytes.slice(2), 'hex'))
 }
 
 

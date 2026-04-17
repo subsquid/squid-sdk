@@ -47,7 +47,7 @@ export class HttpContext<Params=object> {
         let len: number
         if (typeof body == 'string') {
             contentType = contentType || 'text/plain'
-            contentType += '; charset=UTF-8'
+            if (!contentType.includes('charset=')) contentType += '; charset=UTF-8'
             len = Buffer.byteLength(body)
         } else {
             len = body.length

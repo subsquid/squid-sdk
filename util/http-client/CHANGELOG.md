@@ -1,6 +1,27 @@
 # Change Log - @subsquid/http-client
 
-This log was last generated on Fri, 20 Dec 2024 16:52:59 GMT and should not be manually modified.
+This log was last generated on Tue, 04 Nov 2025 07:29:46 GMT and should not be manually modified.
+
+## 1.8.0
+Tue, 04 Nov 2025 07:29:46 GMT
+
+### Minor changes
+
+- make 521, 522, 523 errors retriable
+
+## 1.7.0
+Mon, 22 Sep 2025 13:20:40 GMT
+
+### Minor changes
+
+- allow to pass `HttpResponse` generic type to `HttpError`
+
+## 1.6.1
+Sat, 09 Aug 2025 06:10:24 GMT
+
+### Patches
+
+- fix abort signal listeners leak
 
 ## 1.6.0
 Fri, 20 Dec 2024 16:52:59 GMT

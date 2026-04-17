@@ -1,11 +1,11 @@
 import {createLogger} from '@subsquid/logger'
 import {last, runProgram, Throttler} from '@subsquid/util-internal'
-import {createPrometheusServer} from '@subsquid/util-internal-prometheus-server'
-import * as prom from 'prom-client'
+import {PrometheusServer, RunnerMetrics} from '@subsquid/util-internal-processor-tools'
 import {Database, HashAndHeight} from './database'
 import {DataSource} from './datasource'
-import {Metrics} from './metrics'
 import {formatHead, getItemsCount} from './util'
+
+export {PrometheusServer}
 
 
 const log = createLogger('sqd:batch-processor')
@@ -31,6 +31,10 @@ interface BlockBase {
     header: HashAndHeight
 }
 
+interface RunOptions {
+    prometheus?: PrometheusServer
+}
+
 
 /**
  * Run data processing.
@@ -49,18 +53,19 @@ interface BlockBase {
 export function run<Block extends BlockBase, Store>(
     src: DataSource<Block>,
     db: Database<Store>,
-    dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<void>
+    dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<void>,
+    opts?: RunOptions
 ): void {
     runProgram(() => {
-        return new Processor(src, db, dataHandler).run()
+            return new Processor(src, db, dataHandler, opts).run()
     }, err => {
-        log.fatal(err)
+            log.fatal(err)
     })
 }
 
 
 class Processor<B extends BlockBase, S> {
-    private metrics = new Metrics()
+    private metrics: RunnerMetrics
     private chainHeight: Throttler<number>
     private statusReportTimer?: any
     private hasStatusNews = false
@@ -68,8 +73,12 @@ class Processor<B extends BlockBase, S> {
     constructor(
         private src: DataSource<B>,
         private db: Database<S>,
-        private handler: (ctx: DataHandlerContext<B, S>) => Promise<void>
+        private handler: (ctx: DataHandlerContext<B, S>) => Promise<void>,
+        private readonly opts?: RunOptions
     ) {
+        this.metrics = new RunnerMetrics(
+            src.getBlocksCountInRange?.bind(src) ?? ((range) => Math.max(0, range.to - range.from + 1)),
+        )
         this.chainHeight = new Throttler(() => this.src.getFinalizedHeight(), 30_000)
     }
 
@@ -101,34 +110,27 @@ class Processor<B extends BlockBase, S> {
     }
 
     private async initMetrics(state: HashAndHeight): Promise<void> {
-        await this.updateProgressMetrics(await this.chainHeight.get(), state)
+        this.updateProgressMetrics(await this.chainHeight.get(), state)
         let port = process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT
-        if (port == null) return
-        prom.collectDefaultMetrics()
-        this.metrics.install()
-        let server = await createPrometheusServer(prom.register, port)
-        log.info(`prometheus metrics are served on port ${server.port}`)
+
+        let prometheusServer: PrometheusServer | undefined
+        if (this.opts?.prometheus != null) {
+            prometheusServer = this.opts.prometheus
+        } else if (port != null) {
+            prometheusServer = new PrometheusServer()
+            prometheusServer.setPort(port)
+        }
+        if (prometheusServer == null) return
+
+        prometheusServer.addRunnerMetrics(this.metrics)
+        let listening = await prometheusServer.serve()
+        log.info(`prometheus metrics are served on port ${listening.port}`)
     }
 
     private updateProgressMetrics(chainHeight: number, state: HashAndHeight, time?: bigint): void {
         this.metrics.setChainHeight(chainHeight)
         this.metrics.setLastProcessedBlock(state.height)
-        let left: number
-        let processed: number
-        if (this.src.getBlocksCountInRange) {
-            left = this.src.getBlocksCountInRange({
-                from: this.metrics.getLastProcessedBlock() + 1,
-                to: this.metrics.getChainHeight()
-            })
-            processed = this.src.getBlocksCountInRange({
-                from: 0,
-                to: this.metrics.getChainHeight()
-            }) - left
-        } else {
-            left = this.metrics.getChainHeight() - this.metrics.getLastProcessedBlock()
-            processed = this.metrics.getLastProcessedBlock()
-        }
-        this.metrics.updateProgress(processed, left, time)
+        this.metrics.updateProgress(time)
     }
 
     private async processBatch(prevHead: HashAndHeight, blocks: B[]): Promise<HashAndHeight> {
@@ -144,15 +146,15 @@ class Processor<B extends BlockBase, S> {
         let mappingStartTime = process.hrtime.bigint()
 
         await this.db.transact({
-            prevHead,
-            nextHead,
+                prevHead,
+                nextHead,
             isOnTop
         }, store => {
-            return this.handler({
-                store,
-                blocks,
+                return this.handler({
+                    store,
+                    blocks,
                 isHead: isOnTop
-            })
+                })
         })
 
         let mappingEndTime = process.hrtime.bigint()

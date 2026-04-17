@@ -281,14 +281,7 @@ export class HttpClient {
             if (timer != null) {
                 clearTimeout(timer)
             }
-            if (req.signal && res?.stream) {
-                // FIXME: is `close` always emitted?
-                (res.body as NodeJS.ReadableStream).on('close', () => {
-                    req.signal!.removeEventListener('abort', abort)
-                })
-            } else {
-                req.signal?.removeEventListener('abort', abort)
-            }
+            req.signal?.removeEventListener('abort', abort)
         }
     }
 
@@ -335,6 +328,9 @@ export class HttpClient {
                 case 502:
                 case 503:
                 case 504:
+                case 521:
+                case 522:
+                case 523:
                 case 524:
                     return true
                 default:
@@ -437,8 +433,8 @@ export class HttpResponse<T=any> {
 }
 
 
-export class HttpError extends Error {
-    constructor(public readonly response: HttpResponse) {
+export class HttpError<T=any> extends Error {
+    constructor(public readonly response: HttpResponse<T>) {
         super(`Got ${response.status} from ${response.url}`)
     }
 

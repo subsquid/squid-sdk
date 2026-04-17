@@ -2,6 +2,70 @@
   "name": "@subsquid/solana-dump",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/solana-dump_v0.2.0",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add block timestamp extraction method for Solana dumper with Unix timestamp support"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.11.0` to `4.12.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc\" from `^0.1.0` to `0.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^1.0.0` to `1.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/solana-dump_v0.1.0",
+      "date": "Wed, 14 May 2025 19:46:11 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `--max-confirmation-attempts` cli option"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc\" from `^0.0.4` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.10",
+      "tag": "@subsquid/solana-dump_v0.0.10",
+      "date": "Thu, 24 Apr 2025 15:09:16 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "allow empty logMessages for failed transactions"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.9",
+      "tag": "@subsquid/solana-dump_v0.0.9",
+      "date": "Mon, 17 Mar 2025 09:27:47 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "allow empty logMessages if tx.err is `MaxLoadedAccountsDataSizeExceeded`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.8",
       "tag": "@subsquid/solana-dump_v0.0.8",
       "date": "Wed, 15 Jan 2025 18:59:13 GMT",

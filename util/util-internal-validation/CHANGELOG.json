@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-validation",
   "entries": [
     {
+      "version": "0.8.0",
+      "tag": "@subsquid/util-internal-validation_v0.8.0",
+      "date": "Sat, 09 Aug 2025 06:10:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "tagged union: make the tag to be the first field, not the last"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.7.0",
       "tag": "@subsquid/util-internal-validation_v0.7.0",
       "date": "Tue, 03 Dec 2024 11:47:42 GMT",

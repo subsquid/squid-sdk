@@ -71,6 +71,18 @@ function buildEventFilter(dataRequest: DataRequest): EntityFilter<Event, EventRe
         events.add(filter, relations)
     })
 
+    dataRequest.reviveContractEmitted?.forEach(req => {
+        let {contract, topic0, topic1, topic2, topic3, ...relations} = req
+        let filter = new FilterBuilder<Event>()
+        filter.propIn('name', ['Revive.ContractEmitted'])
+        filter.propIn('_reviveContract', contract)
+        filter.propIn('_reviveTopic0', topic0)
+        filter.propIn('_reviveTopic1', topic1)
+        filter.propIn('_reviveTopic2', topic2)
+        filter.propIn('_reviveTopic3', topic3)
+        events.add(filter, relations)
+    })
+
     return events
 }
 

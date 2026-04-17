@@ -1,6 +1,20 @@
 # Change Log - @subsquid/util-internal-dump-cli
 
-This log was last generated on Mon, 07 Oct 2024 08:48:33 GMT and should not be manually modified.
+This log was last generated on Mon, 09 Jun 2025 13:01:23 GMT and should not be manually modified.
+
+## 1.1.1
+Mon, 09 Jun 2025 13:01:23 GMT
+
+### Patches
+
+- adapt for the latest changes in rpc-client
+
+## 1.1.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- Add block metrics tracking with timestamp caching and prometheus integration for dumper operations
 
 ## 1.0.0
 Mon, 07 Oct 2024 08:48:33 GMT

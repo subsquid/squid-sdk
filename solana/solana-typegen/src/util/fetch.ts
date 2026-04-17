@@ -31,7 +31,7 @@ export async function fetchIdl(client: RpcClient, programAddress: Address): Prom
 
     if (accountInfo?.value == null) return undefined
 
-    const src = new Src(Buffer.from(accountInfo.value.data[0], 'base64'))
+    const src = new Src(new Uint8Array(Buffer.from(accountInfo.value.data[0], 'base64')))
     src.u64() // skip discriminator
     const {data} = idlLayout.decode(src)
 

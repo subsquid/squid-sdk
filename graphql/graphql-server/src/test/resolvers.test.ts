@@ -13,8 +13,9 @@ describe('resolvers extension', function () {
 
     const client = useServer('lib/test/resolvers-extension')
 
-    it('scalars', function () {
-        return client.test(`
+    describe ('responses', () => {
+        it('scalars', function () {
+            return client.test(`
             query {
                 scalarsExtension {
                     id
@@ -27,20 +28,20 @@ describe('resolvers extension', function () {
                 }
             }
         `, {
-            scalarsExtension: [{
-                id: '1',
-                bool: true,
-                date: '2021-09-24T00:00:00.000Z',
-                bigInt: '1000000000000000',
-                bigDecimal: '0.000000000000000001',
-                bytes: '0xaa',
-                attributes: [1, 2, 3]
-            }]
+                scalarsExtension: [{
+                    id: '1',
+                    bool: true,
+                    date: '2021-09-24T00:00:00.000Z',
+                    bigInt: '1000000000000000',
+                    bigDecimal: '0.000000000000000001',
+                    bytes: '0xaa',
+                    attributes: [1, 2, 3]
+                }]
+            })
         })
-    })
 
-    it('openreader scalars continue to work', function () {
-        return client.test(`
+        it('openreader scalars continue to work', function () {
+            return client.test(`
             query {
                 scalars {
                     id
@@ -52,19 +53,19 @@ describe('resolvers extension', function () {
                 }
             }
         `, {
-            scalars: [{
-                id: '1',
-                bool: true,
-                date: '2021-09-24T00:00:00.000000Z',
-                bigInt: '1000000000000000',
-                bigDecimal: '0.000000000000000001',
-                bytes: '0xaa'
-            }]
+                scalars: [{
+                    id: '1',
+                    bool: true,
+                    date: '2021-09-24T00:00:00.000000Z',
+                    bigInt: '1000000000000000',
+                    bigDecimal: '0.000000000000000001',
+                    bytes: '0xaa'
+                }]
+            })
         })
-    })
 
-    it('not enough columns in result regression', function() {
-        return client.test(`
+        it('not enough columns in result regression', function () {
+            return client.test(`
             query {
                 children {
                     name
@@ -74,28 +75,52 @@ describe('resolvers extension', function () {
                 }
             }
         `, {
-            children: [
-                {
-                    parent: {
-                        name: 'hello'
-                    },
-                    name: 'world'
-                }
-            ]
+                children: [
+                    {
+                        parent: {
+                            name: 'hello'
+                        },
+                        name: 'world'
+                    }
+                ]
+            })
         })
-    })
 
-    it('ping-pong', function() {
-        return client.test(`
+        it('ping-pong', function () {
+            return client.test(`
             query {
                 ping(msg: {message: "hello"}) {
                     message
                 }
             }
         `, {
-            ping: {
-                message: 'hello'
-            }
+                ping: {
+                    message: 'hello'
+                }
+            })
+        })
+    })
+
+    // FIXME multiple describes don't work
+    describe ('validation', () => {
+        describe ('@Arg [String]', () => {
+            it('should pass array', function () {
+                return client.test(`query { stringArray(ids: ["1"]) }`, {stringArray: true})
+            })
+
+            it('should pass string', function () {
+                return client.test(`query { stringArray(ids: "1") }`, {stringArray: true})
+            })
+
+            it('should throw if required arg is missing', function () {
+                return client.httpErrorMatch(`query { stringArray }`, {
+                    errors: [
+                        {
+                            message: `Field "stringArray" argument "ids" of type "[String!]!" is required, but it was not provided.`
+                        }
+                    ]
+                })
+            })
         })
     })
 })

@@ -139,7 +139,6 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
 
                 const lastBlockHeight = this.getBlockHeight(lastBlock)
                 const lastBlockTimestamp = this.getBlockTimestamp(lastBlock)
-
                 prometheus.setLastReceivedBlock(lastBlockHeight, lastBlockTimestamp)
                 this.log().debug(`Received block ${lastBlockHeight} at ${lastBlockTimestamp}`)
 
@@ -204,13 +203,11 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
                     to: this.options().lastBlock
                 }
                 assertRange(range)
-
                 const prometheus = this.prometheus()
                 if (this.options().metrics != null) {
                     let server = await prometheus.serve()
                     this.log().info(`prometheus metrics are available on port ${server.port}`)
                 }
-
                 return this.ingest(range, process.stdout)
             }
         }, err => {

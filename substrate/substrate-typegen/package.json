@@ -3,7 +3,7 @@
   "version": "8.1.0",
   "description": "Generates TypeScript definitions for substrate events and calls",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -20,8 +20,8 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.6.0",
-    "@subsquid/logger": "^1.4.0",
+    "@subsquid/http-client": "^1.8.0",
+    "@subsquid/logger": "^1.5.0",
     "@subsquid/substrate-metadata-explorer": "^3.2.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-code-printer": "^1.2.2",
@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@subsquid/substrate-runtime": "^2.0.1",
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }
 }

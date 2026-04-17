@@ -3,7 +3,7 @@ import {InMemoryLRUCache} from '@apollo/utils.keyvaluecache'
 import {mergeSchemas} from '@graphql-tools/schema'
 import {Logger} from '@subsquid/logger'
 import {Context, OpenreaderContext} from '@subsquid/openreader/lib/context'
-import {DbType, PoolOpenreaderContext} from '@subsquid/openreader/lib/db'
+import {DbType, PoolOpenreaderContext, TransactionIsolationLevel} from '@subsquid/openreader/lib/db'
 import {Dialect, getSchemaBuilder} from '@subsquid/openreader/lib/dialect'
 import type {Model} from '@subsquid/openreader/lib/model'
 import {addServerCleanup, Dispose, runApollo} from '@subsquid/openreader/lib/server'
@@ -12,7 +12,7 @@ import {ResponseSizeLimit} from '@subsquid/openreader/lib/util/limit'
 import {def} from '@subsquid/util-internal'
 import {ListeningServer} from '@subsquid/util-internal-http-server'
 import {isTsNode} from '@subsquid/util-internal-ts-node'
-import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from 'apollo-server-core'
+import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from '@subsquid/apollo-server-core'
 import responseCachePlugin from 'apollo-server-plugin-response-cache'
 import assert from 'assert'
 import {GraphQLInt, GraphQLObjectType, GraphQLSchema, GraphQLString} from 'graphql'
@@ -36,8 +36,10 @@ export interface ServerOptions {
     subscriptions?: boolean
     subscriptionPollInterval?: number
     subscriptionMaxResponseNodes?: number
+    validationMaxErrors?: number
     dumbCache?: DumbRedisCacheOptions | DumbInMemoryCacheOptions
     dialect?: Dialect
+    isolationLevel?: TransactionIsolationLevel
 }
 
 
@@ -97,6 +99,7 @@ export class Server {
             graphiqlConsole: true,
             maxRequestSizeBytes: this.options.maxRequestSizeBytes,
             maxRootFields: this.options.maxRootFields,
+            validationMaxErrors: this.options.validationMaxErrors,
             cache: this.cache()
         })
     }
@@ -242,6 +245,7 @@ export class Server {
                     pool,
                     pool,
                     this.options.subscriptionPollInterval,
+                    this.options.isolationLevel,
                     this.options.log
                 )
             }

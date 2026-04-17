@@ -1,6 +1,27 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Thu, 03 Oct 2024 16:36:15 GMT and should not be manually modified.
+This log was last generated on Wed, 08 Apr 2026 08:23:22 GMT and should not be manually modified.
+
+## 5.5.0
+Wed, 08 Apr 2026 08:23:22 GMT
+
+### Minor changes
+
+- allow to configure transaction isolation level (SERIALIZABLE, REPEATABLE READ, READ COMMITTED)
+
+## 5.4.0
+Tue, 17 Mar 2026 11:47:18 GMT
+
+### Minor changes
+
+- add @disableForeignKeyConstraint directive to suppress FK constraints and expose synthetic {field}Id fields with full filtering support
+
+## 5.3.0
+Mon, 05 May 2025 11:31:26 GMT
+
+### Minor changes
+
+- Allows to specify --validation-max-errors option to abort validation and exit with an error message "Too many validation errors, error limit reached. Validation aborted".
 
 ## 5.2.0
 Thu, 03 Oct 2024 16:36:15 GMT

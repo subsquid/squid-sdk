@@ -16,7 +16,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.149.0",
+  "rushVersion": "5.170.1",
 
   /**
    * The next field selects which package manager should be installed and determines its version.
@@ -120,7 +120,7 @@
    * LTS schedule: https://nodejs.org/en/about/releases/
    * LTS versions: https://nodejs.org/en/download/releases/
    */
-  "nodeSupportedVersionRange": ">=18.13.1 <25.0.0",
+  "nodeSupportedVersionRange": ">=18.13.1",
 
   /**
    * Odd-numbered major versions of Node.js are experimental.  Even-numbered releases
@@ -843,6 +843,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/portal-client",
+      "projectFolder": "util/portal-client",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/logger",
       "projectFolder": "util/logger",
       "shouldPublish": true,
@@ -1099,6 +1105,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "polkavm-erc20",
+      "projectFolder": "test/polkavm-erc20",
+      "shouldPublish": false
+    },
+    {
       "packageName": "@subsquid/starknet-data",
       "projectFolder": "starknet/starknet-data",
       "shouldPublish": true,
@@ -1119,6 +1130,12 @@
     {
       "packageName": "@subsquid/starknet-stream",
       "projectFolder": "starknet/starknet-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/starknet-rpc",
+      "projectFolder": "starknet/starknet-rpc",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },

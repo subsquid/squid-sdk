@@ -1,9 +1,9 @@
 {
   "name": "@subsquid/substrate-processor",
-  "version": "8.5.2",
+  "version": "8.7.0",
   "description": "Data fetcher and mappings executor for substrate chains",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -16,26 +16,26 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.6.0",
-    "@subsquid/logger": "^1.4.0",
-    "@subsquid/rpc-client": "^4.11.0",
-    "@subsquid/substrate-data": "^4.2.1",
+    "@subsquid/http-client": "^1.8.0",
+    "@subsquid/logger": "^1.5.0",
+    "@subsquid/rpc-client": "^4.14.0",
+    "@subsquid/substrate-data": "^4.4.4",
     "@subsquid/substrate-data-raw": "^1.2.0",
     "@subsquid/util-internal": "^3.2.0",
     "@subsquid/util-internal-archive-client": "^0.1.2",
     "@subsquid/util-internal-hex": "^1.2.2",
     "@subsquid/util-internal-ingest-tools": "^1.1.4",
     "@subsquid/util-internal-json": "^1.2.3",
-    "@subsquid/util-internal-processor-tools": "^4.2.1",
+    "@subsquid/util-internal-processor-tools": "^4.4.0",
     "@subsquid/util-internal-range": "^0.3.0",
-    "@subsquid/util-internal-validation": "^0.7.0"
+    "@subsquid/util-internal-validation": "^0.8.0"
   },
   "peerDependencies": {
     "@subsquid/substrate-runtime": "^2.0.1"
   },
   "devDependencies": {
     "@subsquid/substrate-runtime": "^2.0.1",
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }
 }

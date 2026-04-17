@@ -1,0 +1,10 @@
+name: Publish GitHub Releases
+description: Aggregate Rush changelogs into a single date-tagged GitHub release
+
+runs:
+  using: composite
+  steps:
+    - run: node ${{ github.action_path }}/index.js
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}

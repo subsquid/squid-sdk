@@ -32,6 +32,7 @@ const baseSchema = buildASTSchema(parse(`
     directive @fulltext(query: String!) on FIELD_DEFINITION
     directive @cardinality(value: Int!) on OBJECT | FIELD_DEFINITION
     directive @byteWeight(value: Float!) on FIELD_DEFINITION
+    directive @disableForeignKeyConstraint on FIELD_DEFINITION
     directive @variant on OBJECT # legacy
     directive @jsonField on OBJECT # legacy
     scalar ID
@@ -132,6 +133,7 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
         let derivedFrom = checkDerivedFrom(type, f)
         let index = checkFieldIndex(type, f)
         let unique = index?.unique || false
+        let fkConstraint = checkDisableForeignKeyConstraint(type, f)
         let limits = {
             ...checkByteWeightDirective(type, f),
             ...checkCardinalityLimitDirective(type, f)
@@ -199,10 +201,14 @@ function addEntityOrJsonObjectOrInterface(model: Model, type: GraphQLObjectType 
                                 description
                             }
                         } else {
+                            if (fkConstraint.disableConstraint && !nullable) {
+                                throw new SchemaError(`Property ${propName} must be nullable when @disableForeignKeyConstraint is applied`)
+                            }
                             properties[key] = {
                                 type: {
                                     kind: 'fk',
-                                    entity: fieldType.name
+                                    entity: fieldType.name,
+                                    ...fkConstraint
                                 },
                                 nullable,
                                 unique,
@@ -506,6 +512,30 @@ function checkCardinalityLimitDirective(type: GraphQLNamedType, f: GraphQLField<
         `Incorrect @cardinality where applied to ${type.name}.${f.name}. Cardinality value must be positive.`
     )
     return {cardinality}
+}
+
+
+function checkDisableForeignKeyConstraint(type: GraphQLNamedType, f: GraphQLField<any, any>): {disableConstraint?: boolean} {
+    let directives = f.astNode?.directives?.filter(d => d.name.value == 'disableForeignKeyConstraint') || []
+    if (directives.length == 0) return {}
+    if (!isEntityType(type)) throw new SchemaError(
+        `@disableForeignKeyConstraint was applied to ${type.name}.${f.name}, but only entity fields can have this directive`
+    )
+    if (directives.length > 1) throw new SchemaError(
+        `Multiple @disableForeignKeyConstraint directives were applied to ${type.name}.${f.name}`
+    )
+    let fieldType = asNonNull(f)
+    let list = unwrapList(fieldType)
+    if (list.nulls.length > 0) throw new SchemaError(
+        `@disableForeignKeyConstraint was applied to ${type.name}.${f.name}, but list fields cannot have this directive`
+    )
+    if (!isEntityType(list.item)) throw new SchemaError(
+        `@disableForeignKeyConstraint was applied to ${type.name}.${f.name}, but only foreign key fields can have this directive`
+    )
+    if (f.astNode?.directives?.some(d => d.name.value == 'derivedFrom')) throw new SchemaError(
+        `@disableForeignKeyConstraint was applied to ${type.name}.${f.name}, but @derivedFrom fields cannot have this directive`
+    )
+    return {disableConstraint: true}
 }
 
 

@@ -1,0 +1,22 @@
+{
+  "name": "@subsquid/starknet-rpc",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/starknet-rpc_v0.0.1",
+      "date": "Thu, 21 Aug 2025 10:51:03 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "Initial starknet RPC interface implementation"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-data\" from `^0.0.2` to `0.1.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

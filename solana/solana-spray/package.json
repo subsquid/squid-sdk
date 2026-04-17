@@ -1,9 +1,9 @@
 {
   "name": "@subsquid/solana-spray",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Subsquid Spray service client",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -16,12 +16,12 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/rpc-client": "^4.11.0",
+    "@subsquid/rpc-client": "^4.14.0",
     "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-validation": "^0.7.0"
+    "@subsquid/util-internal-validation": "^0.8.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }
 }

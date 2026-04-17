@@ -2,6 +2,60 @@
   "name": "@subsquid/evm-typegen",
   "entries": [
     {
+      "version": "4.6.0",
+      "tag": "@subsquid/evm-typegen_v4.6.0",
+      "date": "Mon, 26 Jan 2026 19:17:25 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "use SQD Etherscan proxy by default when no API key is provided"
+          },
+          {
+            "comment": "deprecate `--etherscan-chain-id` in favor of `--chain-id`"
+          },
+          {
+            "comment": "support named chain identifiers in `--chain-id` option (e.g., `ethereum`, `polygon`, `arbitrum`)"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.5.1",
+      "tag": "@subsquid/evm-typegen_v4.5.1",
+      "date": "Thu, 20 Nov 2025 16:46:01 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix multicall result array flattening"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.5.0",
+      "tag": "@subsquid/evm-typegen_v4.5.0",
+      "date": "Mon, 17 Nov 2025 08:42:47 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "support etherscan v2 API"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.4.0",
+      "tag": "@subsquid/evm-typegen_v4.4.0",
+      "date": "Thu, 24 Apr 2025 15:09:16 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "concurently fetch multicall pages"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.3.0",
       "tag": "@subsquid/evm-typegen_v4.3.0",
       "date": "Thu, 27 Jun 2024 09:24:39 GMT",

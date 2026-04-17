@@ -1,9 +1,9 @@
 {
   "name": "@subsquid/http-client",
-  "version": "1.6.0",
+  "version": "1.8.0",
   "description": "Small convenience layer on top of fetch",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -18,12 +18,12 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/logger": "^1.4.0",
+    "@subsquid/logger": "^1.5.0",
     "@subsquid/util-internal": "^3.2.0",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }
 }

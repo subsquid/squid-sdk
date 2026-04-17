@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-ingest-cli
 
-This log was last generated on Mon, 07 Oct 2024 08:48:33 GMT and should not be manually modified.
+This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+
+## 0.2.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- Add prometheus metrics integration for block ingestion monitoring and processing statistics
 
 ## 0.1.1
 Mon, 07 Oct 2024 08:48:33 GMT

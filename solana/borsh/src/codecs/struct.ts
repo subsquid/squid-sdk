@@ -1,13 +1,12 @@
 import {Codec, GetCodecType} from '../codec'
 import {Sink} from '../sink'
 import {Src} from '../src'
-import {AddOptionToUndefined, Simplify} from '../type-util'
 import {propAccess, propName} from '../util'
 
 
-export type GetStructType<Props> = Simplify<AddOptionToUndefined<{
+export type GetStructType<Props> = {
     [K in keyof Props]: GetCodecType<Props[K]>
-}>>
+}
 
 
 type Props<S> = {

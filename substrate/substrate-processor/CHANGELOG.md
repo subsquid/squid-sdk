@@ -1,6 +1,25 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Tue, 03 Dec 2024 11:47:42 GMT and should not be manually modified.
+This log was last generated on Wed, 18 Mar 2026 10:55:26 GMT and should not be manually modified.
+
+## 8.7.0
+Wed, 18 Mar 2026 10:55:26 GMT
+
+### Minor changes
+
+- add `setPrometheusServer()` method, deprecate `setPrometheusPort()`
+
+## 8.6.1
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
+
+## 8.6.0
+Tue, 18 Mar 2025 10:45:46 GMT
+
+### Minor changes
+
+- add special support for `Revive.ContractEmitted` event
 
 ## 8.5.2
 Tue, 03 Dec 2024 11:47:42 GMT

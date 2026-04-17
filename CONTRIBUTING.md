@@ -1,6 +1,6 @@
 # Contributing to Subsquid
 
-Subsquid mono-repo is managed by [rush](https://rushjs.io). 
+Subsquid mono-repo is managed by [rush](https://rushjs.io).
 The setup is pretty standard for rush projects. All information from
 [rush docs](https://rushjs.io/pages/developer/new_developer/) is applicable here.
 
@@ -11,11 +11,11 @@ The setup is pretty standard for rush projects. All information from
 Subsquid repository contains a number of large test data files,
 which are stored as [git LFS](https://git-lfs.github.com) objects.
 
-It can make sense to skip downloading those files by setting 
+It can make sense to skip downloading those files by setting
 `GIT_LFS_SKIP_SMUDGE` environment variable.
 
 ```bash
-GIT_LFS_SKIP_SMUDGE=1 git clone git@github.com:subsquid/squid.git
+GIT_LFS_SKIP_SMUDGE=1 git clone git@github.com:subsquid/squid-sdk.git
 ```
 
 ### 2. Install rush

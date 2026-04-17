@@ -30,7 +30,7 @@ const dataSource = new DataSourceBuilder()
     //
     // NOTE, that block ranges are specified in heights, not in slots !!!
     //
-    .setBlockRange({from: 297875748, to: 297875753})
+    .setBlockRange({from: 279_671_300})
     //
     // Block data returned by the data source has the following structure:
     //

@@ -13,7 +13,7 @@
     "@subsquid/util-internal-code-printer": "^1.2.2"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }
 }

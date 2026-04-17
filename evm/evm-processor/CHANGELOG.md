@@ -1,6 +1,47 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Fri, 03 Jan 2025 11:41:05 GMT and should not be manually modified.
+This log was last generated on Mon, 13 Apr 2026 13:57:31 GMT and should not be manually modified.
+
+## 1.29.1
+Mon, 13 Apr 2026 13:57:31 GMT
+
+### Patches
+
+- retry on "not currently canonical" error from eth_getBlockByHash and debug_traceBlockByHash
+- retry on out-of-range errors from eth_getLogs
+
+## 1.29.0
+Wed, 18 Mar 2026 10:55:26 GMT
+
+### Minor changes
+
+- add `setPrometheusServer()` method, deprecate `setPrometheusPort()`
+
+## 1.28.0
+Wed, 21 Jan 2026 13:21:57 GMT
+
+### Minor changes
+
+- add `query exceeds max results` error handling during logs ingestion
+
+## 1.27.3
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
+
+## 1.27.2
+Thu, 26 Jun 2025 12:47:04 GMT
+
+### Patches
+
+- fix name collision in debug frame schema builder
+
+## 1.27.1
+Fri, 28 Mar 2025 11:16:14 GMT
+
+### Patches
+
+- use zero address as a default value for suicide trace refund address
 
 ## 1.27.0
 Fri, 03 Jan 2025 11:41:05 GMT

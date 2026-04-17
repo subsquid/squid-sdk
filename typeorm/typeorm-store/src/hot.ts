@@ -1,6 +1,7 @@
 import {assertNotNull} from '@subsquid/util-internal'
 import type {EntityManager, EntityMetadata} from 'typeorm'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
+import {escapeIdentifier} from './misc'
 import {Entity, EntityClass} from './store'
 
 
@@ -12,18 +13,21 @@ export interface RowRef {
 
 export interface InsertRecord extends RowRef {
     kind: 'insert'
+    schema?: string
 }
 
 
 export interface DeleteRecord extends RowRef {
     kind: 'delete'
     fields: Record<string, any>
+    schema?: string
 }
 
 
 export interface UpdateRecord extends RowRef {
     kind: 'update'
     fields: Record<string, any>
+    schema?: string
 }
 
 
@@ -157,7 +161,7 @@ export class ChangeTracker {
     }
 
     private escape(name: string): string {
-        return escape(this.em, name)
+        return escapeIdentifier(this.em, name)
     }
 }
 
@@ -167,7 +171,7 @@ export async function rollbackBlock(
     em: EntityManager,
     blockHeight: number
 ): Promise<void> {
-    let schema = escape(em, statusSchema)
+    let schema = escapeIdentifier(em, statusSchema)
 
     let changes: ChangeRow[] = await em.query(
         `SELECT block_height, index, change FROM ${schema}.hot_change_log WHERE block_height = $1 ORDER BY index DESC`,
@@ -175,42 +179,48 @@ export async function rollbackBlock(
     )
 
     for (let rec of changes) {
-        let {table, id} = rec.change
-        table = escape(em, table)
-        switch(rec.change.kind) {
-            case 'insert':
-                await em.query(`DELETE FROM ${table} WHERE id = $1`, [id])
+        let ch = rec.change
+        let {id} = ch
+        switch (ch.kind) {
+            case 'insert': {
+                let fromTable = ch.schema
+                    ? `${escapeIdentifier(em, ch.schema)}.${escapeIdentifier(em, ch.table)}`
+                    : escapeIdentifier(em, ch.table)
+                await em.query(`DELETE FROM ${fromTable} WHERE id = $1`, [id])
                 break
+            }
             case 'update': {
-                let setPairs = Object.keys(rec.change.fields).map((column, idx) => {
-                    return `${escape(em, column)} = $${idx + 1}`
+                let fromTable = ch.schema
+                    ? `${escapeIdentifier(em, ch.schema)}.${escapeIdentifier(em, ch.table)}`
+                    : escapeIdentifier(em, ch.table)
+                let setPairs = Object.keys(ch.fields).map((column, idx) => {
+                    return `${escapeIdentifier(em, column)} = $${idx + 1}`
                 })
                 if (setPairs.length) {
                     await em.query(
-                        `UPDATE ${table} SET ${setPairs.join(', ')} WHERE id = $${setPairs.length + 1}`,
-                        [...Object.values(rec.change.fields), id]
+                        `UPDATE ${fromTable} SET ${setPairs.join(', ')} WHERE id = $${setPairs.length + 1}`,
+                        [...Object.values(ch.fields), id]
                     )
                 }
                 break
             }
             case 'delete': {
-                let columns = ['id', ...Object.keys(rec.change.fields)].map(col => escape(em, col))
+                let fromTable = ch.schema
+                    ? `${escapeIdentifier(em, ch.schema)}.${escapeIdentifier(em, ch.table)}`
+                    : escapeIdentifier(em, ch.table)
+                let columns = ['id', ...Object.keys(ch.fields)].map(col => escapeIdentifier(em, col))
                 let values = columns.map((col, idx) => `$${idx + 1}`)
                 await em.query(
-                    `INSERT INTO ${table} (${columns}) VALUES (${values.join(', ')})`,
-                    [id, ...Object.values(rec.change.fields)]
+                    `INSERT INTO ${fromTable} (${columns}) VALUES (${values.join(', ')})`,
+                    [id, ...Object.values(ch.fields)]
                 )
                 break
             }
         }
     }
 
+    await em.query(`DELETE FROM ${schema}.template_registry WHERE height = $1`, [blockHeight])
     await em.query(`DELETE FROM ${schema}.hot_block WHERE height = $1`, [blockHeight])
-}
-
-
-function escape(em: EntityManager, name: string): string {
-    return em.connection.driver.escape(name)
 }
 
 

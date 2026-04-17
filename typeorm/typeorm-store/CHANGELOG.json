@@ -2,6 +2,66 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "1.9.0",
+      "tag": "@subsquid/typeorm-store_v1.9.0",
+      "date": "Thu, 16 Apr 2026 08:15:17 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "group unfinalized hot blocks to prevent transaction timeouts when processing large batches"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.8.1",
+      "tag": "@subsquid/typeorm-store_v1.8.1",
+      "date": "Wed, 15 Apr 2026 14:45:11 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "re-export `Relation` from typeorm for ESM relation typings"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.8.0",
+      "tag": "@subsquid/typeorm-store_v1.8.0",
+      "date": "Sun, 05 Apr 2026 22:03:07 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add template registry persistence"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.7.0",
+      "tag": "@subsquid/typeorm-store_v1.7.0",
+      "date": "Thu, 05 Feb 2026 16:31:55 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "relax chain continuity check to support chains with gaps"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.6.0",
+      "tag": "@subsquid/typeorm-store_v1.6.0",
+      "date": "Fri, 12 Dec 2025 12:00:23 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "extract datasource creation in TypeormDatabase"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.5.1",
       "tag": "@subsquid/typeorm-store_v1.5.1",
       "date": "Thu, 09 May 2024 15:10:28 GMT",

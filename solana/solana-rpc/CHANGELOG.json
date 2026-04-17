@@ -2,6 +2,69 @@
   "name": "@subsquid/solana-rpc",
   "entries": [
     {
+      "version": "0.1.3",
+      "tag": "@subsquid/solana-rpc_v0.1.3",
+      "date": "Sat, 09 Aug 2025 06:10:24 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^0.2.0` to `0.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.7.0` to `0.8.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.12.0` to `4.13.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.12.0` to `4.13.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.2",
+      "tag": "@subsquid/solana-rpc_v0.1.2",
+      "date": "Fri, 04 Jul 2025 17:08:54 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^0.1.0` to `0.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.1",
+      "tag": "@subsquid/solana-rpc_v0.1.1",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^0.0.3` to `0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.11.0` to `4.12.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.11.0` to `4.12.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/solana-rpc_v0.1.0",
+      "date": "Wed, 14 May 2025 19:46:11 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to configure max number of confirmation attempts"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.4",
       "tag": "@subsquid/solana-rpc_v0.0.4",
       "date": "Wed, 15 Jan 2025 18:59:13 GMT",

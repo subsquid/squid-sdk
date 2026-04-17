@@ -59,6 +59,8 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
     protected abstract getParentBlockHash(block: B): string
     protected abstract getBlockTimestamp(block: B): number
 
+    protected abstract getBlockTimestamp(block: B): number
+
     protected setUpProgram(program: Command): void {}
 
     protected getDefaultChunkSize(): number {

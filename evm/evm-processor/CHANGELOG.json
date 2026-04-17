@@ -2,6 +2,95 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.29.1",
+      "tag": "@subsquid/evm-processor_v1.29.1",
+      "date": "Mon, 13 Apr 2026 13:57:31 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "retry on \"not currently canonical\" error from eth_getBlockByHash and debug_traceBlockByHash"
+          },
+          {
+            "comment": "retry on out-of-range errors from eth_getLogs"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.29.0",
+      "tag": "@subsquid/evm-processor_v1.29.0",
+      "date": "Wed, 18 Mar 2026 10:55:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `setPrometheusServer()` method, deprecate `setPrometheusPort()`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.4.0` to `1.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^4.2.1` to `4.3.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.28.0",
+      "tag": "@subsquid/evm-processor_v1.28.0",
+      "date": "Wed, 21 Jan 2026 13:21:57 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `query exceeds max results` error handling during logs ingestion"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.27.3",
+      "tag": "@subsquid/evm-processor_v1.27.3",
+      "date": "Sat, 09 Aug 2025 06:10:24 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.6.0` to `1.6.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.12.0` to `4.13.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.7.0` to `0.8.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.27.2",
+      "tag": "@subsquid/evm-processor_v1.27.2",
+      "date": "Thu, 26 Jun 2025 12:47:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix name collision in debug frame schema builder"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.27.1",
+      "tag": "@subsquid/evm-processor_v1.27.1",
+      "date": "Fri, 28 Mar 2025 11:16:14 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "use zero address as a default value for suicide trace refund address"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.27.0",
       "tag": "@subsquid/evm-processor_v1.27.0",
       "date": "Fri, 03 Jan 2025 11:41:05 GMT",

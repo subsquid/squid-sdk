@@ -1,5 +1,6 @@
+import {Runtime} from '@subsquid/substrate-runtime'
 import {closedEnum, struct, unknown} from '@subsquid/substrate-runtime/lib/sts'
-import {Call} from '../../interfaces/data'
+import {Call, Event} from '../../interfaces/data'
 import {Address} from '../../types/system'
 import {assertCall, isEvent, UnexpectedEventType} from '../../types/util'
 import {addressOrigin} from '../util'
@@ -21,7 +22,13 @@ const ProxyExecutedLatest = struct({result: Result})
 const ProxyExecutedLegacy = Result
 
 
+function PROXY_EXECUTED(runtime: Runtime, event: Event): boolean {
+    return event.name == 'Proxy.ProxyExecuted'
+}
+
+
 export function visitProxy(cp: CallParser, call: Call): void {
+    if (!cp.isPresent(PROXY_EXECUTED)) return
     let sub = getSubcall(cp, call)
     return cp.visitSubcall(sub, (runtime, event) => {
         if (event.name != 'Proxy.ProxyExecuted') return

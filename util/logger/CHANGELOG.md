@@ -1,6 +1,13 @@
 # Change Log - @subsquid/logger
 
-This log was last generated on Mon, 10 Feb 2025 07:46:03 GMT and should not be manually modified.
+This log was last generated on Wed, 18 Mar 2026 10:55:26 GMT and should not be manually modified.
+
+## 1.5.0
+Wed, 18 Mar 2026 10:55:26 GMT
+
+### Minor changes
+
+- add support for pino-like sinks
 
 ## 1.4.0
 Mon, 10 Feb 2025 07:46:03 GMT

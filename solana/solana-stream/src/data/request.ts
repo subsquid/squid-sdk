@@ -29,6 +29,8 @@ export interface TransactionRequestWhere {
 export interface TransactionRequestRelations {
     instructions?: boolean
     logs?: boolean
+    balances?: boolean
+    tokenBalances?: boolean
 }
 
 /**
