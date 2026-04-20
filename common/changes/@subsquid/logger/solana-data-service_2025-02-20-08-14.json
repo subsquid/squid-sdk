@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/logger",
+      "comment": "do not exclude reserved log record properties, but include them with `_` prefix",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/logger"
+}

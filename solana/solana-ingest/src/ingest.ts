@@ -1,13 +1,15 @@
+import {createLogger} from '@subsquid/logger'
+import {archive, Journal, mapRpcBlock} from '@subsquid/solana-normalization'
+import {GetBlock, removeVoteTransactions} from '@subsquid/solana-rpc-data'
 import {addErrorContext, def} from '@subsquid/util-internal'
 import {Command, Ingest, IngestOptions, Range} from '@subsquid/util-internal-ingest-cli'
 import {toJSON} from '@subsquid/util-internal-json'
-import {RawBlock, removeVoteTransactions} from './mapping'
-import {assertValidity} from '@subsquid/util-internal-validation'
-import {mapRpcBlock} from '@subsquid/solana-normalization'
+import {assertValidity, B58, NAT, object} from '@subsquid/util-internal-validation'
 
 
 interface Options extends IngestOptions {
     votes: boolean
+    relaxed?: boolean
 }
 
 
@@ -28,11 +30,31 @@ export class SolanaIngest extends Ingest<Options> {
             }
         })
         program.option('--no-votes', 'Exclude vote transactions')
+        program.option('--relaxed', 'Do not crush on log parsing failure')
     }
 
     @def
     private mapping(): (raw: unknown) => object {
         let votes = this.options().votes
+        let relaxed = this.options().relaxed
+
+        let RawBlock = object({
+            hash: B58,
+            number: NAT,
+            parentNumber: NAT,
+            block: GetBlock
+        })
+
+        let loggingJournal = createLogger('sqd:solana-normalization')
+
+        let failingJournal: Journal = {
+            warn: function(props: any, msg: string): void {
+                throw addErrorContext(new Error(msg), props)
+            },
+            error: function(props: any, msg: string): void {
+                throw addErrorContext(new Error(msg), props)
+            }
+        }
 
         return function mapRawBlock(raw: unknown): object {
             assertValidity(RawBlock, raw)
@@ -41,32 +63,35 @@ export class SolanaIngest extends Ingest<Options> {
                 removeVoteTransactions(raw.block)
             }
 
-            let normalized = mapRpcBlock(raw, {
-                warn: function(props: any, msg: string): void {
-                    throw addErrorContext(new Error(msg), props)
-                },
-                error: function(props: any, msg: string): void {
-                    throw addErrorContext(new Error(msg), props)
-                }
-            })
+            let journal = relaxed ? loggingJournal.child({
+                blockSlot: raw.number,
+                blockHash: raw.hash
+            }) : failingJournal
 
-            return normalized
+            let normalized = mapRpcBlock(raw.number, raw.block, journal)
+
+            return archive.toArchiveBlock(normalized)
         }
     }
 
     protected async *getBlocks(range: Range): AsyncIterable<object[]> {
         let mapping = this.mapping()
 
-        for await (let blocks of this.archive().getRawBlocks<RawBlock>(range)) {
-            yield blocks.map(raw => {
+        let stream = this.archive().getRawBlocks({
+            ...range,
+            chunksLimit: this.isService() ? 10 : Number.MAX_SAFE_INTEGER
+        })
+
+        for await (let batch of stream) {
+            yield batch.map(raw => {
                 try {
                     let block = mapping(raw)
                     return toJSON(block)
                 } catch(err: any) {
+                    let block = raw as any ?? {}
                     throw addErrorContext(err, {
-                        blockHash: raw.hash,
-                        blockHeight: raw.height,
-                        blockSlot: raw.slot
+                        blockNumber: block.number,
+                        blockHash: block.hash
                     })
                 }
             })
@@ -74,7 +99,7 @@ export class SolanaIngest extends Ingest<Options> {
     }
 
     protected getBlockHeight(block: any): number {
-        return Number(block.header.height) || 0
+        return Number(block.header.number) || 0
     }
 
     protected getBlockTimestamp(block: any): number {

@@ -26,7 +26,7 @@
     "@subsquid/util-internal-ingest-cli": "^0.2.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@types/node": "^24.0.0",
+    "typescript": "5.5.4"
   }
 }

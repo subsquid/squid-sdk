@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "simplify instruction parsing procedure",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "allow to forgive log <-> instruction matching errors",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/solana-normalization"
+}

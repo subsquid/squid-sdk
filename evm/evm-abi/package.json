@@ -21,9 +21,9 @@
     "keccak256": "^1.0.6"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "ethers": "^6.9.0",
-    "typescript": "~5.5.4",
+    "typescript": "5.5.4",
     "viem": "^2.8.14",
     "vitest": "^1.4.0"
   }

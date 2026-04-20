@@ -14,7 +14,6 @@ export interface FinalTxInfo {
 
 export interface FinalDatabase<S> {
     supportsHotBlocks?: false
-    supportsTemplates?: boolean
     connect(): Promise<FinalDatabaseState>
     transact(info: FinalTxInfo, cb: (store: S) => Promise<DatabaseTransactResult | void>): Promise<void>
 }
@@ -41,7 +40,6 @@ export interface HotTxInfo {
 
 export interface HotDatabase<S> {
     supportsHotBlocks: true
-    supportsTemplates?: boolean
     connect(): Promise<HotDatabaseState>
     transact(info: FinalTxInfo, cb: (store: S) => Promise<DatabaseTransactResult | void>): Promise<void>
 

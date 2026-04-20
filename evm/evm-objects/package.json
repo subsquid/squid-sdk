@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@subsquid/evm-stream": "^0.0.0",
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@types/node": "^24.0.0",
+    "typescript": "5.5.4"
   }
 }

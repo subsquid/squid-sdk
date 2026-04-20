@@ -14,9 +14,9 @@
     "semver": "^7.5.4"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "@types/semver": "^7.5.6",
     "type-fest": "^2.19.0",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4"
   }
 }

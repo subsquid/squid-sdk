@@ -1,5 +1,6 @@
 import {
     ANY,
+    ANY_INT,
     ANY_NAT,
     array,
     B58,
@@ -7,7 +8,6 @@ import {
     BIG_NAT,
     constant,
     GetSrcType,
-    INT,
     NAT,
     nullable,
     object,
@@ -72,7 +72,7 @@ export type TokenBalance = GetSrcType<typeof TokenBalance>
 
 export const Reward = object({
     pubkey: B58,
-    lamports: INT,
+    lamports: ANY_INT,
     postBalance: ANY_NAT,
     rewardType: option(STRING),
     commission: option(NAT)
@@ -84,6 +84,7 @@ export type Reward = GetSrcType<typeof Reward>
 
 export const TransactionMeta = object({
     computeUnitsConsumed: option(ANY_NAT),
+    costUnits: option(ANY_NAT),
     err: ANY,
     fee: ANY_NAT,
     preBalances: array(ANY_NAT),

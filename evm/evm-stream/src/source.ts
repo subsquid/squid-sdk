@@ -1,8 +1,8 @@
 import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
 import {def} from '@subsquid/util-internal'
-import {BlockBatch, BlockRef, DataSource, DataSourceStreamOptions, TemplateRegistry} from '@subsquid/util-internal-data-source'
+import {BlockBatch, BlockRef, DataSource, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
-import {applyRangeBound, FiniteRange, mergeRangeRequests, Range, rangeIntersection, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
+import {applyRangeBound, FiniteRange, mergeRangeRequests, Range, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {PortalDataSource} from './portal/source'
 import {Block, DEFAULT_FIELDS, FieldSelection} from './data/model'
@@ -13,15 +13,8 @@ interface BlockRange {
     range?: Range
 }
 
-interface TemplateSpec<F extends FieldSelection> {
-    key: string
-    range?: Range
-    resolve(value: string): DataRequest<F>
-}
-
 export class DataSourceBuilder<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest<F>>[] = []
-    private templates: TemplateSpec<F>[] = []
     private fields?: F
     private blockRange?: Range
     private portal?: PortalClient | PortalClientOptions
@@ -81,67 +74,31 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         return this
     }
 
-    addLog(options: LogRequest & BlockRange): this
-    addLog(key: string, options: LogRequest & BlockRange): this
-    addLog(keyOrOptions: string | (LogRequest & BlockRange), options?: LogRequest & BlockRange): this {
-        if (typeof keyOrOptions === 'string') {
-            let {range, ...log} = options!
-            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
-                logs: [{...log, where: {...log.where, address: [value]}}],
-            })})
-            return this
-        }
-        let {range, ...req} = keyOrOptions
+    addLog(options: LogRequest & BlockRange): this {
+        let {range, ...req} = options
         this.add(range, {logs: [req]})
         return this
     }
 
-    addTransaction(options: TransactionRequest & BlockRange): this
-    addTransaction(key: string, options: TransactionRequest & BlockRange): this
-    addTransaction(keyOrOptions: string | (TransactionRequest & BlockRange), options?: TransactionRequest & BlockRange): this {
-        if (typeof keyOrOptions === 'string') {
-            let {range, ...transaction} = options!
-            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
-                transactions: [{...transaction, where: {...transaction.where, to: [value]}}],
-            })})
-            return this
-        }
-        let {range, ...req} = keyOrOptions
+    addTransaction(options: TransactionRequest & BlockRange): this {
+        let {range, ...req} = options
         this.add(range, {transactions: [req]})
         return this
     }
 
-    addTrace(options: TraceRequest & BlockRange): this
-    addTrace(key: string, options: TraceRequest & BlockRange): this
-    addTrace(keyOrOptions: string | (TraceRequest & BlockRange), options?: TraceRequest & BlockRange): this {
-        if (typeof keyOrOptions === 'string') {
-            let {range, ...trace} = options!
-            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
-                traces: [{...trace, where: {...trace.where, callTo: [value]}}],
-            })})
-            return this
-        }
-        let {range, ...req} = keyOrOptions
+    addTrace(options: TraceRequest & BlockRange): this {
+        let {range, ...req} = options
         this.add(range, {traces: [req]})
         return this
     }
 
-    addStateDiff(options: StateDiffRequest & BlockRange): this
-    addStateDiff(key: string, options: StateDiffRequest & BlockRange): this
-    addStateDiff(keyOrOptions: string | (StateDiffRequest & BlockRange), options?: StateDiffRequest & BlockRange): this {
-        if (typeof keyOrOptions === 'string') {
-            let {range, ...stateDiff} = options!
-            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
-                stateDiffs: [{...stateDiff, where: {...stateDiff.where, address: [value]}}],
-            })})
-            return this
-        }
-        let {range, ...req} = keyOrOptions
+    addStateDiff(options: StateDiffRequest & BlockRange): this {
+        let {range, ...req} = options
         this.add(range, {stateDiffs: [req]})
         return this
     }
 
-    private getRequests(registry: TemplateRegistry | undefined): RangeRequestList<DataRequest<F>> {
+    private getRequests(): RangeRequestList<DataRequest<F>> {
 
         function concat<T>(a?: T[], b?: T[]): T[] | undefined {
             let result: T[] = []
@@ -155,16 +112,6 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         }
 
         let mergedInputs: RangeRequest<DataRequest<F>>[] = this.requests.slice()
-
-        if (registry) {
-            for (let spec of this.templates) {
-                for (let entry of registry.get(spec.key)) {
-                    let range = rangeIntersection(spec.range ?? {from: 0}, entry.range)
-                    if (!range) continue
-                    mergedInputs.push({range, request: spec.resolve(entry.value)})
-                }
-            }
-        }
 
         let requests = mergeRangeRequests(mergedInputs, (a, b) => {
             return {
@@ -196,7 +143,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
 
         let portal = this.portal instanceof PortalClient ? this.portal : new PortalClient(this.portal)
         return new EVMDataSource(
-            (reg) => this.getRequests(reg),
+            () => this.getRequests(),
             portal
         )
     }
@@ -233,15 +180,15 @@ export type GetDataSourceBlock<T> = T extends DataSource<infer B> ? B : never
 
 export class EVMDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
     constructor(
-        private _resolveRequests: (registry: TemplateRegistry | undefined) => RangeRequestList<DataRequest<F>>,
+        private _resolveRequests: () => RangeRequestList<DataRequest<F>>,
         private portal: PortalClient,
     ) {}
 
-    getHead(): Promise<BlockRef | undefined> {
+    getHead(): Promise<BlockRef> {
         return this.createArchive().getHead()
     }
 
-    getFinalizedHead(): Promise<BlockRef | undefined> {
+    getFinalizedHead(): Promise<BlockRef> {
         return this.createArchive().getFinalizedHead()
     }
 

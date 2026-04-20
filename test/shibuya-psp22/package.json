@@ -21,7 +21,7 @@
     "@subsquid/ink-typegen": "^3.1.0",
     "@subsquid/substrate-typegen": "^8.1.0",
     "@subsquid/typeorm-codegen": "^2.2.0",
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@types/node": "^24.0.0",
+    "typescript": "5.5.4"
   }
 }

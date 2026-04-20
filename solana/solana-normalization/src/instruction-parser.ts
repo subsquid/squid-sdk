@@ -5,6 +5,7 @@ import {Instruction, LogMessage} from './data'
 import {Message, parseLogMessage} from './log-parser'
 import {TransactionContext} from './transaction-context'
 
+
 const PROGRAMS_MISSING_INVOKE_LOG = new Set([
     'AddressLookupTab1e1111111111111111111111111',
     'BPFLoader1111111111111111111111111111111111',
@@ -16,7 +17,6 @@ const PROGRAMS_MISSING_INVOKE_LOG = new Set([
     'ZkTokenProof1111111111111111111111111111111',
     'Secp256r1SigVerify1111111111111111111111111',
     'ComputeBudget111111111111111111111111111111',
-    '11111111111111111111111111111111',
 ])
 
 export class ParsingError {
@@ -63,6 +63,7 @@ export class MessageStream {
         return this.pos < this.messages.length
     }
 }
+
 
 export class InstructionTreeTraversal {
     private lastAddress: number[]
@@ -153,7 +154,7 @@ export class InstructionTreeTraversal {
         assert(result.kind === 'invoke-result')
         this.assert(
             result.programId === ins.programId,
-            "invoke result message and instruction program ids don't match",
+            'invoke result message and instruction program ids don\'t match',
             pos
         )
         ins.error = result.error
@@ -204,7 +205,7 @@ export class InstructionTreeTraversal {
     private takeInstructionMessages(ins: Instruction, pos: number): void {
         while (this.messages.unfinished) {
             let msg = this.messages.current
-            switch (msg.kind) {
+            switch(msg.kind) {
                 case 'log':
                 case 'data':
                 case 'other':
@@ -241,7 +242,7 @@ export class InstructionTreeTraversal {
     private dropNonInvokeMessages(): void {
         while (this.messages.unfinished) {
             let msg = this.messages.current
-            switch (msg.kind) {
+            switch(msg.kind) {
                 case 'log':
                 case 'data':
                 case 'cu':
@@ -325,7 +326,7 @@ export class InstructionTreeTraversal {
             transactionIndex: this.tx.transactionIndex,
             instructionAddress: address,
             programId: this.tx.getAccount(ins.programIdIndex),
-            accounts: ins.accounts.map((a) => this.tx.getAccount(a)),
+            accounts: ins.accounts.map(a => this.tx.getAccount(a)),
             data: ins.data,
             isCommitted: this.tx.isCommitted,
             hasDroppedLogMessages: false,

@@ -19,7 +19,7 @@
     "@subsquid/evm-codec": "^0.3.0",
     "@subsquid/evm-abi": "^0.3.1",
     "@subsquid/typeorm-codegen": "^2.2.0",
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@types/node": "^24.0.0",
+    "typescript": "5.5.4"
   }
 }

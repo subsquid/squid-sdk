@@ -2,10 +2,12 @@ import * as rpc from '@subsquid/solana-rpc-data'
 import {Base58Bytes} from '@subsquid/solana-rpc-data'
 import assert from 'assert'
 
+
 export interface Journal {
     warn(props: any, msg: string): void
     error(props: any, msg: string): void
 }
+
 
 export class TransactionContext {
     public readonly erroredInstruction: number
@@ -37,7 +39,7 @@ export class TransactionContext {
                 this.erroredInstruction = tx.transaction.message.instructions.length
                 this.warn({transactionError: err}, 'got InstructionError of unrecognized shape')
             }
-            switch (type) {
+            switch(type) {
                 case 'AccountNotExecutable':
                 case 'CallDepth':
                 case 'MissingAccount':
@@ -73,27 +75,22 @@ export class TransactionContext {
     }
 
     warn(props: any, msg: string): void {
-        this.journal.warn(
-            {
-                transactionHash: this.transactionHash,
-                transactionIndex: this.transactionIndex,
-                ...props,
-            },
-            msg
-        )
+        this.journal.warn({
+            transactionHash: this.transactionHash,
+            transactionIndex: this.transactionIndex,
+            ...props
+        }, msg)
     }
 
     error(props: any, msg: string): void {
-        this.journal.error(
-            {
-                transactionHash: this.transactionHash,
-                transactionIndex: this.transactionIndex,
-                ...props,
-            },
-            msg
-        )
+        this.journal.error({
+            transactionHash: this.transactionHash,
+            transactionIndex: this.transactionIndex,
+            ...props
+        }, msg)
     }
 }
+
 
 function isInstructionError(err: unknown): err is {InstructionError: [number, string]} {
     return typeof err == 'object' && err != null && 'InstructionError' in err

@@ -1,0 +1,87 @@
+#!/bin/bash
+
+set -euo pipefail
+
+images=("$@")
+
+platform="${PLATFORM:-linux/amd64}"
+
+all_images=(
+    "bitcoin/bitcoin-dump"
+    "bitcoin/bitcoin-ingest"
+    "bitcoin/bitcoin-data-service"
+    "evm/evm-dump"
+    "evm/evm-ingest"
+    "evm/evm-data-service"
+    "solana/solana-dump"
+    "solana/solana-ingest"
+    "solana/solana-data-service"
+    "substrate/substrate-dump"
+    "substrate/substrate-ingest"
+    "substrate/substrate-metadata-service"
+    "tron/tron-dump"
+    "tron/tron-ingest"
+    "fuel/fuel-dump"
+    "fuel/fuel-ingest"
+    "hyperliquid/hyperliquid-fills-data-service"
+    "hyperliquid/hyperliquid-fills-ingest"
+    "hyperliquid/hyperliquid-replica-cmds-ingest"
+    "hyperliquid/hyperliquid-replica-cmds-data-service"
+)
+
+if [ ${#images[@]} -eq 0 ]; then
+    images=("${all_images[@]}")
+fi
+
+commit_sha=$(git rev-parse HEAD)
+bake_targets=()
+bake_json='{"target":{'
+first=true
+
+for image in "${images[@]}"; do
+    img="$(basename "$image")"
+    output="type=image,name=docker.io/subsquid/$img,push-by-digest=true,name-canonical=true,push=true"
+    label="org.opencontainers.image.url=https://github.com/subsquid/squid-sdk/tree/${commit_sha}/${image}"
+
+    if [ "$first" = true ]; then
+        first=false
+    else
+        bake_json+=','
+    fi
+
+    bake_json+="\"$img\":{\"output\":[\"$output\"],\"labels\":{\"org.opencontainers.image.url\":\"$label\"}}"
+    bake_targets+=("$img")
+done
+
+bake_json+='}}'
+
+override_file=$(mktemp)
+echo "$bake_json" > "$override_file"
+
+echo "Building targets: ${bake_targets[*]}"
+
+cache_args=""
+if [ -n "${BUILDX_CACHE_FROM:-}" ]; then
+    cache_args+=" --set *.cache-from=${BUILDX_CACHE_FROM}"
+fi
+if [ -n "${BUILDX_CACHE_TO:-}" ]; then
+    cache_args+=" --set *.cache-to=${BUILDX_CACHE_TO}"
+fi
+
+docker buildx bake \
+    -f docker-bake.hcl \
+    -f "$override_file" \
+    --set "*.platform=$platform" \
+    --metadata-file /tmp/bake-metadata.json \
+    $cache_args \
+    "${bake_targets[@]}" || exit 1
+
+rm -f "$override_file"
+
+for image in "${images[@]}"; do
+    img="$(basename "$image")"
+    digest=$(jq -r ".\"$img\".\"containerimage.digest\"" /tmp/bake-metadata.json)
+    mkdir -p "/tmp/digests/$img"
+    touch "/tmp/digests/$img/${digest#sha256:}"
+    echo "Built $img for $platform: $digest"
+done

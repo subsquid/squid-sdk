@@ -30,8 +30,8 @@
     "fastest-levenshtein": "^1.0.16"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "abitype": "^1.0.4",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4"
   }
 }

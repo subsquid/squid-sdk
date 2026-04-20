@@ -1,7 +1,7 @@
-import {run, type DataHandlerContext} from '@subsquid/batch-processor'
+import {run, type TemplateMutation} from '@subsquid/batch-processor'
 import {augmentBlock, type Log as _Log} from '@subsquid/evm-objects'
 import {DataSourceBuilder, GetDataSourceBlock, Block as DataSourceBlock} from '@subsquid/evm-stream'
-import {TypeormDatabase, type Store} from '@subsquid/typeorm-store'
+import {TypeormDatabase} from '@subsquid/typeorm-store'
 import * as factory from './abi/uniswap-v2-factory'
 import * as pair from './abi/uniswap-v2-pair'
 import {Account, DexType, Swap, TrackedPair} from './model'
@@ -36,12 +36,7 @@ const dataSource = new DataSourceBuilder()
             topic0: [factory.events.PairCreated.topic],
         },
     })
-    .addLog(TEMPLATE_SUSHI_PAIR, {
-        where: {
-            topic0: [pair.events.Swap.topic],
-        },
-    })
-    .addLog(TEMPLATE_UNI_PAIR, {
+    .addLog({
         where: {
             topic0: [pair.events.Swap.topic],
         },
@@ -71,10 +66,14 @@ function createSwap(log: Log, type: DexType) {
 run(dataSource, new TypeormDatabase({supportHotBlocks: true}), async (ctx) => {
     const swaps: Swap[] = []
     const pairs: TrackedPair[] = []
+    const templateMutations: TemplateMutation[] = []
+
+    const known = await ctx.store.find(TrackedPair, {})
+    const dexByPair = new Map<string, DexType>(known.map((p) => [p.id, p.dexType]))
 
     for (const block of ctx.blocks) {
         const augmented = augmentBlock(block)
-        const {number: blockNumber, timestamp} = block.header
+        const {number: blockNumber} = block.header
 
         for (const log of augmented.logs) {
             const addr = log.address.toLowerCase()
@@ -83,11 +82,20 @@ run(dataSource, new TypeormDatabase({supportHotBlocks: true}), async (ctx) => {
                 case factory.events.PairCreated.topic: {
                     const {token0, token1, pair: pairAddr} = factory.events.PairCreated.decode(log)
                     const pairLc = pairAddr.toLowerCase()
-                    ctx.templates.add(TEMPLATE_SUSHI_PAIR, pairLc, blockNumber)
+                    const factoryLc = addr
+                    const templateKey = factoryLc === FACTORY_SUSHI.toLowerCase() ? TEMPLATE_SUSHI_PAIR : TEMPLATE_UNI_PAIR
+                    const dexType = factoryLc === FACTORY_SUSHI.toLowerCase() ? DexType.SUSHISWAP : DexType.UNISWAP
+                    templateMutations.push({
+                        type: 'add',
+                        key: templateKey,
+                        value: pairLc,
+                        blockNumber,
+                    })
+                    dexByPair.set(pairLc, dexType)
                     pairs.push(
                         new TrackedPair({
                             id: pairLc,
-                            dexType: DexType.SUSHISWAP,
+                            dexType,
                             token0: token0.toLowerCase(),
                             token1: token1.toLowerCase(),
                             discoveredAtBlock: blockNumber,
@@ -96,12 +104,9 @@ run(dataSource, new TypeormDatabase({supportHotBlocks: true}), async (ctx) => {
                     break
                 }
                 case pair.events.Swap.topic: {
-                    if (ctx.templates.has(TEMPLATE_SUSHI_PAIR, addr, blockNumber)) {
-                        const swap = createSwap(log, DexType.SUSHISWAP)
-                        swaps.push(swap)
-                    } else if (ctx.templates.has(TEMPLATE_UNI_PAIR, addr, blockNumber)) {
-                        const swap = createSwap(log, DexType.UNISWAP)
-                        swaps.push(swap)
+                    const dexType = dexByPair.get(addr)
+                    if (dexType != null) {
+                        swaps.push(createSwap(log, dexType))
                     }
                     break
                 }
@@ -114,5 +119,8 @@ run(dataSource, new TypeormDatabase({supportHotBlocks: true}), async (ctx) => {
     }
     if (swaps.length > 0) {
         await ctx.store.insert(swaps)
+    }
+    if (templateMutations.length > 0) {
+        return {templates: templateMutations}
     }
 })

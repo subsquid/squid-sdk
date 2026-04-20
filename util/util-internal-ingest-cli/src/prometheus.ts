@@ -7,6 +7,7 @@ export class PrometheusServer {
     private latestReceivedBlockNumberGauge: Gauge
     private latestReceivedBlockTimestampGauge: Gauge
     private blocksDeliveryDelayGauge: Gauge
+
     constructor(
         private port: number
     ) {

@@ -5,7 +5,6 @@ import {
     DataSource,
     DataSourceStreamOptions,
     ForkException,
-    TemplateRegistry,
     type BlockBatch,
 } from '@subsquid/util-internal-data-source'
 import {applyRangeBound, FiniteRange, getSize, RangeRequestList, type Range, type RangeRequest} from '@subsquid/util-internal-range'
@@ -16,7 +15,7 @@ import assert from 'assert'
 
 export type RangeRequestResolver<F extends FieldSelection> =
     | RangeRequestList<DataRequest<F>>
-    | ((registry?: TemplateRegistry) => RangeRequestList<DataRequest<F>>)
+    | (() => RangeRequestList<DataRequest<F>>)
 
 export class PortalDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
     constructor(
@@ -25,12 +24,16 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
         private opts?: {squidId?: string}
     ) {}
 
-    getHead(): Promise<BlockRef | undefined> {
-        return this.client.getHead({headers: this.getHeaders()})
+    async getHead(): Promise<BlockRef> {
+        let head = await this.client.getHead({headers: this.getHeaders()})
+        assert(head, 'portal has no chain head')
+        return head
     }
 
-    getFinalizedHead(): Promise<BlockRef | undefined> {
-        return this.client.getFinalizedHead({headers: this.getHeaders()})
+    async getFinalizedHead(): Promise<BlockRef> {
+        let head = await this.client.getFinalizedHead({headers: this.getHeaders()})
+        assert(head, 'portal has no finalized head')
+        return head
     }
 
     getFinalizedStream(opts?: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
@@ -45,15 +48,15 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
         return getSize(this.resolveRequests().map(r => r.range), range)
     }
 
-    private resolveRequests(registry?: TemplateRegistry): RangeRequestList<DataRequest<F>> {
-        return typeof this.requests === 'function' ? this.requests(registry) : this.requests
+    private resolveRequests(): RangeRequestList<DataRequest<F>> {
+        return typeof this.requests === 'function' ? this.requests() : this.requests
     }
 
     private async *_getStream(
         opts?: DataSourceStreamOptions,
         finalized?: boolean
     ): AsyncIterable<BlockBatch<Block<F>>> {
-        let requests = applyRangeBound(this.resolveRequests(opts?.templateRegistry), opts?.from != null ? {from: opts.from} : undefined)
+        let requests = applyRangeBound(this.resolveRequests(), opts?.from != null ? {from: opts.from} : undefined)
         if (requests.length === 0) return
 
         let streamOptions = {request: {headers: this.getHeaders()}}

@@ -1,7 +1,7 @@
+import {createLogger} from '@subsquid/logger'
 import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {RpcCall, RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {GetBlock} from '@subsquid/solana-rpc-data'
-import {Simplify, wait} from '@subsquid/util-internal'
 import {
     array,
     B58,
@@ -13,30 +13,53 @@ import {
     Validator
 } from '@subsquid/util-internal-validation'
 import assert from 'assert'
-import {Commitment} from './base'
 
 
-export type BlockInfo = Simplify<Omit<GetBlock, 'transactions' | 'rewards'>>
+export type Commitment = 'finalized' | 'confirmed'
 
 
-export class Rpc {
+const LatestBlockhash = object({
+    context: object({
+        slot: NAT
+    }),
+    value: object({
+        blockhash: B58,
+        lastValidBlockHeight: NAT
+    })
+})
+
+
+export type LatestBlockhash = GetSrcType<typeof LatestBlockhash>
+
+
+export interface GetBlockOptions {
+    commitment?: Commitment
+    transactionDetails?: 'full' | 'none'
+    maxSupportedTransactionVersion?: number
+    rewards?: boolean
+}
+
+
+export interface RpcApi {
+    getLatestBlockhash(commitment: Commitment, minContextSlot?: number): Promise<LatestBlockhash>
+    getBlocks(commitment: Commitment, startSlot: number, endSlot: number): Promise<number[]>
+    getBlock(slot: number, options?: GetBlockOptions): Promise<GetBlock | 'skipped' | null | undefined>
+    getBlockBatch(slots: number[], options?: GetBlockOptions): Promise<(GetBlock | 'skipped' | null | undefined)[]>
+}
+
+
+export class Rpc implements RpcApi {
     constructor(
-        private client: RpcClient,
-        private priority: number = 0,
-        private maxConfirmationAttempts: number = 10
-    ) {
-    }
-
-    withPriority(priority: number): Rpc {
-        return new Rpc(this.client, priority, this.maxConfirmationAttempts)
-    }
+        public readonly client: RpcClient,
+        public readonly log = createLogger('sqd:solana-rpc')
+    ) {}
 
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
-        return this.client.call(method, params, {priority: this.priority, ...options})
+        return this.client.call(method, params, options)
     }
 
     batchCall<T=any>(batch: {method: string, params?: any[]}[], options?: CallOptions<T>): Promise<T[]> {
-        return this.client.batchCall(batch, {priority: this.priority, ...options})
+        return this.client.batchCall(batch, options)
     }
 
     getLatestBlockhash(commitment: Commitment, minContextSlot?: number): Promise<LatestBlockhash> {
@@ -65,51 +88,14 @@ export class Rpc {
         })
     }
 
-    getBlockInfo(commitment: Commitment, slot: number): Promise<undefined | null | BlockInfo> {
-        return this.call('getBlock', [
-            slot,
-            {
-                commitment,
-                rewards: false,
-                transactionDetails: 'none'
-            }
-        ], {
+    getBlock(slot: number, options?: GetBlockOptions): Promise<GetBlock | 'skipped' | null | undefined> {
+        return this.call<GetBlock | 'skipped' | null | undefined>('getBlock', options ? [slot, options] : [slot], {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: captureNoBlockAtSlot
         })
     }
 
-    async getTopSlot(commitment: Commitment): Promise<number> {
-        let {context: {slot}} = await this.getLatestBlockhash(commitment)
-        return slot
-    }
-
-    async getFinalizedBlockInfo(slot: number): Promise<BlockInfo> {
-        let attempts = this.maxConfirmationAttempts
-        while (attempts) {
-            let block = await this.getBlockInfo('finalized', slot)
-            if (block) return block
-            await wait(100)
-            attempts -= 1
-        }
-        throw new Error(`Failed to getBlock with finalized commitment at slot ${slot} ${this.maxConfirmationAttempts} times in a row`)
-    }
-
-    async getFinalizedBlockHeight(slot: number): Promise<number> {
-        let block = await this.getFinalizedBlockInfo(slot)
-        if (block.blockHeight == null) {
-            throw new Error(`Block height is not available at slot ${slot}`)
-        } else {
-            return block.blockHeight
-        }
-    }
-
-    async getFinalizedHeight(): Promise<number> {
-        let slot = await this.getTopSlot('finalized')
-        return this.getFinalizedBlockHeight(slot)
-    }
-
-    getBlockBatch(slots: number[], options?: GetBlockOptions): Promise<(GetBlock | null | undefined)[]> {
+    getBlockBatch(slots: number[], options?: GetBlockOptions): Promise<(GetBlock | 'skipped' | null | undefined)[]> {
         assert(
             options?.maxSupportedTransactionVersion == null || options.maxSupportedTransactionVersion === 0,
             'maximum supported transaction version is 0'
@@ -120,7 +106,7 @@ export class Rpc {
             let params = options ? [slot, options] : [slot]
             call[i] = {method: 'getBlock', params}
         }
-        return this.reduceBatchOnRetry(call, {
+        return this.reduceBatchOnRetry<GetBlock | 'skipped' | null | undefined>(call, {
             validateResult: getResultValidator(nullable(GetBlock)),
             validateError: captureNoBlockAtSlot
         })
@@ -130,11 +116,14 @@ export class Rpc {
         if (batch.length <= 1) return this.batchCall(batch, options)
 
         let result = await this.batchCall(batch, {...options, retryAttempts: 0}).catch(err => {
-            if (this.client.isConnectionError(err) || err instanceof RpcProtocolError) return
-            throw err
+            if (this.client.isConnectionError(err) || err instanceof RpcProtocolError) {
+                this.log.warn(err, 'will retry request with reduced batch')
+            } else {
+                throw err
+            }
         })
 
-        if (result) return result
+        if (result != null) return result
 
         let pack = await Promise.all([
             this.reduceBatchOnRetry(batch.slice(0, Math.ceil(batch.length / 2)), options),
@@ -146,35 +135,14 @@ export class Rpc {
 }
 
 
-const LatestBlockhash = object({
-    context: object({
-        slot: NAT
-    }),
-    value: object({
-        blockhash: B58,
-        lastValidBlockHeight: NAT
-    })
-})
-
-
-export type LatestBlockhash = GetSrcType<typeof LatestBlockhash>
-
-
-export interface GetBlockOptions {
-    commitment?: Commitment
-    transactionDetails?: 'full' | 'none'
-    maxSupportedTransactionVersion?: number
-    rewards?: boolean
-}
-
-
-function captureNoBlockAtSlot(info: RpcErrorInfo): undefined {
-    if (/slot \d+/i.test(info.message)) return undefined
+function captureNoBlockAtSlot(info: RpcErrorInfo): 'skipped' | undefined {
+    if (info.message.startsWith('Block not available for slot')) return undefined
+    if (/was skipped/.test(info.message)) return 'skipped'
     throw new RpcError(info)
 }
 
 
-export function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
+function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
     return function(result: unknown) {
         let err = validator.validate(result)
         if (err) {

@@ -21,8 +21,8 @@
     "@subsquid/util-internal-binary-heap": "^1.0.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.0.0",
     "fast-check": "^3.14.0",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4"
   }
 }
