@@ -1,5 +1,4 @@
 import type {BlockRef} from '@subsquid/util-internal-data-source'
-import {HashAndHeight} from './database'
 
 
 export function timeInterval(seconds: number): string {

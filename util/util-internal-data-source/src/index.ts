@@ -34,11 +34,11 @@ export interface DataSource<B> {
     getHead(): Promise<BlockRef>
 
     getFinalizedHead(): Promise<BlockRef>
+    
+    // FIXME: maybe it's better to pass it as an option to `getStream`
+    getFinalizedStream(req: StreamRequest): BlockStream<B>
 
-    // FIXME: maybe it's better to pass it ias an option to `getStream`
-    getFinalizedStream(req: StreamRequest): AsyncIterable<BlockBatch<B>>
-
-    getStream(req: StreamRequest): AsyncIterable<BlockBatch<B>>
+    getStream(req: StreamRequest): BlockStream<B>
 
     getBlocksCountInRange?(range: FiniteRange): number
 }

@@ -29,6 +29,7 @@ export class TypeormDatabase {
     private projectDir: string
 
     public readonly supportsHotBlocks: boolean
+    public readonly supportsTemplates = true as const
 
     constructor(options?: TypeormDatabaseOptions) {
         this.statusSchema = options?.stateSchema || 'squid_processor'

@@ -1,4 +1,4 @@
-import {Bytes, Bytes20, Bytes32, Bytes8} from '@subsquid/evm-stream'
+import {Bytes, Bytes20, Bytes32} from '@subsquid/evm-stream'
 import {
     PartialBlock,
     PartialBlockHeader,
@@ -8,7 +8,6 @@ import {
     PartialTransaction
 } from '@subsquid/evm-stream/lib/data/partial'
 import {
-    EIP7702Authorization,
     EvmTraceCallAction,
     EvmTraceCallResult,
     EvmTraceCreateAction,

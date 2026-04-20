@@ -148,7 +148,7 @@ run(dataSource, database, async ctx => {
                     id: ins.id,
                     slot: block.header.number,
                     tx: ins.getTransaction().signatures[0],
-                    timestamp: new Date(block.header.timestamp * 1000)
+                    timestamp: new Date(block.header.timestamp)
                 })
 
                 assert(ins.inner.length == 2)

@@ -1,9 +1,7 @@
 import {weakMemo} from '@subsquid/util-internal'
 import {
-    ANY,
     array,
     ANY_INT,
-    BOOLEAN,
     BYTES,
     constant,
     NAT,
@@ -18,7 +16,7 @@ import {FieldSelection} from '../data/model'
 
 export const getDataSchema = weakMemo((fields: FieldSelection) => {
     let BlockHeader = object({
-        height: NAT,
+        number: NAT,
         hash: BYTES,
         parentHash: BYTES,
         ...project(fields.block, {
