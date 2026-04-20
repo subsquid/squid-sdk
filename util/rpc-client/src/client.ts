@@ -413,19 +413,21 @@ export class RpcClient {
             }
             req.resolve(result)
         }, err => {
-            if (this.closed) return req.reject(err)
+            // Duration of this individual send attempt (not cumulative across retries)
+            let durationMs = Date.now() - startTime
+            if (this.closed) return req.reject(this.enrichError(err, req, durationMs))
             if (this.isConnectionError(err)) {
                 if (req.retryAttempts > 0) {
                     req.retryAttempts -= 1
                     this.enqueue(req)
                 } else {
-                    req.reject(err)
+                    req.reject(this.enrichError(err, req, durationMs))
                 }
                 if (this.backoffEpoch == backoffEpoch) {
                     this.backoff(err, req)
                 }
             } else {
-                req.reject(err)
+                req.reject(this.enrichError(err, req, durationMs))
             }
         }).finally(() => {
             this.capacity += 1
@@ -519,6 +521,25 @@ export class RpcClient {
                 rpcResponse: res
             })
         }
+    }
+
+    private enrichError(err: Error, req: Req, durationMs: number): Error {
+        let rpcMethod: string
+        let rpcBatchSize: number | undefined
+
+        if (Array.isArray(req.call)) {
+            rpcBatchSize = req.call.length
+            rpcMethod = req.call.map(c => c.method).join(',')
+        } else {
+            rpcMethod = req.call.method
+        }
+
+        return addErrorContext(err, {
+            rpcUrl: this.url,
+            rpcMethod,
+            rpcBatchSize,
+            durationMs
+        })
     }
 
     isConnectionError(err: Error): boolean {
