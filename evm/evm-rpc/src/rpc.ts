@@ -28,6 +28,7 @@ import { qty2Int, toQty, getTxHash } from './util'
 import { ChainUtils } from './chain-utils'
 import { EvmRpcClient } from './rpc-client'
 import { isBloomSuperset, logsBloom } from './verification'
+import { computeCreateAddress, extractLogsFromStructLog, CallFrame, StructLog } from './struct-log-extractor'
 
 
 export type Commitment = 'finalized' | 'latest'
@@ -684,12 +685,15 @@ export class Rpc {
      *      node didn't account for.
      *   2. Every extra bit in the header bloom can be attributed to logs that
      *      *would have been emitted* by phantom or reverted transactions in
-     *      this block, as reconstructed by `debug_traceTransaction` with the
-     *      callTracer + withLog option (which captures logs from every call
-     *      frame, including reverted ones).
-     * If either condition fails the data is inconsistent with the block header
-     * in a way we can't explain via the known Ethermint bug — throw rather
-     * than silently accept it.
+     *      this block.
+     * We first reconstruct those logs via `debug_traceTransaction` with
+     * `callTracer` + `withLog: true`. Ethermint's callTracer silently drops
+     * logs from reverted CREATE frames, so if the combined bloom still doesn't
+     * match, we fall back to the heavier struct-log tracer (with call-frame
+     * address tracking) for each leaked tx that callTracer returned no logs
+     * for. Only when neither path accounts for the extras do we throw — the
+     * data is then inconsistent in a way the known Ethermint bug can't
+     * explain, and we refuse to ingest it.
      */
     private async verifyCronosLeakedLogsBloom(
         block: Block,
@@ -716,57 +720,139 @@ export class Rpc {
 
         // Collect transactions whose logs could have leaked into the header
         // bloom: phantom txs (stripped) and reverted txs (status = 0x0).
-        let leakedTxHashes = new Set<Bytes32>(phantomTxHashes)
-        for (let receipt of receipts) {
-            if (qty2Int(receipt.status) === 0) {
-                leakedTxHashes.add(receipt.transactionHash)
-            }
-        }
+        let leakedTxHashes = Array.from(new Set<Bytes32>([
+            ...phantomTxHashes,
+            ...receipts.filter(r => qty2Int(r.status) === 0).map(r => r.transactionHash)
+        ]))
 
-        if (leakedTxHashes.size === 0) {
+        if (leakedTxHashes.length === 0) {
             throw addErrorContext(
                 new Error('Cronos fix: header logs bloom has extra bits but no phantom or reverted transactions were found to explain them - refusing to accept'),
                 errorContext
             )
         }
 
-        // Reconstruct the logs of leaked txs via debug_traceTransaction.
-        // callTracer with withLog=true emits a `logs` array on every frame it
-        // visits, including frames that later reverted.
-        let traceCall = Array.from(leakedTxHashes).map(hash => ({
-            method: 'debug_traceTransaction',
-            params: [hash, {
-                tracer: 'callTracer',
-                tracerConfig: {
-                    onlyTopCall: false,
-                    withLog: true
-                }
-            }]
-        }))
-
-        let traceResults: any[]
+        // Reconstruct each leaked tx's execution logs independently. Pass 1
+        // uses the cheap callTracer; pass 2 falls back to the heavy struct-log
+        // tracer for any tx that callTracer returned zero logs for (matching
+        // Ethermint's behaviour of silently dropping logs from reverted
+        // CREATE frames).
+        let callTraces: CallFrame[]
         try {
-            traceResults = await this.batchCall(traceCall)
+            callTraces = await this.batchCall(leakedTxHashes.map(hash => ({
+                method: 'debug_traceTransaction',
+                params: [hash, {
+                    tracer: 'callTracer',
+                    tracerConfig: {onlyTopCall: false, withLog: true}
+                }]
+            })))
         } catch (err: any) {
             throw addErrorContext(
-                new Error(`Cronos fix: failed to reconstruct leaked logs via debug_traceTransaction: ${err.message}`),
-                {...errorContext, leakedTxHashes: Array.from(leakedTxHashes)}
+                new Error(`Cronos fix: failed to reconstruct leaked logs via debug_traceTransaction (callTracer): ${err.message}`),
+                {...errorContext, leakedTxHashes}
             )
         }
 
-        let tracedLogs: {address: Bytes, topics: Bytes[]}[] = []
-        for (let result of traceResults) {
-            collectFrameLogs(result, tracedLogs)
+        type ReconstructedLogs = {
+            logs: {address: Bytes, topics: Bytes[]}[]
+            tracer: 'callTracer' | 'structLog'
+        }
+        let perTxLogs = new Map<Bytes32, ReconstructedLogs>()
+        for (let i = 0; i < leakedTxHashes.length; i++) {
+            let frameLogs: {address: Bytes, topics: Bytes[]}[] = []
+            collectFrameLogs(callTraces[i], frameLogs)
+            perTxLogs.set(leakedTxHashes[i], {logs: frameLogs, tracer: 'callTracer'})
         }
 
-        let combinedBloom = logsBloom([...logs, ...tracedLogs] as Log[])
+        let fallbackCandidates: {hash: Bytes32, idx: number}[] = []
+        for (let i = 0; i < leakedTxHashes.length; i++) {
+            if (perTxLogs.get(leakedTxHashes[i])!.logs.length === 0) {
+                fallbackCandidates.push({hash: leakedTxHashes[i], idx: i})
+            }
+        }
+
+        if (fallbackCandidates.length > 0) {
+            let transactions = block.block.transactions as Transaction[]
+            let txByHash = new Map(transactions.map(t => [t.hash, t]))
+
+            let structLogResults: {structLogs: StructLog[]}[]
+            try {
+                structLogResults = await this.batchCall(
+                    fallbackCandidates.map(c => ({
+                        method: 'debug_traceTransaction',
+                        params: [c.hash, {
+                            // Default (struct-log) tracer. We only need
+                            // pc/op/depth/stack, so ask the node to keep the
+                            // response small.
+                            enableMemory: false,
+                            disableStorage: true,
+                            disableStack: false
+                        }]
+                    }))
+                )
+            } catch (err: any) {
+                throw addErrorContext(
+                    new Error(`Cronos fix: failed to reconstruct leaked logs via debug_traceTransaction (struct-log): ${err.message}`),
+                    {...errorContext, leakedTxHashes, fallbackCandidates: fallbackCandidates.map(c => c.hash)}
+                )
+            }
+
+            for (let i = 0; i < fallbackCandidates.length; i++) {
+                let {hash, idx} = fallbackCandidates[i]
+                let tx = txByHash.get(hash)
+                if (tx == null) {
+                    throw addErrorContext(
+                        new Error('Cronos fix: struct-log fallback could not find the tx in the block'),
+                        {...errorContext, transactionHash: hash}
+                    )
+                }
+                let topAddress = tx.to != null
+                    ? tx.to.toLowerCase()
+                    : computeCreateAddress(tx.from, qty2Int(tx.nonce))
+                let reconstructed = extractLogsFromStructLog(
+                    structLogResults[i].structLogs,
+                    callTraces[idx],
+                    topAddress
+                )
+                perTxLogs.set(hash, {logs: reconstructed, tracer: 'structLog'})
+            }
+        }
+
+        // A candidate tx's pre-revert logs leaked into the header bloom only
+        // if every one of their bloom bits is already in the header. A log we
+        // reconstructed whose bits fall outside the header simply wasn't part
+        // of the leak — some other Ethermint version / revert path didn't
+        // trigger the bloom bug for that tx. We include only the "leaked"
+        // candidates in the combined bloom; otherwise we'd add spurious bits.
+        let includedLogs: {address: Bytes, topics: Bytes[]}[] = []
+        let tracerUsedByTx: Record<string, 'callTracer' | 'structLog'> = {}
+        let nonLeakedTxs: Record<string, 'callTracer' | 'structLog'> = {}
+        for (let hash of leakedTxHashes) {
+            let {logs: candidateLogs, tracer} = perTxLogs.get(hash)!
+            if (candidateLogs.length === 0) {
+                // No reconstructed logs → tx didn't emit anything → can't
+                // have contributed to the leak.
+                continue
+            }
+            let txBloom = logsBloom(candidateLogs as Log[])
+            if (isBloomSuperset(block.block.logsBloom, txBloom)) {
+                includedLogs.push(...candidateLogs)
+                tracerUsedByTx[hash] = tracer
+            } else {
+                nonLeakedTxs[hash] = tracer
+            }
+        }
+
+        let combinedBloom = logsBloom([...logs, ...includedLogs] as Log[])
         if (combinedBloom !== block.block.logsBloom) {
             throw addErrorContext(
                 new Error('Cronos fix: traced logs from phantom/reverted transactions do not fully explain the extra bits in the header logs bloom - refusing to accept'),
                 {
                     ...errorContext,
-                    leakedTxHashes: Array.from(leakedTxHashes),
-                    tracedLogCount: tracedLogs.length,
+                    leakedTxHashes,
+                    leakingTxs: tracerUsedByTx,
+                    nonLeakedTxs,
+                    tracedLogCount: includedLogs.length,
                     combinedBloom
                 }
             )
@@ -775,8 +861,10 @@ export class Rpc {
         this.log.warn(
             {
                 ...errorContext,
-                leakedTxHashes: Array.from(leakedTxHashes),
-                tracedLogCount: tracedLogs.length
+                leakedTxHashes,
+                leakingTxs: tracerUsedByTx,
+                nonLeakedTxs,
+                tracedLogCount: includedLogs.length
             },
             'Cronos fix: header logs bloom mismatch explained by leaked logs from phantom/reverted transactions (verified via debug_traceTransaction)'
         )

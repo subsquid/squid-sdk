@@ -488,147 +488,319 @@ describe('Rpc Class Integration', () => {
                 ).rejects.toThrow(/different block/)
             })
 
-            describe('trace-based logs bloom verification for leaked logs', () => {
-                // Real-world case: Cronos block 0xaea9ed (11_446_765) contains
-                // a reverted tx 0xd5da1c.. that emitted two logs inside its
-                // call frame before the frame reverted. Those pre-revert log
-                // bits ended up in the block's header logsBloom even though
-                // the receipt reports zero logs. Verified to reproduce on both
-                // Chainstack and dRPC Cronos mainnet endpoints.
+            describe('Cronos logs-bloom mismatch workaround', () => {
+                // Cronos blocks below 20M were produced by older Ethermint
+                // versions that could "leak" pre-revert logs from phantom and
+                // reverted transactions into the block's header logsBloom,
+                // even though those logs never appear in any receipt. The Rpc
+                // class accepts such blocks only when every extra bit in the
+                // header can be attributed to logs reconstructed via
+                // debug_traceTransaction.
                 //
-                // The fixtures for this test are the raw RPC responses:
-                //   block.json                 — eth_getBlockByNumber result
-                //   receipts.json              — eth_getBlockReceipts result
-                //   tx-0xd5da1c-trace.json     — debug_traceTransaction
-                //                                 (callTracer + withLog) result
+                // Two real-world blocks anchor the coverage:
+                //   - 11_446_765: callTracer + withLog correctly captures the
+                //     leaked logs from a reverted CALL frame (happy path).
+                //   - 2_689_327: callTracer drops logs from a reverted CREATE
+                //     frame on Ethermint, so verification falls back to the
+                //     heavier struct-log tracer with call-tree-assisted frame
+                //     address resolution.
 
-                const BLOCK_NUMBER = 11_446_765
-                const BLOCK_HEX = toQty(BLOCK_NUMBER)
-                const REVERTED_TX = '0xd5da1cdc3b88c94a232008ece7111bafba3ac96f8067228432324d71bec25c21'
-                const REVERTED_TX_SENDER = '0x2d35447967a80ef8ca0ef0c3a44e1c78b3b4c27a'
                 const TRACE_CONFIG = {
                     tracer: 'callTracer',
                     tracerConfig: { onlyTopCall: false, withLog: true }
                 }
+                const STRUCTLOG_CONFIG = {
+                    enableMemory: false,
+                    disableStorage: true,
+                    disableStack: false
+                }
 
-                function loadTrace() {
+                function loadCronosFixture(blockNumber: number, name: string) {
                     return JSON.parse(fs.readFileSync(
-                        Path.resolve(__dirname, 'fixtures/cronos/11446765/tx-0xd5da1c-trace.json'),
+                        Path.resolve(__dirname, `fixtures/cronos/${blockNumber}/${name}`),
                         'utf-8'
                     ))
                 }
 
-                function setupMocks(mockClient: MockRpcClient, block: any, receipts: any[]) {
-                    mockClient.setFixture('eth_chainId', undefined, '0x19')
-                    mockClient.setFixture('eth_getBlockByNumber', [BLOCK_HEX, true], block)
-                    mockClient.setFixture('eth_getBlockReceipts', ['latest'], receipts)
-                    mockClient.setFixture('eth_getBlockReceipts', [BLOCK_HEX], receipts)
-                    // nonceAfter = tx.nonce + 1 (reverted tx consumed the nonce,
-                    // so the phantom detector correctly classifies it as NOT phantom).
-                    mockClient.setFixture(
-                        'eth_getTransactionCount',
-                        [REVERTED_TX_SENDER, BLOCK_HEX],
-                        '0x421'
-                    )
-                }
+                describe('block 11446765 — callTracer captures the leaked logs', () => {
+                    const BLOCK_NUMBER = 11_446_765
+                    const BLOCK_HEX = toQty(BLOCK_NUMBER)
+                    const REVERTED_TX = '0xd5da1cdc3b88c94a232008ece7111bafba3ac96f8067228432324d71bec25c21'
+                    const REVERTED_TX_SENDER = '0x2d35447967a80ef8ca0ef0c3a44e1c78b3b4c27a'
 
-                it('accepts block when the reverted tx trace exactly explains the extra bloom bits', async () => {
-                    const block = loadBlock('cronos', BLOCK_NUMBER)
-                    const receipts = loadReceipts('cronos', BLOCK_NUMBER)
-
-                    const mockClient = new MockRpcClient()
-                    setupMocks(mockClient, block, receipts)
-                    mockClient.setFixture('debug_traceTransaction', [REVERTED_TX, TRACE_CONFIG], loadTrace())
-
-                    const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
-
-                    const blocks = await rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
-                    expect(blocks).toHaveLength(1)
-                    // The reverted tx is kept (it consumed the nonce, not a phantom).
-                    expect(blocks[0].block.transactions.length).toEqual(6)
-                    expect(blocks[0].receipts?.length).toEqual(6)
-                })
-
-                it('throws when the reverted tx trace returns no logs to cover the extras', async () => {
-                    const block = loadBlock('cronos', BLOCK_NUMBER)
-                    const receipts = loadReceipts('cronos', BLOCK_NUMBER)
-
-                    const mockClient = new MockRpcClient()
-                    setupMocks(mockClient, block, receipts)
-                    // Same trace frame, but with the leaked logs stripped out.
-                    const brokenTrace = { ...loadTrace(), logs: [] }
-                    mockClient.setFixture('debug_traceTransaction', [REVERTED_TX, TRACE_CONFIG], brokenTrace)
-
-                    const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
-
-                    await expect(
-                        rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
-                    ).rejects.toThrow(/traced logs.*do not fully explain/)
-                })
-
-                it('throws when header bloom has extra bits but no phantom or reverted txs are present', async () => {
-                    const block = loadBlock('cronos', BLOCK_NUMBER)
-                    const receipts = loadReceipts('cronos', BLOCK_NUMBER)
-                    // Flip the reverted receipt's status to 0x1 so the code
-                    // considers it a normal success — now nothing explains
-                    // the extra bloom bits.
-                    const tamperedReceipts = receipts.map(r =>
-                        r.transactionHash === REVERTED_TX ? { ...r, status: '0x1' } : r
-                    )
-
-                    const mockClient = new MockRpcClient()
-                    setupMocks(mockClient, block, tamperedReceipts)
-
-                    const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
-
-                    await expect(
-                        rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
-                    ).rejects.toThrow(/no phantom or reverted transactions/)
-                })
-
-                it('throws when the header bloom is missing a bit set in the computed bloom (not a superset)', async () => {
-                    const block = loadBlock('cronos', BLOCK_NUMBER)
-                    const receipts = loadReceipts('cronos', BLOCK_NUMBER)
-                    // Clear every bit in the header bloom — now receipt logs set
-                    // bits that the header does not. That means our receipts
-                    // contain logs the node's bloom computation didn't account
-                    // for, which the Ethermint leak bug cannot explain.
-                    const tamperedBlock = {
-                        ...block,
-                        logsBloom: '0x' + '00'.repeat(256)
+                    function loadTrace() {
+                        return loadCronosFixture(BLOCK_NUMBER, 'tx-0xd5da1c-trace.json')
                     }
 
-                    const mockClient = new MockRpcClient()
-                    setupMocks(mockClient, tamperedBlock, receipts)
-
-                    const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
-
-                    await expect(
-                        rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
-                    ).rejects.toThrow(/bits not present in the header bloom/)
-                })
-
-                it('finds leaked logs in nested sub-call frames', async () => {
-                    const block = loadBlock('cronos', BLOCK_NUMBER)
-                    const receipts = loadReceipts('cronos', BLOCK_NUMBER)
-                    // Move the leaked logs down into a nested sub-call frame
-                    // to exercise the recursive collectFrameLogs walk.
-                    const trace = loadTrace()
-                    const nestedTrace = {
-                        ...trace,
-                        logs: [],
-                        calls: [{ ...trace, calls: undefined }]
+                    function setupMocks(mockClient: MockRpcClient, block: any, receipts: any[]) {
+                        mockClient.setFixture('eth_chainId', undefined, '0x19')
+                        mockClient.setFixture('eth_getBlockByNumber', [BLOCK_HEX, true], block)
+                        mockClient.setFixture('eth_getBlockReceipts', ['latest'], receipts)
+                        mockClient.setFixture('eth_getBlockReceipts', [BLOCK_HEX], receipts)
+                        // nonceAfter = tx.nonce + 1 (reverted tx consumed the nonce,
+                        // so the phantom detector correctly classifies it as NOT phantom).
+                        mockClient.setFixture(
+                            'eth_getTransactionCount',
+                            [REVERTED_TX_SENDER, BLOCK_HEX],
+                            '0x421'
+                        )
                     }
 
-                    const mockClient = new MockRpcClient()
-                    setupMocks(mockClient, block, receipts)
-                    mockClient.setFixture('debug_traceTransaction', [REVERTED_TX, TRACE_CONFIG], nestedTrace)
+                    it('accepts block when the reverted tx trace exactly explains the extra bloom bits', async () => {
+                        const block = loadBlock('cronos', BLOCK_NUMBER)
+                        const receipts = loadReceipts('cronos', BLOCK_NUMBER)
 
-                    const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
+                        const mockClient = new MockRpcClient()
+                        setupMocks(mockClient, block, receipts)
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_TX, TRACE_CONFIG], loadTrace())
 
-                    const blocks = await rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
-                    expect(blocks).toHaveLength(1)
-                    expect(blocks[0].block.transactions.length).toEqual(6)
+                        const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
+
+                        const blocks = await rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
+                        expect(blocks).toHaveLength(1)
+                        // The reverted tx is kept (it consumed the nonce, not a phantom).
+                        expect(blocks[0].block.transactions.length).toEqual(6)
+                        expect(blocks[0].receipts?.length).toEqual(6)
+                    })
+
+                    it('throws when neither tracer returns logs to cover the extras', async () => {
+                        const block = loadBlock('cronos', BLOCK_NUMBER)
+                        const receipts = loadReceipts('cronos', BLOCK_NUMBER)
+
+                        const mockClient = new MockRpcClient()
+                        setupMocks(mockClient, block, receipts)
+                        // callTracer returns the call tree but with no logs. That
+                        // triggers the struct-log fallback, which we also mock to
+                        // return no LOG opcodes — so the combined bloom can't be
+                        // reconstructed and the block must be rejected.
+                        const brokenCallTrace = { ...loadTrace(), logs: [] }
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_TX, TRACE_CONFIG], brokenCallTrace)
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_TX, STRUCTLOG_CONFIG], { structLogs: [] })
+
+                        const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
+
+                        await expect(
+                            rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
+                        ).rejects.toThrow(/traced logs.*do not fully explain/)
+                    })
+
+                    it('throws when header bloom has extra bits but no phantom or reverted txs are present', async () => {
+                        const block = loadBlock('cronos', BLOCK_NUMBER)
+                        const receipts = loadReceipts('cronos', BLOCK_NUMBER)
+                        // Flip the reverted receipt's status to 0x1 so the code
+                        // considers it a normal success — now nothing explains
+                        // the extra bloom bits.
+                        const tamperedReceipts = receipts.map(r =>
+                            r.transactionHash === REVERTED_TX ? { ...r, status: '0x1' } : r
+                        )
+
+                        const mockClient = new MockRpcClient()
+                        setupMocks(mockClient, block, tamperedReceipts)
+
+                        const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
+
+                        await expect(
+                            rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
+                        ).rejects.toThrow(/no phantom or reverted transactions/)
+                    })
+
+                    it('throws when the header bloom is missing a bit set in the computed bloom (not a superset)', async () => {
+                        const block = loadBlock('cronos', BLOCK_NUMBER)
+                        const receipts = loadReceipts('cronos', BLOCK_NUMBER)
+                        // Clear every bit in the header bloom — now receipt logs set
+                        // bits that the header does not. That means our receipts
+                        // contain logs the node's bloom computation didn't account
+                        // for, which the Ethermint leak bug cannot explain.
+                        const tamperedBlock = {
+                            ...block,
+                            logsBloom: '0x' + '00'.repeat(256)
+                        }
+
+                        const mockClient = new MockRpcClient()
+                        setupMocks(mockClient, tamperedBlock, receipts)
+
+                        const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
+
+                        await expect(
+                            rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
+                        ).rejects.toThrow(/bits not present in the header bloom/)
+                    })
+
+                    it('finds leaked logs in nested sub-call frames', async () => {
+                        const block = loadBlock('cronos', BLOCK_NUMBER)
+                        const receipts = loadReceipts('cronos', BLOCK_NUMBER)
+                        // Move the leaked logs down into a nested sub-call frame
+                        // to exercise the recursive collectFrameLogs walk.
+                        const trace = loadTrace()
+                        const nestedTrace = {
+                            ...trace,
+                            logs: [],
+                            calls: [{ ...trace, calls: undefined }]
+                        }
+
+                        const mockClient = new MockRpcClient()
+                        setupMocks(mockClient, block, receipts)
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_TX, TRACE_CONFIG], nestedTrace)
+
+                        const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
+
+                        const blocks = await rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
+                        expect(blocks).toHaveLength(1)
+                        expect(blocks[0].block.transactions.length).toEqual(6)
+                    })
+
+                    it('rejects the block when a candidate\'s reconstructed logs cover the extras but also introduce bits outside the header', async () => {
+                        // If a single candidate tx produces a log set whose
+                        // bloom covers every missing bit AND adds some bits
+                        // beyond the header, the per-candidate subset filter
+                        // must exclude it entirely (we can't confirm it leaked
+                        // if even one of its bits falls outside the header).
+                        // With that candidate excluded, nothing else accounts
+                        // for the extras — the block is rejected.
+                        const block = loadBlock('cronos', BLOCK_NUMBER)
+                        const receipts = loadReceipts('cronos', BLOCK_NUMBER)
+                        const realTrace = loadTrace()
+                        const realLogs = realTrace.logs as {address: string, topics: string[]}[]
+                        // Real logs (which exactly cover the extras) plus one
+                        // unrelated log that introduces bits outside the header.
+                        const tamperedTrace = {
+                            ...realTrace,
+                            logs: [
+                                ...realLogs,
+                                {
+                                    address: '0x1111111111111111111111111111111111111111',
+                                    topics: ['0x2222222222222222222222222222222222222222222222222222222222222222']
+                                }
+                            ]
+                        }
+
+                        const mockClient = new MockRpcClient()
+                        setupMocks(mockClient, block, receipts)
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_TX, TRACE_CONFIG], tamperedTrace)
+
+                        const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
+
+                        await expect(
+                            rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
+                        ).rejects.toThrow(/traced logs.*do not fully explain/)
+                    })
+                })
+
+                describe('block 2689327 — reverted CREATE needs struct-log fallback', () => {
+                    const BLOCK_NUMBER = 2_689_327
+                    const BLOCK_HEX = toQty(BLOCK_NUMBER)
+                    const REVERTED_CREATE_TX = '0xfc74a22b488414914922ac5a1fc4289658d7c623ca7dff17948e2dd2c14e6837'
+                    const REVERTED_CREATE_SENDER = '0x8b388dc0653cf97d5ba584965988dcfc8c67e413'
+                    const REVERTED_CALL_TX = '0xe0e873bb09e40ec16f8d0f2dc4de52b60c3a12180fd03a3fc7ec71f4a312a1aa'
+                    const REVERTED_CALL_SENDER = '0x9a1d4dd7130dbf763ccb6df917f650b28516ebef'
+
+                    function loadFixture(name: string) {
+                        return loadCronosFixture(BLOCK_NUMBER, name)
+                    }
+
+                    function setupMocks(mockClient: MockRpcClient, block: any, receipts: any[]) {
+                        mockClient.setFixture('eth_chainId', undefined, '0x19')
+                        mockClient.setFixture('eth_getBlockByNumber', [BLOCK_HEX, true], block)
+                        mockClient.setFixture('eth_getBlockReceipts', ['latest'], receipts)
+                        mockClient.setFixture('eth_getBlockReceipts', [BLOCK_HEX], receipts)
+                        // Both reverted txs consumed their nonce, so they're not
+                        // classified as phantoms by the nonce-gap detector. The
+                        // values observed on chain are 0x1 (sender's only tx) and
+                        // 0x9c (previous nonce + 1).
+                        mockClient.setFixture(
+                            'eth_getTransactionCount',
+                            [REVERTED_CREATE_SENDER, BLOCK_HEX],
+                            '0x1'
+                        )
+                        mockClient.setFixture(
+                            'eth_getTransactionCount',
+                            [REVERTED_CALL_SENDER, BLOCK_HEX],
+                            '0x9c'
+                        )
+                    }
+
+                    it('accepts block when struct-log fallback recovers logs that callTracer dropped', async () => {
+                        const block = loadFixture('block.json')
+                        const receipts = loadFixture('receipts.json')
+                        // callTracer returns frames WITHOUT a `logs` field (matching
+                        // real Ethermint behavior on reverted CREATE frames).
+                        const callTraceFc74 = loadFixture('tx-0xfc74a2-calltrace.json')
+                        const callTraceE0e8 = loadFixture('tx-0xe0e873-calltrace.json')
+                        const structLogFc74 = loadFixture('tx-0xfc74a2-structlog.json')
+                        const structLogE0e8 = loadFixture('tx-0xe0e873-structlog.json')
+
+                        const mockClient = new MockRpcClient()
+                        setupMocks(mockClient, block, receipts)
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_CREATE_TX, TRACE_CONFIG], callTraceFc74)
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_CALL_TX, TRACE_CONFIG], callTraceE0e8)
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_CREATE_TX, STRUCTLOG_CONFIG], structLogFc74)
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_CALL_TX, STRUCTLOG_CONFIG], structLogE0e8)
+
+                        const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
+
+                        const blocks = await rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
+                        expect(blocks).toHaveLength(1)
+                        expect(blocks[0].block.transactions.length).toEqual(20)
+                        expect(blocks[0].receipts?.length).toEqual(20)
+                    })
+
+                    it('excludes candidates whose reconstructed logs fall outside the header bloom', async () => {
+                        // Models the "partial leak" case: one reverted tx leaked
+                        // its pre-revert logs (0xfc74..), the other reverted tx
+                        // emitted logs that did NOT leak (we synthesize the latter
+                        // by giving callTracer a `logs` field with unrelated bits).
+                        // The filter must treat 0xe0e8 as non-leaking and exclude
+                        // its logs from the combined bloom.
+                        const block = loadFixture('block.json')
+                        const receipts = loadFixture('receipts.json')
+                        const callTraceFc74 = loadFixture('tx-0xfc74a2-calltrace.json')
+                        const callTraceE0e8Base = loadFixture('tx-0xe0e873-calltrace.json')
+                        const structLogFc74 = loadFixture('tx-0xfc74a2-structlog.json')
+                        // Attach a log to the 0xe0e8 trace whose bloom bits cannot
+                        // possibly be in the header (synthetic topic / address).
+                        const nonLeakingTrace = {
+                            ...callTraceE0e8Base,
+                            logs: [{
+                                address: '0x1111111111111111111111111111111111111111',
+                                topics: ['0x2222222222222222222222222222222222222222222222222222222222222222']
+                            }]
+                        }
+
+                        const mockClient = new MockRpcClient()
+                        setupMocks(mockClient, block, receipts)
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_CREATE_TX, TRACE_CONFIG], callTraceFc74)
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_CALL_TX, TRACE_CONFIG], nonLeakingTrace)
+                        // 0xfc74 goes through the struct-log fallback (callTracer
+                        // returned no logs for it). 0xe0e8 had a synthetic log via
+                        // callTracer, so no struct-log fixture is needed for it.
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_CREATE_TX, STRUCTLOG_CONFIG], structLogFc74)
+
+                        const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
+
+                        const blocks = await rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
+                        expect(blocks).toHaveLength(1)
+                        expect(blocks[0].block.transactions.length).toEqual(20)
+                    })
+
+                    it('throws when callTracer drops logs AND struct-log tracer is unavailable', async () => {
+                        const block = loadFixture('block.json')
+                        const receipts = loadFixture('receipts.json')
+                        const callTraceFc74 = loadFixture('tx-0xfc74a2-calltrace.json')
+                        const callTraceE0e8 = loadFixture('tx-0xe0e873-calltrace.json')
+
+                        const mockClient = new MockRpcClient()
+                        setupMocks(mockClient, block, receipts)
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_CREATE_TX, TRACE_CONFIG], callTraceFc74)
+                        mockClient.setFixture('debug_traceTransaction', [REVERTED_CALL_TX, TRACE_CONFIG], callTraceE0e8)
+                        // Struct-log fixtures NOT set — the fallback fetch fails
+                        // and we refuse to ingest the block.
+
+                        const rpc = new Rpc({ client: mockClient as any, verifyLogsBloom: true })
+
+                        await expect(
+                            rpc.getBlockBatch([BLOCK_NUMBER], { receipts: true, transactions: true })
+                        ).rejects.toThrow(/failed to reconstruct leaked logs via debug_traceTransaction \(struct-log\)/)
+                    })
                 })
             })
 

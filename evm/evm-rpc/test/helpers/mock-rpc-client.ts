@@ -28,17 +28,16 @@ export class MockRpcClient {
     }
 
     async batchCall(batch: {method: string, params?: any[]}[], options?: {validateResult?: (result: any) => any}): Promise<any[]> {
+        // Mirror real `batchCall` semantics: a missing fixture / per-item
+        // failure rejects the whole batch (the real client throws an RpcError
+        // when no validateError handler is provided).
         const results = []
         for (const req of batch) {
-            try {
-                let result = await this.call(req.method, req.params)
-                if (options?.validateResult) {
-                    result = options.validateResult(result)
-                }
-                results.push(result)
-            } catch (error: any) {
-                results.push({error: error.message})
+            let result = await this.call(req.method, req.params)
+            if (options?.validateResult) {
+                result = options.validateResult(result)
             }
+            results.push(result)
         }
         return results
     }

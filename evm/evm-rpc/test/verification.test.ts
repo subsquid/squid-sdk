@@ -55,11 +55,14 @@ describe('Verification Functions', () => {
                 })
 
                 it.skipIf(
-                    // Cronos block 11446765 has leaked logs from a reverted
-                    // transaction — its header bloom cannot be reconstructed
-                    // from the receipt logs alone. Handled by the trace-based
-                    // verification path in the Rpc class, covered in rpc.test.ts.
-                    fixture.chain === 'cronos' && fixture.blockNumber === 11446765
+                    // These Cronos blocks have leaked logs from reverted txs —
+                    // their header bloom cannot be reconstructed from receipt
+                    // logs alone. Handled by the trace-based verification path
+                    // in the Rpc class; see rpc.test.ts for coverage.
+                    fixture.chain === 'cronos' && (
+                        fixture.blockNumber === 11446765 ||
+                        fixture.blockNumber === 2689327
+                    )
                 )('logsBloom verification', async () => {
                     const block = loadBlock(fixture.chain, fixture.blockNumber)
                     // Use loadAllReceipts so that Cronos blocks with recovered
