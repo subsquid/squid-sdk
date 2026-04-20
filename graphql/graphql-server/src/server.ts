@@ -15,7 +15,7 @@ import {isTsNode} from '@subsquid/util-internal-ts-node'
 import {ApolloServerPluginCacheControl, KeyValueCache, PluginDefinition} from '@subsquid/apollo-server-core'
 import responseCachePlugin from 'apollo-server-plugin-response-cache'
 import assert from 'assert'
-import {GraphQLInt, GraphQLNonNull, GraphQLObjectType, GraphQLSchema, GraphQLString} from 'graphql'
+import {GraphQLBoolean, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLSchema, GraphQLString} from 'graphql'
 import Keyv from 'keyv'
 import * as path from 'path'
 import {Pool} from 'pg'
@@ -118,6 +118,7 @@ export class Server {
 
         if (this.options.squidStatus !== false) {
             schemas.push(this.squidStatusSchema())
+            schemas.push(this.squidTemplatesSchema())
         }
 
         let customResolvers = await this.customResolvers()
@@ -188,6 +189,68 @@ export class Server {
                     }
                 }
             })
+        })
+    }
+
+    @def
+    private squidTemplatesSchema(): GraphQLSchema {
+        let templatesQuery = {
+            sql:
+                `SELECT key, value, type, block_number, height FROM squid_processor.template_registry ` +
+                `ORDER BY height, block_number, type, key, value`,
+            params: [],
+            map(rows: any[][]): {
+                key: string
+                value: string
+                add: boolean
+                blockNumber: number
+                height: number
+            }[] {
+                return rows.map((row) => ({
+                    key: row[0],
+                    value: row[1],
+                    add: row[2],
+                    blockNumber: parseInt(row[3], 10),
+                    height: parseInt(row[4], 10),
+                }))
+            },
+        }
+
+        let templateType = new GraphQLObjectType({
+            name: 'SquidTemplate',
+            fields: {
+                key: {
+                    type: new GraphQLNonNull(GraphQLString),
+                },
+                value: {
+                    type: new GraphQLNonNull(GraphQLString),
+                },
+                add: {
+                    type: new GraphQLNonNull(GraphQLBoolean),
+                    description: 'True if the entry adds a template value; false if it removes one',
+                },
+                blockNumber: {
+                    type: new GraphQLNonNull(GraphQLInt),
+                },
+                height: {
+                    type: new GraphQLNonNull(GraphQLInt),
+                    description: 'Processor height when the mutation was persisted',
+                },
+            },
+        })
+
+        return new GraphQLSchema({
+            query: new GraphQLObjectType({
+                name: 'Query',
+                fields: {
+                    squidTemplates: {
+                        type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(templateType))),
+                        resolve(source, args, context: Context) {
+                            return context.openreader.executeQuery(templatesQuery)
+                        },
+                    },
+                },
+            }),
         })
     }
 

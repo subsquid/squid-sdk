@@ -1,8 +1,14 @@
 import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
 import {def} from '@subsquid/util-internal'
-import {BlockBatch, BlockRef, DataSource, DataSourceStreamOptions} from '@subsquid/util-internal-data-source'
+import {
+    BlockBatch,
+    BlockRef,
+    DataSource,
+    DataSourceStreamOptions,
+    TemplateRegistry,
+} from '@subsquid/util-internal-data-source'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
-import {applyRangeBound, FiniteRange, mergeRangeRequests, Range, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
+import {applyRangeBound, FiniteRange, mergeRangeRequests, Range, rangeIntersection, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {Block, DEFAULT_FIELDS, FieldSelection} from './data/model'
 import {
@@ -21,8 +27,15 @@ interface BlockRange {
     range?: Range
 }
 
+interface TemplateSpec<F extends FieldSelection> {
+    key: string
+    range?: Range
+    resolve(value: string): DataRequest<F>
+}
+
 export class DataSourceBuilder<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest<F>>[] = []
+    private templates: TemplateSpec<F>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
     private archive?: PortalClient | PortalClientOptions
@@ -82,43 +95,97 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         return this
     }
 
-    addTransaction(options: TransactionRequest & BlockRange): this {
-        let {range, ...req} = options
+    addTransaction(options: TransactionRequest & BlockRange): this
+    addTransaction(key: string, options: TransactionRequest & BlockRange): this
+    addTransaction(keyOrOptions: string | (TransactionRequest & BlockRange), options?: TransactionRequest & BlockRange): this {
+        if (typeof keyOrOptions === 'string') {
+            let {range, ...transaction} = options!
+            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
+                transactions: [{...transaction, where: {...transaction.where, feePayer: [value]}}],
+            })})
+            return this
+        }
+        let {range, ...req} = keyOrOptions
         this.add(range, {transactions: [req]})
         return this
     }
 
-    addInstruction(options: InstructionRequest & BlockRange): this {
-        let {range, ...req} = options
+    addInstruction(options: InstructionRequest & BlockRange): this
+    addInstruction(key: string, options: InstructionRequest & BlockRange): this
+    addInstruction(keyOrOptions: string | (InstructionRequest & BlockRange), options?: InstructionRequest & BlockRange): this {
+        if (typeof keyOrOptions === 'string') {
+            let {range, ...instruction} = options!
+            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
+                instructions: [{...instruction, where: {...instruction.where, programId: [value]}}],
+            })})
+            return this
+        }
+        let {range, ...req} = keyOrOptions
         this.add(range, {instructions: [req]})
         return this
     }
 
-    addLog(options: LogRequest & BlockRange): this {
-        let {range, ...req} = options
+    addLog(options: LogRequest & BlockRange): this
+    addLog(key: string, options: LogRequest & BlockRange): this
+    addLog(keyOrOptions: string | (LogRequest & BlockRange), options?: LogRequest & BlockRange): this {
+        if (typeof keyOrOptions === 'string') {
+            let {range, ...log} = options!
+            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
+                logs: [{...log, where: {...log.where, programId: [value]}}],
+            })})
+            return this
+        }
+        let {range, ...req} = keyOrOptions
         this.add(range, {logs: [req]})
         return this
     }
 
-    addBalance(options: BalanceRequest & BlockRange): this {
-        let {range, ...req} = options
+    addBalance(options: BalanceRequest & BlockRange): this
+    addBalance(key: string, options: BalanceRequest & BlockRange): this
+    addBalance(keyOrOptions: string | (BalanceRequest & BlockRange), options?: BalanceRequest & BlockRange): this {
+        if (typeof keyOrOptions === 'string') {
+            let {range, ...balance} = options!
+            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
+                balances: [{...balance, where: {...balance.where, account: [value]}}],
+            })})
+            return this
+        }
+        let {range, ...req} = keyOrOptions
         this.add(range, {balances: [req]})
         return this
     }
 
-    addTokenBalance(options: TokenBalanceRequest & BlockRange): this {
-        let {range, ...req} = options
+    addTokenBalance(options: TokenBalanceRequest & BlockRange): this
+    addTokenBalance(key: string, options: TokenBalanceRequest & BlockRange): this
+    addTokenBalance(keyOrOptions: string | (TokenBalanceRequest & BlockRange), options?: TokenBalanceRequest & BlockRange): this {
+        if (typeof keyOrOptions === 'string') {
+            let {range, ...tokenBalance} = options!
+            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
+                tokenBalances: [{...tokenBalance, where: {...tokenBalance.where, account: [value]}}],
+            })})
+            return this
+        }
+        let {range, ...req} = keyOrOptions
         this.add(range, {tokenBalances: [req]})
         return this
     }
 
-    addReward(options: RewardRequest & BlockRange): this {
-        let {range, ...req} = options
+    addReward(options: RewardRequest & BlockRange): this
+    addReward(key: string, options: RewardRequest & BlockRange): this
+    addReward(keyOrOptions: string | (RewardRequest & BlockRange), options?: RewardRequest & BlockRange): this {
+        if (typeof keyOrOptions === 'string') {
+            let {range, ...reward} = options!
+            this.templates.push({key: keyOrOptions, range, resolve: (value) => ({
+                rewards: [{...reward, where: {...reward.where, pubkey: [value]}}],
+            })})
+            return this
+        }
+        let {range, ...req} = keyOrOptions
         this.add(range, {rewards: [req]})
         return this
     }
 
-    private getRequests(): RangeRequestList<DataRequest<any>> {
+    private getRequests(registry: TemplateRegistry | undefined): RangeRequestList<DataRequest<any>> {
 
         function concat<T>(a?: T[], b?: T[]): T[] | undefined {
             let result: T[] = []
@@ -132,6 +199,16 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
         }
 
         let mergedInputs: RangeRequest<DataRequest<F>>[] = this.requests.slice()
+
+        if (registry) {
+            for (let spec of this.templates) {
+                for (let entry of registry.get(spec.key)) {
+                    let range = rangeIntersection(spec.range ?? {from: 0}, entry.range)
+                    if (!range) continue
+                    mergedInputs.push({range, request: spec.resolve(entry.value)})
+                }
+            }
+        }
 
         let requests = mergeRangeRequests(mergedInputs, (a, b) => {
             return {
@@ -165,7 +242,7 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
 
         let portal = this.archive instanceof PortalClient ? this.archive : new PortalClient(this.archive)
         return new SolanaDataSource(
-            () => this.getRequests(),
+            (reg) => this.getRequests(reg),
             portal
         )
     }
@@ -204,7 +281,7 @@ export type GetDataSourceBlock<T> = T extends DataSource<infer B> ? B : never
 
 export class SolanaDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
     constructor(
-        private _resolveRequests: () => RangeRequestList<DataRequest<F>>,
+        private _resolveRequests: (registry: TemplateRegistry | undefined) => RangeRequestList<DataRequest<F>>,
         private portal: PortalClient,
     ) {}
 
