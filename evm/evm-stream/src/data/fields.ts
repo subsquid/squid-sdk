@@ -1,10 +1,8 @@
-import {DEFAULT_FIELDS, FieldSelection} from './model'
 import {Selector} from './type-util'
 
 
 function merge<Keys extends string>(def: Selector<Keys>, requested: Selector<Keys> = {}): Selector<Keys> {
     let fields: Selector<Keys> = {}
-
     for (let key in def) {
         if (requested[key] !== false) {
             fields[key] = def[key]

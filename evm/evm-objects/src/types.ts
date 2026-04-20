@@ -1,4 +1,4 @@
-import {Bytes, FieldSelection} from '@subsquid/evm-stream'
+import {FieldSelection} from '@subsquid/evm-stream'
 import * as base from '@subsquid/evm-stream'
 
 
