@@ -1,24 +1,8 @@
 import {isForkException as isPortalForkException, PortalClient, solana} from '@subsquid/portal-client'
 import {maybeLast} from '@subsquid/util-internal'
-import {
-    BlockRef,
-    DataSource,
-    DataSourceStreamOptions,
-    ForkException,
-    type BlockBatch,
-} from '@subsquid/util-internal-data-source'
+import {BlockRef, DataSource, StreamRequest, ForkException, type BlockBatch} from '@subsquid/util-internal-data-source'
 import {applyRangeBound, FiniteRange, getSize, RangeRequestList, type RangeRequest} from '@subsquid/util-internal-range'
-import {
-    Block,
-    FieldSelection,
-    type Balance,
-    type BlockHeader,
-    type Instruction,
-    type LogMessage,
-    type Reward,
-    type TokenBalance,
-    type Transaction,
-} from '../data/model'
+import {Block, FieldSelection} from '../data/model'
 import {DataRequest} from '../data/request'
 import {
     mergeItems,
@@ -39,7 +23,7 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
     constructor(
         private client: PortalClient,
         private requests: RangeRequestResolver<F>,
-        private opts?: {squidId?: string}
+        private opts?: {squidId?: string},
     ) {}
 
     async getHead(): Promise<BlockRef> {
@@ -54,80 +38,96 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
         return head
     }
 
-    getFinalizedStream(opts?: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
+    getFinalizedStream(opts?: StreamRequest): AsyncIterable<BlockBatch<Block<F>>> {
         return this._getStream(opts, true)
     }
 
-    getStream(opts?: DataSourceStreamOptions): AsyncIterable<BlockBatch<Block<F>>> {
+    getStream(opts?: StreamRequest): AsyncIterable<BlockBatch<Block<F>>> {
         return this._getStream(opts, false)
     }
 
     getBlocksCountInRange(range: FiniteRange): number {
-        return getSize(this.resolveRequests().map(r => r.range), range)
+        return getSize(
+            this.resolveRequests().map((r) => r.range),
+            range,
+        )
     }
 
     private resolveRequests(): RangeRequestList<DataRequest<F>> {
         return typeof this.requests === 'function' ? this.requests() : this.requests
     }
 
-    private async *_getStream(
-        opts?: DataSourceStreamOptions,
-        finalized?: boolean
-    ): AsyncIterable<BlockBatch<Block<F>>> {
+    private async *_getStream(opts?: StreamRequest, finalized?: boolean): AsyncIterable<BlockBatch<Block<F>>> {
         let requests = applyRangeBound(this.resolveRequests(), opts?.from != null ? {from: opts.from} : undefined)
         if (requests.length === 0) return
 
         let streamOptions = {request: {headers: this.getHeaders()}}
         let parentHash = opts?.parentHash
+        let nextBlock = opts?.from
 
-        for (let i = 0; i < requests.length; i++) {
-            let req = requests[i]
-            let query = mapRequest(req, parentHash)
-            let stream = this.client.getStream(query, streamOptions, finalized)
-
-            try {
-                for await (let {blocks, meta} of stream) {
-                    yield {
-                        blocks: blocks.map((block) => mapBlock(block)),
-                        finalizedHead: getHead(meta.finalizedHeadNumber, meta.finalizedHeadHash),
-                    }
-
-                    let lastBlock = maybeLast(blocks)?.header
-                    if (lastBlock != null) {
-                        parentHash = lastBlock.hash
-                    }
+        // Stream a request from the portal and keep (parentHash, nextBlock)
+        // in sync with the last block of every batch.
+        let drain = async function* (
+            this: PortalDataSource<F>,
+            req: RangeRequest<DataRequest<F>>,
+        ): AsyncIterable<BlockBatch<Block<F>>> {
+            for await (let {blocks, meta} of this.client.getStream(
+                mapRequest(req, parentHash),
+                streamOptions,
+                finalized,
+            )) {
+                yield {
+                    blocks: blocks.map((block) => mapBlock(block)),
+                    finalizedHead: getHead(meta.finalizedHeadNumber, meta.finalizedHeadHash),
                 }
 
-                // finalize range
-                assert(req.range.to != null)
-
-                let nextReq = requests[i + 1]
-                let gapRange = {from: req.range.to + 1, to: nextReq ? nextReq.range.from - 1 : undefined}
-                if (gapRange.from === gapRange.to) continue
-
-                for await (let {blocks, meta} of this.client.getStream(
-                    mapRequest({range: gapRange, request: {fields: req.request.fields}}, parentHash),
-                    streamOptions,
-                    finalized
-                )) {
-                    let finalizedHead = getHead(meta.finalizedHeadNumber, meta.finalizedHeadHash)
-                    if (finalizedHead && req.range.to <= finalizedHead.number) {
-                        parentHash = undefined
-                        break
-                    }
-
-                    let lastBlock = maybeLast(blocks)?.header
-                    if (lastBlock != null) {
-                        parentHash = lastBlock.hash
-                    }
+                let lastBlock = maybeLast(blocks)?.header
+                if (lastBlock != null) {
+                    parentHash = lastBlock.hash
+                    nextBlock = lastBlock.number + 1
                 }
-            } catch (e: unknown) {
-                if (isPortalForkException(e)) {
-                    throw new ForkException(e.blockNumber, e.parentBlockHash, e.previousBlocks)
-                }
-
-                throw e
             }
+        }.bind(this)
+
+        // Advance the stream until the given block becomes finalized, after
+        // which chain-continuity info is no longer needed and is dropped.
+        // When `to` is undefined the stream is open-ended and we wait on the
+        // current tail (nextBlock - 1).
+        let finalize = async (to?: number) => {
+            if (nextBlock == null) return
+            if (to != null && nextBlock > to) return
+            let target = to ?? nextBlock - 1
+            for await (let {finalizedHead} of drain({range: {from: nextBlock, to}, request: {}})) {
+                if (finalizedHead && target <= finalizedHead.number) {
+                    parentHash = undefined
+                    nextBlock = undefined
+                    return
+                }
+            }
+        }
+
+        try {
+            for (let req of requests) {
+                // Close any gap preceding this query so parentHash lands on
+                // req.range.from (or is safely dropped).
+                await finalize(req.range.from - 1)
+
+                if (nextBlock !== req.range.from) {
+                    parentHash = undefined
+                }
+
+                yield* drain(req)
+            }
+
+            // After the last query, wait for its range to finalize before
+            // ending the stream.
+            await finalize()
+        } catch (e: unknown) {
+            if (isPortalForkException(e)) {
+                throw new ForkException(e.blockNumber, e.parentBlockHash, e.previousBlocks)
+            }
+
+            throw e
         }
     }
 
@@ -145,7 +145,7 @@ function getHead(number?: number | undefined, hash?: string | undefined): BlockR
 
 function mapRequest<F extends FieldSelection>(
     req: RangeRequest<DataRequest<F>>,
-    parentBlockHash?: string
+    parentBlockHash?: string,
 ): solana.Query<MapFieldSelection<F>> {
     let transactions = req.request.transactions?.map((tx) => ({...tx.where, ...tx.include}))
     let instructions = req.request.instructions?.map((ix) => ({...ix.where, ...ix.include}))
