@@ -233,6 +233,19 @@ function encodeTransaction(tx: Transaction): Buffer {
             BigInt(assertNotNull(tx.value, 'tx.value is missing'))
         ])
         return Buffer.concat([Buffer.from([0x64]), Buffer.from(payload)])
+    } else if (tx.type == '0x65') {
+        // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L43
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            decodeHex(tx.from),
+            BigInt(tx.nonce),
+            BigInt(tx.gasPrice ?? 0),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing'))
+        ])
+        return Buffer.concat([Buffer.from([0x65]), Buffer.from(payload)])
     } else if (tx.type == '0x66') {
         // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L104
         let payload = RLP.encode([
