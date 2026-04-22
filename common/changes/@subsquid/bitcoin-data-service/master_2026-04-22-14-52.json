@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/bitcoin-data-service",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/bitcoin-data-service"
+}

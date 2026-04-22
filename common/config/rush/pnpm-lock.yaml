@@ -116,9 +116,6 @@ dependencies:
   '@rush-temp/evm-stream':
     specifier: file:./projects/evm-stream.tgz
     version: file:projects/evm-stream.tgz
-  '@rush-temp/evm-template-registry':
-    specifier: file:./projects/evm-template-registry.tgz
-    version: file:projects/evm-template-registry.tgz(supports-color@8.1.1)(ts-node@10.9.2)
   '@rush-temp/evm-typegen':
     specifier: file:./projects/evm-typegen.tgz
     version: file:projects/evm-typegen.tgz
@@ -8143,47 +8140,13 @@ packages:
     dev: false
 
   file:projects/evm-stream.tgz:
-    resolution: {integrity: sha512-mxAfTY9s4HnFC/OyvZmwaELLcvM0WMcoOjdzQX+fUe7fZynFoiD/pQj6HaFhTsClu9wTB+N2eFU/2FE4epTK+Q==, tarball: file:projects/evm-stream.tgz}
+    resolution: {integrity: sha512-y8nNv7t1Rv4d06iDFneDQSedr5IHGauzX5sA55BCqs+mFNbyiKXJSsUkNcgR5bQFP4ZvLj+kvo7UySWSRNwhng==, tarball: file:projects/evm-stream.tgz}
     name: '@rush-temp/evm-stream'
     version: 0.0.0
     dependencies:
       '@subsquid/portal-client': 0.4.0
       '@types/node': 24.0.15
       typescript: 5.5.4
-    dev: false
-
-  file:projects/evm-template-registry.tgz(supports-color@8.1.1)(ts-node@10.9.2):
-    resolution: {integrity: sha512-VupdFb8600zJNRifOw+EGNbUQivY8h9wdCJETlPyQTdXWe5yYneAzVaNHFZAnfCdyHOC40XcqdkN2PAlyN7dnQ==, tarball: file:projects/evm-template-registry.tgz}
-    id: file:projects/evm-template-registry.tgz
-    name: '@rush-temp/evm-template-registry'
-    version: 0.0.0
-    dependencies:
-      '@types/node': 24.0.15
-      dotenv: 16.3.1
-      ethers: 6.9.0
-      pg: 8.11.3
-      typeorm: 0.3.17(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - '@google-cloud/spanner'
-      - '@sap/hana-client'
-      - better-sqlite3
-      - bufferutil
-      - hdb-pool
-      - ioredis
-      - mongodb
-      - mssql
-      - mysql2
-      - oracledb
-      - pg-native
-      - pg-query-stream
-      - redis
-      - sql.js
-      - sqlite3
-      - supports-color
-      - ts-node
-      - typeorm-aurora-data-api-driver
-      - utf-8-validate
     dev: false
 
   file:projects/evm-typegen.tgz:
@@ -8896,7 +8859,7 @@ packages:
     dev: false
 
   file:projects/substrate-ingest.tgz:
-    resolution: {integrity: sha512-WaQvGgRGBTodsuvfRa7OBvYDxM9vbq9IIqmiH0xcU5IvSc4KUK4M4kseqhbsHXMtnvUtGLAm1HxqjL+oaOENEQ==, tarball: file:projects/substrate-ingest.tgz}
+    resolution: {integrity: sha512-HtZ+lFqVaK3D4PPMT/fJkh2BRsKWBGLJlUf82pXvaB1+ZquVx7az+dinlMZkEYVK2Nv8Ghsmo6xWW9Kgsm/spA==, tarball: file:projects/substrate-ingest.tgz}
     name: '@rush-temp/substrate-ingest'
     version: 0.0.0
     dependencies:
@@ -8929,7 +8892,7 @@ packages:
     dev: false
 
   file:projects/substrate-processor.tgz:
-    resolution: {integrity: sha512-aCdvHmfb81ndWbSqbhSAb1Yi1h6JjCyFpTf7q5fH6HLGHGayoYyua/3YzwYiEyipWQwY/pUUhyRDqfbTKb0LlA==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-jUE50FgYVbxwqK5KZddSdcU9kn67Fx6FJIRqgBlEIs+34mByiSx++vr+OyxtejUYOLkY46d8ybEGn7FL8E1s1w==, tarball: file:projects/substrate-processor.tgz}
     name: '@rush-temp/substrate-processor'
     version: 0.0.0
     dependencies:

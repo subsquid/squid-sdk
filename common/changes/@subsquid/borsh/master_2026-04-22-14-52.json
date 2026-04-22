@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/borsh",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/borsh"
+}

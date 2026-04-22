@@ -3,7 +3,7 @@
     {
       "packageName": "@subsquid/evm-stream",
       "comment": "init",
-      "type": "patch"
+      "type": "none"
     }
   ],
   "packageName": "@subsquid/evm-stream"

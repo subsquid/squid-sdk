@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/bitcoin-dump",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/bitcoin-dump"
+}
