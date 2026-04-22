@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Wed, 19 Nov 2025 10:21:16 GMT and should not be manually modified.
+This log was last generated on Wed, 22 Apr 2026 06:32:55 GMT and should not be manually modified.
+
+## 4.4.5
+Wed, 22 Apr 2026 06:32:55 GMT
+
+### Patches
+
+- skip phantom-extrinsic events emitted by the MultiBlockElection pallet when parsing calls
 
 ## 4.4.4
 Wed, 19 Nov 2025 10:21:16 GMT
