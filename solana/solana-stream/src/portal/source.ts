@@ -1,28 +1,41 @@
 import {isForkException as isPortalForkException, PortalClient, solana} from '@subsquid/portal-client'
 import {maybeLast} from '@subsquid/util-internal'
-import {BlockRef, DataSource, StreamRequest, ForkException, type BlockBatch} from '@subsquid/util-internal-data-source'
-import {applyRangeBound, FiniteRange, getSize, RangeRequestList, type RangeRequest} from '@subsquid/util-internal-range'
+import {
+    BlockBatch,
+    BlockRef,
+    ForkException,
+    StreamRequest,
+} from '@subsquid/util-internal-data-source'
+import {
+    applyRangeBound,
+    FiniteRange,
+    getSize,
+    RangeRequest,
+    RangeRequestList,
+} from '@subsquid/util-internal-range'
+import assert from 'assert'
 import {Block, FieldSelection} from '../data/model'
 import {DataRequest} from '../data/request'
 import {
-    mergeItems,
-    TX_FILTER_KEYS,
+    BALANCE_FILTER_KEYS,
     INSTRUCTION_FILTER_KEYS,
     LOG_FILTER_KEYS,
-    BALANCE_FILTER_KEYS,
-    TOKEN_BALANCE_FILTER_KEYS,
+    mergeItems,
     REWARD_FILTER_KEYS,
+    TOKEN_BALANCE_FILTER_KEYS,
+    TX_FILTER_KEYS,
 } from './merge'
-import assert from 'assert'
+import type {SolanaDataSource} from '../source'
 
-export type RangeRequestResolver<F extends FieldSelection> =
-    | RangeRequestList<DataRequest<F>>
-    | (() => RangeRequestList<DataRequest<F>>)
+export type RangeRequestResolver =
+    | RangeRequestList<DataRequest>
+    | (() => RangeRequestList<DataRequest>)
 
-export class PortalDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
+export class PortalSolanaDataSource<F extends FieldSelection> implements SolanaDataSource<F> {
     constructor(
         private client: PortalClient,
-        private requests: RangeRequestResolver<F>,
+        private fields: FieldSelection,
+        private requests: RangeRequestResolver,
         private opts?: {squidId?: string},
     ) {}
 
@@ -53,7 +66,7 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
         )
     }
 
-    private resolveRequests(): RangeRequestList<DataRequest<F>> {
+    private resolveRequests(): RangeRequestList<DataRequest> {
         return typeof this.requests === 'function' ? this.requests() : this.requests
     }
 
@@ -68,11 +81,11 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
         // Stream a request from the portal and keep (parentHash, nextBlock)
         // in sync with the last block of every batch.
         let drain = async function* (
-            this: PortalDataSource<F>,
-            req: RangeRequest<DataRequest<F>>,
+            this: PortalSolanaDataSource<F>,
+            req: RangeRequest<DataRequest>,
         ): AsyncIterable<BlockBatch<Block<F>>> {
             for await (let {blocks, meta} of this.client.getStream(
-                mapRequest(req, parentHash),
+                mapRequest(req, this.fields, parentHash),
                 streamOptions,
                 finalized,
             )) {
@@ -143,10 +156,11 @@ function getHead(number?: number | undefined, hash?: string | undefined): BlockR
     return {number, hash}
 }
 
-function mapRequest<F extends FieldSelection>(
-    req: RangeRequest<DataRequest<F>>,
+function mapRequest(
+    req: RangeRequest<DataRequest>,
+    fields: FieldSelection,
     parentBlockHash?: string,
-): solana.Query<MapFieldSelection<F>> {
+): solana.Query<MapFieldSelection> {
     let transactions = req.request.transactions?.map((tx) => ({...tx.where, ...tx.include}))
     let instructions = req.request.instructions?.map((ix) => ({...ix.where, ...ix.include}))
     let logs = req.request.logs?.map((log) => ({...log.where, ...log.include}))
@@ -158,7 +172,7 @@ function mapRequest<F extends FieldSelection>(
         fromBlock: req.range.from,
         toBlock: req.range.to === Infinity ? undefined : req.range.to,
         parentBlockHash: parentBlockHash,
-        fields: mapFieldSelection(req.request.fields),
+        fields: mapFieldSelection(fields),
         includeAllBlocks: req.request.includeAllBlocks,
         transactions: transactions && mergeItems(transactions, TX_FILTER_KEYS),
         instructions: instructions && mergeItems(instructions, INSTRUCTION_FILTER_KEYS),
@@ -169,21 +183,21 @@ function mapRequest<F extends FieldSelection>(
     }
 }
 
-function mapFieldSelection<F extends FieldSelection>(fields?: F) {
+function mapFieldSelection(fields: FieldSelection) {
     return {
-        block: fields?.block,
-        transaction: {...fields?.transaction, transactionIndex: true},
-        instruction: {...fields?.instruction, transactionIndex: true, instructionAddress: true},
-        log: {...fields?.log, logIndex: true, transactionIndex: true, instructionAddress: true},
-        balance: {...fields?.balance, transactionIndex: true, account: true},
-        tokenBalance: {...fields?.tokenBalance, transactionIndex: true, account: true},
-        reward: {...fields?.reward, pubkey: true},
+        block: fields.block,
+        transaction: {...fields.transaction, transactionIndex: true},
+        instruction: {...fields.instruction, transactionIndex: true, instructionAddress: true},
+        log: {...fields.log, logIndex: true, transactionIndex: true, instructionAddress: true},
+        balance: {...fields.balance, transactionIndex: true, account: true},
+        tokenBalance: {...fields.tokenBalance, transactionIndex: true, account: true},
+        reward: {...fields.reward, pubkey: true},
     } satisfies solana.FieldSelection
 }
 
-type MapFieldSelection<F extends FieldSelection> = ReturnType<typeof mapFieldSelection<F>>
+type MapFieldSelection = ReturnType<typeof mapFieldSelection>
 
-export function mapBlock<F extends FieldSelection>(rawBlock: solana.Block<MapFieldSelection<F>>): Block<F> {
+export function mapBlock<F extends FieldSelection>(rawBlock: solana.Block<MapFieldSelection>): Block<F> {
     let {number, hash, ...hdr} = rawBlock.header
     let header = {
         number,

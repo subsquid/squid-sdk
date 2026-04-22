@@ -1,9 +1,8 @@
 import {LogMessage} from '@subsquid/solana-normalization'
-import {Base58Bytes, FieldSelection} from './model'
+import {Base58Bytes} from './model'
 
 
-export interface DataRequest<F extends FieldSelection> {
-    fields?: F
+export interface DataRequest {
     includeAllBlocks?: boolean
     transactions?: TransactionRequest[]
     instructions?: InstructionRequest[]

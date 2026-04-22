@@ -8,7 +8,7 @@ import {
     BALANCE_FILTER_KEYS,
     TOKEN_BALANCE_FILTER_KEYS,
     REWARD_FILTER_KEYS,
-} from './portal/merge'
+} from './merge'
 
 describe('mergeItems', function () {
     describe('instructions', function () {

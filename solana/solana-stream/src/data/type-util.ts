@@ -1,42 +1,44 @@
-export type Simplify<T> = {
-    [K in keyof T]: T[K]
-} & {}
+/**
+ * Flattens an intersection type into a single object shape for nicer IDE hover
+ * output. The trailing `& {}` is a no-op at the type level but forces the
+ * compiler to normalize the representation.
+ */
+export type Simplify<T> = {[K in keyof T]: T[K]} & {}
 
+/**
+ * Extracts the string keys of `F` whose values include the literal `true`.
+ *
+ * @example
+ * type Keys = TrueFields<{a: true; b: false; c?: boolean}>
+ * // "a" | "c"  -- `c`'s type includes `true` through `boolean`
+ */
+export type TrueFields<F> = {
+    [K in keyof F]-?: true extends F[K] ? K : never
+}[keyof F]
 
-export type ExcludeUndefined<T> = {
-    [K in keyof T as undefined extends T[K] ? never : K]: T[K]
-} & {}
+/**
+ * Picks the set of truthy field keys for a given section `K` of a
+ * `FieldSelection`-shaped type `F`.
+ */
+export type GetFields<F, K extends keyof F> = TrueFields<F[K]>
 
-
-export type GetFields<
-    FieldSelectionType,
-    Defaults extends FieldSelectionType,
-    Selection extends FieldSelectionType,
-    K extends keyof FieldSelectionType
-> = TrueFields<MergeDefault<Selection[K], Defaults[K]>>
-
-
-type MergeDefault<T, D> = Simplify<
-    undefined extends T ? D : Omit<D, keyof ExcludeUndefined<T>> & ExcludeUndefined<T>
->
-
-
-type TrueFields<F> = keyof {
-    [K in keyof F as true extends F[K] ? K : never]: true
-}
-
-
+/**
+ * Picks `Fields` from `T` while distributing over unions, so members of a
+ * discriminated union are narrowed independently.
+ */
 export type Select<T, Fields> = T extends any ? Simplify<Pick<T, Extract<keyof T, Fields>>> : never
 
-
-export type Selector<Fields extends string | number | symbol> = {
+/**
+ * Optional boolean flag map over a finite set of string keys.
+ *
+ * Shape: `{[K in Fields]?: boolean}` - equivalent to `Partial<Record<Fields, boolean>>`.
+ */
+export type Selector<Fields extends PropertyKey> = {
     [P in Fields]?: boolean
 }
 
-
-export type MakePartial<T, Required extends keyof T> = Simplify<
-    Pick<T, Required> &
-    {
-        [K in keyof T as K extends Required ? never : K]+?: T[K]
-    }
->
+/**
+ * Produces a type with `Required` keys kept as-is and all other keys made
+ * optional.
+ */
+export type MakePartial<T, Required extends keyof T> = Simplify<Pick<T, Required> & Partial<Omit<T, Required>>>
