@@ -69,3 +69,16 @@ export interface Block<F extends FieldSelection = {}> {
     tokenBalances: TokenBalance<F>[]
     rewards: Reward<F>[]
 }
+
+
+/**
+ * Maps a raw `@subsquid/solana-stream` block type to its augmented counterpart
+ * produced by {@link augmentBlock}.
+ *
+ * @example
+ * ```ts
+ * type RawBlock = GetDataSourceBlock<typeof dataSource>
+ * type Block = AugmentedBlock<RawBlock>
+ * ```
+ */
+export type AugmentedBlock<B> = B extends base.Block<infer F> ? Block<F> : never

@@ -79,15 +79,7 @@ export type Reward = Omit<norm.Reward, 'pubkey'> & {
 export function toArchiveBlock(block: norm.Block): Block {
     let dict = new AccountDict()
 
-    let {
-        header: {slot, parentSlot, ...hdr}
-    } = block
-
-    let header = {
-        number: slot,
-        parentNumber: parentSlot,
-        ...hdr
-    }
+    let header: BlockHeader = {...block.header}
 
     let transactions = block.transactions.map(tx => {
         let {accountKeys, addressTableLookups, loadedAddresses, ...props} = tx

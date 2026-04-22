@@ -154,8 +154,8 @@ export class ChainFixer {
             let b = batch.blocks[i]
             if (this.from > b.block.parentSlot) {
                 if (this.ingest.validateChainContinuity && this.parentHash && this.parentHash !== b.block.previousBlockhash) throw new ForkException(
+                    b.slot,
                     this.parentHash,
-                    getBlockRef(b),
                     [{
                         number: b.block.parentSlot,
                         hash: b.block.previousBlockhash

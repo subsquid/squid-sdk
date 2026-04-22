@@ -111,7 +111,7 @@ export class DataService {
         } catch(err: any) {
             await it.return?.().catch(err => log.error(err))
             if (isForkException(err)) {
-                return new InvalidBaseBlock(err.prev)
+                return new InvalidBaseBlock(err.previousBlocks)
             } else {
                 throw err
             }
@@ -191,14 +191,14 @@ export class DataService {
 
             if (isForkException(err)) {
                 stacked = 0
-                let forkBase = this.chain.getForkBase(err.prev)
+                let forkBase = this.chain.getForkBase(err.previousBlocks)
                 if (forkBase) {
                     base = forkBase
-                    this.log.info({forkBase: base, upstreamBlocks: err.prev}, 'fork encountered')
+                    this.log.info({forkBase: base, upstreamBlocks: err.previousBlocks}, 'fork encountered')
                 } else {
                     throw addErrorContext(new Error('rollback behind finalized head'), {
                         finalizedHead: this.chain.getFinalizedHead(),
-                        upstreamBlocks: err.prev
+                        upstreamBlocks: err.previousBlocks
                     })
                 }
             } else {

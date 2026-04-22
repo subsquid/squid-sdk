@@ -41,13 +41,13 @@ export class Block {
 
 export class BlockHeader implements PartialBlockHeader {
     id: string
-    height: number
+    number: number
     hash: Base58Bytes
     parentHash: Base58Bytes
 
     constructor(header: PartialBlockHeader) {
         this.id = formatId(header)
-        this.height = header.height
+        this.number = header.number
         this.hash = header.hash
         this.parentHash = header.parentHash
         Object.assign(this, header)

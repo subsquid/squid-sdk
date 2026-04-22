@@ -1,6 +1,6 @@
 import {run} from '@subsquid/batch-processor'
 import {augmentBlock} from '@subsquid/solana-objects'
-import {DataSourceBuilder, SolanaRpcClient} from '@subsquid/solana-stream'
+import {DataSourceBuilder} from '@subsquid/solana-stream'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import assert from 'assert'
 import * as tokenProgram from './abi/token-program'
@@ -11,17 +11,8 @@ import {Exchange} from './model'
 // that defines where to get the data and what data should we get.
 const dataSource = new DataSourceBuilder()
     // Provide Subsquid Network Gateway URL.
-    // .setGateway('https://v2.archive.subsquid.io/network/solana-mainnet')
-    // Subsquid Network is always about 1000 blocks behind the head.
-    // We must use regular RPC endpoint to get through the last mile
-    // and stay on top of the chain.
-    // This is a limitation, and we promise to lift it in the future!
-    .setRpc(process.env.SOLANA_NODE == null ? undefined : {
-        client: new SolanaRpcClient({
-            url: process.env.SOLANA_NODE,
-            // rateLimit: 100 // requests per sec
-        }),
-        strideConcurrency: 10
+    .setPortal({
+        url: 'https://portal.sqd.dev/datasets/solana-mainnet',
     })
     // Currently only blocks from 240_000_000 and above are stored in Subsquid Network.
     // When we specify it, we must also limit the range of requested blocks.
@@ -50,10 +41,9 @@ const dataSource = new DataSourceBuilder()
     // Accurate selection of only required fields can have a notable positive impact
     // on performance when data is sourced from Subsquid Network.
     //
-    // We do it below only for illustration as all fields we've selected
-    // are fetched by default.
+    // Note: when `.setFields()` is called, the provided selection fully replaces
+    // the built-in defaults. Make sure to list every field you need below.
     //
-    // It is possible to override default selection by setting undesired fields to `false`.
     .setFields({
         block: { // block header fields
             timestamp: true
@@ -67,6 +57,8 @@ const dataSource = new DataSourceBuilder()
             data: true
         },
         tokenBalance: { // token balance record fields
+            preMint: true,
+            postMint: true,
             preAmount: true,
             postAmount: true,
             preOwner: true,
@@ -155,9 +147,9 @@ run(dataSource, database, async ctx => {
             if (ins.programId === whirlpool.programId && ins.d8 === whirlpool.instructions.swap.d8) {
                 let exchange = new Exchange({
                     id: ins.id,
-                    slot: block.header.slot,
+                    slot: block.header.number,
                     tx: ins.getTransaction().signatures[0],
-                    timestamp: new Date(block.header.timestamp * 1000)
+                    timestamp: new Date(block.header.timestamp)
                 })
 
                 assert(ins.inner.length == 2)

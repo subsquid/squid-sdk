@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "rename `slot` to `number`",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/solana-normalization"
+}
