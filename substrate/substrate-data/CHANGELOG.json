@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.4.5",
+      "tag": "@subsquid/substrate-data_v4.4.5",
+      "date": "Wed, 22 Apr 2026 06:32:55 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "skip phantom-extrinsic events emitted by the MultiBlockElection pallet when parsing calls"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.4.4",
       "tag": "@subsquid/substrate-data_v4.4.4",
       "date": "Wed, 19 Nov 2025 10:21:16 GMT",
