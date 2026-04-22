@@ -155,7 +155,7 @@ export class ChainFixer {
             if (this.from > b.block.parentSlot) {
                 if (this.ingest.validateChainContinuity && this.parentHash && this.parentHash !== b.block.previousBlockhash) throw new ForkException(
                     b.slot,
-                    b.block.previousBlockhash,
+                    this.parentHash,
                     [{
                         number: b.block.parentSlot,
                         hash: b.block.previousBlockhash

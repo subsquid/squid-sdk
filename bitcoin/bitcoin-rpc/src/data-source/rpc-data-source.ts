@@ -92,7 +92,7 @@ export class BitcoinRpcDataSource implements DataSource<Block> {
                     }
                     throw new ForkException(
                         block.number,
-                        block.block.previousblockhash ?? ZERO_HASH,
+                        parentHash,
                         [
                             {
                                 number: block.number - 1,

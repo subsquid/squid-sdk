@@ -95,7 +95,7 @@ export class EvmRpcDataSource implements DataSource<Block> {
                     }
                     throw new ForkException(
                         block.number,
-                        block.block.parentHash,
+                        parentHash,
                         [{
                             number: block.number - 1,
                             hash: block.block.parentHash

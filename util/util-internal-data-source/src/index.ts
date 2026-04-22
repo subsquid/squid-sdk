@@ -49,12 +49,12 @@ export class ForkException extends Error {
 
     constructor(
         blockNumber: number,
-        parentBlockHash: string,
+        public readonly expectedParentHash: string,
         public readonly previousBlocks: BlockRef[]
     ) {
         assert(previousBlocks.length > 0)
         let last = previousBlocks[previousBlocks.length - 1]
-        super(`expected ${blockNumber} to have parent ${last.number}#${parentBlockHash}, but got ${last.number}#${last.hash}`)
+        super(`expected ${blockNumber} to have parent ${last.number}#${expectedParentHash}, but got ${last.number}#${last.hash}`)
     }
 
     get name(): string {
