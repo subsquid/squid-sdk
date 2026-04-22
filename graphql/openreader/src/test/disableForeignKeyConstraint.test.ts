@@ -1,4 +1,3 @@
-import expect from 'expect'
 import {parse} from 'graphql'
 import {buildModel, buildSchema, SchemaError} from '../model.schema'
 import {useDatabase, useServer} from './setup'

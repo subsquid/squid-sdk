@@ -1,3 +1,4 @@
+/// <reference types="vitest/globals" />
 import {createLogger} from '@subsquid/logger'
 import {assertNotNull} from "@subsquid/util-internal"
 import {ListeningServer} from "@subsquid/util-internal-http-server"
@@ -53,7 +54,7 @@ export function databaseDelete(): Promise<void> {
 
 
 export function useDatabase(sql: string[]): void {
-    before(async () => {
+    beforeAll(async () => {
         await databaseDelete()
         await databaseExecute(sql)
     })
@@ -64,7 +65,7 @@ export function useServer(schema: string, options?: Partial<ServerOptions>): Cli
     let client = new Client('not defined')
     let db = new Pool(db_config)
     let info: ListeningServer | undefined
-    before(async () => {
+    beforeAll(async () => {
         info = await serve({
             connection: db,
             model: buildModel(buildSchema(parse(schema))),
@@ -78,7 +79,7 @@ export function useServer(schema: string, options?: Partial<ServerOptions>): Cli
         })
         client.endpoint = `http://localhost:${info.port}/graphql`
     })
-    after(() => info?.close())
-    after(() => db.end())
+    afterAll(() => info?.close())
+    afterAll(() => db.end())
     return client
 }

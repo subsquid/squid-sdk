@@ -1,7 +1,7 @@
 import assert from 'assert'
 import * as fc from 'fast-check'
 import {Arbitrary} from 'fast-check'
-import {describe, it} from 'node:test'
+import { describe, it } from 'vitest'
 import {Range, RangeRequest} from './interfaces'
 import {assertRange, assertRangeList, mergeRangeRequests, rangeContains, rangeDifference} from './util'
 

@@ -1,4 +1,3 @@
-import expect from 'expect'
 import {TypeormDatabase} from '../database'
 import type {TemplateMutation} from '../templates'
 import {Data} from './lib/model'

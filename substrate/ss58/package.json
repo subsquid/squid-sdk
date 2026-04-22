@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "test": "node lib/test.js"
+    "test": "vitest --run"
   },
   "dependencies": {
     "@subsquid/ss58-codec": "^1.2.3",
@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }

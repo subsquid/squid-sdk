@@ -1,3 +1,4 @@
+/// <reference types="vitest/globals" />
 import {createOrmConfig} from '@subsquid/typeorm-config'
 import {assertNotNull} from '@subsquid/util-internal'
 import {Client as PgClient, ClientBase} from 'pg'

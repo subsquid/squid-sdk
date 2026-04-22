@@ -1,5 +1,5 @@
-import expect from "expect"
-import {parse, print, Type} from "./typeExp"
+import { describe, it, expect } from 'vitest'
+import { parse, print, Type } from './typeExp'
 
 describe('Type expressions', function () {
     function ast(exp: string, type: Type): void {
