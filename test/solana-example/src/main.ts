@@ -41,10 +41,9 @@ const dataSource = new DataSourceBuilder()
     // Accurate selection of only required fields can have a notable positive impact
     // on performance when data is sourced from Subsquid Network.
     //
-    // We do it below only for illustration as all fields we've selected
-    // are fetched by default.
+    // Note: when `.setFields()` is called, the provided selection fully replaces
+    // the built-in defaults. Make sure to list every field you need below.
     //
-    // It is possible to override default selection by setting undesired fields to `false`.
     .setFields({
         block: { // block header fields
             timestamp: true
@@ -58,6 +57,8 @@ const dataSource = new DataSourceBuilder()
             data: true
         },
         tokenBalance: { // token balance record fields
+            preMint: true,
+            postMint: true,
             preAmount: true,
             postAmount: true,
             preOwner: true,
