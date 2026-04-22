@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.4.6",
+      "tag": "@subsquid/substrate-data_v4.4.6",
+      "date": "Wed, 22 Apr 2026 07:00:43 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "skip events whose extrinsic index is beyond the real extrinsic range when parsing calls (generalizes the previous MultiBlockElection-only fix to cover any pallet emitting phantom-extrinsic events)"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.4.5",
       "tag": "@subsquid/substrate-data_v4.4.5",
       "date": "Wed, 22 Apr 2026 06:32:55 GMT",

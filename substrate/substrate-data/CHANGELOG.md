@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Wed, 22 Apr 2026 06:32:55 GMT and should not be manually modified.
+This log was last generated on Wed, 22 Apr 2026 07:00:43 GMT and should not be manually modified.
+
+## 4.4.6
+Wed, 22 Apr 2026 07:00:43 GMT
+
+### Patches
+
+- skip events whose extrinsic index is beyond the real extrinsic range when parsing calls (generalizes the previous MultiBlockElection-only fix to cover any pallet emitting phantom-extrinsic events)
 
 ## 4.4.5
 Wed, 22 Apr 2026 06:32:55 GMT
