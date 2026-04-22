@@ -18,6 +18,9 @@ import {unwrapSudo, unwrapSudoAs, visitSudo, visitSudoAs} from './sudo'
 export type Boundary<T> = (runtime: Runtime, event: Event) => T | undefined | null | false
 
 
+const PHANTOM_EXTRINSIC_EVENT_RE = /^(Migrations|MultiBlockElection)\./
+
+
 export interface CallResult {
     ok: boolean
     error?: unknown
@@ -327,10 +330,11 @@ export class CallParser {
             let event = this.events[this.eventPos]
             if (event.phase === 'ApplyExtrinsic') {
                 if (event.extrinsicIndex !== this.extrinsic.index) {
-                    if (event.name.includes('Migrations.')) {
+                    if (PHANTOM_EXTRINSIC_EVENT_RE.test(event.name)) {
                         let index = assertNotNull(event.extrinsicIndex)
-                        // Besides `Migrations.*` events there can be more parachain-defined events,
-                        // so we skip all events related to the "phantom" extrinsic.
+                        // Besides `Migrations.*` / `MultiBlockElection.*` events there can be
+                        // more parachain-defined events, so we skip all events related to
+                        // the "phantom" extrinsic.
                         this.skipExtrinsicEvents(index)
                         continue
                     } else {
