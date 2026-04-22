@@ -42,6 +42,6 @@
     "@types/secp256k1": "4.0.6",
     "tsx": "^4.7.0",
     "typescript": "5.5.4",
-    "vitest": "^1.4.0"
+    "vitest": "4.1.5"
   }
 }

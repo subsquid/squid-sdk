@@ -1,5 +1,5 @@
+import { describe, it, expect } from 'vitest'
 import * as transaction from './tx'
-import expect from 'expect'
 
 describe('Transaction', () => {
     it('Legacy 1', () => {

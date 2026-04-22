@@ -30,6 +30,15 @@
       "enableParallelism": false,
       "ignoreMissingScript": true,
       "allowWarningsInSuccessfulBuild": true
+    },
+    {
+      "name": "test:lfs",
+      "commandKind": "bulk",
+      "summary": "Run LFS test suites (requires git-lfs fixtures)",
+      "description": "Executes *.lfs.test.ts suites gated behind opt-in heavy fixtures (git-lfs, network).",
+      "enableParallelism": false,
+      "ignoreMissingScript": true,
+      "allowWarningsInSuccessfulBuild": true
     }
   ],
 

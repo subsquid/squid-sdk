@@ -26,12 +26,11 @@
     "@subsquid/big-decimal": "^1.0.0"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.7",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.10.9",
-    "expect": "^29.7.0",
-    "mocha": "^10.7.0",
+    "dotenv": "^16.3.1",
     "pg": "^8.11.3",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }

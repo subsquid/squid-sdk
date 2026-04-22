@@ -1,0 +1,8 @@
+{
+  "name": "squid-sdk-root",
+  "private": true,
+  "description": "Root-level deps for shared tooling (e.g. vitest.config.ts)",
+  "devDependencies": {
+    "vitest": "4.1.5"
+  }
+}

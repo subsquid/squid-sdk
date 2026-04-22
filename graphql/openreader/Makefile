@@ -1,5 +1,5 @@
 test:
-	npx mocha -r dotenv/config ./lib/test/*.test.js --exit --timeout 10000
+	@npx vitest --run
 
 
 test-cockroach:

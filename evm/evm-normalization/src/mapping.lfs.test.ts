@@ -1,10 +1,10 @@
-import {GetBlock, removeVoteTransactions} from '@subsquid/solana-rpc-data'
+import {Block} from '@subsquid/evm-rpc'
 import {toJSON} from '@subsquid/util-internal-json'
 import assert, {fail} from 'assert'
 import * as fs from 'fs'
-import {it} from 'node:test'
+import { it } from 'vitest'
 import * as Path from 'path'
-import {Journal, mapRpcBlock} from './mapping'
+import {mapRpcBlock} from './mapping'
 
 
 const FIXTURES_DIR = Path.resolve(__dirname, '../fixtures')
@@ -12,7 +12,7 @@ const FIXTURES_DIR = Path.resolve(__dirname, '../fixtures')
 
 interface Fixture {
     name: string
-    readBlock(): GetBlock
+    readBlock(): Block
     readResult(): any
 }
 
@@ -24,7 +24,7 @@ function* listFixtures(): Iterable<Fixture> {
         if (fs.existsSync(blocksPath) && fs.existsSync(resultPath)) {
             yield {
                 name,
-                readBlock(): GetBlock {
+                readBlock(): Block {
                     return JSON.parse(fs.readFileSync(blocksPath, 'utf-8'))
                 },
                 readResult(): any {
@@ -36,24 +36,16 @@ function* listFixtures(): Iterable<Fixture> {
 }
 
 
-const failingJournal: Journal = {
-    warn(props: any, msg: string) {
-        throw new Error(`got warning: ${msg}, props: ${JSON.stringify(props)}`)
-    },
-    error(props: any, msg: string) {
-        throw new Error(`got error: ${msg}, props: ${JSON.stringify(props)}`)
-    }
-}
-
-
 for (let fix of listFixtures()) {
     it(fix.name, () => {
         let block = fix.readBlock()
         let expected = fix.readResult()
 
-        removeVoteTransactions(block)
-
-        let actual = mapRpcBlock(0, block, failingJournal)
+        let actual = mapRpcBlock(block, {
+            withTraces: true,
+            withStateDiffs: true,
+            assertLogIndex: true,
+        })
         actual = normalizeJson(actual)
         try {
             assert.deepStrictEqual(actual, expected)

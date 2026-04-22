@@ -9,11 +9,14 @@
   },
   "scripts": {
     "build": "",
-    "test": "node test.js"
+    "test": "vitest --run"
   },
   "main": "bigdecimal.js",
   "types": "bigdecimal.d.ts",
   "dependencies": {
     "big.js":"~6.2.1"
+  },
+  "devDependencies": {
+    "vitest": "4.1.5"
   }
 }

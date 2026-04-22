@@ -1,4 +1,3 @@
-import expect from 'expect'
 import {useDatabase, useServer} from './setup'
 import {Dialect} from '../dialect'
 

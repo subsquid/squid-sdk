@@ -1,7 +1,7 @@
 import { toJSON } from '@subsquid/util-internal-json'
 import assert, { fail } from 'assert'
 import * as fs from 'fs'
-import { it } from 'node:test'
+import { it } from 'vitest'
 import * as Path from 'path'
 import { mapRpcBlock } from './mapping'
 import { BlockWithTx } from '@subsquid/bitcoin-rpc'

@@ -1,4 +1,4 @@
-import {describe, it} from 'node:test'
+import { describe, it } from 'vitest'
 import assert from 'assert'
 import {mergeItems, LOG_FILTER_KEYS, TX_FILTER_KEYS, TRACE_FILTER_KEYS, STATE_DIFF_FILTER_KEYS} from './merge'
 

@@ -1,5 +1,6 @@
-import assert from "assert"
-import {Levels, LogLevel} from "./level"
+import assert from 'assert'
+import { describe, it } from 'vitest'
+import { Levels, LogLevel } from './level'
 
 
 function suite(

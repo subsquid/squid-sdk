@@ -6,7 +6,13 @@ function tsvector(columns: string[]) {
 }
 
 
-isCockroach() || describe.skip('full text search', function () {
+// TODO: FTS tests have been disabled since 2022-08-17 (Eldar Gabdullin, PR #95 "New openreader")
+// via the `isCockroach() || describe.skip(...)` pattern which never actually ran them —
+// on cockroach `||` short-circuited, on postgres `describe.skip` registered the suite as skipped.
+// Re-enabling via `describe.skipIf(isCockroach())` revealed schema drift: the generated GraphQL
+// lacks a `search` field now, so `Cannot query field "search" on type "Query"` is thrown.
+// Keeping unconditionally skipped until the FTS pipeline is revisited.
+describe.skip('full text search', function () {
     useDatabase([
         `create table foo (
             id text primary key, 

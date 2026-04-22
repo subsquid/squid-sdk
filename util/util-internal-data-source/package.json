@@ -14,15 +14,14 @@
   ],
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "test": "mocha lib/**/*.test.js"
+    "test": "vitest --run"
   },
   "dependencies": {
     "@subsquid/util-internal-range": "^0.3.0"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.7",
     "@types/node": "^24.0.0",
-    "mocha": "^10.7.0",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }

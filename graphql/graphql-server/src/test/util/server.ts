@@ -1,3 +1,4 @@
+/// <reference types="vitest/globals" />
 import {ListeningServer} from '@subsquid/util-internal-http-server'
 import {Client} from 'gql-test-client'
 import {Server} from '../../server'
@@ -7,7 +8,7 @@ export function useServer(project: string): Client {
     let client = new Client('not defined')
     let info: ListeningServer | undefined
 
-    before(async () => {
+    beforeAll(async () => {
         info = await new Server({
             dir: project,
             // log: createLogger('sqd:graphql-server')
@@ -15,7 +16,7 @@ export function useServer(project: string): Client {
         client.endpoint = `http://localhost:${info.port}/graphql`
     })
 
-    after(() => info?.close())
+    afterAll(() => info?.close())
 
     return client
 }

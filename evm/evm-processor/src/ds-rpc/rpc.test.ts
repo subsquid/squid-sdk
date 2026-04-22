@@ -2,7 +2,7 @@ import {RpcClient, RpcError} from '@subsquid/rpc-client'
 import {RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {BlockConsistencyError} from '@subsquid/util-internal-ingest-tools'
 import assert from 'assert'
-import {describe, it} from 'node:test'
+import { describe, it } from 'vitest'
 import {Rpc} from './rpc'
 
 
