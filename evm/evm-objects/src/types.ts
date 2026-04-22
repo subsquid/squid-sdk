@@ -89,3 +89,16 @@ export interface Block<F extends FieldSelection = {}> {
     traces: Trace<F>[]
     stateDiffs: StateDiff<F>[]
 }
+
+
+/**
+ * Maps a raw `@subsquid/evm-stream` block type to its augmented counterpart
+ * produced by {@link augmentBlock}.
+ *
+ * @example
+ * ```ts
+ * type RawBlock = GetDataSourceBlock<typeof dataSource>
+ * type Block = AugmentedBlock<RawBlock>
+ * ```
+ */
+export type AugmentedBlock<B> = B extends base.Block<infer F> ? Block<F> : never
