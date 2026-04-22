@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "skip events whose extrinsic index is beyond the real extrinsic range when parsing calls (generalizes the previous MultiBlockElection-only fix to cover any pallet emitting phantom-extrinsic events)",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}
