@@ -1,21 +1,19 @@
 import {evm, isForkException as isPortalForkException, PortalClient} from '@subsquid/portal-client'
-import {maybeLast} from '@subsquid/util-internal'
-import {BlockRef, DataSource, StreamRequest, ForkException, type BlockBatch} from '@subsquid/util-internal-data-source'
-import {applyRangeBound, FiniteRange, getSize, RangeRequestList, type RangeRequest} from '@subsquid/util-internal-range'
+import {def, maybeLast} from '@subsquid/util-internal'
+import {BlockBatch, BlockRef, ForkException, StreamRequest} from '@subsquid/util-internal-data-source'
+import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
+import {applyRangeBound, FiniteRange, getSize, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
+import assert from 'assert'
 import {Block, FieldSelection} from '../data/model'
 import {DataRequest} from '../data/request'
-import {mergeItems, LOG_FILTER_KEYS, TX_FILTER_KEYS, TRACE_FILTER_KEYS, STATE_DIFF_FILTER_KEYS} from './merge'
-import assert from 'assert'
+import type {EVMDataSource} from '../source'
+import {LOG_FILTER_KEYS, mergeItems, STATE_DIFF_FILTER_KEYS, TRACE_FILTER_KEYS, TX_FILTER_KEYS} from './merge'
 
-export type RangeRequestResolver<F extends FieldSelection> =
-    | RangeRequestList<DataRequest<F>>
-    | (() => RangeRequestList<DataRequest<F>>)
-
-export class PortalDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
+export class PortalEvmDataSource<F extends FieldSelection> implements EVMDataSource<F> {
     constructor(
         private client: PortalClient,
-        private requests: RangeRequestResolver<F>,
-        private opts?: {squidId?: string},
+        private fields: F,
+        private requests: RangeRequestList<DataRequest>,
     ) {}
 
     async getHead(): Promise<BlockRef> {
@@ -40,17 +38,13 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
 
     getBlocksCountInRange(range: FiniteRange): number {
         return getSize(
-            this.resolveRequests().map((r) => r.range),
+            this.requests.map((r) => r.range),
             range,
         )
     }
 
-    private resolveRequests(): RangeRequestList<DataRequest<F>> {
-        return typeof this.requests === 'function' ? this.requests() : this.requests
-    }
-
     private async *_getStream(opts?: StreamRequest, finalized?: boolean): AsyncIterable<BlockBatch<Block<F>>> {
-        let requests = applyRangeBound(this.resolveRequests(), opts?.from != null ? {from: opts.from} : undefined)
+        let requests = applyRangeBound(this.requests, opts?.from != null ? {from: opts.from} : undefined)
         if (requests.length === 0) return
 
         let streamOptions = {request: {headers: this.getHeaders()}}
@@ -60,11 +54,11 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
         // Stream a request from the portal and keep (parentHash, nextBlock)
         // in sync with the last block of every batch.
         let drain = async function* (
-            this: PortalDataSource<F>,
-            req: RangeRequest<DataRequest<F>>,
+            this: PortalEvmDataSource<F>,
+            req: RangeRequest<DataRequest>,
         ): AsyncIterable<BlockBatch<Block<F>>> {
             for await (let {blocks, meta} of this.client.getStream(
-                mapRequest(req, parentHash),
+                mapRequest(req, this.fields, parentHash),
                 streamOptions,
                 finalized,
             )) {
@@ -124,7 +118,12 @@ export class PortalDataSource<F extends FieldSelection> implements DataSource<Bl
     }
 
     private getHeaders() {
-        return this.opts?.squidId ? {'x-squid-id': this.opts.squidId} : undefined
+        return {'x-squid-id': this.getSquidId()}
+    }
+
+    @def
+    private getSquidId() {
+        return getOrGenerateSquidId()
     }
 }
 
@@ -135,10 +134,11 @@ function getHead(number?: number | undefined, hash?: string | undefined): BlockR
     return {number, hash}
 }
 
-function mapRequest<F extends FieldSelection>(
-    req: RangeRequest<DataRequest<F>>,
+function mapRequest(
+    req: RangeRequest<DataRequest>,
+    fields: FieldSelection,
     parentBlockHash?: string,
-): evm.Query<MapFieldSelection<F>> {
+): evm.Query<MapFieldSelection> {
     let logs = req.request.logs?.map((log) => ({...log.where, ...log.include}))
     let transactions = req.request.transactions?.map((tx) => ({...tx.where, ...tx.include}))
     let traces = req.request.traces?.map((trace) => ({...trace.where, ...trace.include}))
@@ -148,7 +148,7 @@ function mapRequest<F extends FieldSelection>(
         fromBlock: req.range.from,
         toBlock: req.range.to === Infinity ? undefined : req.range.to,
         parentBlockHash: parentBlockHash,
-        fields: mapFieldSelection(req.request.fields),
+        fields: mapFieldSelection(fields),
         includeAllBlocks: req.request.includeAllBlocks,
         logs: logs && mergeItems(logs, LOG_FILTER_KEYS),
         transactions: transactions && mergeItems(transactions, TX_FILTER_KEYS),
@@ -157,19 +157,19 @@ function mapRequest<F extends FieldSelection>(
     }
 }
 
-function mapFieldSelection<F extends FieldSelection>(fields?: F) {
+function mapFieldSelection(fields: FieldSelection) {
     return {
-        block: fields?.block,
-        transaction: {...fields?.transaction, transactionIndex: true},
-        log: {...fields?.log, logIndex: true, transactionIndex: true},
-        trace: {...fields?.trace, transactionIndex: true, traceAddress: true},
-        stateDiff: {...fields?.stateDiff, transactionIndex: true, key: true, address: true},
+        block: fields.block,
+        transaction: {...fields.transaction, transactionIndex: true},
+        log: {...fields.log, logIndex: true, transactionIndex: true},
+        trace: {...fields.trace, transactionIndex: true, traceAddress: true},
+        stateDiff: {...fields.stateDiff, transactionIndex: true, key: true, address: true},
     } satisfies evm.FieldSelection
 }
 
-type MapFieldSelection<F extends FieldSelection> = ReturnType<typeof mapFieldSelection<F>>
+type MapFieldSelection = ReturnType<typeof mapFieldSelection>
 
-export function mapBlock<F extends FieldSelection>(rawBlock: evm.Block<MapFieldSelection<F>>): Block<F> {
+export function mapBlock<F extends FieldSelection>(rawBlock: evm.Block<MapFieldSelection>): Block<F> {
     let {number, hash, ...hdr} = rawBlock.header
     let header = {
         number,

@@ -1,45 +1,59 @@
 import type {
     BlockRequiredFields,
     LogRequiredFields,
-    TraceRequiredFields,
     StateDiffRequiredFields,
+    TraceRequiredFields,
     TransactionRequiredFields,
 } from './partial'
 import type {
     EvmBlockHeader,
-    EvmTransaction,
     EvmLog,
-    EvmTrace,
-    EvmTraceBase,
-    EvmTraceCreateAction,
-    EvmTraceCreateResult,
-    EvmTraceCallAction,
-    EvmTraceCallResult,
-    EvmTraceSuicideAction,
-    EvmTraceRewardAction,
     EvmStateDiff,
     EvmStateDiffBase,
+    EvmTraceBase,
+    EvmTraceCallAction,
+    EvmTraceCallResult,
+    EvmTraceCreateAction,
+    EvmTraceCreateResult,
+    EvmTraceRewardAction,
+    EvmTraceSuicideAction,
+    EvmTransaction,
 } from './evm'
 import type {GetFields, Select, Selector, Simplify} from './type-util'
 
-type AddPrefix<Prefix extends string, S extends string> = `${Prefix}${Capitalize<S>}`
+/** Namespaced string built from a `Prefix` and a `Capitalize`d payload. */
+type Prefixed<Prefix extends string, S extends string> = `${Prefix}${Capitalize<S>}`
 
+/** Inverse of `Prefixed`. Returns `never` when the prefix does not match. */
+type Unprefixed<Prefix extends string, T> = T extends `${Prefix}${infer S}` ? Uncapitalize<S> : never
+
+/**
+ * User-facing field selection. Each section is an optional `Selector`
+ * over that section's non-required fields.
+ */
 export interface FieldSelection {
     block?: Selector<Exclude<keyof EvmBlockHeader, BlockRequiredFields>>
     transaction?: Selector<Exclude<keyof EvmTransaction, TransactionRequiredFields>>
     log?: Selector<Exclude<keyof EvmLog, LogRequiredFields>>
     trace?: Selector<
         | Exclude<keyof EvmTraceBase, TraceRequiredFields>
-        | AddPrefix<'create', keyof EvmTraceCreateAction>
-        | AddPrefix<'createResult', keyof EvmTraceCreateResult>
-        | AddPrefix<'call', keyof EvmTraceCallAction>
-        | AddPrefix<'callResult', keyof EvmTraceCallResult>
-        | AddPrefix<'suicide', keyof EvmTraceSuicideAction>
-        | AddPrefix<'reward', keyof EvmTraceRewardAction>
+        | Prefixed<'create', keyof EvmTraceCreateAction>
+        | Prefixed<'createResult', keyof EvmTraceCreateResult>
+        | Prefixed<'call', keyof EvmTraceCallAction>
+        | Prefixed<'callResult', keyof EvmTraceCallResult>
+        | Prefixed<'suicide', keyof EvmTraceSuicideAction>
+        | Prefixed<'reward', keyof EvmTraceRewardAction>
     >
     stateDiff?: Selector<Exclude<keyof EvmStateDiff, StateDiffRequiredFields>>
 }
 
+export type FieldKey = keyof FieldSelection
+
+/**
+ * Default field set applied when {@link DataSourceBuilder#setFields} is not
+ * called.  `as const` preserves the literal `true` values so they feed through
+ * {@link GetFields} correctly.
+ */
 export const DEFAULT_FIELDS = {
     block: {
         timestamp: true,
@@ -64,80 +78,78 @@ export const DEFAULT_FIELDS = {
     },
 } as const satisfies FieldSelection
 
-type Item<Data, RequiredFields extends keyof Data, F extends FieldSelection, K extends keyof FieldSelection> = Simplify<
-    Pick<Data, RequiredFields> & Select<Data, GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, K>>
+/**
+ * A concrete item type derived from a raw data shape, the always-present
+ * required keys, and a per-section field selection.
+ */
+type Item<Data, Required extends keyof Data, F extends FieldSelection, K extends FieldKey> = Simplify<
+    Pick<Data, Required> & Select<Data, GetFields<F, K>>
 >
 
 export type BlockHeader<F extends FieldSelection = {}> = Item<EvmBlockHeader, BlockRequiredFields, F, 'block'>
 
-export type Transaction<F extends FieldSelection = {}> = Item<
-    EvmTransaction,
-    TransactionRequiredFields,
-    F,
-    'transaction'
->
+export type Transaction<F extends FieldSelection = {}> = Item<EvmTransaction, TransactionRequiredFields, F, 'transaction'>
 
 export type Log<F extends FieldSelection = {}> = Item<EvmLog, LogRequiredFields, F, 'log'>
 
-type RemovePrefix<Prefix extends string, T> = T extends `${Prefix}${infer S}` ? Uncapitalize<S> : never
+type TraceActionFields<Prefix extends string, F extends FieldSelection> = Unprefixed<Prefix, GetFields<F, 'trace'>>
 
 export type TraceCreateAction<F extends FieldSelection = {}> = Select<
     EvmTraceCreateAction,
-    RemovePrefix<'create', GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, 'trace'>>
+    TraceActionFields<'create', F>
 >
 
 export type TraceCreateResult<F extends FieldSelection = {}> = Select<
     EvmTraceCreateResult,
-    RemovePrefix<'createResult', GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, 'trace'>>
+    TraceActionFields<'createResult', F>
 >
 
-export type TraceCallAction<F extends FieldSelection = {}> = Select<
-    EvmTraceCallAction,
-    RemovePrefix<'call', GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, 'trace'>>
->
+export type TraceCallAction<F extends FieldSelection = {}> = Select<EvmTraceCallAction, TraceActionFields<'call', F>>
 
 export type TraceCallResult<F extends FieldSelection = {}> = Select<
     EvmTraceCallResult,
-    RemovePrefix<'callResult', GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, 'trace'>>
+    TraceActionFields<'callResult', F>
 >
 
 export type TraceSuicideAction<F extends FieldSelection = {}> = Select<
     EvmTraceSuicideAction,
-    RemovePrefix<'suicide', GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, 'trace'>>
+    TraceActionFields<'suicide', F>
 >
 
 export type TraceRewardAction<F extends FieldSelection = {}> = Select<
     EvmTraceRewardAction,
-    RemovePrefix<'reward', GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, 'trace'>>
+    TraceActionFields<'reward', F>
 >
 
-type TraceBase<F extends FieldSelection = {}> = Pick<EvmTraceBase, Exclude<TraceRequiredFields, 'type'>> &
-    Select<EvmTraceBase, GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, 'trace'>>
+type TraceBase<F extends FieldSelection = {}> = Simplify<
+    Pick<EvmTraceBase, Exclude<TraceRequiredFields, 'type'>> & Select<EvmTraceBase, GetFields<F, 'trace'>>
+>
 
-type RemoveEmptyObjects<T> = {
+/** Drops keys whose value type is the empty object (i.e. no fields selected). */
+type OmitEmpty<T> = {
     [K in keyof T as {} extends T[K] ? never : K]: T[K]
 }
 
 export type TraceCreate<F extends FieldSelection = {}> = Simplify<
-    TraceBase<F> & {type: 'create'} & RemoveEmptyObjects<{action: TraceCreateAction<F>; result?: TraceCreateResult<F>}>
+    TraceBase<F> & {type: 'create'} & OmitEmpty<{action: TraceCreateAction<F>; result?: TraceCreateResult<F>}>
 >
 
 export type TraceCall<F extends FieldSelection = {}> = Simplify<
-    TraceBase<F> & {type: 'call'} & RemoveEmptyObjects<{action: TraceCallAction<F>; result?: TraceCallResult<F>}>
+    TraceBase<F> & {type: 'call'} & OmitEmpty<{action: TraceCallAction<F>; result?: TraceCallResult<F>}>
 >
 
 export type TraceSuicide<F extends FieldSelection = {}> = Simplify<
-    TraceBase<F> & {type: 'suicide'} & RemoveEmptyObjects<{action: TraceSuicideAction<F>}>
+    TraceBase<F> & {type: 'suicide'} & OmitEmpty<{action: TraceSuicideAction<F>}>
 >
 
 export type TraceReward<F extends FieldSelection = {}> = Simplify<
-    TraceBase<F> & {type: 'reward'} & RemoveEmptyObjects<{action: TraceRewardAction<F>}>
+    TraceBase<F> & {type: 'reward'} & OmitEmpty<{action: TraceRewardAction<F>}>
 >
 
 export type Trace<F extends FieldSelection = {}> = TraceCreate<F> | TraceCall<F> | TraceSuicide<F> | TraceReward<F>
 
 export type StateDiff<F extends FieldSelection = {}> = Simplify<
-    EvmStateDiffBase & Select<EvmStateDiff, GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, 'stateDiff'>>
+    EvmStateDiffBase & Select<EvmStateDiff, GetFields<F, 'stateDiff'>>
 >
 
 export interface Block<F extends FieldSelection = {}> {

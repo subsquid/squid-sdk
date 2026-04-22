@@ -1,8 +1,6 @@
-import {FieldSelection} from './model'
 import {EvmStateDiff, Bytes, Bytes20, Bytes32} from './evm'
 
-export interface DataRequest<F extends FieldSelection> {
-    fields?: F
+export interface DataRequest {
     includeAllBlocks?: boolean
     logs?: LogRequest[]
     transactions?: TransactionRequest[]
