@@ -74,7 +74,7 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     } catch (e: any) {
       // Fast path failed — run a slow per-field loop over a fresh src to
       // pinpoint the offending argument for a nicer error message.
-      throw this.locateDecodeError(input, e, (src, i) => new FunctionCalldataDecodeError(this.selector, i, e.message, input))
+      throw this.locateDecodeError(input, e)
     }
   }
 
@@ -113,19 +113,19 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     return result
   }
 
-  private locateDecodeError(input: string, original: any, make: (src: Src, i: string) => Error): Error {
+  private locateDecodeError(input: string, original: Error): Error {
     const slow = new Src(hexToBytes(input, 10))
     for (const i in this.args) {
       try {
         this.args[i].decode(slow)
       } catch (e: any) {
-        return make(slow, i)
+        return new FunctionCalldataDecodeError(this.selector, i, e.message, input)
       }
     }
     return original
   }
 
-  private locateResultError(output: string, components: Struct, original: any): Error {
+  private locateResultError(output: string, components: Struct, original: Error): Error {
     const slow = new Src(hexToBytes(output, 2))
     for (const i in components) {
       try {
@@ -137,9 +137,13 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     return original
   }
 
-  private isCodec(value: any): value is Codec<any> {
-    return value != null && typeof value === 'object' &&
-      typeof value.encode === 'function' && typeof value.decode === 'function'
+  private isCodec(value: unknown): value is Codec<any> {
+    return (
+      value != null &&
+      typeof value === 'object' &&
+      typeof (value as any).encode === 'function' &&
+      typeof (value as any).decode === 'function'
+    )
   }
 
   private checkSignature(val: string) {

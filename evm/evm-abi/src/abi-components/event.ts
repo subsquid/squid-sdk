@@ -45,6 +45,19 @@ function slotsCountOf(codecs: readonly Codec<any>[]): number {
   return c
 }
 
+/**
+ * Append a closure-captured value to a parallel names/values pair. Returns
+ * the chosen variable name so the caller can splice it straight into a
+ * generated function body.
+ */
+function capture(names: string[], values: any[], name: string, value: unknown): string {
+  names.push(name)
+  values.push(value)
+  return name
+}
+
+type FieldOrder = {key: string; kind: 'topic' | 'data'; idx: number}
+
 export class AbiEvent<const T extends EventArgs> {
   public readonly args: T
   public readonly params: IndexedCodecs<T>
@@ -85,7 +98,7 @@ export class AbiEvent<const T extends EventArgs> {
 
     const topicFields: Array<[string, Codec<any>]> = []
     const dataFields: Array<[string, Codec<any>]> = []
-    const order: Array<{key: string; kind: 'topic' | 'data'; idx: number}> = []
+    const order: FieldOrder[] = []
 
     for (const key in args) {
       const arg = args[key]
@@ -121,61 +134,56 @@ export class AbiEvent<const T extends EventArgs> {
     topicFields: Array<[string, Codec<any>]>,
     dataFields: Array<[string, Codec<any>]>,
   ): (args: EncodedStruct<IndexedCodecs<T>>) => EventRecord {
-    const closureNames: string[] = ['TOPIC', 'Sink', 'bytesToHex']
-    const closureValues: any[] = [this.topic, Sink, bytesToHexString]
+    const names: string[] = []
+    const values: any[] = []
+    capture(names, values, 'TOPIC', this.topic)
+    capture(names, values, 'Sink', Sink)
+    capture(names, values, 'bytesToHex', bytesToHexString)
 
     let body = 'const topics = [TOPIC];\n'
 
     for (let i = 0; i < topicFields.length; i++) {
       const [name, codec] = topicFields[i]
-      const encName = `__et${i}`
-      closureNames.push(encName)
-      closureValues.push(codec.encode.bind(codec))
+      const enc = capture(names, values, `__et${i}`, codec.encode.bind(codec))
       const slots = codec.slotsCount ?? 1
-      body += `{\n`
-      body += `  const s = new Sink(${slots});\n`
-      body += `  ${encName}(s, args${propAccess(name)});\n`
-      body += `  const b = s.result();\n`
-      body += `  topics.push('0x' + bytesToHex(b, 0, b.length));\n`
-      body += `}\n`
+      body +=
+        `{\n` +
+        `  const s = new Sink(${slots});\n` +
+        `  ${enc}(s, args${propAccess(name)});\n` +
+        `  const b = s.result();\n` +
+        `  topics.push('0x' + bytesToHex(b, 0, b.length));\n` +
+        `}\n`
     }
 
     const dataChildrenSlots = slotsCountOf(dataFields.map(([, c]) => c))
     body += `const dataSink = new Sink(${dataChildrenSlots});\n`
     for (let i = 0; i < dataFields.length; i++) {
       const [name, codec] = dataFields[i]
-      const encName = `__ed${i}`
-      closureNames.push(encName)
-      closureValues.push(codec.encode.bind(codec))
-      body += `${encName}(dataSink, args${propAccess(name)});\n`
+      const enc = capture(names, values, `__ed${i}`, codec.encode.bind(codec))
+      body += `${enc}(dataSink, args${propAccess(name)});\n`
     }
-    body += `const dataBytes = dataSink.result();\n`
-    body += `return { topics, data: '0x' + bytesToHex(dataBytes, 0, dataBytes.length) };\n`
+    body +=
+      `const dataBytes = dataSink.result();\n` +
+      `return { topics, data: '0x' + bytesToHex(dataBytes, 0, dataBytes.length) };\n`
 
-    const factory = new Function(
-      ...closureNames,
-      `return function encode(args){\n${body}};`,
-    )
-    return factory(...closureValues)
+    return new Function(...names, `return function encode(args){\n${body}};`)(...values)
   }
 
   private createDecode(
-    order: Array<{key: string; kind: 'topic' | 'data'; idx: number}>,
+    order: FieldOrder[],
     topicFields: Array<[string, Codec<any>]>,
     dataFields: Array<[string, Codec<any>]>,
   ): (rec: EventRecord) => DecodedStruct<IndexedCodecs<T>> {
-    const closureNames: string[] = ['Src', 'hexBytes']
-    const closureValues: any[] = [Src, hexToBytes]
+    const names: string[] = []
+    const values: any[] = []
+    capture(names, values, 'Src', Src)
+    capture(names, values, 'hexBytes', hexToBytes)
 
     for (let i = 0; i < topicFields.length; i++) {
-      const [, codec] = topicFields[i]
-      closureNames.push(`__dt${i}`)
-      closureValues.push(codec.decode.bind(codec))
+      capture(names, values, `__dt${i}`, topicFields[i][1].decode.bind(topicFields[i][1]))
     }
     for (let i = 0; i < dataFields.length; i++) {
-      const [, codec] = dataFields[i]
-      closureNames.push(`__dd${i}`)
-      closureValues.push(codec.decode.bind(codec))
+      capture(names, values, `__dd${i}`, dataFields[i][1].decode.bind(dataFields[i][1]))
     }
 
     // Property-literal evaluation is left-to-right, so we can safely mix
@@ -184,25 +192,17 @@ export class AbiEvent<const T extends EventArgs> {
     // appear in dataFields order. `order[]` preserves the original
     // args-definition order, and data fields were appended to dataFields
     // in that same order, so the invariant holds.
-    const entries: string[] = []
-    for (const o of order) {
-      if (o.kind === 'topic') {
-        entries.push(
-          `  ${propName(o.key)}: __dt${o.idx}(new Src(hexBytes(rec.topics[${o.idx + 1}], 2)))`,
-        )
-      } else {
-        entries.push(`  ${propName(o.key)}: __dd${o.idx}(dataSrc)`)
-      }
-    }
-
-    let body = 'const dataSrc = new Src(hexBytes(rec.data, 2));\n'
-    body += `return {\n${entries.join(',\n')}\n};\n`
-
-    const factory = new Function(
-      ...closureNames,
-      `return function decode(rec){\n${body}};`,
+    const entries = order.map((o) =>
+      o.kind === 'topic'
+        ? `  ${propName(o.key)}: __dt${o.idx}(new Src(hexBytes(rec.topics[${o.idx + 1}], 2)))`
+        : `  ${propName(o.key)}: __dd${o.idx}(dataSrc)`,
     )
-    return factory(...closureValues)
+
+    const body =
+      'const dataSrc = new Src(hexBytes(rec.data, 2));\n' +
+      `return {\n${entries.join(',\n')}\n};\n`
+
+    return new Function(...names, `return function decode(rec){\n${body}};`)(...values)
   }
 
   /**
@@ -224,12 +224,12 @@ export class AbiEvent<const T extends EventArgs> {
       try {
         return jit(rec)
       } catch (e: any) {
-        throw this.locateDecodeError(rec, e)
+        throw this.locateDecodeError(rec, e as Error)
       }
     }
   }
 
-  private locateDecodeError(rec: EventRecord, original: any): Error {
+  private locateDecodeError(rec: EventRecord, original: Error): Error {
     for (let t = 0; t < this.topicFields.length; t++) {
       const [name, codec] = this.topicFields[t]
       try {
