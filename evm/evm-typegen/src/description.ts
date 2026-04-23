@@ -53,33 +53,36 @@ export function describe(abi: Abi): Contract {
     const rawEvents = abi.filter((x) => x.type === 'event') as AbiEvent[]
     const rawFunctions = abi.filter((x) => x.type === 'function') as AbiFunction[]
 
-    // Overload index is computed across the concatenation of events and
-    // functions sharing a name (matches existing evm-typegen behavior).
+    // Events and functions share a name-space for overload numbering
+    // (matches existing evm-typegen behavior). The per-item overload
+    // index is its position among same-named siblings in `combined`.
     const combined: readonly (AbiEvent | AbiFunction)[] = [...rawEvents, ...rawFunctions]
-    const nameCounts: Record<string, number> = {}
-    for (const item of combined) nameCounts[item.name] = (nameCounts[item.name] || 0) + 1
-    const overloadIndex = (item: AbiEvent | AbiFunction): number =>
-        combined.filter((x) => x.name === item.name).findIndex((x) => x === item)
+    const nameCounts = new Map<string, number>()
+    const nameIndex = new Map<AbiEvent | AbiFunction, number>()
+    for (const item of combined) {
+        const seen = nameCounts.get(item.name) ?? 0
+        nameIndex.set(item, seen)
+        nameCounts.set(item.name, seen + 1)
+    }
+
+    const overloadedSuffix = (item: AbiEvent | AbiFunction, base: string): string => {
+        const count = nameCounts.get(item.name) ?? 1
+        return count > 1 ? `${base}_${nameIndex.get(item)}` : base
+    }
 
     const events: Event[] = rawEvents.map((e) => {
-        const overloaded = nameCounts[e.name] > 1
-        const idx = overloadIndex(e)
         const signature = eventSignature(e)
         return {
             name: e.name,
             signature,
             topic: `0x${keccak256(signature).toString('hex')}`,
             inputs: e.inputs.map((p, i) => toField(p, i, true)),
-            key: overloaded ? `${e.name}_${idx}` : e.name,
-            typeName: overloaded
-                ? `${capitalize(e.name)}EventArgs_${idx}`
-                : `${capitalize(e.name)}EventArgs`,
+            key: overloadedSuffix(e, e.name),
+            typeName: overloadedSuffix(e, `${capitalize(e.name)}EventArgs`),
         }
     })
 
     const functions: Function[] = rawFunctions.map((f) => {
-        const overloaded = nameCounts[f.name] > 1
-        const idx = overloadIndex(f)
         const signature = fnSignature(f)
         const kind: FunctionKind =
             f.stateMutability === 'view' || f.stateMutability === 'pure' ? 'viewFun' : 'fun'
@@ -90,13 +93,9 @@ export function describe(abi: Abi): Contract {
             kind,
             inputs: f.inputs.map((p, i) => toField(p, i, false)),
             outputs: (f.outputs ?? []).map((p, i) => toField(p, i, false)),
-            key: overloaded ? `${f.name}_${idx}` : f.name,
-            paramsTypeName: overloaded
-                ? `${capitalize(f.name)}Params_${idx}`
-                : `${capitalize(f.name)}Params`,
-            returnTypeName: overloaded
-                ? `${capitalize(f.name)}Return_${idx}`
-                : `${capitalize(f.name)}Return`,
+            key: overloadedSuffix(f, f.name),
+            paramsTypeName: overloadedSuffix(f, `${capitalize(f.name)}Params`),
+            returnTypeName: overloadedSuffix(f, `${capitalize(f.name)}Return`),
         }
     })
 
@@ -113,10 +112,9 @@ function toField(p: AbiParameter, index: number, isEventInput: boolean): Field {
 }
 
 function toType(p: AbiParameter): Type {
-    if (/\[\d+\]$/.test(p.type)) {
-        const m = p.type.match(/\[(\d+)\]$/)!
-        const size = Number(m[1])
-        return { kind: 'fixedArray', size, item: toType(stripOuterArray(p)) }
+    const fixed = p.type.match(/\[(\d+)\]$/)
+    if (fixed) {
+        return { kind: 'fixedArray', size: Number(fixed[1]), item: toType(stripOuterArray(p)) }
     }
     if (p.type.endsWith('[]')) {
         return { kind: 'array', item: toType(stripOuterArray(p)) }

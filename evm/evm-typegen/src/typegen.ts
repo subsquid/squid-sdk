@@ -113,56 +113,54 @@ export class Typegen {
     }
 }
 
+const EVM_CODEC_MODULE = '@subsquid/evm-codec'
+const SUPPORT_MODULE = '../abi.support.js'
+
 class TypeModuleOutput extends FileOutput {
-    private evmCodec = new Set<Import>()
-    private support = new Set<Import>()
-    private moduleImports = new Map<string, Set<Import>>()
+    /**
+     * Per-module import buckets. Printed in insertion order, so seeding
+     * the map with `evm-codec` and `abi.support` up front gives us a
+     * stable import ordering at the top of the generated file.
+     */
+    private imports = new Map<string, Import[]>([
+        [EVM_CODEC_MODULE, []],
+        [SUPPORT_MODULE, []],
+    ])
 
     constructor(file: string) {
         super(file)
         this.lazy(() => {
-            this.printImports('@subsquid/evm-codec', this.evmCodec)
-            this.printImports('../abi.support.js', this.support)
-            for (const [from, imports] of this.moduleImports) {
-                this.printImports(from, imports)
+            let any = false
+            for (const [from, imps] of this.imports) {
+                if (this.printImports(from, imps)) any = true
             }
-            if (this.hasAnyImports()) {
-                this.line()
-            }
+            if (any) this.line()
         })
     }
 
-    private hasAnyImports(): boolean {
-        if (this.evmCodec.size > 0) return true
-        if (this.support.size > 0) return true
-        for (const imports of this.moduleImports.values()) {
-            if (imports.size > 0) return true
-        }
-        return false
-    }
-
     import(bucket: 'evmCodec' | 'support', name: string, alias?: string, type = false): void {
-        this[bucket].add({ name, alias, type })
+        const from = bucket === 'evmCodec' ? EVM_CODEC_MODULE : SUPPORT_MODULE
+        this.importFrom(from, { name, alias, type })
     }
 
     importFrom(from: string, imp: Import): void {
-        let s = this.moduleImports.get(from)
-        if (!s) {
-            s = new Set()
-            this.moduleImports.set(from, s)
+        let list = this.imports.get(from)
+        if (!list) {
+            list = []
+            this.imports.set(from, list)
         }
-        s.add(imp)
+        list.push(imp)
     }
 
-    private printImports(from: string, imports: Set<Import>): void {
-        if (imports.size === 0) return
+    private printImports(from: string, imports: Import[]): boolean {
+        if (imports.length === 0) return false
         const seen = new Set<string>()
         const values: Import[] = []
         const types: Import[] = []
         for (const imp of imports) {
-            const k = `${imp.type ? 't' : 'v'}:${imp.name}:${imp.alias || ''}`
-            if (seen.has(k)) continue
-            seen.add(k)
+            const key = `${imp.type ? 't' : 'v'}:${imp.name}:${imp.alias || ''}`
+            if (seen.has(key)) continue
+            seen.add(key)
             ;(imp.type ? types : values).push(imp)
         }
         const fmt = (list: Import[]) =>
@@ -172,6 +170,7 @@ class TypeModuleOutput extends FileOutput {
                 .join(', ')
         if (values.length > 0) this.line(`import { ${fmt(values)} } from '${from}'`)
         if (types.length > 0) this.line(`import type { ${fmt(types)} } from '${from}'`)
+        return values.length > 0 || types.length > 0
     }
 
     printEvent(e: Event): void {
