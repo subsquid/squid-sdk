@@ -177,15 +177,13 @@ class TypeModuleOutput extends FileOutput {
     printEvent(e: Event): void {
         this.line(`// ${e.signature}`)
         if (e.inputs.length === 0) {
-            this.import('evmCodec', 'struct')
-            this.line(`export const ${e.key} = event('${e.topic}', struct({}))`)
+            this.line(`export const ${e.key} = event('${e.topic}', {})`)
         } else {
-            this.import('evmCodec', 'struct')
-            this.line(`export const ${e.key} = event('${e.topic}', struct({`)
+            this.line(`export const ${e.key} = event('${e.topic}', {`)
             this.indentation(() => {
                 for (const f of e.inputs) this.printFieldDsl(f, ',')
             })
-            this.line(`}))`)
+            this.line(`})`)
         }
         this.line(`export type ${e.typeName} = EParams<typeof ${e.key}>`)
     }

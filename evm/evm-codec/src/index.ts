@@ -1,4 +1,6 @@
 export * from './codec'
 export * from './dsl'
+export * from './hex'
 export * from './sink'
 export * from './src'
+export * from './util'

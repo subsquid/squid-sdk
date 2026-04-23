@@ -1075,6 +1075,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "evm-codec-bench",
+      "projectFolder": "test/evm-codec-bench",
+      "shouldPublish": false
+    },
+    {
       "packageName": "gql-test-client",
       "projectFolder": "test/gql-client",
       "shouldPublish": false

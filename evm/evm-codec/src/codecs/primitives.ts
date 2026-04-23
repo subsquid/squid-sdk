@@ -6,8 +6,28 @@ import { safeToNumber } from '../safeToNumber'
 
 type Numberish = number | bigint
 
+/**
+ * Build a primitive numeric codec driven by a `Sink`/`Src` method name and a
+ * value-conversion strategy.
+ */
+type NumericConv = 'safeToNumber' | 'BigInt' | 'none'
+
+function numericCodec<TOut extends number | bigint>(method: string, conv: NumericConv): Codec<Numberish, TOut> {
+  return {
+    encode(sink: Sink, val: Numberish) {
+      const v = conv === 'safeToNumber' ? safeToNumber(val) : conv === 'BigInt' ? BigInt(val) : val
+      ;(sink as any)[method](v)
+    },
+    decode(src: Src): TOut {
+      return (src as any)[method]()
+    },
+    isDynamic: false,
+    baseType: 'int',
+  }
+}
+
 export const bool: Codec<boolean> = {
-  encode: function (sink: Sink, val: boolean) {
+  encode(sink: Sink, val: boolean) {
     sink.bool(val)
   },
   decode(src: Src): boolean {
@@ -17,139 +37,20 @@ export const bool: Codec<boolean> = {
   baseType: 'bool',
 }
 
-export const uint8: Codec<Numberish, number> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.u8(safeToNumber(val))
-  },
-  decode(src: Src): number {
-    return src.u8()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
+export const uint8: Codec<Numberish, number> = numericCodec('u8', 'safeToNumber')
+export const int8: Codec<Numberish, number> = numericCodec('i8', 'safeToNumber')
+export const uint16: Codec<Numberish, number> = numericCodec('u16', 'safeToNumber')
+export const int16: Codec<Numberish, number> = numericCodec('i16', 'safeToNumber')
+export const uint32: Codec<Numberish, number> = numericCodec('u32', 'safeToNumber')
+export const int32: Codec<Numberish, number> = numericCodec('i32', 'safeToNumber')
+export const uint64: Codec<Numberish, bigint> = numericCodec('u64', 'BigInt')
+export const int64: Codec<Numberish, bigint> = numericCodec('i64', 'BigInt')
+export const uint128: Codec<Numberish, bigint> = numericCodec('u128', 'BigInt')
+export const int128: Codec<Numberish, bigint> = numericCodec('i128', 'BigInt')
+export const uint256: Codec<Numberish, bigint> = numericCodec('u256', 'BigInt')
+export const int256: Codec<Numberish, bigint> = numericCodec('i256', 'BigInt')
 
-export const int8: Codec<Numberish, number> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.i8(safeToNumber(val))
-  },
-  decode(src: Src): number {
-    return src.i8()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const uint16: Codec<Numberish, number> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.u16(safeToNumber(val))
-  },
-  decode(src: Src): number {
-    return src.u16()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const int16: Codec<Numberish, number> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.i16(safeToNumber(val))
-  },
-  decode(src: Src): number {
-    return src.i16()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const uint32: Codec<Numberish, number> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.u32(safeToNumber(val))
-  },
-  decode(src: Src): number {
-    return src.u32()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const int32: Codec<Numberish, number> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.i32(safeToNumber(val))
-  },
-  decode(src: Src): number {
-    return src.i32()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const uint64: Codec<Numberish, bigint> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.u64(BigInt(val))
-  },
-  decode(src: Src): bigint {
-    return src.u64()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const int64: Codec<Numberish, bigint> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.i64(BigInt(val))
-  },
-  decode(src: Src): bigint {
-    return src.i64()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const uint128: Codec<Numberish, bigint> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.u128(BigInt(val))
-  },
-  decode(src: Src): bigint {
-    return src.u128()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const int128: Codec<Numberish, bigint> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.i128(BigInt(val))
-  },
-  decode(src: Src): bigint {
-    return src.i128()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const uint256: Codec<Numberish, bigint> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.u256(BigInt(val))
-  },
-  decode(src: Src): bigint {
-    return src.u256()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const int256: Codec<Numberish, bigint> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.i256(BigInt(val))
-  },
-  decode(src: Src): bigint {
-    return src.i256()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const string = <const>{
+export const string: Codec<string> = {
   encode(sink: Sink, val: string) {
     sink.newStaticDataArea()
     sink.string(val)
@@ -162,20 +63,20 @@ export const string = <const>{
   baseType: 'string',
 }
 
-function toBuffer(val: Uint8Array | string): Uint8Array {
+function toBytes(val: Uint8Array | string): Uint8Array {
   if (val instanceof Uint8Array) {
     return val
   }
   if (!isHex(val)) {
-    throw new Error(`Expected hex string or buffer, got: ${val}`)
+    throw new Error(`Expected hex string or Uint8Array, got: ${val}`)
   }
   return decodeHex(val)
 }
 
-export const bytes: Codec<Uint8Array | string, string>  = <const>{
+export const bytes: Codec<Uint8Array | string, string> = {
   encode(sink: Sink, val: Uint8Array | string) {
     sink.newStaticDataArea()
-    sink.bytes(toBuffer(val))
+    sink.bytes(toBytes(val))
     sink.endCurrentDataArea()
   },
   decode(src: Src): string {
@@ -187,7 +88,7 @@ export const bytes: Codec<Uint8Array | string, string>  = <const>{
 
 const bytesN = (size: number): Codec<Uint8Array | string, string> => ({
   encode(sink: Sink, val: Uint8Array | string) {
-    sink.staticBytes(size, toBuffer(val))
+    sink.staticBytes(size, toBytes(val))
   },
   decode(src: Src): string {
     return toHex(src.staticBytes(size))
@@ -293,4 +194,3 @@ export const uint240 = uint256
 export const int240 = int256
 export const uint248 = uint256
 export const int248 = int256
-

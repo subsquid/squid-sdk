@@ -1,0 +1,23 @@
+{
+  "name": "evm-codec-bench",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Benchmarks comparing the JIT-compiled StructCodec in the local @subsquid/evm-codec against the last published loop-based baseline from npm.",
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "bench": "node lib/bench.js",
+    "bench:abi": "node lib/bench-abi.js",
+    "verify": "node lib/verify-abi.js"
+  },
+  "dependencies": {
+    "@subsquid/evm-abi": "^0.3.1",
+    "@subsquid/evm-codec": "^0.3.0",
+    "evm-abi-old": "npm:@subsquid/evm-abi@0.3.1",
+    "evm-codec-old": "npm:@subsquid/evm-codec@0.3.0",
+    "viem": "^2.8.14"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "5.5.4"
+  }
+}

@@ -4,6 +4,8 @@ import {
   type Struct,
   type DecodedStruct,
   type EncodedStruct,
+  bytesToHexString,
+  hexToBytes,
   Sink,
   Src,
   StructCodec,
@@ -14,14 +16,6 @@ export interface CallRecord {
   input: string
 }
 
-function slotsCount(codecs: readonly Codec<any>[]) {
-  let count = 0
-  for (const codec of codecs) {
-    count += codec.slotsCount ?? 1
-  }
-  return count
-}
-
 export type FunctionReturn<T extends AbiFunction<any, any>> = T extends AbiFunction<any, infer R>
   ? R extends Codec<any, infer U> ? U : R extends Struct ? DecodedStruct<R> : void
   : never
@@ -30,9 +24,15 @@ export type FunctionArguments<T extends AbiFunction<any, any>> =
   T extends AbiFunction<infer U, any> ? EncodedStruct<U> : never
 
 export class AbiFunction<const T extends Struct, const R extends Codec<any> | Struct | undefined> {
-  readonly #selector: Buffer
+  /**
+   * Top-level tuple codec for the function arguments. We use its
+   * `encodeInline` / `decodeInline` entrypoints so that the JIT-compiled
+   * body runs directly — without the extra `newStaticDataArea` /
+   * `src.slice(src.u32())` wrappers that apply only when a dynamic
+   * struct is nested inside another tuple.
+   */
+  private readonly argsCodec: StructCodec<T>
   public readonly args: T
-  private readonly slotsCount: number
 
   public get sighash() {
     return this.selector
@@ -46,9 +46,8 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
   ) {
     assert(selector.startsWith('0x'), 'selector must start with 0x')
     assert(selector.length === 10, 'selector must be 4 bytes long')
-    this.#selector = Buffer.from(selector.slice(2), 'hex')
-    this.args = args instanceof StructCodec ? args.components : args
-    this.slotsCount = slotsCount(Object.values(this.args))
+    this.argsCodec = args instanceof StructCodec ? args : new StructCodec<T>(args)
+    this.args = this.argsCodec.components
   }
 
   is(calldata: string | CallRecord) {
@@ -56,11 +55,11 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
   }
 
   encode(args: EncodedStruct<T>) {
-    const sink = new Sink(this.slotsCount)
-    for (let i in this.args) {
-      this.args[i].encode(sink, args[i])
-    }
-    return `0x${Buffer.concat([this.#selector, sink.result()]).toString('hex')}`
+    const sink = new Sink(this.argsCodec.childrenSlotsCount)
+    this.argsCodec.encodeInline(sink, args)
+    const body = sink.result()
+    // selector is already '0x' + 8 hex chars; append encoded-body hex directly.
+    return this.selector + bytesToHexString(body, 0, body.length)
   }
 
   decode(calldata: string | CallRecord): DecodedStruct<T> {
@@ -69,38 +68,31 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
     if (!this.checkSignature(input)) {
       throw new FunctionInvalidSignatureError({targetSig: this.selector, sig: input.slice(0, this.selector.length)})
     }
-    const src = new Src(Buffer.from(input.slice(10), 'hex'))
-    const result = {} as any
-    for (let i in this.args) {
-      try {
-        result[i] = this.args[i].decode(src)
-      } catch (e: any) {
-        throw new FunctionCalldataDecodeError(this.selector, i, e.message, input)
-      }
+    const src = new Src(hexToBytes(input, 10))
+    try {
+      return this.argsCodec.decodeInline(src)
+    } catch (e: any) {
+      // Fast path failed — run a slow per-field loop over a fresh src to
+      // pinpoint the offending argument for a nicer error message.
+      throw this.locateDecodeError(input, e, (src, i) => new FunctionCalldataDecodeError(this.selector, i, e.message, input))
     }
-    return result
   }
 
   decodeResult(output: string): FunctionReturn<typeof this> {
     if (!this.returnType) {
       return undefined as any
     }
-    const src = new Src(Buffer.from(output.slice(2), 'hex'))
+    const src = new Src(hexToBytes(output, 2))
     // StructCodec is used as an inline tuple-of-codecs container for
-    // multi-output functions; its own decode would prepend an outer offset
-    // that eth_call return data does not carry, so decode each component
-    // in place instead.
+    // multi-output functions; its own `decode` would prepend an outer
+    // offset that eth_call return data does not carry, so go through
+    // `decodeInline` to skip that wrapper.
     if (this.returnType instanceof StructCodec) {
-      const components = (this.returnType as StructCodec<Struct>).components
-      const result = {} as any
-      for (const i in components) {
-        try {
-          result[i] = components[i].decode(src)
-        } catch (e: any) {
-          throw new FunctionResultDecodeError(this.selector, i, e.message, output)
-        }
+      try {
+        return (this.returnType as StructCodec<Struct>).decodeInline(src) as any
+      } catch (e: any) {
+        throw this.locateResultError(output, (this.returnType as StructCodec<Struct>).components, e)
       }
-      return result
     }
     if (this.isCodec(this.returnType)) {
       try {
@@ -119,6 +111,30 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
       }
     }
     return result
+  }
+
+  private locateDecodeError(input: string, original: any, make: (src: Src, i: string) => Error): Error {
+    const slow = new Src(hexToBytes(input, 10))
+    for (const i in this.args) {
+      try {
+        this.args[i].decode(slow)
+      } catch (e: any) {
+        return make(slow, i)
+      }
+    }
+    return original
+  }
+
+  private locateResultError(output: string, components: Struct, original: any): Error {
+    const slow = new Src(hexToBytes(output, 2))
+    for (const i in components) {
+      try {
+        components[i].decode(slow)
+      } catch (e: any) {
+        return new FunctionResultDecodeError(this.selector, i, e.message, output)
+      }
+    }
+    return original
   }
 
   private isCodec(value: any): value is Codec<any> {

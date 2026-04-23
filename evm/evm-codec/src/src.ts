@@ -1,4 +1,14 @@
 import { WORD_SIZE } from './codec'
+import { bytesToHexString } from './hex'
+
+const I128_SIGN_BIT = 1n << 127n
+const I128_RANGE = 1n << 128n
+const I64_SIGN_BIT = 1n << 63n
+const I64_RANGE = 1n << 64n
+
+// `TextDecoder` is stateless under default construction, so a single shared
+// instance is safe.
+const TEXT_DECODER = new TextDecoder('utf-8')
 
 export class Src {
   private view: DataView
@@ -58,13 +68,9 @@ export class Src {
 
   i64(): bigint {
     this.pos += WORD_SIZE - 8
-    return this.#i64()
-  }
-
-  #i64(): bigint {
-    let val = this.view.getBigInt64(this.pos, false)
-    this.pos += 8
-    return val
+    // Unpack as signed: two's complement over 64 bits.
+    const raw = this.#u64()
+    return raw < I64_SIGN_BIT ? raw : raw - I64_RANGE
   }
 
   u128(): bigint {
@@ -73,36 +79,41 @@ export class Src {
   }
 
   #u128(): bigint {
-    let hi = this.#u64()
-    let lo = this.#u64()
-    return lo + (hi << 64n)
+    const hi = this.view.getBigUint64(this.pos, false)
+    const lo = this.view.getBigUint64(this.pos + 8, false)
+    this.pos += 16
+    return (hi << 64n) | lo
   }
 
   i128(): bigint {
     this.pos += WORD_SIZE - 16
-    return this.#i128()
-  }
-
-  #i128(): bigint {
-    let hi = this.#i64()
-    let lo = this.#u64()
-    return lo + (hi << 64n)
+    const raw = this.#u128()
+    return raw < I128_SIGN_BIT ? raw : raw - I128_RANGE
   }
 
   u256(): bigint {
-    let hi = this.#u128()
-    let lo = this.#u128()
-    return lo + (hi << 128n)
+    const hi = this.#u128()
+    const lo = this.#u128()
+    return (hi << 128n) | lo
   }
 
   i256(): bigint {
-    let hi = this.#i128()
-    let lo = this.#u128()
-    return lo + (hi << 128n)
+    const hi = this.#u128()
+    const lo = this.#u128()
+    // sign-extend high 128 bits
+    const raw = (hi << 128n) | lo
+    return hi < I128_SIGN_BIT ? raw : raw - (1n << 256n)
   }
 
+  /**
+   * Read the next word and return its trailing 20 bytes as a lowercase hex
+   * address. Avoids parsing the whole word into a BigInt just to
+   * re-stringify it.
+   */
   address(): string {
-    return '0x' + this.u256().toString(16).padStart(40, '0')
+    const start = this.pos + WORD_SIZE - 20
+    this.pos += WORD_SIZE
+    return '0x' + bytesToHexString(this.buf, start, 20)
   }
 
   bytes(): Uint8Array {
@@ -129,7 +140,7 @@ export class Src {
     this.safeJump(ptr, 'string')
     const len = Number(this.u256())
     this.assertLength(len, 'string')
-    const val = Buffer.from(this.buf.buffer, this.buf.byteOffset + this.pos, len).toString('utf-8')
+    const val = TEXT_DECODER.decode(this.buf.subarray(this.pos, this.pos + len))
     this.jumpBack()
     return val
   }
@@ -140,13 +151,17 @@ export class Src {
 
   private assertLength(len: number, typeName: string): void {
     if (this.buf.length - this.pos < len) {
-      throw new RangeError(`Unexpected end of input. Attempting to read ${typeName} of length ${len} from 0x${Buffer.from(this.buf).toString('hex')}`)
+      throw new RangeError(
+        `Unexpected end of input. Attempting to read ${typeName} of length ${len} from 0x${bytesToHexString(this.buf, 0, this.buf.length)}`,
+      )
     }
   }
 
   public safeJump(pos: number, typeName: string): void {
     if (pos < 0 || pos >= this.buf.length) {
-      throw new RangeError(`Unexpected pointer location: 0x${pos.toString(16)}. Attempting to read ${typeName} from 0x${Buffer.from(this.buf).toString('hex')}`)
+      throw new RangeError(
+        `Unexpected pointer location: 0x${pos.toString(16)}. Attempting to read ${typeName} from 0x${bytesToHexString(this.buf, 0, this.buf.length)}`,
+      )
     }
     this.oldPos = this.pos
     this.pos = pos
