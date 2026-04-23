@@ -55,9 +55,17 @@
     {
       "name": "install-lint",
       "commandKind": "global",
-      "summary": "Install the Biome autoinstaller (runs automatically via postRushInstall)",
+      "summary": "Install the Biome autoinstaller and link it into the root node_modules (runs automatically via postRushInstall)",
       "autoinstallerName": "lint",
-      "shellCommand": "biome --version",
+      "shellCommand": "node common/scripts/link-biome.js",
+      "safeForSimultaneousRushProcesses": true
+    },
+    {
+      "name": "install-vitest",
+      "commandKind": "global",
+      "summary": "Install the Vitest autoinstaller for the root vitest.config.ts (runs automatically via postRushInstall)",
+      "autoinstallerName": "vitest",
+      "shellCommand": "node common/scripts/link-vitest.js",
       "safeForSimultaneousRushProcesses": true
     },
     {

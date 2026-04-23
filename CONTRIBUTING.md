@@ -79,8 +79,26 @@ rush biome:fix
 ```
 
 The Biome configuration lives in `biome.json` at the repo root. The autoinstaller
-(the tool itself) is pinned in `common/autoinstallers/lint/`; bump it with
-`rush update-autoinstaller --name lint`.
+(the tool itself) is pinned in `common/autoinstallers/lint/`. `rush install` /
+`rush update` automatically install it and symlink `node_modules/@biomejs/biome`
+at the repo root so editor integrations (e.g. the Biome VS Code extension) can
+discover the pinned binary. Bump the pinned version with:
+
+```bash
+rush update-autoinstaller --name lint
+```
+
+### 7. Shared vitest tooling
+
+The shared `vitest.config.ts` at the repo root is backed by the `vitest`
+autoinstaller at `common/autoinstallers/vitest/`. `rush install` / `rush update`
+automatically install it and symlink `node_modules/vitest` at the repo root so
+editors and the shared config can resolve `vitest/config`. Bump the pinned
+version with:
+
+```bash
+rush update-autoinstaller --name vitest
+```
 
 ## Pull Requests
 

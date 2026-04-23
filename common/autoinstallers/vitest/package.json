@@ -1,0 +1,9 @@
+{
+  "name": "vitest",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Autoinstaller that provides `vitest` for the root-level vitest.config.ts (shared tooling).",
+  "dependencies": {
+    "vitest": "4.1.5"
+  }
+}

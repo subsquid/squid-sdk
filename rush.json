@@ -320,7 +320,11 @@
       // Install the Biome autoinstaller used by `rush lint` / `rush format` / `rush biome`.
       // The `install-lint` command is flagged `safeForSimultaneousRushProcesses: true`
       // so it can run from inside this hook while `rush install` still holds its lock.
-      "node common/scripts/install-run-rush.js install-lint"
+      "node common/scripts/install-run-rush.js install-lint",
+      // Install the Vitest autoinstaller and link it into the root node_modules so that
+      // the shared `vitest.config.ts` at the repo root can resolve `vitest/config`.
+      // `install-vitest` is also flagged `safeForSimultaneousRushProcesses: true`.
+      "node common/scripts/install-run-rush.js install-vitest"
     ],
 
     /**
