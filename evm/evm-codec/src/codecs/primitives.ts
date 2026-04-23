@@ -7,21 +7,41 @@ import { safeToNumber } from '../safeToNumber'
 type Numberish = number | bigint
 
 /**
- * Build a primitive numeric codec that funnels encode/decode through the
- * given `Sink`/`Src` method name. The `toNative` coercion normalizes the
- * user-facing `number | bigint` input to whatever the underlying Sink
- * method expects (a `number` for widths ≤ 32 bits, a `bigint` otherwise).
+ * Small-integer (≤ 32 bits) codec. `Sink`'s `u8/i8/u16/…/u32/i32` writers
+ * all take a `number`; we accept either a `number` or a `bigint` from the
+ * caller and narrow via `safeToNumber`. The returned codec decodes to a
+ * plain `number`.
  */
-function numericCodec<TOut extends number | bigint>(
-  method: string,
-  toNative: (v: Numberish) => number | bigint,
-): Codec<Numberish, TOut> {
+type NumberMethod = 'u8' | 'i8' | 'u16' | 'i16' | 'u32' | 'i32'
+
+function numberCodec(method: NumberMethod): Codec<Numberish, number> {
   return {
     encode(sink: Sink, val: Numberish) {
-      ;(sink as any)[method](toNative(val))
+      sink[method](safeToNumber(val))
     },
-    decode(src: Src): TOut {
-      return (src as any)[method]()
+    decode(src: Src): number {
+      return src[method]()
+    },
+    isDynamic: false,
+    baseType: 'int',
+  }
+}
+
+/**
+ * Wide-integer (≥ 64 bits) codec. `Sink`'s `u64/i64/…/u256/i256` writers
+ * all take a `bigint`; we accept either a `number` or a `bigint` from the
+ * caller and widen via `BigInt`. The returned codec decodes to a
+ * `bigint`.
+ */
+type BigIntMethod = 'u64' | 'i64' | 'u128' | 'i128' | 'u256' | 'i256'
+
+function bigintCodec(method: BigIntMethod): Codec<Numberish, bigint> {
+  return {
+    encode(sink: Sink, val: Numberish) {
+      sink[method](BigInt(val))
+    },
+    decode(src: Src): bigint {
+      return src[method]()
     },
     isDynamic: false,
     baseType: 'int',
@@ -39,18 +59,18 @@ export const bool: Codec<boolean> = {
   baseType: 'bool',
 }
 
-export const uint8: Codec<Numberish, number> = numericCodec('u8', safeToNumber)
-export const int8: Codec<Numberish, number> = numericCodec('i8', safeToNumber)
-export const uint16: Codec<Numberish, number> = numericCodec('u16', safeToNumber)
-export const int16: Codec<Numberish, number> = numericCodec('i16', safeToNumber)
-export const uint32: Codec<Numberish, number> = numericCodec('u32', safeToNumber)
-export const int32: Codec<Numberish, number> = numericCodec('i32', safeToNumber)
-export const uint64: Codec<Numberish, bigint> = numericCodec('u64', BigInt)
-export const int64: Codec<Numberish, bigint> = numericCodec('i64', BigInt)
-export const uint128: Codec<Numberish, bigint> = numericCodec('u128', BigInt)
-export const int128: Codec<Numberish, bigint> = numericCodec('i128', BigInt)
-export const uint256: Codec<Numberish, bigint> = numericCodec('u256', BigInt)
-export const int256: Codec<Numberish, bigint> = numericCodec('i256', BigInt)
+export const uint8: Codec<Numberish, number> = numberCodec('u8')
+export const int8: Codec<Numberish, number> = numberCodec('i8')
+export const uint16: Codec<Numberish, number> = numberCodec('u16')
+export const int16: Codec<Numberish, number> = numberCodec('i16')
+export const uint32: Codec<Numberish, number> = numberCodec('u32')
+export const int32: Codec<Numberish, number> = numberCodec('i32')
+export const uint64: Codec<Numberish, bigint> = bigintCodec('u64')
+export const int64: Codec<Numberish, bigint> = bigintCodec('i64')
+export const uint128: Codec<Numberish, bigint> = bigintCodec('u128')
+export const int128: Codec<Numberish, bigint> = bigintCodec('i128')
+export const uint256: Codec<Numberish, bigint> = bigintCodec('u256')
+export const int256: Codec<Numberish, bigint> = bigintCodec('i256')
 
 export const string: Codec<string> = {
   encode(sink: Sink, val: string) {
