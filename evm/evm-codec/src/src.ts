@@ -1,10 +1,14 @@
 import { WORD_SIZE } from './codec'
 import { bytesToHexString } from './hex'
 
-const I128_SIGN_BIT = 1n << 127n
-const I128_RANGE = 1n << 128n
+// Sign bit + wrap-around range for each signed-integer width.
+// `val < SIGN_BIT` ⇒ positive; otherwise subtract RANGE for two's complement.
 const I64_SIGN_BIT = 1n << 63n
 const I64_RANGE = 1n << 64n
+const I128_SIGN_BIT = 1n << 127n
+const I128_RANGE = 1n << 128n
+const I256_SIGN_BIT = 1n << 255n
+const I256_RANGE = 1n << 256n
 
 // `TextDecoder` is stateless under default construction, so a single shared
 // instance is safe.
@@ -100,9 +104,8 @@ export class Src {
   i256(): bigint {
     const hi = this.#u128()
     const lo = this.#u128()
-    // sign-extend high 128 bits
     const raw = (hi << 128n) | lo
-    return hi < I128_SIGN_BIT ? raw : raw - (1n << 256n)
+    return raw < I256_SIGN_BIT ? raw : raw - I256_RANGE
   }
 
   /**

@@ -10,6 +10,10 @@ const TEXT_ENCODER = new TextEncoder()
 const U64_MASK = 0xffffffffffffffffn
 const U128_MASK = (1n << 128n) - 1n
 const U256_BASE = 1n << 256n
+
+// Range bounds for the int/uint writers. Numeric for the 32-bit-and-smaller
+// range so that `val < MIN` / `val > MAX` cannot trigger a Number↔BigInt
+// comparison on the hot path.
 const U8_MAX = 255
 const U16_MAX = 65535
 const U32_MAX = 4294967295
@@ -76,7 +80,7 @@ export class Sink {
   }
 
   u8(val: number) {
-    if (val < 0 || val > U8_MAX) this.#oob(val, 'uint8')
+    if (val < 0 || val > U8_MAX) this.#oob(val, 'uint8', 0, U8_MAX)
     this.reserve(WORD_SIZE)
     this.pos += WORD_SIZE - 1
     this.view.setUint8(this.pos, val)
@@ -84,12 +88,12 @@ export class Sink {
   }
 
   i8(val: number) {
-    if (val < I8_MIN || val > I8_MAX) this.#oob(val, 'int8')
+    if (val < I8_MIN || val > I8_MAX) this.#oob(val, 'int8', I8_MIN, I8_MAX)
     this.#i256(BigInt(val))
   }
 
   u16(val: number) {
-    if (val < 0 || val > U16_MAX) this.#oob(val, 'uint16')
+    if (val < 0 || val > U16_MAX) this.#oob(val, 'uint16', 0, U16_MAX)
     this.reserve(WORD_SIZE)
     this.pos += WORD_SIZE - 2
     this.view.setUint16(this.pos, val, false)
@@ -97,12 +101,12 @@ export class Sink {
   }
 
   i16(val: number) {
-    if (val < I16_MIN || val > I16_MAX) this.#oob(val, 'int16')
+    if (val < I16_MIN || val > I16_MAX) this.#oob(val, 'int16', I16_MIN, I16_MAX)
     this.#i256(BigInt(val))
   }
 
   u32(val: number) {
-    if (val < 0 || val > U32_MAX) this.#oob(val, 'uint32')
+    if (val < 0 || val > U32_MAX) this.#oob(val, 'uint32', 0, U32_MAX)
     this.reserve(WORD_SIZE)
     this.pos += WORD_SIZE - 4
     this.view.setUint32(this.pos, val, false)
@@ -119,12 +123,12 @@ export class Sink {
   }
 
   i32(val: number) {
-    if (val < I32_MIN || val > I32_MAX) this.#oob(val, 'int32')
+    if (val < I32_MIN || val > I32_MAX) this.#oob(val, 'int32', I32_MIN, I32_MAX)
     this.#i256(BigInt(val))
   }
 
   u64(val: bigint) {
-    if (val < 0n || val > U64_MAX_BI) this.#oob(val, 'uint64')
+    if (val < 0n || val > U64_MAX_BI) this.#oob(val, 'uint64', 0n, U64_MAX_BI)
     this.reserve(WORD_SIZE)
     this.pos += WORD_SIZE - 8
     this.view.setBigUint64(this.pos, val, false)
@@ -132,7 +136,7 @@ export class Sink {
   }
 
   i64(val: bigint) {
-    if (val < I64_MIN_BI || val > I64_MAX_BI) this.#oob(val, 'int64')
+    if (val < I64_MIN_BI || val > I64_MAX_BI) this.#oob(val, 'int64', I64_MIN_BI, I64_MAX_BI)
     this.#i256(val)
   }
 
@@ -142,7 +146,7 @@ export class Sink {
   }
 
   u128(val: bigint) {
-    if (val < 0n || val > U128_MAX_BI) this.#oob(val, 'uint128')
+    if (val < 0n || val > U128_MAX_BI) this.#oob(val, 'uint128', 0n, U128_MAX_BI)
     this.reserve(WORD_SIZE)
     this.pos += WORD_SIZE - 16
     this.#u64(val & U64_MASK)
@@ -150,7 +154,7 @@ export class Sink {
   }
 
   i128(val: bigint) {
-    if (val < I128_MIN_BI || val > I128_MAX_BI) this.#oob(val, 'int128')
+    if (val < I128_MIN_BI || val > I128_MAX_BI) this.#oob(val, 'int128', I128_MIN_BI, I128_MAX_BI)
     this.#i256(val)
   }
 
@@ -164,14 +168,14 @@ export class Sink {
   }
 
   u256(val: bigint) {
-    if (val < 0n || val > U256_MAX_BI) this.#oob(val, 'uint256')
+    if (val < 0n || val > U256_MAX_BI) this.#oob(val, 'uint256', 0n, U256_MAX_BI)
     this.reserve(WORD_SIZE)
     this.#u128Raw(val >> 128n)
     this.#u128Raw(val & U128_MASK)
   }
 
   i256(val: bigint) {
-    if (val < I256_MIN_BI || val > I256_MAX_BI) this.#oob(val, 'int256')
+    if (val < I256_MIN_BI || val > I256_MAX_BI) this.#oob(val, 'int256', I256_MIN_BI, I256_MAX_BI)
     this.#i256(val)
   }
 
@@ -239,8 +243,8 @@ export class Sink {
     this.u8(val ? 1 : 0)
   }
 
-  #oob(val: bigint | number, typeName: string): never {
-    throw new Error(`${val} is out of bounds for ${typeName}`)
+  #oob(val: bigint | number, typeName: string, min: bigint | number, max: bigint | number): never {
+    throw new Error(`${val} is out of bounds for ${typeName}[${min}, ${max}]`)
   }
 
   /**
