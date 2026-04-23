@@ -18,6 +18,56 @@
       "shellCommand": "node ops/workspace/lib/unify.js"
     },
     {
+      "name": "lint",
+      "commandKind": "global",
+      "summary": "Lint the repository with Biome",
+      "autoinstallerName": "lint",
+      "shellCommand": "biome lint ."
+    },
+    {
+      "name": "lint:fix",
+      "commandKind": "global",
+      "summary": "Lint the repository with Biome and apply safe fixes",
+      "autoinstallerName": "lint",
+      "shellCommand": "biome lint --write ."
+    },
+    {
+      "name": "format",
+      "commandKind": "global",
+      "summary": "Check formatting with Biome",
+      "autoinstallerName": "lint",
+      "shellCommand": "biome format ."
+    },
+    {
+      "name": "format:fix",
+      "commandKind": "global",
+      "summary": "Reformat the repository with Biome",
+      "autoinstallerName": "lint",
+      "shellCommand": "biome format --write ."
+    },
+    {
+      "name": "biome",
+      "commandKind": "global",
+      "summary": "Run Biome lint + formatter checks",
+      "autoinstallerName": "lint",
+      "shellCommand": "biome check ."
+    },
+    {
+      "name": "install-lint",
+      "commandKind": "global",
+      "summary": "Install the Biome autoinstaller (runs automatically via postRushInstall)",
+      "autoinstallerName": "lint",
+      "shellCommand": "biome --version",
+      "safeForSimultaneousRushProcesses": true
+    },
+    {
+      "name": "biome:fix",
+      "commandKind": "global",
+      "summary": "Run Biome lint + formatter with safe fixes",
+      "autoinstallerName": "lint",
+      "shellCommand": "biome check --write ."
+    },
+    {
       "name": "e2e",
       "commandKind": "global",
       "summary": "run e2e test suite",

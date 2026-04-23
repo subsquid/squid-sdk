@@ -316,7 +316,11 @@
       // This is needed to remove node_gyp_bins which contains symlinks outside the root
       // @see https://github.com/nodejs/node-gyp/issues/2713
       // @see https://github.com/nodejs/node-gyp/pull/2721
-      "find ./common -name node_gyp_bins -type d -exec rm -r '{}' \\;"
+      "find ./common -name node_gyp_bins -type d -exec rm -r '{}' \\;",
+      // Install the Biome autoinstaller used by `rush lint` / `rush format` / `rush biome`.
+      // The `install-lint` command is flagged `safeForSimultaneousRushProcesses: true`
+      // so it can run from inside this hook while `rush install` still holds its lock.
+      "node common/scripts/install-run-rush.js install-lint"
     ],
 
     /**

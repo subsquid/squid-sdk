@@ -1,0 +1,149 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "ignore": [
+      "node_modules",
+      "**/node_modules",
+      "**/lib",
+      "**/build",
+      "**/dist",
+      "common/temp",
+      "common/deploy",
+      "common/changes",
+      "common/autoinstallers",
+      "common/config/rush",
+      "common/scripts",
+      "rush.json",
+      "**/.rush",
+      "**/rush-logs",
+      "**/CHANGELOG.json",
+      "**/CHANGELOG.md",
+      "**/tsconfig*.json",
+      "**/*.test.json",
+      "**/fixtures/**",
+      "**/testdata/**",
+      "**/abi/**",
+      "**/generated/**"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "useEditorconfig": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 4,
+    "lineEnding": "lf",
+    "lineWidth": 120,
+    "attributePosition": "auto",
+    "bracketSpacing": false
+  },
+  "organizeImports": {
+    "enabled": false
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noForEach": "off",
+        "useArrowFunction": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "off",
+        "useArrayLiterals": "off"
+      },
+      "style": {
+        "noNegationElse": "off",
+        "noNonNullAssertion": "off",
+        "noParameterAssign": "off",
+        "useBlockStatements": "off"
+      },
+      "suspicious": {
+        "noDoubleEquals": "off",
+        "noEmptyBlockStatements": "off",
+        "noExplicitAny": "off"
+      }
+    },
+    "ignore": [
+      "**/node_modules",
+      "**/lib",
+      "**/build",
+      "**/dist",
+      "common/temp",
+      "common/deploy",
+      "common/changes",
+      "**/CHANGELOG.json",
+      "**/CHANGELOG.md",
+      "**/fixtures/**",
+      "**/testdata/**",
+      "**/abi/**",
+      "**/generated/**"
+    ]
+  },
+  "json": {
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": true
+    },
+    "formatter": {
+      "indentWidth": 2,
+      "trailingCommas": "none"
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "all",
+      "semicolons": "asNeeded",
+      "arrowParentheses": "always",
+      "bracketSameLine": false,
+      "quoteStyle": "single",
+      "attributePosition": "auto",
+      "bracketSpacing": false
+    },
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    }
+  },
+  "overrides": [
+    {
+      "include": ["*.ts", "*.tsx", "*.mts", "*.cts"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noConstAssign": "off",
+            "noGlobalObjectCalls": "off",
+            "noInvalidConstructorSuper": "off",
+            "noNewSymbol": "off",
+            "noSetterReturn": "off",
+            "noUndeclaredVariables": "off",
+            "noUnreachable": "off",
+            "noUnreachableSuper": "off"
+          },
+          "style": {
+            "noArguments": "error",
+            "noVar": "off",
+            "useConst": "off"
+          },
+          "suspicious": {
+            "noDuplicateClassMembers": "off",
+            "noDuplicateObjectKeys": "off",
+            "noDuplicateParameters": "off",
+            "noFunctionAssign": "off",
+            "noImportAssign": "off",
+            "noRedeclare": "off",
+            "noUnsafeNegation": "off",
+            "useGetterReturn": "off"
+          }
+        }
+      }
+    }
+  ]
+}

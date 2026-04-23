@@ -59,6 +59,29 @@ rush data-test
 rush e2e
 ```
 
+### 6. Lint & format
+
+The repository is linted and formatted with [Biome](https://biomejs.dev) via a
+Rush autoinstaller.
+
+```bash
+# Lint
+rush lint
+rush lint:fix
+
+# Format
+rush format
+rush format:fix
+
+# Lint + format together
+rush biome
+rush biome:fix
+```
+
+The Biome configuration lives in `biome.json` at the repo root. The autoinstaller
+(the tool itself) is pinned in `common/autoinstallers/lint/`; bump it with
+`rush update-autoinstaller --name lint`.
+
 ## Pull Requests
 
 All pull requests should be made from a fork. To create a pull request
