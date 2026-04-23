@@ -2,8 +2,6 @@ import { decodeHex, isHex, toHex } from '@subsquid/util-internal-hex'
 import { Codec } from '../codec'
 import { Sink } from '../sink'
 import { Src } from '../src'
-import { ArrayCodec, FixedSizeArrayCodec } from './array'
-import { StructCodec } from './struct'
 import { safeToNumber } from '../safeToNumber'
 
 type Numberish = number | bigint
@@ -242,18 +240,6 @@ export const address: Codec<string> = {
   isDynamic: false,
   baseType: 'address',
 }
-
-export const fixedSizeArray = <TIn, TOut>(item: Codec<TIn, TOut>, size: number): Codec<TIn[], TOut[]> => new FixedSizeArrayCodec(item, size)
-
-export const array = <TIn, TOut>(item: Codec<TIn, TOut>): Codec<TIn[], TOut[]> => new ArrayCodec(item)
-
-type Struct = {
-  [key: string]: Codec<any>
-}
-
-export const struct = <const T extends Struct>(components: T) => new StructCodec<T>(components)
-
-export const tuple = struct
 
 export const uint24 = uint32
 export const int24 = int32

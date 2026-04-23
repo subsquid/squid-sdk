@@ -1,4 +1,4 @@
-export { Src } from './src'
-export { Sink } from './sink'
-export type { Codec, Struct, DecodedStruct, EncodedStruct, BaseType } from './codec'
-export * from './codecs/primitives'
+export * from './codec'
+export * from './dsl'
+export * from './sink'
+export * from './src'

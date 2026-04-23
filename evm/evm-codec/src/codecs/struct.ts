@@ -1,6 +1,7 @@
-import {Codec, Struct, DecodedStruct, EncodedStruct} from '../codec'
+import { Codec, Struct, DecodedStruct, EncodedStruct } from '../codec'
 import { Sink } from '../sink'
 import { Src } from '../src'
+import { propAccess, propName } from '../util'
 
 function slotsCount(codecs: readonly Codec<any>[]) {
   let count = 0
@@ -14,62 +15,49 @@ export class StructCodec<const T extends Struct> implements Codec<EncodedStruct<
   public readonly baseType = 'struct'
   public readonly isDynamic: boolean
   public readonly slotsCount: number
+  public readonly components: T
   private readonly childrenSlotsCount: number
-  private readonly components: T
+
+  encode: (sink: Sink, val: EncodedStruct<T>) => void
+  decode: (src: Src) => DecodedStruct<T>
 
   constructor(components: T) {
     this.components = components
     const codecs = Object.values(components)
     this.isDynamic = codecs.some((codec) => codec.isDynamic)
     this.childrenSlotsCount = slotsCount(codecs)
+    this.slotsCount = this.isDynamic ? 1 : this.childrenSlotsCount
+
+    this.encode = this.createEncode()
+    this.decode = this.createDecode()
+  }
+
+  private createEncode(): any {
+    let body = ''
     if (this.isDynamic) {
-      this.slotsCount = 1
-    } else {
-      this.slotsCount = this.childrenSlotsCount
+      body += `sink.newStaticDataArea(${this.childrenSlotsCount})\n`
     }
-  }
-
-  public encode(sink: Sink, val: EncodedStruct<T>): void {
+    for (let key in this.components) {
+      let a = propAccess(key)
+      body += `this.components${a}.encode(sink, val${a})\n`
+    }
     if (this.isDynamic) {
-      this.encodeDynamic(sink, val)
-      return
+      body += `sink.endCurrentDataArea()\n`
     }
-    for (let i in this.components) {
-      let prop = this.components[i]
-      prop.encode(sink, val[i])
-    }
+    return new Function('sink', 'val', body)
   }
 
-  private encodeDynamic(sink: Sink, val: EncodedStruct<T>): void {
-    sink.newStaticDataArea(this.childrenSlotsCount)
-    for (let i in this.components) {
-      let prop = this.components[i]
-      prop.encode(sink, val[i])
-    }
-    sink.endCurrentDataArea()
-  }
-
-  public decode(src: Src): DecodedStruct<T> {
+  private createDecode(): any {
+    let body = ''
     if (this.isDynamic) {
-      return this.decodeDynamic(src)
+      body += `var offset = src.u32()\n`
+      body += `src = src.slice(offset)\n`
     }
-    let result: any = {}
-    for (let i in this.components) {
-      let prop = this.components[i]
-      result[i] = prop.decode(src)
+    body += 'return {\n'
+    for (let key in this.components) {
+      body += `${propName(key)}: this.components${propAccess(key)}.decode(src),\n`
     }
-    return result
-  }
-
-  private decodeDynamic(src: Src): DecodedStruct<T> {
-    let result: any = {}
-
-    const offset = src.u32()
-    const tmpSrc = src.slice(offset)
-    for (let i in this.components) {
-      let prop = this.components[i]
-      result[i] = prop.decode(tmpSrc)
-    }
-    return result
+    body += '}\n'
+    return new Function('src', body)
   }
 }

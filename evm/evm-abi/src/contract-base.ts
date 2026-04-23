@@ -1,6 +1,7 @@
 import type { AbiFunction } from './abi-components/function'
 import type { Codec, Struct, EncodedStruct } from '@subsquid/evm-codec'
 
+
 export interface Chain {
   client: {
     call: <T = any>(method: string, params?: unknown[]) => Promise<T>

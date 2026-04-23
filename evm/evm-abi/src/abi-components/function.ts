@@ -1,5 +1,13 @@
 import assert from 'node:assert'
-import {type Codec, type Struct, type DecodedStruct, type EncodedStruct, Sink, Src} from '@subsquid/evm-codec'
+import {
+  type Codec,
+  type Struct,
+  type DecodedStruct,
+  type EncodedStruct,
+  Sink,
+  Src,
+  StructCodec,
+} from '@subsquid/evm-codec'
 import {FunctionInvalidSignatureError, FunctionResultDecodeError, FunctionCalldataDecodeError} from '../errors'
 
 export interface CallRecord {
@@ -18,22 +26,29 @@ export type FunctionReturn<T extends AbiFunction<any, any>> = T extends AbiFunct
   ? R extends Codec<any, infer U> ? U : R extends Struct ? DecodedStruct<R> : void
   : never
 
-export type FunctionArguments<T extends AbiFunction<any, any>> = T extends AbiFunction<infer U, any> ? EncodedStruct<U> : never
+export type FunctionArguments<T extends AbiFunction<any, any>> =
+  T extends AbiFunction<infer U, any> ? EncodedStruct<U> : never
 
 export class AbiFunction<const T extends Struct, const R extends Codec<any> | Struct | undefined> {
   readonly #selector: Buffer
+  public readonly args: T
   private readonly slotsCount: number
 
   public get sighash() {
     return this.selector
   }
 
-  constructor(public selector: string, public signature: string, public readonly args: T, public readonly returnType?: R, public isView = false) {
+  constructor(
+    public selector: string,
+    args: StructCodec<T> | T,
+    public readonly returnType?: R,
+    public isView = false,
+  ) {
     assert(selector.startsWith('0x'), 'selector must start with 0x')
     assert(selector.length === 10, 'selector must be 4 bytes long')
     this.#selector = Buffer.from(selector.slice(2), 'hex')
-    this.args = args
-    this.slotsCount = slotsCount(Object.values(args))
+    this.args = args instanceof StructCodec ? args.components : args
+    this.slotsCount = slotsCount(Object.values(this.args))
   }
 
   is(calldata: string | CallRecord) {
@@ -60,14 +75,10 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
       try {
         result[i] = this.args[i].decode(src)
       } catch (e: any) {
-        throw new FunctionCalldataDecodeError(this.signature, i, e.message, input)
+        throw new FunctionCalldataDecodeError(this.selector, i, e.message, input)
       }
     }
     return result
-  }
-
-  private isCodecs(value: any): value is Codec<any> {
-    return 'decode' in value && 'encode' in value
   }
 
   decodeResult(output: string): FunctionReturn<typeof this> {
@@ -75,23 +86,44 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
       return undefined as any
     }
     const src = new Src(Buffer.from(output.slice(2), 'hex'))
-    if (this.isCodecs(this.returnType)) {
+    // StructCodec is used as an inline tuple-of-codecs container for
+    // multi-output functions; its own decode would prepend an outer offset
+    // that eth_call return data does not carry, so decode each component
+    // in place instead.
+    if (this.returnType instanceof StructCodec) {
+      const components = (this.returnType as StructCodec<Struct>).components
+      const result = {} as any
+      for (const i in components) {
+        try {
+          result[i] = components[i].decode(src)
+        } catch (e: any) {
+          throw new FunctionResultDecodeError(this.selector, i, e.message, output)
+        }
+      }
+      return result
+    }
+    if (this.isCodec(this.returnType)) {
       try {
         return this.returnType.decode(src) as any
       } catch (e: any) {
-        throw new FunctionResultDecodeError(this.signature, '', e.message, output)
+        throw new FunctionResultDecodeError(this.selector, '', e.message, output)
       }
     }
     const result = {} as any
-    for (let i in this.returnType) {
-      const codec = this.returnType[i] as Codec<any>
+    for (const i in this.returnType as Struct) {
+      const codec = (this.returnType as Struct)[i]
       try {
         result[i] = codec.decode(src)
       } catch (e: any) {
-        throw new FunctionResultDecodeError(this.signature, i, e.message, output)
+        throw new FunctionResultDecodeError(this.selector, i, e.message, output)
       }
     }
     return result
+  }
+
+  private isCodec(value: any): value is Codec<any> {
+    return value != null && typeof value === 'object' &&
+      typeof value.encode === 'function' && typeof value.decode === 'function'
   }
 
   private checkSignature(val: string) {
@@ -101,14 +133,12 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | St
 
 export const fun = <const T extends Struct, const R extends Codec<any> | Struct | undefined>(
   selector: string,
-  signature: string,
-  args: T,
+  args: StructCodec<T> | T,
   returnType?: R,
-) => new AbiFunction<T, R>(selector, signature, args, returnType, false)
+) => new AbiFunction<T, R>(selector, args, returnType, false)
 
 export const viewFun = <const T extends Struct, const R extends Codec<any> | Struct | undefined>(
   selector: string,
-  signature: string,
-  args: T,
+  args: StructCodec<T> | T,
   returnType?: R,
-) => new AbiFunction<T, R>(selector, signature, args, returnType, true)
+) => new AbiFunction<T, R>(selector, args, returnType, true)

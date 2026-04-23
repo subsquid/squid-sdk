@@ -1,5 +1,5 @@
 import type { Simplify } from '../indexed'
-import { bytes32, Src, type Codec, type DecodedStruct, type Struct } from '@subsquid/evm-codec'
+import { bytes32, Sink, Src, StructCodec, type Codec, type DecodedStruct, type EncodedStruct, type Struct } from '@subsquid/evm-codec'
 import {
   EventDecodingError,
   EventEmptyTopicsError,
@@ -22,17 +22,26 @@ export type IndexedCodecs<T extends EventArgs> = Simplify<{
         : T[K]
 }>
 
-export type EventParams<T extends AbiEvent<any>> = T extends AbiEvent<infer U> ? DecodedStruct<U> : never
+export type EventParams<T extends AbiEvent<any>> =
+  T extends AbiEvent<infer U> ? DecodedStruct<IndexedCodecs<U>> : never
+
+export type EventArgumentsInput<T extends AbiEvent<any>> =
+  T extends AbiEvent<infer U> ? EncodedStruct<IndexedCodecs<U>> : never
 
 export class AbiEvent<const T extends EventArgs> {
+  public readonly args: T
   public readonly params: IndexedCodecs<T>
   private readonly topicCount: number
 
-  constructor(public readonly topic: string, public readonly signature: string, args: T) {
+  constructor(
+    public readonly topic: string,
+    args: StructCodec<T> | T,
+  ) {
+    this.args = args instanceof StructCodec ? args.components : args
     this.topicCount = 1
     this.params = {} as IndexedCodecs<T>
-    for (const i in args) {
-      const arg = args[i]
+    for (const i in this.args) {
+      const arg = this.args[i]
       this.params[i] = arg.indexed && arg.isDynamic
       ? {
           ...bytes32,
@@ -47,6 +56,29 @@ export class AbiEvent<const T extends EventArgs> {
 
   is(rec: EventRecord): boolean {
     return this.checkTopicsCount(rec) && this.checkSignature(rec)
+  }
+
+  encode(args: EncodedStruct<IndexedCodecs<T>>): EventRecord {
+    const topics: string[] = [this.topic]
+    let dataSlots = 0
+    for (const i in this.params) {
+      if (!this.params[i].indexed) {
+        dataSlots += this.params[i].slotsCount ?? 1
+      }
+    }
+    const dataSink = new Sink(dataSlots)
+    for (const i in this.params) {
+      const codec = this.params[i]
+      const val = (args as any)[i]
+      if (codec.indexed) {
+        const topicSink = new Sink(codec.slotsCount ?? 1)
+        codec.encode(topicSink, val)
+        topics.push('0x' + topicSink.result().toString('hex'))
+      } else {
+        codec.encode(dataSink, val)
+      }
+    }
+    return { topics, data: '0x' + dataSink.result().toString('hex') }
   }
 
   decode(rec: EventRecord): DecodedStruct<IndexedCodecs<T>> {
@@ -75,7 +107,7 @@ export class AbiEvent<const T extends EventArgs> {
           result[i] = this.params[i].decode(src)
         }
       } catch (e: any) {
-        throw new EventDecodingError(this.signature, i, rec.data, e.message)
+        throw new EventDecodingError(this.topic, i, rec.data, e.message)
       }
     }
     return result
@@ -90,4 +122,7 @@ export class AbiEvent<const T extends EventArgs> {
   }
 }
 
-export const event = <const T extends Struct>(topic: string, signature: string, args: T) => new AbiEvent<T>(topic, signature, args)
+export const event = <const T extends Struct>(
+  topic: string,
+  args: StructCodec<T> | T,
+) => new AbiEvent<T>(topic, args)

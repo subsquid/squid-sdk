@@ -106,6 +106,11 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
       LOG.info(`saved ${dest.path('multicall.ts')}`)
     }
 
+    if (specs.length > 0) {
+      dest.add('abi.support.ts', [__dirname, '../src/abi.support.ts'])
+      LOG.info(`saved ${dest.path('abi.support.ts')}`)
+    }
+
     for (let spec of specs) {
       LOG.info(`processing ${spec.src}`)
       let abi_json = await read(spec, opts)
