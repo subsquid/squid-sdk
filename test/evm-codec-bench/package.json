@@ -7,8 +7,7 @@
     "build": "rm -rf lib && tsc",
     "bench": "node lib/bench.js",
     "bench:abi": "node lib/bench-abi.js",
-    "verify": "node lib/verify-abi.js",
-    "bench:collect": "node scripts/collect-bench.mjs"
+    "verify": "node lib/verify-abi.js"
   },
   "dependencies": {
     "@subsquid/evm-abi": "^0.3.1",

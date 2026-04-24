@@ -31,25 +31,10 @@ The benchmarks wire the **same** values through three **libraries** and assert p
 - `npm run bench:abi` — `node lib/bench-abi.js`
 - `npm run verify` — `node lib/verify-abi.js`
 
-## Record results (Node + Bun, 3 runs each, update README)
+## Benchmark results (snapshot)
 
-From this directory, after `npm run build`:
+The block below is a **snapshot** from a run on a developer machine. To refresh it, run `npm run build`, then `npm run bench` / `npm run bench:abi` (optionally on Bun) and paste the output here.
 
-```bash
-node scripts/collect-bench.mjs
-# or
-npm run bench:collect
-```
-
-This runs `lib/bench.js` and `lib/bench-abi.js` **three times** on **Node** and **three times** on **Bun**, medians all throughput numbers, and rewrites the **[Benchmark results](#benchmark-results-auto-generated)** section. Requires `bun` on `PATH` (install from [bun.sh](https://bun.sh)).
-
-The manual single-pass commands above are still useful for quick A/B on one runtime.
-
-## Benchmark results (auto-generated)
-
-The block below is overwritten by `npm run bench:collect`. Do not edit it by hand.
-
-<!-- BENCH-RESULTS:AUTO -->
 _Last updated: 2026-04-24 — Node `v20.18.2`, Linux 6.6.87.2-microsoft-standard-WSL2._
 
 ### `lib/bench.js` (StructCodec)
@@ -139,4 +124,3 @@ _Last updated: 2026-04-24 — Node `v20.18.2`, Linux 6.6.87.2-microsoft-standard
     vs old (loop)   encode 1.66x   decode 3.42x
     vs viem         encode 6.13x   decode 17.37x
 ```
-<!-- :BENCH-RESULTS:AUTO -->
