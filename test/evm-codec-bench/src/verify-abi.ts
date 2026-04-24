@@ -6,7 +6,7 @@
  * per-field JS loop for `StructCodec.encodeInline` / `decodeInline`.
  */
 import * as assert from 'node:assert/strict'
-import {address, array, bool, bytes4, fixedSizeArray, int32, Sink, string, struct, uint256} from '@subsquid/evm-codec'
+import {address, array, bool, bytes4, fixedSizeArray, int32, BytesSink, string, struct, uint256} from '@subsquid/evm-codec'
 import {event, fun, indexed} from '@subsquid/evm-abi'
 import {encodeEventTopics, encodeFunctionData, parseAbiItem} from 'viem'
 
@@ -104,7 +104,7 @@ check('dynamic function matches viem byte-for-byte', () => {
 
 check('function with single non-struct return decodes', () => {
     const simple = fun('0x12345678', {foo: uint256}, int32)
-    const sink = new Sink(1)
+    const sink = new BytesSink(1)
     int32.encode(sink, -420)
     assert.equal(simple.decodeResult(sink.toString()), -420)
 })

@@ -34,21 +34,30 @@ type SquidLib = typeof NEW
 function squidVariant(label: string, lib: SquidLib, buildCodec: (lib: SquidLib) => any): Variant {
     const codec = buildCodec(lib)
     const slots = codec.slotsCount ?? 1
-    // The old published baseline doesn't export HexSrc, so route its
-    // decode through `Src` + hex→bytes conversion (that's what the old
-    // AbiFunction did internally anyway).
-    const hasHexSrc = typeof (lib as any).HexSrc === 'function'
+    // The old published baseline doesn't expose `HexSrc` / `HexSink`, so
+    // its encode has to go through `Sink` + bytes→hex conversion and its
+    // decode through `Src` + hex→bytes conversion (both matching what
+    // the old AbiFunction did internally anyway).
+    const HexSinkCtor = (lib as any).HexSink
+    const HexSrcCtor = (lib as any).HexSrc
+    const BytesSinkCtor: typeof lib.BytesSink = lib.BytesSink ?? (lib as any).Sink
+    const BytesSrcCtor: typeof lib.BytesSrc = lib.BytesSrc ?? (lib as any).Src
     return {
         label,
         encode(value) {
-            const sink = new lib.Sink(slots)
+            if (HexSinkCtor) {
+                const sink = new HexSinkCtor(slots)
+                codec.encode(sink, value)
+                return sink.toString() as `0x${string}`
+            }
+            const sink = new BytesSinkCtor(slots)
             codec.encode(sink, value)
             return sink.toString() as `0x${string}`
         },
         decode(data) {
-            if (hasHexSrc) return codec.decode(new (lib as any).HexSrc(data))
+            if (HexSrcCtor) return codec.decode(new HexSrcCtor(data))
             const buf = Buffer.from(data.slice(2), 'hex')
-            return codec.decode(new lib.Src(buf))
+            return codec.decode(new BytesSrcCtor(buf))
         },
     }
 }

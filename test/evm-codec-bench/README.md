@@ -12,8 +12,6 @@ The benchmarks wire the **same** values through three **libraries** and assert p
 | **old (loop)** | `evm-codec-old` / `evm-abi-old` (last published 0.3.x on npm) |
 | **viem** | `viem` ABI helpers (encode/decode parameters, `decodeEventLog`, function data, …) |
 
-The section **[Benchmark results (auto-generated)](#benchmark-results-auto-generated)** at the end of this file is updated by `npm run bench:collect`. It contains **(1)** median **ops/s** for all three along with **explicit ratios** new÷old and new÷viem on **Node**, and **(2)** **Bun ÷ Node** for **`new (JIT)` only** so you can compare runtimes. Each ratio **above 1×** means the left-hand **throughput** (numerator) is higher — i.e. the numerator is faster in that run.
-
 ## Prerequisites
 
 - Build the local packages (`@subsquid/evm-codec`, `@subsquid/evm-abi`) so the bench package resolves them (e.g. monorepo `rush build` for those projects).
@@ -43,38 +41,102 @@ node scripts/collect-bench.mjs
 npm run bench:collect
 ```
 
-This runs `lib/bench.js` and `lib/bench-abi.js` **three times** on **Node** and **three times** on **Bun**, medians all throughput numbers, and rewrites the **[Benchmark results](#benchmark-results-auto-generated)** section with **(a)** a three-way table (new / old / viem + new÷old, new÷viem) and **(b)** a Bun vs Node table for `new (JIT)` only. Requires `bun` on `PATH` (install from [bun.sh](https://bun.sh)).
+This runs `lib/bench.js` and `lib/bench-abi.js` **three times** on **Node** and **three times** on **Bun**, medians all throughput numbers, and rewrites the **[Benchmark results](#benchmark-results-auto-generated)** section. Requires `bun` on `PATH` (install from [bun.sh](https://bun.sh)).
 
 The manual single-pass commands above are still useful for quick A/B on one runtime.
 
 ## Benchmark results (auto-generated)
 
-The block below is overwritten by `npm run bench:collect` (ratios, ops/s, Node vs Bun). Do not edit it by hand.
+The block below is overwritten by `npm run bench:collect`. Do not edit it by hand.
 
 <!-- BENCH-RESULTS:AUTO -->
-_Last updated: 2026-04-24 — median of **3** consecutive runs on the same machine._
-
-| | |
-|---|---|
-| **Node** | `v20.18.2` |
-| **Bun** | `1.2.23` |
-| **Kernel** | Linux 6.6.87.2-microsoft-standard-WSL2 |
+_Last updated: 2026-04-24 — Node `v20.18.2`, Linux 6.6.87.2-microsoft-standard-WSL2._
 
 ### `lib/bench.js` (StructCodec)
 
-| Scenario | Node `new (JIT)` encode (median) | Node decode (median) | Bun encode (median) | Bun decode (median) |
-|---|---:|---:|---:|---:|
-| static struct (ERC20 Transfer event args) | 395.23 k ops/s | 6.31 M ops/s | 578.40 k ops/s | 3.60 M ops/s |
-| dynamic struct (bytes + array) | 96.63 k ops/s | 261.31 k ops/s | 110.62 k ops/s | 245.06 k ops/s |
-| nested tuple (uniswap-style swap call) | 184.52 k ops/s | 573.26 k ops/s | 224.39 k ops/s | 505.16 k ops/s |
-| aggregate-like struct (multicall tryAggregate output) | 47.07 k ops/s | 162.66 k ops/s | 43.66 k ops/s | 141.19 k ops/s |
+```
+=== static struct (ERC20 Transfer event args) (200,000 iters) ===
+  encode parity: OK   decode parity: OK
+  encode:
+  new (JIT)        301.30 ms       663,794 ops/s
+  old (loop)       512.77 ms       390,042 ops/s
+  viem             380.71 ms       525,331 ops/s
+  decode:
+  new (JIT)         37.01 ms     5,403,965 ops/s
+  old (loop)       264.22 ms       756,939 ops/s
+  viem             950.52 ms       210,411 ops/s
+  speedup (new vs baseline):
+    vs old (loop)   encode 1.70x   decode 7.14x
+    vs viem         encode 1.26x   decode 25.68x
+
+=== dynamic struct (bytes + array) (100,000 iters) ===
+  encode parity: OK   decode parity: OK
+  encode:
+  new (JIT)        534.83 ms       186,976 ops/s
+  old (loop)      1133.41 ms        88,229 ops/s
+  viem            1707.18 ms        58,576 ops/s
+  decode:
+  new (JIT)        375.63 ms       266,218 ops/s
+  old (loop)       725.62 ms       137,814 ops/s
+  viem            4014.77 ms        24,908 ops/s
+  speedup (new vs baseline):
+    vs old (loop)   encode 2.12x   decode 1.93x
+    vs viem         encode 3.19x   decode 10.69x
+
+=== nested tuple (uniswap-style swap call) (50,000 iters) ===
+  encode parity: OK   decode parity: OK
+  encode:
+  new (JIT)        133.00 ms       375,950 ops/s
+  old (loop)       339.62 ms       147,224 ops/s
+  viem             613.84 ms        81,454 ops/s
+  decode:
+  new (JIT)         86.01 ms       581,356 ops/s
+  old (loop)       382.87 ms       130,592 ops/s
+  viem            1119.53 ms        44,662 ops/s
+  speedup (new vs baseline):
+    vs old (loop)   encode 2.55x   decode 4.45x
+    vs viem         encode 4.62x   decode 13.02x
+
+=== aggregate-like struct (multicall tryAggregate output) (30,000 iters) ===
+  encode parity: OK   decode parity: OK
+  encode:
+  new (JIT)        571.52 ms        52,491 ops/s
+  old (loop)       678.00 ms        44,248 ops/s
+  viem            1752.60 ms        17,117 ops/s
+  decode:
+  new (JIT)        167.29 ms       179,332 ops/s
+  old (loop)       808.63 ms        37,100 ops/s
+  viem            2853.85 ms        10,512 ops/s
+  speedup (new vs baseline):
+    vs old (loop)   encode 1.19x   decode 4.83x
+    vs viem         encode 3.07x   decode 17.06x
+```
 
 ### `lib/bench-abi.js` (AbiEvent / AbiFunction)
 
-| Scenario | Node `new (JIT)` encode (median) | Node decode (median) | Bun encode (median) | Bun decode (median) |
-|---|---:|---:|---:|---:|
-| AbiEvent.decode: ERC-20 Transfer | — | 6.80 M ops/s | — | 3.22 M ops/s |
-| AbiFunction.encode/decode: dynamic 4-arg call | 130.57 k ops/s | 360.76 k ops/s | 165.97 k ops/s | 314.09 k ops/s |
+```
+=== AbiEvent.decode: ERC-20 Transfer (200,000 iters) ===
+  decode parity: OK
+  decode:
+  new (JIT)         31.67 ms     6,314,649 ops/s
+  old (loop)       485.09 ms       412,296 ops/s
+  viem            1158.56 ms       172,628 ops/s
+  speedup (new vs baseline):
+    vs old (loop)   decode 15.32x
+    vs viem         decode 36.58x
 
-These rows are **median ops/s** for **`new (JIT)` only** (Node vs Bun). **`new` vs `old (loop)` vs `viem` ratios** are not duplicated here: run `node lib/bench.js` / `node lib/bench-abi.js` once and use the **speedup** lines in the terminal; see [Comparison: what is measured](#comparison-what-is-measured) above.
+=== AbiFunction.encode/decode: dynamic 4-arg call (50,000 iters) ===
+  encode parity: OK
+  encode:
+  new (JIT)        267.11 ms       187,192 ops/s
+  old (loop)       442.89 ms       112,895 ops/s
+  viem            1636.47 ms        30,554 ops/s
+  decode:
+  new (JIT)        139.59 ms       358,199 ops/s
+  old (loop)       477.18 ms       104,783 ops/s
+  viem            2424.63 ms        20,622 ops/s
+  speedup (new vs baseline):
+    vs old (loop)   encode 1.66x   decode 3.42x
+    vs viem         encode 6.13x   decode 17.37x
+```
 <!-- :BENCH-RESULTS:AUTO -->
