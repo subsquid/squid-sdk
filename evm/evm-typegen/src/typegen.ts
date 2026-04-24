@@ -1,7 +1,7 @@
 import type {Logger} from '@subsquid/logger'
 import {FileOutput, type OutDir} from '@subsquid/util-internal-code-printer'
 import type {Abi} from 'abitype'
-import {type ContractDef, type EventDef, type FieldDef, type FunctionDef, type TypeDef, describe} from './description'
+import {type ContractDef, type DocDef, type EventDef, type FieldDef, type FunctionDef, type NatSpec, type TypeDef, describe} from './description'
 
 type Import = {name: string; alias?: string; type?: boolean}
 
@@ -15,9 +15,10 @@ export class Typegen {
         abi: Abi,
         basename: string,
         private log: Logger,
+        natspec?: NatSpec,
     ) {
         this.dest = dest.child(basename)
-        this.contract = describe(abi)
+        this.contract = describe(abi, natspec)
     }
 
     async generate(): Promise<void> {
@@ -169,8 +170,23 @@ class TypeModuleOutput extends FileOutput {
         return (values.length > 0 ? 1 : 0) + (types.length > 0 ? 1 : 0)
     }
 
+    printDoc(signature: string, docs: DocDef | undefined): void {
+        const docLines: string[] = []
+        if (docs?.notice) docLines.push(docs.notice)
+        if (docs?.dev) docLines.push(`@dev ${docs.dev}`)
+        if (docLines.length === 0) {
+            this.line(`/** ${signature} */`)
+        } else {
+            this.line('/**')
+            this.line(` * ${signature}`)
+            this.line(' *')
+            for (const l of docLines) this.line(` * ${l}`)
+            this.line(' */')
+        }
+    }
+
     printEvent(e: EventDef): void {
-        this.line(`// ${e.signature}`)
+        this.printDoc(e.signature, e.docs)
         if (e.inputs.length === 0) {
             this.line(`export const ${e.key} = event('${e.topic}', {})`)
         } else {
@@ -186,7 +202,7 @@ class TypeModuleOutput extends FileOutput {
     printFunction(f: FunctionDef): void {
         this.import('support', 'func')
 
-        this.line(`// ${f.signature}`)
+        this.printDoc(f.signature, f.docs)
         const prefix = `export const ${f.key} = func('${f.selector}', `
         const hasInputs = f.inputs.length > 0
         const hasOutputs = f.outputs.length > 0
@@ -227,6 +243,7 @@ class TypeModuleOutput extends FileOutput {
     }
 
     private printFieldDsl(f: FieldDef, end: string): void {
+        if (f.doc) this.line(`/** ${f.doc} */`)
         const start = `${propKey(f.name)}: `
         if (f.indexed) {
             this.import('support', 'indexed')

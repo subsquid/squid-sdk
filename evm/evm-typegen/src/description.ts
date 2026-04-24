@@ -6,6 +6,25 @@ export interface ContractDef {
     functions: FunctionDef[]
 }
 
+export interface DocDef {
+    notice?: string
+    dev?: string
+    params?: Record<string, string>
+    returns?: Record<string, string>
+}
+
+/** NatSpec documentation extracted from a compilation artifact's userdoc/devdoc fields. */
+export interface NatSpec {
+    userdoc?: {
+        methods?: Record<string, {notice?: string}>
+        events?: Record<string, {notice?: string}>
+    }
+    devdoc?: {
+        methods?: Record<string, {details?: string; params?: Record<string, string>; returns?: Record<string, string>}>
+        events?: Record<string, {details?: string; params?: Record<string, string>}>
+    }
+}
+
 export interface EventDef {
     name: string
     signature: string
@@ -13,6 +32,7 @@ export interface EventDef {
     inputs: FieldDef[]
     key: string
     typeName: string
+    docs?: DocDef
 }
 
 export interface FunctionDef {
@@ -24,12 +44,14 @@ export interface FunctionDef {
     key: string
     paramsTypeName: string
     returnTypeName: string
+    docs?: DocDef
 }
 
 export interface FieldDef {
     name: string
     type: TypeDef
     indexed?: boolean
+    doc?: string
 }
 
 export type TypeDef =
@@ -38,7 +60,7 @@ export type TypeDef =
     | {kind: 'fixedArray'; item: TypeDef; size: number}
     | {kind: 'tuple'; fields: FieldDef[]}
 
-export function describe(abi: Abi): ContractDef {
+export function describe(abi: Abi, natspec?: NatSpec): ContractDef {
     const rawEvents = abi.filter((x) => x.type === 'event') as AbiEvent[]
     const rawFunctions = abi.filter((x) => x.type === 'function') as AbiFunction[]
 
@@ -47,31 +69,90 @@ export function describe(abi: Abi): ContractDef {
 
     const events: EventDef[] = rawEvents.map((e) => {
         const signature = eventSignature(e)
+        const docs = buildEventDocs(signature, natspec)
+        const inputs = e.inputs.map((p, i) => toFieldDef(p, i, true))
+        annotateParamDocs(inputs, docs?.params)
         return {
             name: e.name,
             signature,
             topic: `0x${keccak256(signature).toString('hex')}`,
-            inputs: e.inputs.map((p, i) => toFieldDef(p, i, true)),
+            inputs,
             key: eventSuffix(e, e.name),
             typeName: eventSuffix(e, `${capitalize(e.name)}EventArgs`),
+            docs,
         }
     })
 
     const functions: FunctionDef[] = rawFunctions.map((f) => {
         const signature = fnSignature(f)
+        const docs = buildFunctionDocs(signature, natspec)
+        const inputs = f.inputs.map((p, i) => toFieldDef(p, i, false))
+        const outputs = (f.outputs ?? []).map((p, i) => toFieldDef(p, i, false))
+        annotateParamDocs(inputs, docs?.params)
+        annotateReturnDocs(outputs, docs?.returns)
         return {
             name: f.name,
             signature,
             selector: `0x${keccak256(signature).slice(0, 4).toString('hex')}`,
-            inputs: f.inputs.map((p, i) => toFieldDef(p, i, false)),
-            outputs: (f.outputs ?? []).map((p, i) => toFieldDef(p, i, false)),
+            inputs,
+            outputs,
             key: functionSuffix(f, f.name),
             paramsTypeName: functionSuffix(f, `${capitalize(f.name)}Params`),
             returnTypeName: functionSuffix(f, `${capitalize(f.name)}Return`),
+            docs,
         }
     })
 
     return {events, functions}
+}
+
+function buildEventDocs(signature: string, natspec: NatSpec | undefined): DocDef | undefined {
+    const notice = natspec?.userdoc?.events?.[signature]?.notice
+    const devEntry = natspec?.devdoc?.events?.[signature]
+    if (!notice && !devEntry) return undefined
+    return filterEmptyDoc({
+        notice,
+        dev: devEntry?.details,
+        params: devEntry?.params,
+    })
+}
+
+function buildFunctionDocs(signature: string, natspec: NatSpec | undefined): DocDef | undefined {
+    const notice = natspec?.userdoc?.methods?.[signature]?.notice
+    const devEntry = natspec?.devdoc?.methods?.[signature]
+    if (!notice && !devEntry) return undefined
+    return filterEmptyDoc({
+        notice,
+        dev: devEntry?.details,
+        params: devEntry?.params,
+        returns: devEntry?.returns,
+    })
+}
+
+function filterEmptyDoc(doc: DocDef): DocDef | undefined {
+    const hasContent =
+        doc.notice != null ||
+        doc.dev != null ||
+        (doc.params != null && Object.keys(doc.params).length > 0) ||
+        (doc.returns != null && Object.keys(doc.returns).length > 0)
+    return hasContent ? doc : undefined
+}
+
+function annotateParamDocs(fields: FieldDef[], params: Record<string, string> | undefined): void {
+    if (!params) return
+    for (const field of fields) {
+        const doc = params[field.name]
+        if (doc) field.doc = doc
+    }
+}
+
+function annotateReturnDocs(fields: FieldDef[], returns: Record<string, string> | undefined): void {
+    if (!returns) return
+    for (let i = 0; i < fields.length; i++) {
+        const field = fields[i]
+        const doc = returns[field.name] ?? returns[`_${i}`]
+        if (doc) field.doc = doc
+    }
 }
 
 function overloadSuffixer(items: readonly (AbiEvent | AbiFunction)[]) {

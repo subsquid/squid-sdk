@@ -5,6 +5,7 @@ import {createLogger} from '@subsquid/logger'
 import {runProgram, wait} from '@subsquid/util-internal'
 import * as validator from '@subsquid/util-internal-commander'
 import {Typegen} from './typegen'
+import type {NatSpec} from './description'
 import {GET} from './util/fetch'
 import {OutDir} from '@subsquid/util-internal-code-printer'
 import {chainIdOption} from './chainIds'
@@ -115,8 +116,8 @@ squid-evm-typegen src/abi 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413#contract
 
         for (let spec of specs) {
             LOG.info(`processing ${spec.src}`)
-            let abi_json = await read(spec, opts)
-            await new Typegen(dest, abi_json, spec.name, LOG).generate()
+            let {abi, natspec} = await read(spec, opts)
+            await new Typegen(dest, abi, spec.name, LOG, natspec).generate()
         }
     },
     (err) => LOG.fatal(err),
@@ -129,23 +130,30 @@ async function read(
         chainId?: number
         etherscanApiKey?: string
     },
-): Promise<any> {
+): Promise<{abi: any; natspec?: NatSpec}> {
     if (spec.kind == 'address') {
-        return fetchFromEtherscan(spec.src, getEtherscanAPIConfig(options))
+        return {abi: await fetchFromEtherscan(spec.src, getEtherscanAPIConfig(options))}
     }
-    let abi: any
+    let raw: any
     if (spec.kind == 'url') {
-        abi = await GET(spec.src)
+        raw = await GET(spec.src)
     } else {
-        abi = JSON.parse(fs.readFileSync(spec.src, 'utf-8'))
+        raw = JSON.parse(fs.readFileSync(spec.src, 'utf-8'))
     }
-    if (Array.isArray(abi)) {
-        return abi
+    if (Array.isArray(raw)) {
+        return {abi: raw}
     }
-    if (Array.isArray(abi?.abi)) {
-        return abi.abi
+    if (Array.isArray(raw?.abi)) {
+        return {abi: raw.abi, natspec: extractNatSpec(raw)}
     }
     throw new Error('Unrecognized ABI format')
+}
+
+function extractNatSpec(artifact: any): NatSpec | undefined {
+    const userdoc = artifact.userdoc
+    const devdoc = artifact.devdoc
+    if (!userdoc && !devdoc) return undefined
+    return {userdoc, devdoc}
 }
 
 async function fetchFromEtherscan(address: string, config: EtherscanAPIConfig): Promise<any> {
