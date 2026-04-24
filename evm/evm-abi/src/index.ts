@@ -2,8 +2,7 @@ export {ContractBase} from './contract-base'
 
 export {indexed} from './indexed'
 export {
-    fun,
-    viewFun,
+    func,
     AbiFunction,
     type FunctionReturn,
     type FunctionArguments,

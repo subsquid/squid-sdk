@@ -1,8 +1,8 @@
 import * as p from '@subsquid/evm-codec'
-import {fun, ContractBase, type AbiFunction, type FunctionReturn, type FunctionArguments} from '@subsquid/evm-abi'
+import {func, ContractBase, type AbiFunction, type FunctionReturn, type FunctionArguments} from '@subsquid/evm-abi'
 
 // aggregate((address,bytes)[])
-const aggregate = fun(
+const aggregate = func(
     '0x252dba42',
     {
         calls: p.array(
@@ -16,7 +16,7 @@ const aggregate = fun(
 )
 
 // tryAggregate(bool,(address,bytes)[])
-const tryAggregate = fun(
+const tryAggregate = func(
     '0xbce38bd7',
     {
         requireSuccess: p.bool,

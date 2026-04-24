@@ -15,13 +15,10 @@ export interface EventDef {
     typeName: string
 }
 
-export type FunctionKind = 'fun' | 'viewFun'
-
 export interface FunctionDef {
     name: string
     signature: string
     selector: string
-    kind: FunctionKind
     inputs: FieldDef[]
     outputs: FieldDef[]
     key: string
@@ -63,12 +60,10 @@ export function describe(abi: Abi): ContractDef {
 
     const functions: FunctionDef[] = rawFunctions.map((f) => {
         const signature = fnSignature(f)
-        const kind: FunctionKind = f.stateMutability === 'view' || f.stateMutability === 'pure' ? 'viewFun' : 'fun'
         return {
             name: f.name,
             signature,
             selector: `0x${keccak256(signature).slice(0, 4).toString('hex')}`,
-            kind,
             inputs: f.inputs.map((p, i) => toFieldDef(p, i, false)),
             outputs: (f.outputs ?? []).map((p, i) => toFieldDef(p, i, false)),
             key: suffix(f, f.name),

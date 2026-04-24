@@ -1,10 +1,10 @@
 import {describe, expect, it} from 'vitest'
 import {array, bool, bytes4, fixedSizeArray, int32, BytesSink, string, struct, uint256} from '@subsquid/evm-codec'
-import {fun} from '..'
+import {func} from '..'
 
 describe('Function', () => {
     it('encodes/decodes simple args', () => {
-        const simpleFunction = fun('0x12345678', {
+        const simpleFunction = func('0x12345678', {
             foo: uint256,
             _1: int32,
             _2: bool,
@@ -31,7 +31,7 @@ describe('Function', () => {
             foo: uint256,
             bar: bytes4,
         })
-        const dynamicFunction = fun('0x423917ce', {
+        const dynamicFunction = func('0x423917ce', {
             arg1: array(uint256),
             arg2: fixedSizeArray(array(uint256), 10),
             arg3: struct({
@@ -64,7 +64,7 @@ describe('Function', () => {
     })
 
     it('return simple type', () => {
-        const simpleFunction = fun(
+        const simpleFunction = func(
             '0x12345678',
             {
                 foo: uint256,
@@ -85,7 +85,7 @@ describe('Function', () => {
         sink.string('hello')
         sink.closeTail()
 
-        const _fun = fun('0x12345678', {}, struct({_0: uint256, b: string}))
-        expect(_fun.decodeResult(sink.toString())).toStrictEqual({_0: 100n, b: 'hello'})
+        const _func = func('0x12345678', {}, struct({_0: uint256, b: string}))
+        expect(_func.decodeResult(sink.toString())).toStrictEqual({_0: 100n, b: 'hello'})
     })
 })

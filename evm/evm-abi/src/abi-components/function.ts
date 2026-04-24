@@ -40,7 +40,6 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | un
         public selector: string,
         args: T,
         public readonly returnType?: R,
-        public isView = false,
     ) {
         assert(selector.startsWith('0x'), 'selector must start with 0x')
         assert(selector.length === 10, 'selector must be 4 bytes long')
@@ -153,14 +152,8 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | un
     }
 }
 
-export const fun = <const T extends Struct, const R extends Codec<any> | undefined>(
+export const func = <const T extends Struct, const R extends Codec<any> | undefined>(
     selector: string,
     args: T,
     returnType?: R,
-) => new AbiFunction<T, R>(selector, args, returnType, false)
-
-export const viewFun = <const T extends Struct, const R extends Codec<any> | undefined>(
-    selector: string,
-    args: T,
-    returnType?: R,
-) => new AbiFunction<T, R>(selector, args, returnType, true)
+) => new AbiFunction<T, R>(selector, args, returnType)

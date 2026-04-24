@@ -62,7 +62,7 @@ export class Typegen {
     }
 
     private generateContract(): void {
-        const viewFns = this.contract.functions.filter((f) => f.kind === 'viewFun' && f.outputs.length > 0)
+        const viewFns = this.contract.functions.filter((f) => f.outputs.length > 0)
 
         const out = new TypeModuleOutput(this.dest.path('contract.ts'))
         out.import('support', 'ContractBase')
@@ -184,10 +184,10 @@ class TypeModuleOutput extends FileOutput {
     }
 
     printFunction(f: FunctionDef): void {
-        this.import('support', f.kind)
+        this.import('support', 'func')
 
         this.line(`// ${f.signature}`)
-        const prefix = `export const ${f.key} = ${f.kind}('${f.selector}', `
+        const prefix = `export const ${f.key} = func('${f.selector}', `
         const hasInputs = f.inputs.length > 0
         const hasOutputs = f.outputs.length > 0
         const singleReturn = f.outputs.length === 1
