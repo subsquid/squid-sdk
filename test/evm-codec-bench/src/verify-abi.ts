@@ -7,7 +7,7 @@
  */
 import * as assert from 'node:assert/strict'
 import {address, array, bool, bytes4, fixedSizeArray, int32, BytesSink, string, struct, uint256} from '@subsquid/evm-codec'
-import {event, fun, indexed} from '@subsquid/evm-abi'
+import {event, func, indexed} from '@subsquid/evm-abi'
 import {encodeEventTopics, encodeFunctionData, parseAbiItem} from 'viem'
 
 function check(name: string, run: () => void) {
@@ -24,7 +24,7 @@ function check(name: string, run: () => void) {
 // ---------- functions ----------
 
 check('simple static function round-trips', () => {
-    const simple = fun('0x12345678', {
+    const simple = func('0x12345678', {
         foo: uint256,
         _1: int32,
         _2: bool,
@@ -39,7 +39,7 @@ check('simple static function round-trips', () => {
 
 check('dynamic function matches viem byte-for-byte', () => {
     const staticStruct = struct({foo: uint256, bar: bytes4})
-    const dynamic = fun('0x423917ce', {
+    const dynamic = func('0x423917ce', {
         arg1: array(uint256),
         arg2: fixedSizeArray(array(uint256), 10),
         arg3: struct({
@@ -103,20 +103,20 @@ check('dynamic function matches viem byte-for-byte', () => {
 })
 
 check('function with single non-struct return decodes', () => {
-    const simple = fun('0x12345678', {foo: uint256}, int32)
+    const simple = func('0x12345678', {foo: uint256}, int32)
     const sink = new BytesSink(1)
     int32.encode(sink, -420)
     assert.equal(simple.decodeResult(sink.toString()), -420)
 })
 
 check('function with multi-value (struct) return decodes', () => {
-    const _fun = fun('0x12345678', {}, struct({_0: uint256, b: string}))
+    const _func = func('0x12345678', {}, struct({_0: uint256, b: string}))
     const output =
         '0x0000000000000000000000000000000000000000000000000000000000000064' +
         '0000000000000000000000000000000000000000000000000000000000000040' +
         '0000000000000000000000000000000000000000000000000000000000000005' +
         '68656c6c6f000000000000000000000000000000000000000000000000000000'
-    assert.deepEqual(_fun.decodeResult(output), {_0: 100n, b: 'hello'})
+    assert.deepEqual(_func.decodeResult(output), {_0: 100n, b: 'hello'})
 })
 
 // ---------- events ----------

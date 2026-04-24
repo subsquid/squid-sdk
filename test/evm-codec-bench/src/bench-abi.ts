@@ -151,7 +151,7 @@ const DYNAMIC_FUNCTION = parseAbiItem(
 
 function buildDynamicFunctionVariants() {
     const staticStruct = NEW_CODEC.struct({foo: NEW_CODEC.uint256, bar: NEW_CODEC.bytes4})
-    const newFn = NEW_ABI.fun(DYNAMIC_SELECTOR, {
+    const newFn = NEW_ABI.func(DYNAMIC_SELECTOR, {
         arg1: NEW_CODEC.array(NEW_CODEC.uint256),
         arg2: NEW_CODEC.fixedSizeArray(NEW_CODEC.array(NEW_CODEC.uint256), 10),
         arg3: NEW_CODEC.struct({
@@ -167,7 +167,7 @@ function buildDynamicFunctionVariants() {
         bar: (OLD_CODEC as any).bytes4,
     })
     // API drift: old `fun(selector, signature, args, retType?)`.
-    const oldFn = (OLD_ABI.fun as any)(
+    const oldFn = (OLD_ABI.func as any)(
         DYNAMIC_SELECTOR,
         'foo(uint256[],uint256[][10],(uint256,uint256[],(uint256,bytes4)),(uint256,bytes4))',
         {
