@@ -1,42 +1,31 @@
 import assert from 'node:assert'
-import {WORD_SIZE} from './codec'
-import {toHex} from '@subsquid/util-internal-hex'
-
-const TEXT_ENCODER = new TextEncoder()
+import {decodeHex, isHex, toHex} from '@subsquid/util-internal-hex'
+import {WORD_SIZE, type Sink} from '../codec'
+import {
+    TEXT_ENCODER,
+    U256_BASE,
+    U8_MAX, U16_MAX, U32_MAX,
+    I8_MIN, I8_MAX, I16_MIN, I16_MAX, I32_MIN, I32_MAX,
+    U64_MAX_BI, I64_MIN_BI, I64_MAX_BI,
+    U128_MAX_BI, I128_MIN_BI, I128_MAX_BI,
+    U256_MAX_BI, I256_MIN_BI, I256_MAX_BI,
+} from './bounds'
 
 const U64_MASK = 0xffffffffffffffffn
 const U128_MASK = (1n << 128n) - 1n
-const U256_BASE = 1n << 256n
 
-const U8_MAX = 255
-const U16_MAX = 65535
-const U32_MAX = 4294967295
-const I8_MIN = -128
-const I8_MAX = 127
-const I16_MIN = -32768
-const I16_MAX = 32767
-const I32_MIN = -2147483648
-const I32_MAX = 2147483647
-const U64_MAX_BI = 18446744073709551615n
-const I64_MIN_BI = -9223372036854775808n
-const I64_MAX_BI = 9223372036854775807n
-const U128_MAX_BI = 340282366920938463463374607431768211455n
-const I128_MIN_BI = -170141183460469231731687303715884105728n
-const I128_MAX_BI = 170141183460469231731687303715884105727n
-const U256_MAX_BI = 115792089237316195423570985008687907853269984665640564039457584007913129639935n
-const I256_MIN_BI = -57896044618658097711785492504343953926634992332820282019728792003956564819968n
-const I256_MAX_BI = 57896044618658097711785492504343953926634992332820282019728792003956564819967n
-
-export class Sink {
+export class BytesSink implements Sink {
     private pos = 0
     private buf: Uint8Array
     private view: DataView
-    private stack: {start: number; jumpBackPtr: number; size: number}[] = []
+    private stack: {start: number; jumpBackPtr: number; size: number; countWord: boolean}[] = []
+
     constructor(fields: number, capacity = 1280) {
         this.stack.push({
             start: 0,
             jumpBackPtr: 0,
             size: fields * WORD_SIZE,
+            countWord: false,
         })
         this.buf = new Uint8Array(capacity)
         this.view = new DataView(this.buf.buffer, this.buf.byteOffset, this.buf.byteLength)
@@ -54,7 +43,7 @@ export class Sink {
 
     reserve(additional: number): void {
         if (this.buf.length - this.pos < additional) {
-            this._allocate(this.pos + additional)
+            this.#allocate(this.pos + additional)
         }
     }
 
@@ -62,7 +51,7 @@ export class Sink {
         return this.stack[this.stack.length - 1].size
     }
 
-    private _allocate(cap: number): void {
+    #allocate(cap: number): void {
         cap = Math.max(cap, this.buf.length * 2)
         const buf = new Uint8Array(cap)
         buf.set(this.buf)
@@ -127,7 +116,7 @@ export class Sink {
         this.#i256(val)
     }
 
-    #u64(val: bigint) {
+    private writeU64(val: bigint) {
         this.view.setBigUint64(this.pos, val, false)
         this.pos += 8
     }
@@ -136,8 +125,8 @@ export class Sink {
         if (val < 0n || val > U128_MAX_BI) this.#oob(val, 'uint128', 0n, U128_MAX_BI)
         this.reserve(WORD_SIZE)
         this.pos += WORD_SIZE - 16
-        this.#u64(val & U64_MASK)
-        this.#u64(val >> 64n)
+        this.writeU64(val >> 64n)
+        this.writeU64(val & U64_MASK)
     }
 
     i128(val: bigint) {
@@ -146,8 +135,8 @@ export class Sink {
     }
 
     #u128Raw(val: bigint) {
-        this.#u64(val >> 64n)
-        this.#u64(val & U64_MASK)
+        this.writeU64(val >> 64n)
+        this.writeU64(val & U64_MASK)
     }
 
     u256(val: bigint) {
@@ -169,27 +158,35 @@ export class Sink {
         this.#u128Raw(uval & U128_MASK)
     }
 
-    bytes(val: Uint8Array) {
-        const size = val.length
+    bytes(val: Uint8Array | string) {
+        const bytes = typeof val === 'string' ? this.#stringToBytes(val) : val
+        const size = bytes.length
         this.u32(size)
-        const wordsCount = Math.ceil(size / WORD_SIZE)
-        const reservedSize = WORD_SIZE * wordsCount
+        const reservedSize = Math.ceil(size / WORD_SIZE) * WORD_SIZE
         this.reserve(reservedSize)
-        this.buf.set(val, this.pos)
+        this.buf.set(bytes, this.pos)
         this.pos += reservedSize
-        this.increaseCurrentDataAreaSize(reservedSize + WORD_SIZE)
+        this.#increaseCurrentDataAreaSize(reservedSize + WORD_SIZE)
     }
 
-    staticBytes(len: number, val: Uint8Array) {
+    staticBytes(len: number, val: Uint8Array | string) {
         if (len > 32) {
             throw new Error(`bytes${len} is not a valid type`)
         }
-        if (val.length > len) {
+        const bytes = typeof val === 'string' ? this.#stringToBytes(val) : val
+        if (bytes.length > len) {
             throw new Error(`invalid data size for bytes${len}`)
         }
         this.reserve(WORD_SIZE)
-        this.buf.set(val, this.pos)
+        this.buf.set(bytes, this.pos)
         this.pos += WORD_SIZE
+    }
+
+    #stringToBytes(val: string): Uint8Array {
+        if (!isHex(val)) {
+            throw new Error(`Expected hex string or Uint8Array, got: ${val}`)
+        }
+        return decodeHex(val)
     }
 
     address(val: string) {
@@ -206,14 +203,7 @@ export class Sink {
     }
 
     string(val: string) {
-        const encoded = TEXT_ENCODER.encode(val)
-        const size = encoded.length
-        this.u32(size)
-        const reservedSize = Math.ceil(size / WORD_SIZE) * WORD_SIZE
-        this.reserve(reservedSize)
-        this.buf.set(encoded, this.pos)
-        this.pos += reservedSize
-        this.increaseCurrentDataAreaSize(reservedSize + WORD_SIZE)
+        this.bytes(TEXT_ENCODER.encode(val))
     }
 
     bool(val: boolean) {
@@ -224,52 +214,49 @@ export class Sink {
         throw new Error(`${val} is out of bounds for ${typeName}[${min}, ${max}]`)
     }
 
-    /**
-     * @example
-     * @link [Solidity docs](https://docs.soliditylang.org/en/latest/abi-spec.html#use-of-dynamic-types)
-     */
-    newStaticDataArea(slotsCount = 0) {
+    openTail(slotsCount = 0) {
         const offset = this.size()
         this.reserve(WORD_SIZE)
         this.#u32Raw(offset)
-        const dataAreaStart = this.currentDataAreaStart()
-        this.pushDataArea(dataAreaStart + offset, slotsCount)
+        const dataAreaStart = this.#currentDataAreaStart()
+        this.#pushDataArea(dataAreaStart + offset, slotsCount, false)
         this.pos = dataAreaStart + offset
     }
 
-    newDynamicDataArea(slotsCount: number) {
+    openArray(count: number) {
         const offset = this.size()
         this.reserve(WORD_SIZE)
         this.#u32Raw(offset)
-        const dataAreaStart = this.currentDataAreaStart()
-        this.pushDataArea(dataAreaStart + offset + WORD_SIZE, slotsCount)
+        const dataAreaStart = this.#currentDataAreaStart()
+        this.#pushDataArea(dataAreaStart + offset + WORD_SIZE, count, true)
         this.pos = dataAreaStart + offset
         this.reserve(WORD_SIZE)
-        this.#u32Raw(slotsCount)
+        this.#u32Raw(count)
     }
 
-    private currentDataAreaStart() {
+    #currentDataAreaStart() {
         return this.stack[this.stack.length - 1].start
     }
 
-    public increaseCurrentDataAreaSize(amount: number) {
+    #increaseCurrentDataAreaSize(amount: number) {
         this.stack[this.stack.length - 1].size += amount
     }
 
-    private pushDataArea(dataAreaStart: number, slotsCount: number) {
+    #pushDataArea(dataAreaStart: number, slotsCount: number, countWord: boolean) {
         const size = slotsCount * WORD_SIZE
         this.reserve(dataAreaStart + size)
         this.stack.push({
             start: dataAreaStart,
             jumpBackPtr: this.pos,
             size,
+            countWord,
         })
     }
 
-    public endCurrentDataArea() {
+    closeTail() {
         assert(this.stack.length > 1, 'No dynamic encoding started')
-        const {jumpBackPtr, size} = this.stack.pop()!
-        this.increaseCurrentDataAreaSize(size)
+        const {jumpBackPtr, size, countWord} = this.stack.pop()!
+        this.#increaseCurrentDataAreaSize(size + (countWord ? WORD_SIZE : 0))
         this.pos = jumpBackPtr
     }
 }

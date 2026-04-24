@@ -1,7 +1,11 @@
-import {decodeHex, isHex} from '@subsquid/util-internal-hex'
-import type {Codec, Source} from '../codec'
-import type {Sink} from '../sink'
-import {safeToNumber} from '../safeToNumber'
+import type {Codec, Sink, Src} from '../codec'
+
+function safeToNumber(value: number | bigint): number {
+    if (value < Number.MIN_SAFE_INTEGER || value > Number.MAX_SAFE_INTEGER) {
+        throw new Error(`${value} is not a safe integer`)
+    }
+    return Number(value)
+}
 
 type Numberish = number | bigint
 type NumberType = 'u8' | 'i8' | 'u16' | 'i16' | 'u32' | 'i32'
@@ -29,7 +33,7 @@ export const bool: Codec<boolean> = {
     encode(sink: Sink, val: boolean) {
         sink.bool(val)
     },
-    decode(src: Source): boolean {
+    decode(src: Src): boolean {
         return src.bool()
     },
     isDynamic: false,
@@ -51,39 +55,25 @@ export const int256 = bigintCodec('i256')
 
 export const string: Codec<string> = {
     encode(sink: Sink, val: string) {
-        sink.newStaticDataArea()
+        sink.openTail()
         sink.string(val)
-        sink.endCurrentDataArea()
+        sink.closeTail()
     },
-    decode(src: Source): string {
+    decode(src: Src): string {
         return src.string()
     },
     isDynamic: true,
     baseType: 'string',
 }
 
-function toBytes(val: Uint8Array | string): Uint8Array {
-    if (val instanceof Uint8Array) {
-        return val
-    }
-    if (!isHex(val)) {
-        throw new Error(`Expected hex string or Uint8Array, got: ${val}`)
-    }
-    return decodeHex(val)
-}
-
 export const bytes: Codec<Uint8Array | string, string> = {
     encode(sink: Sink, val: Uint8Array | string) {
-        sink.newStaticDataArea()
-        sink.bytes(toBytes(val))
-        sink.endCurrentDataArea()
+        sink.openTail()
+        sink.bytes(val)
+        sink.closeTail()
     },
-    // `src.hex()` is the native return type for this codec: on a `Src`
-    // it fuses the old `toHex(src.bytes())` into a single call; on a
-    // `HexSrc` it degenerates to a pure string slice with no byte
-    // conversion at all.
-    decode(src: Source): string {
-        return src.hex()
+    decode(src: Src): string {
+        return src.bytesHex()
     },
     isDynamic: true,
     baseType: 'bytes',
@@ -91,10 +81,10 @@ export const bytes: Codec<Uint8Array | string, string> = {
 
 const bytesN = (size: number): Codec<Uint8Array | string, string> => ({
     encode(sink: Sink, val: Uint8Array | string) {
-        sink.staticBytes(size, toBytes(val))
+        sink.staticBytes(size, val)
     },
-    decode(src: Source): string {
-        return src.staticHex(size)
+    decode(src: Src): string {
+        return src.staticBytesHex(size)
     },
     isDynamic: false,
     baseType: 'bytes',
@@ -138,7 +128,7 @@ export const address: Codec<string> = {
     encode(sink: Sink, val: string) {
         sink.address(val)
     },
-    decode(src: Source): string {
+    decode(src: Src): string {
         return src.address()
     },
     isDynamic: false,

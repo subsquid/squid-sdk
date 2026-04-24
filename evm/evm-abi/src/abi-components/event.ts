@@ -1,11 +1,10 @@
 import type {Simplify} from '../indexed'
 import {
     bytes32,
+    HexSink,
     HexSrc,
     propAccess,
     propName,
-    Sink,
-    toHex,
     type Codec,
     type DecodedStruct,
     type EncodedStruct,
@@ -112,8 +111,8 @@ export class AbiEvent<const T extends EventArgs> {
         topicFields: NamedCodec[],
         dataFields: NamedCodec[],
     ): (args: EncodedStruct<IndexedCodecs<T>>) => EventRecord {
-        const names: string[] = ['TOPIC', 'Sink', 'toHex']
-        const values: any[] = [this.topic, Sink, toHex]
+        const names: string[] = ['TOPIC', 'HexSink']
+        const values: any[] = [this.topic, HexSink]
 
         let body = 'const topics=[TOPIC];'
 
@@ -123,10 +122,12 @@ export class AbiEvent<const T extends EventArgs> {
             names.push(enc)
             values.push(codec.encode.bind(codec))
             const slots = codec.slotsCount ?? 1
-            body += `{const s=new Sink(${slots});${enc}(s,args${propAccess(name)});const b=s.result();topics.push(toHex(b,0,b.length));}`
+            // `HexSink.toString()` returns the full `0x`-prefixed hex string,
+            // which is exactly the format required for a log topic.
+            body += `{const s=new HexSink(${slots});${enc}(s,args${propAccess(name)});topics.push(s.toString());}`
         }
 
-        body += `const dataSink=new Sink(${totalSlots(dataFields)});`
+        body += `const dataSink=new HexSink(${totalSlots(dataFields)});`
         for (let i = 0; i < dataFields.length; i++) {
             const [name, codec] = dataFields[i]
             const enc = `__ed${i}`
@@ -134,7 +135,7 @@ export class AbiEvent<const T extends EventArgs> {
             values.push(codec.encode.bind(codec))
             body += `${enc}(dataSink,args${propAccess(name)});`
         }
-        body += 'const dataBytes=dataSink.result();return{topics,data:toHex(dataBytes,0,dataBytes.length)};'
+        body += 'return{topics,data:dataSink.toString()};'
 
         const fn = new Function(...names, 'args', body)
         return fn.bind(null, ...values)

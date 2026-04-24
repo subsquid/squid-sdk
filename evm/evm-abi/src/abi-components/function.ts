@@ -4,11 +4,10 @@ import {
     type Struct,
     type DecodedStruct,
     type EncodedStruct,
+    HexSink,
     HexSrc,
     propName,
-    Sink,
     StructCodec,
-    toHex,
 } from '@subsquid/evm-codec'
 import {FunctionInvalidSignatureError, FunctionResultDecodeError, FunctionCalldataDecodeError} from '../errors'
 
@@ -59,10 +58,11 @@ export class AbiFunction<const T extends Struct, const R extends Codec<any> | un
     }
 
     encode(args: EncodedStruct<T>) {
-        const sink = new Sink(this.argsCodec.childrenSlotsCount)
+        // `HexSink` produces hex directly, so we can skip the bytes→hex
+        // conversion that `Sink.result() + toHex` would otherwise do.
+        const sink = new HexSink(this.argsCodec.childrenSlotsCount)
         this.argsCodec.encodeInline(sink, args)
-        const body = sink.result()
-        return this.selector + toHex(body, 0, body.length).slice(2)
+        return this.selector + sink.result().slice(2)
     }
 
     decode(calldata: string | CallRecord): DecodedStruct<T> {

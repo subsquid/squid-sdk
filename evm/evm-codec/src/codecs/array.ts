@@ -1,5 +1,4 @@
-import { WORD_SIZE, type Codec, type Source } from '../codec'
-import type { Sink } from '../sink'
+import { WORD_SIZE, type Codec, type Sink, type Src } from '../codec'
 
 export class ArrayCodec<const TIn, const TOut> implements Codec<readonly TIn[], readonly TOut[]> {
   public readonly isDynamic = true
@@ -7,20 +6,17 @@ export class ArrayCodec<const TIn, const TOut> implements Codec<readonly TIn[], 
   constructor(public readonly item: Codec<TIn, TOut>) {}
 
   encode(sink: Sink, val: TIn[]) {
-    sink.newDynamicDataArea(val.length)
+    sink.openArray(val.length)
     for (let i = 0; i < val.length; i++) {
       this.item.encode(sink, val[i])
     }
-    sink.increaseCurrentDataAreaSize(WORD_SIZE)
-    sink.endCurrentDataArea()
+    sink.closeTail()
   }
 
-  decode(src: Source): TOut[] {
+  decode(src: Src): TOut[] {
     const offset = src.u32()
-
-    src.safeJump(offset, 'array')
+    src.jump(offset)
     const len = src.u32()
-
     const tmpSrc = src.slice(offset + WORD_SIZE)
     const val = new Array(len)
     for (let i = 0; i < val.length; i++) {
@@ -54,14 +50,14 @@ export class FixedSizeArrayCodec<const TIn, const TOut> implements Codec<readonl
   }
 
   private encodeDynamic(sink: Sink, val: TIn[]) {
-    sink.newStaticDataArea(this.size)
+    sink.openTail(this.size)
     for (let i = 0; i < val.length; i++) {
       this.item.encode(sink, val[i])
     }
-    sink.endCurrentDataArea()
+    sink.closeTail()
   }
 
-  decode(src: Source): TOut[] {
+  decode(src: Src): TOut[] {
     if (this.isDynamic) {
       return this.decodeDynamic(src)
     }
@@ -72,7 +68,7 @@ export class FixedSizeArrayCodec<const TIn, const TOut> implements Codec<readonl
     return val
   }
 
-  private decodeDynamic(src: Source): TOut[] {
+  private decodeDynamic(src: Src): TOut[] {
     const offset = src.u32()
     const tmpSrc = src.slice(offset)
     let val = new Array(this.size)

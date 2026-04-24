@@ -4,7 +4,7 @@ import {StructCodec} from './codecs/struct'
 
 export * from './codecs/primitives'
 export {ArrayCodec, FixedSizeArrayCodec} from './codecs/array'
-export {StructCodec} from './codecs/struct'
+export {StructCodec, type DecodedStruct, type EncodedStruct} from './codecs/struct'
 
 export const fixedSizeArray = <TIn, TOut>(item: Codec<TIn, TOut>, size: number): Codec<TIn[], TOut[]> =>
     new FixedSizeArrayCodec(item, size)

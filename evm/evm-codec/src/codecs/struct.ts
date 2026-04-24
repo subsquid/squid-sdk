@@ -1,6 +1,13 @@
-import type {Codec, Source, Struct, DecodedStruct, EncodedStruct} from '../codec'
-import type {Sink} from '../sink'
-import {propAccess, propName} from '../util'
+import type {Codec, Sink, Src, Struct} from '../codec'
+import {type Pretty, propAccess, propName} from '../util'
+
+export type DecodedStruct<T extends Struct> = Pretty<{
+    [K in keyof T]: T[K] extends Codec<any, infer U> ? U : never
+}>
+
+export type EncodedStruct<T extends Struct> = Pretty<{
+    [K in keyof T]: T[K] extends Codec<infer U, any> ? U : never
+}>
 
 function slotsCount(codecs: readonly Codec<any>[]) {
     let count = 0
@@ -18,10 +25,10 @@ export class StructCodec<const T extends Struct> implements Codec<EncodedStruct<
     public readonly components: T
 
     readonly encodeInline: (sink: Sink, val: EncodedStruct<T>) => void
-    readonly decodeInline: (src: Source) => DecodedStruct<T>
+    readonly decodeInline: (src: Src) => DecodedStruct<T>
 
     readonly encode: (sink: Sink, val: EncodedStruct<T>) => void
-    readonly decode: (src: Source) => DecodedStruct<T>
+    readonly decode: (src: Src) => DecodedStruct<T>
 
     constructor(components: T) {
         this.components = components
@@ -33,20 +40,14 @@ export class StructCodec<const T extends Struct> implements Codec<EncodedStruct<
 
         this.encodeInline = this.createEncode(entries, false)
         this.decodeInline = this.createDecode(entries, false)
-        // No need to JIT a second wrapper when there is nothing to wrap.
         this.encode = this.isDynamic ? this.createEncode(entries, true) : this.encodeInline
         this.decode = this.isDynamic ? this.createDecode(entries, true) : this.decodeInline
     }
 
-    /**
-     * Generate a straight-line encode function for this struct. Each child's
-     * `.encode` is bound once at construction and captured as a local
-     * (`__eN`), so the hot path has no `this` indirection and no
-     * `.encode`/`.components` property walk per field. When `wrap` is true
-     * and the struct is dynamic, the body is also wrapped in
-     * `newStaticDataArea`/`endCurrentDataArea` so the function can be used
-     * as a nested ABI field.
-     */
+    // JIT-generates a straight-line encode function. Each child's encode is bound once
+    // at construction time to avoid property lookups on the hot path. When wrap=true
+    // and the struct is dynamic, openTail/closeTail bracket the field writes so the
+    // function can be used as a nested ABI field.
     private createEncode(
         entries: Array<[string, Codec<any>]>,
         wrap: boolean,
@@ -55,7 +56,7 @@ export class StructCodec<const T extends Struct> implements Codec<EncodedStruct<
         const closureValues: any[] = []
         let body = ''
         if (wrap && this.isDynamic) {
-            body += `sink.newStaticDataArea(${this.childrenSlotsCount});`
+            body += `sink.openTail(${this.childrenSlotsCount});`
         }
         for (let i = 0; i < entries.length; i++) {
             const [key, child] = entries[i]
@@ -65,13 +66,13 @@ export class StructCodec<const T extends Struct> implements Codec<EncodedStruct<
             body += `${name}(sink, val${propAccess(key)});`
         }
         if (wrap && this.isDynamic) {
-            body += 'sink.endCurrentDataArea();'
+            body += 'sink.closeTail();'
         }
         const fn = new Function(...closureNames, 'sink', 'val', body)
         return fn.bind(null, ...closureValues)
     }
 
-    private createDecode(entries: Array<[string, Codec<any>]>, wrap: boolean): (src: Source) => DecodedStruct<T> {
+    private createDecode(entries: Array<[string, Codec<any>]>, wrap: boolean): (src: Src) => DecodedStruct<T> {
         const closureNames: string[] = []
         const closureValues: any[] = []
         let body = ''

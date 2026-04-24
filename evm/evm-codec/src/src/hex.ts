@@ -1,20 +1,5 @@
-import {WORD_SIZE} from './codec'
+import {WORD_SIZE, type Src} from '../codec'
 
-/**
- * Hex-string-native counterpart of {@link Src}. Reads every ABI word
- * directly from a `0x`-prefixed hex string instead of allocating an
- * intermediate `Uint8Array`.
- *
- * Exposes the same public surface as {@link Src} so codecs can consume
- * either backend interchangeably. `hex()` / `staticHex()` become pure
- * string slices — the fast path for codecs whose output is itself hex
- * (`bytes`, `bytesN`, `address`, …); `bytes()` / `staticBytes()` fall
- * back to a single `Buffer.from(sub, 'hex')` on the relevant substring.
- *
- * Pointer arithmetic lives in hex-character coordinates (two per byte)
- * internally; public method signatures keep byte coordinates for
- * {@link Src} parity, with the 2x translation happening at the boundary.
- */
 const HEX_BYTE = 2
 const WORD_HEX = WORD_SIZE * HEX_BYTE
 
@@ -27,12 +12,8 @@ const I256_RANGE = 1n << 256n
 
 const TEXT_DECODER = new TextDecoder('utf-8')
 
-export class HexSrc {
-    // Backing string. Named `buf` (not `hex`) so it does not clash with
-    // the `hex()` reader method that this class also exposes.
+export class HexSrc implements Src {
     private readonly buf: string
-    // Hex-char position of byte 0 of the view we expose — 2 for
-    // `0x`-prefixed event data, 10 for function calldata, etc.
     private readonly base: number
     private readonly endChar: number
     private pos: number
@@ -52,23 +33,7 @@ export class HexSrc {
         return new HexSrc(this.buf, s, e)
     }
 
-    /**
-     * Advance the read cursor by `n` bytes without decoding anything.
-     * Byte-count API (not hex-char count) so callers stay agnostic of
-     * the backing representation. Mirror of {@link Src.skip}.
-     */
-    public skip(n: number): void {
-        const target = this.pos + HEX_BYTE * n
-        if (n < 0 || target > this.endChar) {
-            throw new RangeError(
-                `Cannot skip ${n} bytes from offset ${(this.pos - this.base) >> 1}: buffer has ${(this.endChar - this.base) >> 1} bytes`,
-            )
-        }
-        this.pos = target
-    }
-
     u8(): number {
-        // Trailing byte of the word = last two hex chars.
         const start = this.pos + WORD_HEX - 2
         const val = Number.parseInt(this.buf.slice(start, start + 2), 16)
         this.pos += WORD_HEX
@@ -137,7 +102,6 @@ export class HexSrc {
     }
 
     address(): string {
-        // Low 20 bytes of the word = last 40 hex chars.
         const start = this.pos + WORD_HEX - 40
         const val = `0x${this.buf.slice(start, start + 40)}`
         this.pos += WORD_HEX
@@ -146,20 +110,20 @@ export class HexSrc {
 
     bytes(): Uint8Array {
         const ptr = this.u32()
-        this.safeJump(ptr, 'bytes')
+        this.jump(ptr)
         const len = Number(this.u256())
-        this.assertLength(len, 'bytes')
+        this.#assertLength(len, 'bytes')
         const sub = this.buf.slice(this.pos, this.pos + HEX_BYTE * len)
         const val = Buffer.from(sub, 'hex')
         this.jumpBack()
         return val
     }
 
-    hex(): string {
+    bytesHex(): string {
         const ptr = this.u32()
-        this.safeJump(ptr, 'bytes')
+        this.jump(ptr)
         const len = Number(this.u256())
-        this.assertLength(len, 'bytes')
+        this.#assertLength(len, 'bytes')
         const val = `0x${this.buf.slice(this.pos, this.pos + HEX_BYTE * len)}`
         this.jumpBack()
         return val
@@ -174,7 +138,7 @@ export class HexSrc {
         return Buffer.from(sub, 'hex')
     }
 
-    staticHex(len: number): string {
+    staticBytesHex(len: number): string {
         if (len > 32) {
             throw new Error(`bytes${len} is not a valid type`)
         }
@@ -185,9 +149,9 @@ export class HexSrc {
 
     string(): string {
         const ptr = this.u32()
-        this.safeJump(ptr, 'string')
+        this.jump(ptr)
         const len = Number(this.u256())
-        this.assertLength(len, 'string')
+        this.#assertLength(len, 'bytes')
         const sub = this.buf.slice(this.pos, this.pos + HEX_BYTE * len)
         const val = TEXT_DECODER.decode(Buffer.from(sub, 'hex'))
         this.jumpBack()
@@ -195,16 +159,13 @@ export class HexSrc {
     }
 
     bool(): boolean {
-        // `Src.bool()` = `!!src.u8()` = trailing byte != 0. The two
-        // trailing hex chars live at pos + WORD_HEX - 2 / -1; a direct
-        // charCode compare skips the substring + parseInt.
         const a = this.buf.charCodeAt(this.pos + WORD_HEX - 2)
         const b = this.buf.charCodeAt(this.pos + WORD_HEX - 1)
         this.pos += WORD_HEX
         return a !== 48 /* '0' */ || b !== 48
     }
 
-    private assertLength(len: number, typeName: string): void {
+    #assertLength(len: number, typeName: string): void {
         if (this.endChar - this.pos < HEX_BYTE * len) {
             throw new RangeError(
                 `Unexpected end of input. Attempting to read ${typeName} of length ${len} from 0x${this.buf.slice(this.base, this.endChar)}`,
@@ -212,18 +173,18 @@ export class HexSrc {
         }
     }
 
-    public safeJump(pos: number, typeName: string): void {
+    jump(pos: number): void {
         const target = this.base + HEX_BYTE * pos
         if (pos < 0 || target >= this.endChar) {
             throw new RangeError(
-                `Unexpected pointer location: 0x${pos.toString(16)}. Attempting to read ${typeName} from 0x${this.buf.slice(this.base, this.endChar)}`,
+                `Unexpected pointer location: 0x${pos.toString(16)}. Attempting to read from 0x${this.buf.slice(this.base, this.endChar)}`,
             )
         }
         this.oldPos = this.pos
         this.pos = target
     }
 
-    public jumpBack(): void {
+    jumpBack(): void {
         this.pos = this.oldPos
     }
 }

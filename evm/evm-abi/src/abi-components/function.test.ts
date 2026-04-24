@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {array, bool, bytes4, fixedSizeArray, int32, Sink, string, struct, uint256} from '@subsquid/evm-codec'
+import {array, bool, bytes4, fixedSizeArray, int32, BytesSink, string, struct, uint256} from '@subsquid/evm-codec'
 import {fun} from '..'
 
 describe('Function', () => {
@@ -71,7 +71,7 @@ describe('Function', () => {
             },
             int32,
         )
-        const sink = new Sink(1)
+        const sink = new BytesSink(1)
         int32.encode(sink, -420)
         expect(simpleFunction.decodeResult(sink.toString())).toBe(-420)
     })
@@ -79,11 +79,11 @@ describe('Function', () => {
     it('return tuple (round-trip through Sink)', () => {
         // Hand-build the ABI-encoded return blob using Sink so the test
         // doesn't depend on a third-party encoder.
-        const sink = new Sink(1)
-        sink.newStaticDataArea()
+        const sink = new BytesSink(1)
+        sink.openTail()
         sink.u256(100n)
         sink.string('hello')
-        sink.endCurrentDataArea()
+        sink.closeTail()
 
         const _fun = fun('0x12345678', {}, struct({_0: uint256, b: string}))
         expect(_fun.decodeResult(sink.toString())).toStrictEqual({_0: 100n, b: 'hello'})

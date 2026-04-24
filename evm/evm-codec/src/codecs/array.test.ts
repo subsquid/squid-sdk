@@ -1,10 +1,10 @@
 import {describe, expect, it} from 'vitest'
-import {address, array, bytes, fixedSizeArray, int8, Sink, Src, string, uint256} from '..'
+import {address, array, bytes, fixedSizeArray, int8, BytesSink, BytesSrc, string, uint256} from '..'
 
-function roundtrip<T>(codec: {encode: (s: Sink, v: T) => void; decode: (s: Src) => T; slotsCount?: number}, value: T) {
-  const sink = new Sink(codec.slotsCount ?? 1)
+function roundtrip<T>(codec: {encode: (s: BytesSink, v: T) => void; decode: (s: BytesSrc) => T; slotsCount?: number}, value: T) {
+  const sink = new BytesSink(codec.slotsCount ?? 1)
   codec.encode(sink, value)
-  expect(codec.decode(new Src(sink.result()))).toStrictEqual(value)
+  expect(codec.decode(new BytesSrc(sink.result()))).toStrictEqual(value)
 }
 
 describe('fixed size array', () => {
@@ -55,7 +55,7 @@ describe('dynamic size array', () => {
   })
 
   it('hardcore dynamic types', () => {
-    const sink = new Sink(5)
+    const sink = new BytesSink(5)
     const arr1 = array(array(fixedSizeArray(string, 3)))
     const arr2 = array(array(uint256))
     const arr3 = array(fixedSizeArray(bytes, 2))
@@ -77,7 +77,7 @@ describe('dynamic size array', () => {
     arr2.encode(sink, data2)
     uint256.encode(sink, 123n)
 
-    const src = new Src(sink.result())
+    const src = new BytesSrc(sink.result())
     expect(arr1.decode(src)).toStrictEqual(data1)
     expect(address.decode(src)).toBe('0x1234567890123456789012345678901234567890')
     expect(arr3.decode(src)).toStrictEqual(data3)

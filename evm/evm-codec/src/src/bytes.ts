@@ -1,4 +1,4 @@
-import {WORD_SIZE} from './codec'
+import {WORD_SIZE, type Src} from '../codec'
 import {toHex} from '@subsquid/util-internal-hex'
 
 const I64_SIGN_BIT = 1n << 63n
@@ -10,33 +10,17 @@ const I256_RANGE = 1n << 256n
 
 const TEXT_DECODER = new TextDecoder('utf-8')
 
-export class Src {
+export class BytesSrc implements Src {
     private view: DataView
     private pos = 0
     private oldPos = 0
+
     constructor(private buf: Uint8Array) {
         this.view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength)
     }
 
-    slice(start: number, end?: number): Src {
-        return new Src(this.buf.subarray(start, end))
-    }
-
-    /**
-     * Advance the read cursor by `n` bytes without decoding anything.
-     * Useful for jumping past padded/unused slots in ABI words (each
-     * slot is {@link WORD_SIZE} bytes). Counterpart of {@link safeJump}
-     * but relative and forward-only. Range-checks against the end of
-     * the backing buffer.
-     */
-    public skip(n: number): void {
-        const target = this.pos + n
-        if (n < 0 || target > this.buf.length) {
-            throw new RangeError(
-                `Cannot skip ${n} bytes from offset ${this.pos}: buffer has ${this.buf.length} bytes`,
-            )
-        }
-        this.pos = target
+    slice(start: number, end?: number): BytesSrc {
+        return new BytesSrc(this.buf.subarray(start, end))
     }
 
     u8(): number {
@@ -128,24 +112,19 @@ export class Src {
 
     bytes(): Uint8Array {
         const ptr = this.u32()
-        this.safeJump(ptr, 'bytes')
+        this.jump(ptr)
         const len = Number(this.u256())
-        this.assertLength(len, 'bytes')
+        this.#assertLength(len, 'bytes')
         const val = this.buf.subarray(this.pos, this.pos + len)
         this.jumpBack()
         return val
     }
 
-    /**
-     * Parallel to {@link bytes}, but returns the value as a `0x`-prefixed
-     * lowercase hex string — equivalent to `toHex(src.bytes())` but fused so
-     * that {@link HexSrc} can provide a zero-conversion override.
-     */
-    hex(): string {
+    bytesHex(): string {
         const ptr = this.u32()
-        this.safeJump(ptr, 'bytes')
+        this.jump(ptr)
         const len = Number(this.u256())
-        this.assertLength(len, 'bytes')
+        this.#assertLength(len, 'bytes')
         const val = toHex(this.buf, this.pos, len)
         this.jumpBack()
         return val
@@ -160,12 +139,7 @@ export class Src {
         return val
     }
 
-    /**
-     * Parallel to {@link staticBytes}, but returns a `0x`-prefixed hex
-     * string. Exists so that `bytesN` codecs can stay agnostic of the
-     * underlying {@link Src}/{@link HexSrc} backend.
-     */
-    staticHex(len: number): string {
+    staticBytesHex(len: number): string {
         if (len > 32) {
             throw new Error(`bytes${len} is not a valid type`)
         }
@@ -176,9 +150,9 @@ export class Src {
 
     string(): string {
         const ptr = this.u32()
-        this.safeJump(ptr, 'string')
+        this.jump(ptr)
         const len = Number(this.u256())
-        this.assertLength(len, 'string')
+        this.#assertLength(len, 'string')
         const val = TEXT_DECODER.decode(this.buf.subarray(this.pos, this.pos + len))
         this.jumpBack()
         return val
@@ -188,7 +162,7 @@ export class Src {
         return !!this.u8()
     }
 
-    private assertLength(len: number, typeName: string): void {
+    #assertLength(len: number, typeName: string): void {
         if (this.buf.length - this.pos < len) {
             throw new RangeError(
                 `Unexpected end of input. Attempting to read ${typeName} of length ${len} from ${toHex(this.buf)}`,
@@ -196,17 +170,17 @@ export class Src {
         }
     }
 
-    public safeJump(pos: number, typeName: string): void {
+    jump(pos: number): void {
         if (pos < 0 || pos >= this.buf.length) {
             throw new RangeError(
-                `Unexpected pointer location: 0x${pos.toString(16)}. Attempting to read ${typeName} from ${toHex(this.buf)}`,
+                `Unexpected pointer location: 0x${pos.toString(16)}. Attempting to read from ${toHex(this.buf)}`,
             )
         }
         this.oldPos = this.pos
         this.pos = pos
     }
 
-    public jumpBack(): void {
+    jumpBack(): void {
         this.pos = this.oldPos
     }
 }

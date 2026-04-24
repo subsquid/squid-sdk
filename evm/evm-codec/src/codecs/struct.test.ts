@@ -1,10 +1,10 @@
 import {describe, expect, it} from 'vitest'
-import {address, array, bytes4, int8, Sink, Src, struct, uint256} from '..'
+import {address, array, bytes4, int8, BytesSink, BytesSrc, struct, uint256} from '..'
 
-function roundtrip<T>(codec: {encode: (s: Sink, v: T) => void; decode: (s: Src) => T; slotsCount?: number}, value: T) {
-  const sink = new Sink(codec.slotsCount ?? 1)
+function roundtrip<T>(codec: {encode: (s: BytesSink, v: T) => void; decode: (s: BytesSrc) => T; slotsCount?: number}, value: T) {
+  const sink = new BytesSink(codec.slotsCount ?? 1)
   codec.encode(sink, value)
-  expect(codec.decode(new Src(sink.result()))).toStrictEqual(value)
+  expect(codec.decode(new BytesSrc(sink.result()))).toStrictEqual(value)
 }
 
 describe('StructCodec', () => {
@@ -55,7 +55,7 @@ describe('StructCodec', () => {
         bar: '0x12345678',
       },
     }
-    const sink = new Sink(1)
+    const sink = new BytesSink(1)
     // `bytes4` accepts either `Uint8Array` or the `0x…`-prefixed hex form
     // on the encode side but always returns the hex form on decode — check
     // both input paths explicitly.
@@ -63,7 +63,7 @@ describe('StructCodec', () => {
       ...value,
       str: {...value.str, bar: Uint8Array.from([0x12, 0x34, 0x56, 0x78])},
     })
-    expect(s.decode(new Src(sink.result()))).toStrictEqual(value)
+    expect(s.decode(new BytesSrc(sink.result()))).toStrictEqual(value)
     roundtrip(s, value)
   })
 })
