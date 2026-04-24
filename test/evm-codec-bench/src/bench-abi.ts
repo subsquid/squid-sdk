@@ -167,7 +167,7 @@ function buildDynamicFunctionVariants() {
         bar: (OLD_CODEC as any).bytes4,
     })
     // API drift: old `fun(selector, signature, args, retType?)`.
-    const oldFn = (OLD_ABI.func as any)(
+    const oldFn = (OLD_ABI as any).fun(
         DYNAMIC_SELECTOR,
         'foo(uint256[],uint256[][10],(uint256,uint256[],(uint256,bytes4)),(uint256,bytes4))',
         {
