@@ -2,13 +2,13 @@ export {ContractBase} from './contract-base'
 
 export {indexed} from './indexed'
 export {
-  fun,
-  viewFun,
-  AbiFunction,
-  type FunctionReturn,
-  type FunctionArguments,
+    fun,
+    viewFun,
+    AbiFunction,
+    type FunctionReturn,
+    type FunctionArguments,
 } from './abi-components/function'
-export {event, AbiEvent, type EventRecord, type EventParams} from './abi-components/event'
+export {event, AbiEvent, type EventRecord, type EventParams, type EventArgumentsInput} from './abi-components/event'
 export * from './errors'
 import keccak256 from 'keccak256'
 

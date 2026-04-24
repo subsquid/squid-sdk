@@ -1,19 +1,29 @@
-import type { Simplify } from '../indexed'
-import { bytes32, Src, type Codec, type DecodedStruct, type Struct } from '@subsquid/evm-codec'
+import type {Simplify} from '../indexed'
 import {
-  EventDecodingError,
-  EventEmptyTopicsError,
-  EventInvalidSignatureError,
-  EventTopicCountMismatchError
+    bytes32,
+    HexSrc,
+    propAccess,
+    propName,
+    Sink,
+    toHex,
+    type Codec,
+    type DecodedStruct,
+    type EncodedStruct,
+} from '@subsquid/evm-codec'
+import {
+    EventDecodingError,
+    EventEmptyTopicsError,
+    EventInvalidSignatureError,
+    EventTopicCountMismatchError,
 } from '../errors'
 
 export interface EventRecord {
-  topics: string[]
-  data: string
+    topics: string[]
+    data: string
 }
 
 type EventArgs = {
-  [key: string]: Codec<any> & { indexed?: boolean }
+    [key: string]: Codec<any> & {indexed?: boolean}
 }
 
 export type IndexedCodecs<T extends EventArgs> = Simplify<{
@@ -22,72 +32,162 @@ export type IndexedCodecs<T extends EventArgs> = Simplify<{
         : T[K]
 }>
 
-export type EventParams<T extends AbiEvent<any>> = T extends AbiEvent<infer U> ? DecodedStruct<U> : never
+export type EventParams<T extends AbiEvent<any>> = T extends AbiEvent<infer U> ? DecodedStruct<IndexedCodecs<U>> : never
 
-export class AbiEvent<const T extends EventArgs> {
-  public readonly params: IndexedCodecs<T>
-  private readonly topicCount: number
+export type EventArgumentsInput<T extends AbiEvent<any>> = T extends AbiEvent<infer U>
+    ? EncodedStruct<IndexedCodecs<U>>
+    : never
 
-  constructor(public readonly topic: string, public readonly signature: string, args: T) {
-    this.topicCount = 1
-    this.params = {} as IndexedCodecs<T>
-    for (const i in args) {
-      const arg = args[i]
-      this.params[i] = arg.indexed && arg.isDynamic
-      ? {
-          ...bytes32,
-          isDynamic: true,
-          indexed: true,
-        } as any
-      : arg
+type NamedCodec = [string, Codec<any>]
+type FieldOrder = {key: string; kind: 'topic' | 'data'; idx: number}
 
-      if (arg.indexed) this.topicCount += 1
-    }
-  }
-
-  is(rec: EventRecord): boolean {
-    return this.checkTopicsCount(rec) && this.checkSignature(rec)
-  }
-
-  decode(rec: EventRecord): DecodedStruct<IndexedCodecs<T>> {
-    if (rec.topics.length == 0) {
-      throw new EventEmptyTopicsError()
-    }
-
-    if (!this.checkTopicsCount(rec)) {
-      throw new EventTopicCountMismatchError({targetCount: this.topicCount, count: rec.topics.length})
-    }
-
-    if (!this.checkSignature(rec)) {
-      throw new EventInvalidSignatureError({targetSig: this.topic, sig: rec.topics[0]})
-    }
-
-    const src = new Src(Buffer.from(rec.data.slice(2), 'hex'))
-    const result = {} as any
-    let topicCounter = 1
-    for (let i in this.params) {
-      try {
-        if (this.params[i].indexed) {
-          const topic = rec.topics[topicCounter++]
-          const topicSrc = new Src(Buffer.from(topic.slice(2), 'hex'))
-          result[i] = this.params[i].decode(topicSrc)
-        } else {
-          result[i] = this.params[i].decode(src)
-        }
-      } catch (e: any) {
-        throw new EventDecodingError(this.signature, i, rec.data, e.message)
-      }
-    }
-    return result
-  }
-
-  private checkSignature(rec: EventRecord) {
-    return rec.topics[0] === this.topic
-  }
-
-  private checkTopicsCount(rec: EventRecord) {
-    return rec.topics.length === this.topicCount
-  }
+function totalSlots(fields: NamedCodec[]): number {
+    let c = 0
+    for (const [, codec] of fields) c += codec.slotsCount ?? 1
+    return c
 }
 
-export const event = <const T extends Struct>(topic: string, signature: string, args: T) => new AbiEvent<T>(topic, signature, args)
+export class AbiEvent<const T extends EventArgs> {
+    public readonly args: T
+    public readonly params: IndexedCodecs<T>
+    private readonly topicCount: number
+    private readonly topicFields: NamedCodec[]
+    private readonly dataFields: NamedCodec[]
+
+    private readonly encodeInline: (args: EncodedStruct<IndexedCodecs<T>>) => EventRecord
+    private readonly decodeInline: (rec: EventRecord) => DecodedStruct<IndexedCodecs<T>>
+
+    constructor(
+        public readonly topic: string,
+        args: T,
+    ) {
+        this.args = args
+        this.params = {} as IndexedCodecs<T>
+
+        const topicFields: NamedCodec[] = []
+        const dataFields: NamedCodec[] = []
+        const order: FieldOrder[] = []
+
+        for (const key in args) {
+            const arg = args[key]
+            const param = arg.indexed && arg.isDynamic ? ({...bytes32, isDynamic: true, indexed: true} as any) : arg
+            this.params[key] = param
+            if (arg.indexed) {
+                order.push({key, kind: 'topic', idx: topicFields.length})
+                topicFields.push([key, param])
+            } else {
+                order.push({key, kind: 'data', idx: dataFields.length})
+                dataFields.push([key, param])
+            }
+        }
+
+        this.topicFields = topicFields
+        this.dataFields = dataFields
+        this.topicCount = 1 + topicFields.length
+
+        this.encodeInline = this.createEncodeInline(topicFields, dataFields)
+        this.decodeInline = this.createDecodeInline(order, topicFields, dataFields)
+    }
+
+    encode(args: EncodedStruct<IndexedCodecs<T>>): EventRecord {
+        return this.encodeInline(args)
+    }
+
+    decode(rec: EventRecord): DecodedStruct<IndexedCodecs<T>> {
+        if (rec.topics.length === 0) throw new EventEmptyTopicsError()
+        if (rec.topics.length !== this.topicCount) {
+            throw new EventTopicCountMismatchError({targetCount: this.topicCount, count: rec.topics.length})
+        }
+        if (rec.topics[0] !== this.topic) {
+            throw new EventInvalidSignatureError({targetSig: this.topic, sig: rec.topics[0]})
+        }
+        return this.decodeInline(rec)
+    }
+
+    is(rec: EventRecord): boolean {
+        return this.checkTopicsCount(rec) && this.checkSignature(rec)
+    }
+
+    private createEncodeInline(
+        topicFields: NamedCodec[],
+        dataFields: NamedCodec[],
+    ): (args: EncodedStruct<IndexedCodecs<T>>) => EventRecord {
+        const names: string[] = ['TOPIC', 'Sink', 'toHex']
+        const values: any[] = [this.topic, Sink, toHex]
+
+        let body = 'const topics=[TOPIC];'
+
+        for (let i = 0; i < topicFields.length; i++) {
+            const [name, codec] = topicFields[i]
+            const enc = `__et${i}`
+            names.push(enc)
+            values.push(codec.encode.bind(codec))
+            const slots = codec.slotsCount ?? 1
+            body += `{const s=new Sink(${slots});${enc}(s,args${propAccess(name)});const b=s.result();topics.push(toHex(b,0,b.length));}`
+        }
+
+        body += `const dataSink=new Sink(${totalSlots(dataFields)});`
+        for (let i = 0; i < dataFields.length; i++) {
+            const [name, codec] = dataFields[i]
+            const enc = `__ed${i}`
+            names.push(enc)
+            values.push(codec.encode.bind(codec))
+            body += `${enc}(dataSink,args${propAccess(name)});`
+        }
+        body += 'const dataBytes=dataSink.result();return{topics,data:toHex(dataBytes,0,dataBytes.length)};'
+
+        const fn = new Function(...names, 'args', body)
+        return fn.bind(null, ...values)
+    }
+
+    private createDecodeInline(
+        order: FieldOrder[],
+        topicFields: NamedCodec[],
+        dataFields: NamedCodec[],
+    ): (rec: EventRecord) => DecodedStruct<IndexedCodecs<T>> {
+        const fieldNames = order.map((o) => o.key)
+        const names: string[] = ['HexSrc', 'EventDecodingError', 'TOPIC', 'FIELD_NAMES']
+        const values: any[] = [HexSrc, EventDecodingError, this.topic, fieldNames]
+
+        // Topic and data fields go through the same `codec.decode(src)`
+        // path; topics just get their own one-word `HexSrc` per field.
+        for (let i = 0; i < topicFields.length; i++) {
+            const codec = topicFields[i][1]
+            names.push(`__dt${i}`)
+            values.push(codec.decode.bind(codec))
+        }
+        for (let i = 0; i < dataFields.length; i++) {
+            const codec = dataFields[i][1]
+            names.push(`__dd${i}`)
+            values.push(codec.decode.bind(codec))
+        }
+
+        let body = 'let __i=0;try{'
+        if (dataFields.length > 0) body += 'const dataSrc=new HexSrc(rec.data);'
+        const fields: string[] = []
+        for (let n = 0; n < order.length; n++) {
+            const o = order[n]
+            const reader =
+                o.kind === 'data'
+                    ? `__dd${o.idx}(dataSrc)`
+                    : `__dt${o.idx}(new HexSrc(rec.topics[${o.idx + 1}]))`
+            body += `const __v${n}=${reader};__i=${n + 1};`
+            fields.push(`${propName(o.key)}:__v${n}`)
+        }
+        body += `return{${fields.join(',')}};`
+        body += '}catch(e){throw new EventDecodingError(TOPIC,FIELD_NAMES[__i],rec.data,e.message);}'
+
+        const fn = new Function(...names, 'rec', body)
+        return fn.bind(null, ...values)
+    }
+
+    private checkSignature(rec: EventRecord) {
+        return rec.topics[0] === this.topic
+    }
+
+    private checkTopicsCount(rec: EventRecord) {
+        return rec.topics.length === this.topicCount
+    }
+}
+
+export const event = <const T extends EventArgs>(topic: string, args: T) => new AbiEvent<T>(topic, args)
