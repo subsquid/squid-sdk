@@ -49,6 +49,39 @@ describe('Event', () => {
         expect(event.decode(rec)).toEqual(value)
     })
 
+    it('topicSelection() without filter returns topic0 only', () => {
+        const event = _event(TOPIC, {
+            a: indexed(uint256),
+            b: uint256,
+        })
+        expect(event.topicSelection()).toEqual({topic0: [TOPIC]})
+    })
+
+    it('topicSelection() encodes indexed field values to 32-byte hex', () => {
+        const event = _event(TOPIC, {
+            a: indexed(uint256),
+            b: indexed(uint256),
+            c: uint256,
+        })
+        const filter = event.topicSelection({a: [1n, 2n]})
+        expect(filter.topic0).toEqual([TOPIC])
+        expect(filter.topic1).toHaveLength(2)
+        expect(filter.topic1![0]).toMatch(/^0x[0-9a-f]{64}$/)
+        expect(filter.topic1![1]).toMatch(/^0x[0-9a-f]{64}$/)
+        expect(filter.topic2).toBeUndefined()
+    })
+
+    it('topicSelection() places values at the correct topic position', () => {
+        const event = _event(TOPIC, {
+            from: indexed(uint256),
+            to: indexed(uint256),
+            value: uint256,
+        })
+        const filter = event.topicSelection({to: [1n]})
+        expect(filter.topic1).toBeUndefined()
+        expect(filter.topic2).toHaveLength(1)
+    })
+
     it('throws on topic count / signature mismatch', () => {
         const event = _event(TOPIC, {
             a: indexed(uint256),

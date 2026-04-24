@@ -37,6 +37,21 @@ export type EventArgumentsInput<T extends AbiEvent<any>> = T extends AbiEvent<in
     ? EncodedStruct<IndexedCodecs<U>>
     : never
 
+/** Return type of `AbiEvent.topicSelection()` — compatible with `LogRequestWhere`. */
+export type TopicFilter = {
+    topic0: string[]
+    topic1?: string[]
+    topic2?: string[]
+    topic3?: string[]
+}
+
+/** Input type for `AbiEvent.topicSelection()`: one optional array of values per indexed field. */
+export type IndexedTopicFilter<T extends EventArgs> = {
+    [K in keyof T as T[K] extends {indexed: true} ? K : never]?: Array<
+        IndexedCodecs<T>[K] extends Codec<infer TIn, any> ? TIn : never
+    >
+}
+
 type NamedCodec = [string, Codec<any>]
 type FieldOrder = {key: string; kind: 'topic' | 'data'; idx: number}
 
@@ -105,6 +120,40 @@ export class AbiEvent<const T extends EventArgs> {
 
     is(rec: EventRecord): boolean {
         return this.checkTopicsCount(rec) && this.checkSignature(rec)
+    }
+
+    /**
+     * Build a topic filter compatible with `LogRequestWhere`.
+     *
+     * `topic0` is always set to `[this.topic]`. For each indexed field present
+     * in `filter`, the provided values are ABI-encoded to 32-byte hex words and
+     * placed at the corresponding `topic1`/`topic2`/`topic3` position.
+     * Multiple values per field are ORed by the node/gateway.
+     *
+     * @example
+     * // Subscribe to all Transfer events
+     * processor.addLog({ where: { address: [CONTRACT], ...TRANSFER.topicSelection() } })
+     *
+     * // Subscribe to Transfers to a specific address
+     * processor.addLog({ where: { address: [CONTRACT], ...TRANSFER.topicSelection({ to: ['0x1234...'] }) } })
+     */
+    topicSelection(filter?: IndexedTopicFilter<T>): TopicFilter {
+        const result: TopicFilter = {topic0: [this.topic]}
+        if (!filter) return result
+
+        const keys = ['topic1', 'topic2', 'topic3'] as const
+        for (let i = 0; i < this.topicFields.length; i++) {
+            const [name, codec] = this.topicFields[i]
+            const values: Array<any> | undefined = (filter as any)[name]
+            if (values == null) continue
+            result[keys[i]] = values.map((val) => {
+                const sink = new HexSink(1)
+                codec.encode(sink, val)
+                return sink.toString()
+            })
+        }
+
+        return result
     }
 
     private createEncodeInline(
