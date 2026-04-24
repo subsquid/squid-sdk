@@ -42,9 +42,8 @@ export function describe(abi: Abi): ContractDef {
     const rawEvents = abi.filter((x) => x.type === 'event') as AbiEvent[]
     const rawFunctions = abi.filter((x) => x.type === 'function') as AbiFunction[]
 
-    // Events and functions share a name-space for overload numbering.
-    const all = [...rawEvents, ...rawFunctions]
-    const suffix = overloadSuffixer(all)
+    const eventSuffix = overloadSuffixer(rawEvents)
+    const functionSuffix = overloadSuffixer(rawFunctions)
 
     const events: EventDef[] = rawEvents.map((e) => {
         const signature = eventSignature(e)
@@ -53,8 +52,8 @@ export function describe(abi: Abi): ContractDef {
             signature,
             topic: `0x${keccak256(signature).toString('hex')}`,
             inputs: e.inputs.map((p, i) => toFieldDef(p, i, true)),
-            key: suffix(e, e.name),
-            typeName: suffix(e, `${capitalize(e.name)}EventArgs`),
+            key: eventSuffix(e, e.name),
+            typeName: eventSuffix(e, `${capitalize(e.name)}EventArgs`),
         }
     })
 
@@ -66,9 +65,9 @@ export function describe(abi: Abi): ContractDef {
             selector: `0x${keccak256(signature).slice(0, 4).toString('hex')}`,
             inputs: f.inputs.map((p, i) => toFieldDef(p, i, false)),
             outputs: (f.outputs ?? []).map((p, i) => toFieldDef(p, i, false)),
-            key: suffix(f, f.name),
-            paramsTypeName: suffix(f, `${capitalize(f.name)}Params`),
-            returnTypeName: suffix(f, `${capitalize(f.name)}Return`),
+            key: functionSuffix(f, f.name),
+            paramsTypeName: functionSuffix(f, `${capitalize(f.name)}Params`),
+            returnTypeName: functionSuffix(f, `${capitalize(f.name)}Return`),
         }
     })
 
@@ -83,8 +82,11 @@ function overloadSuffixer(items: readonly (AbiEvent | AbiFunction)[]) {
         indices.set(item, seen)
         counts.set(item.name, seen + 1)
     }
-    return (item: AbiEvent | AbiFunction, base: string): string =>
-        (counts.get(item.name) ?? 1) > 1 ? `${base}_${indices.get(item)}` : base
+    return (item: AbiEvent | AbiFunction, base: string): string => {
+        if ((counts.get(item.name) ?? 1) <= 1) return base
+        const idx = indices.get(item)!
+        return idx === 0 ? base : `${base}_${idx}`
+    }
 }
 
 function toFieldDef(p: AbiParameter, index: number, isEventInput: boolean): FieldDef {
