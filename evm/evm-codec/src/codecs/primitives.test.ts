@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {bytes32, Sink, Src, string, uint256} from "../src";
+import {bytes32, Sink, Src, string, uint256} from "..";
 
 describe('Strings', () => {
   it('should encode and decode strings', async () => {

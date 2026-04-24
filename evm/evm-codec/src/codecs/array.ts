@@ -1,6 +1,5 @@
-import { Codec, WORD_SIZE } from '../codec'
-import { Sink } from '../sink'
-import { Src } from '../src'
+import { WORD_SIZE, type Codec, type Source } from '../codec'
+import type { Sink } from '../sink'
 
 export class ArrayCodec<const TIn, const TOut> implements Codec<readonly TIn[], readonly TOut[]> {
   public readonly isDynamic = true
@@ -16,7 +15,7 @@ export class ArrayCodec<const TIn, const TOut> implements Codec<readonly TIn[], 
     sink.endCurrentDataArea()
   }
 
-  decode(src: Src): TOut[] {
+  decode(src: Source): TOut[] {
     const offset = src.u32()
 
     src.safeJump(offset, 'array')
@@ -62,7 +61,7 @@ export class FixedSizeArrayCodec<const TIn, const TOut> implements Codec<readonl
     sink.endCurrentDataArea()
   }
 
-  decode(src: Src): TOut[] {
+  decode(src: Source): TOut[] {
     if (this.isDynamic) {
       return this.decodeDynamic(src)
     }
@@ -73,7 +72,7 @@ export class FixedSizeArrayCodec<const TIn, const TOut> implements Codec<readonl
     return val
   }
 
-  private decodeDynamic(src: Src): TOut[] {
+  private decodeDynamic(src: Source): TOut[] {
     const offset = src.u32()
     const tmpSrc = src.slice(offset)
     let val = new Array(this.size)

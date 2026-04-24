@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { Sink, Src } from '../src'
-import { encodeAbiParameters } from 'viem'
+import {describe, expect, it} from 'vitest'
+import {Sink, Src} from '.'
 
 describe('src', () => {
   it('negative numbers', () => {
@@ -56,66 +55,55 @@ describe('src', () => {
   it('mixed dynamic types', () => {
     const str1 = 'abc'.repeat(100)
     const bytes1 = Buffer.alloc(100).fill('321')
-    const bytes7 = '0x1234567890abcd'
+    const bytes7 = Buffer.from('1234567890abcd', 'hex')
     const str2 = 'hello'
-    const address = '0xabc4567890123456789012345678901234567890'
-    const encoded = Buffer.from(
-      encodeAbiParameters(
-        [
-          { type: 'uint8' },
-          { type: 'string' },
-          { type: 'bytes7' },
-          { type: 'int128' },
-          { type: 'bytes' },
-          { type: 'address' },
-          { type: 'string' },
-        ],
-        [69, str1, bytes7, -21312312452243312424534213123123123123n, `0x${bytes1.toString('hex')}`, address, str2],
-      ).slice(2),
-      'hex',
-    )
-    const src = new Src(encoded)
+    const addressValue = '0xabc4567890123456789012345678901234567890'
+
+    // Build a multi-field ABI-encoded blob using Sink, then make sure
+    // Src reads every field back in the expected order.
+    const sink = new Sink(4)
+    sink.newStaticDataArea()
+    sink.u8(69)
+    sink.string(str1)
+    sink.staticBytes(7, bytes7)
+    sink.i128(-21312312452243312424534213123123123123n)
+    sink.bytes(bytes1)
+    sink.address(addressValue)
+    sink.string(str2)
+    sink.endCurrentDataArea()
+
+    const src = new Src(sink.result())
     expect(src.u8()).toBe(69)
     expect(src.string()).toBe(str1)
-    expect(src.staticBytes(7)).toStrictEqual(Buffer.from(bytes7.slice(2), 'hex'))
+    expect(src.staticBytes(7)).toStrictEqual(bytes7)
     expect(src.i128()).toBe(-21312312452243312424534213123123123123n)
     expect(src.bytes()).toStrictEqual(bytes1)
-    expect(src.address()).toBe(address)
+    expect(src.address()).toBe(addressValue)
     expect(src.string()).toBe(str2)
   })
 
   describe('string', () => {
     function testString(str: string) {
-      const encoded = Buffer.from(encodeAbiParameters([{ type: 'string' }], [str]).slice(2), 'hex')
-      const src = new Src(encoded)
-      expect(src.string()).toBe(str)
+      const sink = new Sink(1)
+      sink.newStaticDataArea()
+      sink.string(str)
+      sink.endCurrentDataArea()
+      expect(new Src(sink.result()).string()).toBe(str)
     }
 
-    it('short string', () => {
-      testString('hello')
-    })
-
-    it('32 byte string', () => {
-      testString('this string length is 32 bytes!!')
-    })
-
-    it('longer string', () => {
-      testString('this string length is 33 bytes!!!')
-    })
-
-    it('UTF', () => {
-      testString('привет 👍')
-    })
+    it('short string', () => testString('hello'))
+    it('32 byte string', () => testString('this string length is 32 bytes!!'))
+    it('longer string', () => testString('this string length is 33 bytes!!!'))
+    it('UTF', () => testString('привет 👍'))
   })
 
   it('bytes', () => {
     const buffer = Buffer.alloc(150)
     buffer.fill('xd')
-    const encoded = Buffer.from(
-      encodeAbiParameters([{ type: 'bytes' }], [`0x${buffer.toString('hex')}`]).slice(2),
-      'hex',
-    )
-    const src = new Src(encoded)
-    expect(src.bytes()).toStrictEqual(buffer)
+    const sink = new Sink(1)
+    sink.newStaticDataArea()
+    sink.bytes(buffer)
+    sink.endCurrentDataArea()
+    expect(new Src(sink.result()).bytes()).toStrictEqual(buffer)
   })
 })
