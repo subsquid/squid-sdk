@@ -35,9 +35,9 @@ The benchmarks wire the **same** values through three **libraries** and assert p
 
 The block below is a **snapshot** from a run on a developer machine. To refresh it, run `npm run build`, then `npm run bench` / `npm run bench:abi` (optionally on Bun) and paste the output here.
 
-_Last updated: 2026-04-24 — Node `v20.18.2`, Linux 6.6.87.2-microsoft-standard-WSL2._
+_Last updated: 2026-04-24 — Node `v20.18.2`, Bun `1.2.23`, Linux 6.6.87.2-microsoft-standard-WSL2._
 
-### `lib/bench.js` (StructCodec)
+### `lib/bench.js` (StructCodec) — Node.js
 
 ```
 === static struct (ERC20 Transfer event args) (200,000 iters) ===
@@ -97,7 +97,67 @@ _Last updated: 2026-04-24 — Node `v20.18.2`, Linux 6.6.87.2-microsoft-standard
     vs viem         encode 3.07x   decode 17.06x
 ```
 
-### `lib/bench-abi.js` (AbiEvent / AbiFunction)
+### `lib/bench.js` (StructCodec) — Bun
+
+```
+=== static struct (ERC20 Transfer event args) (200,000 iters) ===
+  encode parity: OK   decode parity: OK
+  encode:
+  new (JIT)        157.39 ms     1,270,699 ops/s
+  old (loop)       392.31 ms       509,797 ops/s
+  viem             365.84 ms       546,683 ops/s
+  decode:
+  new (JIT)         48.46 ms     4,127,054 ops/s
+  old (loop)       227.12 ms       880,610 ops/s
+  viem             713.89 ms       280,156 ops/s
+  speedup (new vs baseline):
+    vs old (loop)   encode 2.49x   decode 4.69x
+    vs viem         encode 2.32x   decode 14.73x
+
+=== dynamic struct (bytes + array) (100,000 iters) ===
+  encode parity: OK   decode parity: OK
+  encode:
+  new (JIT)        527.63 ms       189,527 ops/s
+  old (loop)       998.93 ms       100,107 ops/s
+  viem            2692.77 ms        37,137 ops/s
+  decode:
+  new (JIT)        356.05 ms       280,856 ops/s
+  old (loop)       622.71 ms       160,589 ops/s
+  viem            5027.85 ms        19,889 ops/s
+  speedup (new vs baseline):
+    vs old (loop)   encode 1.89x   decode 1.75x
+    vs viem         encode 5.10x   decode 14.12x
+
+=== nested tuple (uniswap-style swap call) (50,000 iters) ===
+  encode parity: OK   decode parity: OK
+  encode:
+  new (JIT)        158.18 ms       316,101 ops/s
+  old (loop)       338.18 ms       147,851 ops/s
+  viem             946.29 ms        52,838 ops/s
+  decode:
+  new (JIT)        101.69 ms       491,701 ops/s
+  old (loop)       266.70 ms       187,477 ops/s
+  viem            1546.75 ms        32,326 ops/s
+  speedup (new vs baseline):
+    vs old (loop)   encode 2.14x   decode 2.62x
+    vs viem         encode 5.98x   decode 15.21x
+
+=== aggregate-like struct (multicall tryAggregate output) (30,000 iters) ===
+  encode parity: OK   decode parity: OK
+  encode:
+  new (JIT)        532.78 ms        56,309 ops/s
+  old (loop)       731.13 ms        41,033 ops/s
+  viem            2709.37 ms        11,073 ops/s
+  decode:
+  new (JIT)        210.33 ms       142,632 ops/s
+  old (loop)       507.75 ms        59,084 ops/s
+  viem            4182.85 ms         7,172 ops/s
+  speedup (new vs baseline):
+    vs old (loop)   encode 1.37x   decode 2.41x
+    vs viem         encode 5.09x   decode 19.89x
+```
+
+### `lib/bench-abi.js` (AbiEvent / AbiFunction) — Node.js
 
 ```
 === AbiEvent.decode: ERC-20 Transfer (200,000 iters) ===
@@ -123,4 +183,32 @@ _Last updated: 2026-04-24 — Node `v20.18.2`, Linux 6.6.87.2-microsoft-standard
   speedup (new vs baseline):
     vs old (loop)   encode 1.66x   decode 3.42x
     vs viem         encode 6.13x   decode 17.37x
+```
+
+### `lib/bench-abi.js` (AbiEvent / AbiFunction) — Bun
+
+```
+=== AbiEvent.decode: ERC-20 Transfer (200,000 iters) ===
+  decode parity: OK
+  decode:
+  new (JIT)         70.33 ms     2,843,887 ops/s
+  old (loop)       391.01 ms       511,494 ops/s
+  viem            1150.87 ms       173,782 ops/s
+  speedup (new vs baseline):
+    vs old (loop)   decode 5.56x
+    vs viem         decode 16.36x
+
+=== AbiFunction.encode/decode: dynamic 4-arg call (50,000 iters) ===
+  encode parity: OK
+  encode:
+  new (JIT)        211.95 ms       235,900 ops/s
+  old (loop)       410.04 ms       121,940 ops/s
+  viem            1897.08 ms        26,356 ops/s
+  decode:
+  new (JIT)        165.19 ms       302,675 ops/s
+  old (loop)       319.81 ms       156,342 ops/s
+  viem            3008.19 ms        16,621 ops/s
+  speedup (new vs baseline):
+    vs old (loop)   encode 1.93x   decode 1.94x
+    vs viem         encode 8.95x   decode 18.21x
 ```
