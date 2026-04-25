@@ -149,9 +149,9 @@ export class HexSrc implements Src {
 
     string(): string {
         const ptr = this.u32()
-        this.jump(ptr)
+        this.jump(ptr, 'string')
         const len = Number(this.u256())
-        this.#assertLength(len, 'bytes')
+        this.#assertLength(len, 'string')
         const sub = this.buf.slice(this.pos, this.pos + HEX_BYTE * len)
         const val = TEXT_DECODER.decode(Buffer.from(sub, 'hex'))
         this.jumpBack()
@@ -173,11 +173,12 @@ export class HexSrc implements Src {
         }
     }
 
-    jump(pos: number): void {
+    jump(pos: number, typeName?: string): void {
         const target = this.base + HEX_BYTE * pos
         if (pos < 0 || target >= this.endChar) {
+            const what = typeName ? `${typeName} ` : ''
             throw new RangeError(
-                `Unexpected pointer location: 0x${pos.toString(16)}. Attempting to read from 0x${this.buf.slice(this.base, this.endChar)}`,
+                `Unexpected pointer location: 0x${pos.toString(16)}. Attempting to read ${what}from 0x${this.buf.slice(this.base, this.endChar)}`,
             )
         }
         this.oldPos = this.pos

@@ -56,7 +56,7 @@ export interface Src {
     /** Create a sub-view of this source starting at byte offset `start`. */
     slice(start: number, end?: number): Src
     /** Follow an offset pointer: save the current position and jump to `pos`. */
-    jump(pos: number): void
+    jump(pos: number, typeName?: string): void
     /** Return to the position saved by the last `jump`. */
     jumpBack(): void
 }

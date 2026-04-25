@@ -150,7 +150,7 @@ export class BytesSrc implements Src {
 
     string(): string {
         const ptr = this.u32()
-        this.jump(ptr)
+        this.jump(ptr, 'string')
         const len = Number(this.u256())
         this.#assertLength(len, 'string')
         const val = TEXT_DECODER.decode(this.buf.subarray(this.pos, this.pos + len))
@@ -170,10 +170,11 @@ export class BytesSrc implements Src {
         }
     }
 
-    jump(pos: number): void {
+    jump(pos: number, typeName?: string): void {
         if (pos < 0 || pos >= this.buf.length) {
+            const what = typeName ? `${typeName} ` : ''
             throw new RangeError(
-                `Unexpected pointer location: 0x${pos.toString(16)}. Attempting to read from ${toHex(this.buf)}`,
+                `Unexpected pointer location: 0x${pos.toString(16)}. Attempting to read ${what}from ${toHex(this.buf)}`,
             )
         }
         this.oldPos = this.pos
