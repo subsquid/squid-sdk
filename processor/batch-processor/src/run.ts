@@ -62,6 +62,7 @@ interface ProcessorStateInit {
     unfinalizedHeads?: BlockRef[]
 }
 
+
 class ProcessorState {
     finalizedHead: BlockRef | undefined = undefined
     unfinalizedHeads: BlockRef[] = []
@@ -89,7 +90,7 @@ class ProcessorState {
     }
 }
 
-class Processor<B extends BlockBase, S> {
+export class Processor<B extends BlockBase, S> {
     private metrics: RunnerMetrics
     private statusReportTimer?: any
     private hasStatusNews = false
@@ -289,7 +290,7 @@ class Processor<B extends BlockBase, S> {
     }
 }
 
-function findRollbackIndex(currentChain: BlockRef[], forkChain: BlockRef[]): number {
+export function findRollbackIndex(currentChain: BlockRef[], forkChain: BlockRef[]): number {
     let currentIndex = 0
     let forkIndex = 0
     let lastCommonIndex = -1

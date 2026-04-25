@@ -977,6 +977,11 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-testing",
+      "projectFolder": "util/util-internal-testing",
+      "shouldPublish": false
+    },
+    {
       "packageName": "@subsquid/util-internal-ts-node",
       "projectFolder": "util/util-internal-ts-node",
       "shouldPublish": true,

@@ -2,36 +2,34 @@ import {createLogger} from '@subsquid/logger'
 import {concurrentMap, last} from '@subsquid/util-internal'
 import {ForkException} from '@subsquid/util-internal-data-source'
 import {splitRange} from '@subsquid/util-internal-range'
-import assert from 'assert'
+import assert from 'node:assert'
 import {getBlockRef} from '../util'
 import {getBlocks} from './fetch'
-import {IngestBatch, IngestOptions} from './ingest'
-
+import type {IngestBatch, IngestOptions} from './ingest'
 
 const log = createLogger('sqd:solana-rpc:chain-fixer')
-
 
 export function ensureContinuity(
     ingest: IngestOptions,
     upstream: AsyncIterable<IngestBatch>,
     from: number,
     parentHash?: string,
-    to?: number
-): AsyncIterable<IngestBatch>
-{
+    to?: number,
+): AsyncIterable<IngestBatch> {
     let stream = new ChainFixer(ingest, from, parentHash).fix(upstream)
     if (to == null) {
         return stream
-    } else {
-        return limitUpperBoundary(to, stream)
     }
+    return limitUpperBoundary(to, stream)
 }
 
-
-async function* limitUpperBoundary(to: number, upstream: AsyncIterable<IngestBatch>): AsyncIterable<IngestBatch> {
+export async function* limitUpperBoundary(
+    to: number,
+    upstream: AsyncIterable<IngestBatch>,
+): AsyncIterable<IngestBatch> {
     for await (let batch of upstream) {
         if (last(batch.blocks).slot >= to) {
-            batch.blocks = batch.blocks.filter(b => b.slot <= to)
+            batch.blocks = batch.blocks.filter((b) => b.slot <= to)
             if (batch.blocks.length > 0) {
                 yield batch
             }
@@ -41,12 +39,11 @@ async function* limitUpperBoundary(to: number, upstream: AsyncIterable<IngestBat
     }
 }
 
-
 export class ChainFixer {
     constructor(
         private ingest: IngestOptions,
         private from: number,
-        private parentHash?: string
+        private parentHash?: string,
     ) {}
 
     async *fix(upstream: AsyncIterable<IngestBatch>): AsyncIterable<IngestBatch> {
@@ -126,22 +123,22 @@ export class ChainFixer {
         return concurrentMap(
             this.ingest.strideConcurrency,
             splitRange(this.ingest.strideSize, {from, to}),
-            async range => {
+            async (range) => {
                 let blocks = await getBlocks(
                     this.ingest.rpc,
                     this.ingest.commitment,
                     this.ingest.req,
                     range,
                     this.ingest.validateChainContinuity,
-                    this.ingest.maxConfirmationAttempts
+                    this.ingest.maxConfirmationAttempts,
                 )
                 return {blocks}
-            }
+            },
         )
     }
 
     private acceptBatch(batch: IngestBatch): {
-        head?: IngestBatch,
+        head?: IngestBatch
         tail?: IngestBatch
     } {
         // find a boundary of blocks below this.from
@@ -153,42 +150,42 @@ export class ChainFixer {
         for (let i = offset; i < batch.blocks.length; i++) {
             let b = batch.blocks[i]
             if (this.from > b.block.parentSlot) {
-                if (this.ingest.validateChainContinuity && this.parentHash && this.parentHash !== b.block.previousBlockhash) throw new ForkException(
-                    b.slot,
-                    this.parentHash,
-                    [{
-                        number: b.block.parentSlot,
-                        hash: b.block.previousBlockhash
-                    }]
+                if (
+                    this.ingest.validateChainContinuity &&
+                    this.parentHash &&
+                    this.parentHash !== b.block.previousBlockhash
                 )
+                    throw new ForkException(b.slot, this.parentHash, [
+                        {
+                            number: b.block.parentSlot,
+                            hash: b.block.previousBlockhash,
+                        },
+                    ])
                 this.from = b.slot + 1
                 this.parentHash = b.block.blockhash
             } else {
                 if (i - offset > 0) {
                     return {
                         head: batchSlice(batch, offset, i),
-                        tail: batchSlice(batch, i)
+                        tail: batchSlice(batch, i),
                     }
-                } else {
-                    return {
-                        tail: batchSlice(batch, offset)
-                    }
+                }
+                return {
+                    tail: batchSlice(batch, offset),
                 }
             }
         }
 
         if (offset < batch.blocks.length) {
             return {
-                head: batchSlice(batch, offset)
+                head: batchSlice(batch, offset),
             }
-        } else {
-            return {}
         }
+        return {}
     }
 }
 
-
-function removeOverlaps(batch: IngestBatch): void {
+export function removeOverlaps(batch: IngestBatch): void {
     if (batch.blocks.length == 0) return
 
     let blocks = batch.blocks
@@ -201,10 +198,7 @@ function removeOverlaps(batch: IngestBatch): void {
             if (prev.slot < next.block.parentSlot) {
                 break
             }
-            if (
-                prev.slot === next.block.parentSlot &&
-                prev.block.blockhash === next.block.previousBlockhash
-            ) {
+            if (prev.slot === next.block.parentSlot && prev.block.blockhash === next.block.previousBlockhash) {
                 break
             }
             i -= 1
@@ -216,10 +210,9 @@ function removeOverlaps(batch: IngestBatch): void {
     blocks.length = i + 1
 }
 
-
 function batchSlice(batch: IngestBatch, start?: number, end?: number): IngestBatch {
     let res: IngestBatch = {
-        blocks: batch.blocks.slice(start, end)
+        blocks: batch.blocks.slice(start, end),
     }
     if (batch.finalized) {
         res.finalized = {...batch.finalized}
