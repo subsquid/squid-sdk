@@ -13,7 +13,8 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run"
   },
   "dependencies": {
     "@subsquid/logger": "^1.5.0",
@@ -30,7 +31,9 @@
   },
   "devDependencies": {
     "@subsquid/util-internal-archive-client": "^0.1.2",
+    "@subsquid/util-internal-testing": "^0.0.0",
     "@types/node": "^24.0.0",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }

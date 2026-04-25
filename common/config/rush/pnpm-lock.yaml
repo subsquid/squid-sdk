@@ -52,7 +52,7 @@ dependencies:
     version: file:projects/balances.tgz(supports-color@8.1.1)
   '@rush-temp/batch-processor':
     specifier: file:./projects/batch-processor.tgz
-    version: file:projects/batch-processor.tgz
+    version: file:projects/batch-processor.tgz(tsx@4.21.0)
   '@rush-temp/big-decimal':
     specifier: file:./projects/big-decimal.tgz
     version: file:projects/big-decimal.tgz(@types/node@24.0.15)(tsx@4.21.0)
@@ -70,7 +70,7 @@ dependencies:
     version: file:projects/bitcoin-normalization.tgz(tsx@4.21.0)
   '@rush-temp/bitcoin-rpc':
     specifier: file:./projects/bitcoin-rpc.tgz
-    version: file:projects/bitcoin-rpc.tgz
+    version: file:projects/bitcoin-rpc.tgz(tsx@4.21.0)
   '@rush-temp/borsh':
     specifier: file:./projects/borsh.tgz
     version: file:projects/borsh.tgz
@@ -229,7 +229,7 @@ dependencies:
     version: file:projects/solana-objects.tgz
   '@rush-temp/solana-rpc':
     specifier: file:./projects/solana-rpc.tgz
-    version: file:projects/solana-rpc.tgz
+    version: file:projects/solana-rpc.tgz(tsx@4.21.0)
   '@rush-temp/solana-rpc-data':
     specifier: file:./projects/solana-rpc-data.tgz
     version: file:projects/solana-rpc-data.tgz
@@ -370,7 +370,7 @@ dependencies:
     version: file:projects/util-internal-ingest-cli.tgz
   '@rush-temp/util-internal-ingest-tools':
     specifier: file:./projects/util-internal-ingest-tools.tgz
-    version: file:projects/util-internal-ingest-tools.tgz
+    version: file:projects/util-internal-ingest-tools.tgz(tsx@4.21.0)
   '@rush-temp/util-internal-json':
     specifier: file:./projects/util-internal-json.tgz
     version: file:projects/util-internal-json.tgz
@@ -379,7 +379,7 @@ dependencies:
     version: file:projects/util-internal-json-fix-unsafe-integers.tgz(tsx@4.21.0)
   '@rush-temp/util-internal-processor-tools':
     specifier: file:./projects/util-internal-processor-tools.tgz
-    version: file:projects/util-internal-processor-tools.tgz
+    version: file:projects/util-internal-processor-tools.tgz(tsx@4.21.0)
   '@rush-temp/util-internal-prometheus-server':
     specifier: file:./projects/util-internal-prometheus-server.tgz
     version: file:projects/util-internal-prometheus-server.tgz
@@ -392,6 +392,9 @@ dependencies:
   '@rush-temp/util-internal-squid-id':
     specifier: file:./projects/util-internal-squid-id.tgz
     version: file:projects/util-internal-squid-id.tgz
+  '@rush-temp/util-internal-testing':
+    specifier: file:./projects/util-internal-testing.tgz
+    version: file:projects/util-internal-testing.tgz(tsx@4.21.0)
   '@rush-temp/util-internal-ts-node':
     specifier: file:./projects/util-internal-ts-node.tgz
     version: file:projects/util-internal-ts-node.tgz
@@ -3397,10 +3400,6 @@ packages:
 
   /@types/minimatch@5.1.2:
     resolution: {integrity: sha512-K0VQKziLUWkVKiRVrx4a40iPaxTUefQmjtkQofBkYRcoaaL/8rhwDWww9qWbrgicNOgnpIsMxyNIUM4+n6dUIA==}
-    dev: false
-
-  /@types/mocha@10.0.8:
-    resolution: {integrity: sha512-HfMcUmy9hTMJh66VNcmeC9iVErIZJli2bszuXc6julh5YGuRb/W5OnkHjwLNYdFlMis0sY3If5SEAp+PktdJjw==}
     dev: false
 
   /@types/node@10.17.60:
@@ -7379,15 +7378,38 @@ packages:
       - typeorm-aurora-data-api-driver
     dev: false
 
-  file:projects/batch-processor.tgz:
-    resolution: {integrity: sha512-HKr3WKOedtSYLFfgsmqaAepazQvKmr0PDv5AxMmYxiksQQsc+58Xr3n40C2Xv2x01MCgsngz1BIfYc7IuRcl/A==, tarball: file:projects/batch-processor.tgz}
+  file:projects/batch-processor.tgz(tsx@4.21.0):
+    resolution: {integrity: sha512-Tqb+TZTRp2n1L0/cEkDqfcULh13Ve7/XGTdagtoo1UNRfadm5BRYOM52+gt4Qoiz4gxXTZPZ90svMjNvzoqONQ==, tarball: file:projects/batch-processor.tgz}
+    id: file:projects/batch-processor.tgz
     name: '@rush-temp/batch-processor'
     version: 0.0.0
     dependencies:
-      '@types/mocha': 10.0.8
       '@types/node': 24.0.15
-      prom-client: 14.2.0
       typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(tsx@4.21.0)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
     dev: false
 
   file:projects/big-decimal.tgz(@types/node@24.0.15)(tsx@4.21.0):
@@ -7486,17 +7508,41 @@ packages:
       - yaml
     dev: false
 
-  file:projects/bitcoin-rpc.tgz:
-    resolution: {integrity: sha512-C0pVZgWzr7iMDLscszvfwsxuR6xohpR4YjBHiXe4UfglMDSsgk6mpsmAYRV9jbyiO0sr/k/L/kTPe8cOQRBVcg==, tarball: file:projects/bitcoin-rpc.tgz}
+  file:projects/bitcoin-rpc.tgz(tsx@4.21.0):
+    resolution: {integrity: sha512-eR6sKZZyTsBlu3HdYO0Od3Werc5jGn55C6IqpUu8eNtaHjcxWzRY/BoNImmUUYwtCMBiFV0xjdUVWUxS+mQhuQ==, tarball: file:projects/bitcoin-rpc.tgz}
+    id: file:projects/bitcoin-rpc.tgz
     name: '@rush-temp/bitcoin-rpc'
     version: 0.0.0
     dependencies:
       '@types/node': 24.0.15
       ts-node: 10.9.2(@types/node@24.0.15)(typescript@5.5.4)
       typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(tsx@4.21.0)
     transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
       - '@swc/core'
       - '@swc/wasm'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
     dev: false
 
   file:projects/borsh-bench.tgz:
@@ -8584,13 +8630,38 @@ packages:
       typescript: 5.5.4
     dev: false
 
-  file:projects/solana-rpc.tgz:
-    resolution: {integrity: sha512-LYuT4wKUrMol/Bs+NL8Xmx5HuJpxcpFpEQsMNVxP424P38BnZXy5/vtyWpaWfS3K7LVBLUHdkYuR/t/KFdYa0Q==, tarball: file:projects/solana-rpc.tgz}
+  file:projects/solana-rpc.tgz(tsx@4.21.0):
+    resolution: {integrity: sha512-BL50WtrlDggWZY0iPwdkeSs7OcezPwZmJlKgq86YJV7OKgt3uL4snB+8quyKJFchPP0yIeRESkf3f2f/mL7hVQ==, tarball: file:projects/solana-rpc.tgz}
+    id: file:projects/solana-rpc.tgz
     name: '@rush-temp/solana-rpc'
     version: 0.0.0
     dependencies:
       '@types/node': 24.0.15
       typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(tsx@4.21.0)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
     dev: false
 
   file:projects/solana-spray.tgz:
@@ -9276,13 +9347,38 @@ packages:
       typescript: 5.5.4
     dev: false
 
-  file:projects/util-internal-ingest-tools.tgz:
-    resolution: {integrity: sha512-3l2eccQBLWtoFXABu93Chf8+i+Bd/ckqSikctWrn5/6+DvSPvmqftfe4XfPopa9jsDKTX+Bgwr4gw5l+B+smAw==, tarball: file:projects/util-internal-ingest-tools.tgz}
+  file:projects/util-internal-ingest-tools.tgz(tsx@4.21.0):
+    resolution: {integrity: sha512-r6zc3pqRvdtK+S4DgQ+DUAQ4XezoOHFN76Gr8LaGMj2MSQxJ/F2evy2B5sgXuw2ekwfZNQ1k1/xS9G/ufxHVGQ==, tarball: file:projects/util-internal-ingest-tools.tgz}
+    id: file:projects/util-internal-ingest-tools.tgz
     name: '@rush-temp/util-internal-ingest-tools'
     version: 0.0.0
     dependencies:
       '@types/node': 24.0.15
       typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(tsx@4.21.0)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
     dev: false
 
   file:projects/util-internal-json-fix-unsafe-integers.tgz(tsx@4.21.0):
@@ -9328,14 +9424,39 @@ packages:
       typescript: 5.5.4
     dev: false
 
-  file:projects/util-internal-processor-tools.tgz:
-    resolution: {integrity: sha512-cuOg2OD0pUO8/ZdUTSM3Z9Rjf7tnGFlm5x8ObUXcyUMhHTmgplU7JzVchDCAAREPJOMO/uHZZ8jwnMpJdmDeiw==, tarball: file:projects/util-internal-processor-tools.tgz}
+  file:projects/util-internal-processor-tools.tgz(tsx@4.21.0):
+    resolution: {integrity: sha512-Q70XAgohXFzgzfxioIS5CXpFAMKOzn82WFk1OXXUmxKDOpb7ZCQ7GTM7pMM4uUx6V0EFUprS0lfARbMfO5H0hw==, tarball: file:projects/util-internal-processor-tools.tgz}
+    id: file:projects/util-internal-processor-tools.tgz
     name: '@rush-temp/util-internal-processor-tools'
     version: 0.0.0
     dependencies:
       '@types/node': 24.0.15
       prom-client: 14.2.0
       typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(tsx@4.21.0)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
     dev: false
 
   file:projects/util-internal-prometheus-server.tgz:
@@ -9399,6 +9520,40 @@ packages:
     dependencies:
       '@types/node': 24.0.15
       typescript: 5.5.4
+    dev: false
+
+  file:projects/util-internal-testing.tgz(tsx@4.21.0):
+    resolution: {integrity: sha512-LEzYodExxCtDiAapGbtNPjWFJtp/sQ5rNCcji2LCrniFzTkBjv3XcdFFSK/fb3rqKKPwmG0wISKu1+OhwnPZIw==, tarball: file:projects/util-internal-testing.tgz}
+    id: file:projects/util-internal-testing.tgz
+    name: '@rush-temp/util-internal-testing'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 24.0.15
+      typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(tsx@4.21.0)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
     dev: false
 
   file:projects/util-internal-ts-node.tgz:

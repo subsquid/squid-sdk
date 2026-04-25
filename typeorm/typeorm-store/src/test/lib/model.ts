@@ -1,5 +1,16 @@
 import {Column as Column_, Column, Entity, ManyToOne, PrimaryColumn} from 'typeorm'
 
+@Entity()
+export class IdOnly {
+    @PrimaryColumn()
+    id!: string
+
+    constructor(id?: string) {
+        if (id != null) {
+            this.id = id
+        }
+    }
+}
 
 @Entity()
 export class Item {
@@ -17,7 +28,6 @@ export class Item {
     }
 }
 
-
 @Entity()
 export class Order {
     @PrimaryColumn()
@@ -29,7 +39,6 @@ export class Order {
     @Column({nullable: false})
     qty!: number
 }
-
 
 @Entity()
 export class Data {
@@ -52,7 +61,9 @@ export class Data {
     @Column('int4', {array: true})
     integerArray?: number[] | null
 
-    @Column('numeric', {transformer: {from: (s?: string) => s == null ? null : BigInt(s), to: (val?: bigint) => val?.toString()}})
+    @Column('numeric', {
+        transformer: {from: (s?: string) => (s == null ? null : BigInt(s)), to: (val?: bigint) => val?.toString()},
+    })
     bigInteger?: bigint | null
 
     @Column('timestamp with time zone')
@@ -61,7 +72,7 @@ export class Data {
     @Column('bytea')
     bytes?: Uint8Array | null
 
-    @Column_("jsonb", {nullable: true})
+    @Column_('jsonb', {nullable: true})
     json?: unknown | null
 
     @ManyToOne(() => Item)

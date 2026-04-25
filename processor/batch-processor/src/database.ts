@@ -4,13 +4,11 @@
  */
 export type Database<S> = FinalDatabase<S> | HotDatabase<S>
 
-
 export interface FinalTxInfo {
     prevHead: HashAndHeight
     nextHead: HashAndHeight
     isOnTop: boolean
 }
-
 
 export interface FinalDatabase<S> {
     supportsHotBlocks?: false
@@ -18,11 +16,9 @@ export interface FinalDatabase<S> {
     transact(info: FinalTxInfo, cb: (store: S) => Promise<DatabaseTransactResult | void>): Promise<void>
 }
 
-
 export interface DatabaseTransactResult {
     templates?: TemplateMutation[]
 }
-
 
 export interface FinalDatabaseState {
     height: number
@@ -30,13 +26,11 @@ export interface FinalDatabaseState {
     templates?: TemplateMutation[]
 }
 
-
 export interface HotTxInfo {
     finalizedHead: HashAndHeight
     baseHead: HashAndHeight
     newBlocks: HashAndHeight[]
 }
-
 
 export interface HotDatabase<S> {
     supportsHotBlocks: true
@@ -45,26 +39,22 @@ export interface HotDatabase<S> {
 
     transactHot2(
         info: HotTxInfo,
-        cb: (store: S, blockSliceStart: number, blockSliceEnd: number) => Promise<DatabaseTransactResult | void>
+        cb: (store: S, blockSliceStart: number, blockSliceEnd: number) => Promise<DatabaseTransactResult | void>,
     ): Promise<void>
 }
-
 
 export interface HotBlock extends HashAndHeight {
     templates?: TemplateMutation[]
 }
-
 
 export interface HotDatabaseState extends HashAndHeight {
     top: HotBlock[]
     templates?: TemplateMutation[]
 }
 
-
 export interface FinalDatabaseState extends HashAndHeight {
     templates?: TemplateMutation[]
 }
-
 
 export interface TemplateMutation {
     type: 'add' | 'delete'
@@ -72,7 +62,6 @@ export interface TemplateMutation {
     value: string
     blockNumber: number
 }
-
 
 export interface HashAndHeight {
     hash: string
