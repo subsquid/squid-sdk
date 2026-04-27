@@ -59,25 +59,30 @@ describe('src', () => {
     const str2 = 'hello'
     const addressValue = '0xabc4567890123456789012345678901234567890'
 
-    // Build a multi-field ABI-encoded blob using Sink, then make sure
-    // Src reads every field back in the expected order.
-    const sink = new BytesSink(4)
-    sink.openTail()
+    // Build a 7-field ABI-encoded tuple: each dynamic field (string/bytes) gets its
+    // own head slot (openTail writes the pointer) + tail data, while static fields
+    // (u8, staticBytes, i128, address) are written directly into the head.
+    const sink = new BytesSink(7)
     sink.u8(69)
+    sink.openTail()
     sink.string(str1)
+    sink.closeTail()
     sink.staticBytes(7, bytes7)
     sink.i128(-21312312452243312424534213123123123123n)
+    sink.openTail()
     sink.bytes(bytes1)
+    sink.closeTail()
     sink.address(addressValue)
+    sink.openTail()
     sink.string(str2)
     sink.closeTail()
 
     const src = new BytesSrc(sink.result())
     expect(src.u8()).toBe(69)
     expect(src.string()).toBe(str1)
-    expect(src.staticBytes(7)).toStrictEqual(bytes7)
+    expect(src.staticBytes(7)).toStrictEqual(new Uint8Array(bytes7))
     expect(src.i128()).toBe(-21312312452243312424534213123123123123n)
-    expect(src.bytes()).toStrictEqual(bytes1)
+    expect(src.bytes()).toStrictEqual(new Uint8Array(bytes1))
     expect(src.address()).toBe(addressValue)
     expect(src.string()).toBe(str2)
   })
@@ -104,6 +109,6 @@ describe('src', () => {
     sink.openTail()
     sink.bytes(buffer)
     sink.closeTail()
-    expect(new BytesSrc(sink.result()).bytes()).toStrictEqual(buffer)
+    expect(new BytesSrc(sink.result()).bytes()).toStrictEqual(new Uint8Array(buffer))
   })
 })

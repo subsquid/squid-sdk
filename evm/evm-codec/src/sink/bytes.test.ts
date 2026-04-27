@@ -43,7 +43,7 @@ describe('sink', () => {
     expect(src.i8()).toBe(-2)
     expect(src.address()).toBe('0x1234567890123456789012345678901234567890')
     expect(src.u256()).toBe(3n)
-    expect(src.staticBytes(7)).toStrictEqual(Buffer.from('1234567890abcd', 'hex'))
+    expect(src.staticBytes(7)).toStrictEqual(new Uint8Array(Buffer.from('1234567890abcd', 'hex')))
   })
 
   describe('string', () => {
@@ -68,7 +68,7 @@ describe('sink', () => {
     buffer.fill('xd')
     sink.bytes(buffer)
     sink.closeTail()
-    expect(new BytesSrc(sink.result()).bytes()).toStrictEqual(buffer)
+    expect(new BytesSrc(sink.result()).bytes()).toStrictEqual(new Uint8Array(buffer))
   })
 
   it('string encodes to canonical 32-byte-aligned ABI layout', () => {
