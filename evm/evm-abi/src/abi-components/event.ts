@@ -321,8 +321,12 @@ export class AbiEvent<const T extends EventArgs> {
         dataFields: NamedCodec[],
     ): (rec: EventRecord) => DecodedStruct<IndexedCodecs<T>> {
         const fieldNames = order.map((o) => o.key)
-        const names: string[] = ['HexSrc', 'EventDecodingError', 'TOPIC', 'FIELD_NAMES']
-        const values: any[] = [HexSrc, EventDecodingError, this.topic, fieldNames]
+        // For each field in declaration order: the 1-based topics[] index when
+        // the field is an indexed topic, or -1 when it lives in rec.data.
+        // Used by the catch block to report the actual bytes that failed.
+        const fieldTopicIdx = order.map((o) => (o.kind === 'topic' ? o.idx + 1 : -1))
+        const names: string[] = ['HexSrc', 'EventDecodingError', 'TOPIC', 'FIELD_NAMES', 'FIELD_TOPIC_IDX']
+        const values: any[] = [HexSrc, EventDecodingError, this.topic, fieldNames, fieldTopicIdx]
 
         for (let i = 0; i < topicDecoders.length; i++) {
             names.push(`__dt${i}`)
@@ -347,7 +351,7 @@ export class AbiEvent<const T extends EventArgs> {
             fields.push(`${propName(o.key)}:__v${n}`)
         }
         body += `return{${fields.join(',')}};`
-        body += '}catch(e){throw new EventDecodingError(TOPIC,FIELD_NAMES[__i],rec.data,e.message);}'
+        body += '}catch(e){const __ti=FIELD_TOPIC_IDX[__i];const __raw=__ti>=0?rec.topics[__ti]:rec.data;throw new EventDecodingError(TOPIC,FIELD_NAMES[__i],__raw,e.message);}'
 
         const fn = new Function(...names, 'rec', body)
         return fn.bind(null, ...values)

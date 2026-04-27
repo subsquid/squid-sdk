@@ -134,6 +134,29 @@ describe('Event', () => {
         expect(event.decode(rec)).toEqual({a: expectedHash})
     })
 
+    it('EventDecodingError for a topic field reports the corrupt topic, not rec.data', () => {
+        const event = _event(TOPIC, {
+            a: indexed(uint256),
+            b: uint256,
+        })
+        const rec = event.encode({a: 1n, b: 2n})
+
+        // Replace topic 1 with an invalid hex string so that uint256 decoding
+        // throws (BigInt rejects non-hex digits).  rec.data remains valid.
+        const badTopic = '0x' + 'zz'.repeat(32)
+        let err: Error | undefined
+        try {
+            event.decode({topics: [TOPIC, badTopic], data: rec.data})
+        } catch (e: any) {
+            err = e
+        }
+
+        expect(err).toBeDefined()
+        // The error message must reference the bad topic, not rec.data.
+        expect(err!.message).toContain(badTopic)
+        expect(err!.message).not.toContain(rec.data)
+    })
+
     it('throws on topic count / signature mismatch', () => {
         const event = _event(TOPIC, {
             a: indexed(uint256),
