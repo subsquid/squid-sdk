@@ -92,6 +92,9 @@ dependencies:
   '@rush-temp/evm-codec':
     specifier: file:./projects/evm-codec.tgz
     version: file:projects/evm-codec.tgz(tsx@4.21.0)
+  '@rush-temp/evm-codec-bench':
+    specifier: file:./projects/evm-codec-bench.tgz
+    version: file:projects/evm-codec-bench.tgz
   '@rush-temp/evm-data-service':
     specifier: file:./projects/evm-data-service.tgz
     version: file:projects/evm-data-service.tgz
@@ -509,6 +512,12 @@ dependencies:
   ethers:
     specifier: ^6.9.0
     version: 6.9.0
+  evm-abi-old:
+    specifier: npm:@subsquid/evm-abi@0.3.1
+    version: /@subsquid/evm-abi@0.3.1
+  evm-codec-old:
+    specifier: npm:@subsquid/evm-codec@0.3.0
+    version: /@subsquid/evm-codec@0.3.0
   expect:
     specifier: ^29.7.0
     version: 29.7.0
@@ -2941,6 +2950,19 @@ packages:
       '@subsquid/util-internal-prometheus-server': 1.3.0(prom-client@14.2.0)
       '@subsquid/util-internal-range': 0.3.0
       prom-client: 14.2.0
+    dev: false
+
+  /@subsquid/evm-abi@0.3.1:
+    resolution: {integrity: sha512-kWD8KjPBj4bR7u2Ct0xZmmVVkto0DKbSv9LQoh3fdGpS1UXbMg1jt4idupd970U8O7u3JJoTosgtApaXbKfoig==}
+    dependencies:
+      '@subsquid/evm-codec': 0.3.0
+      keccak256: 1.0.6
+    dev: false
+
+  /@subsquid/evm-codec@0.3.0:
+    resolution: {integrity: sha512-W6EIiC7MJN2oWdbgzpUSDop+UtROdFAlvsrzc10g3AnCAaK31nH59tkTjylRxgECewWFCFWZrwsVp+a+lwvXMA==}
+    dependencies:
+      '@subsquid/util-internal-hex': 1.2.2
     dev: false
 
   /@subsquid/graphiql-console@0.3.0:
@@ -7634,7 +7656,7 @@ packages:
     dev: false
 
   file:projects/evm-abi.tgz(tsx@4.21.0):
-    resolution: {integrity: sha512-dHv+cil0i6gJZHHDbTSqSp4A34IUXWCDxGGBLuAYwhmg50eIetLSXzm+63NIqIum0e1JrLS2NK9sfC9ZGvalNw==, tarball: file:projects/evm-abi.tgz}
+    resolution: {integrity: sha512-rPA1Kja39z2tqi4vUVoicceD3uiZKR+2UEfeV+4IWAg84Y82jH795dbbtZ4pQ41SN7b/eweagfXBrUWi60DfnQ==, tarball: file:projects/evm-abi.tgz}
     id: file:projects/evm-abi.tgz
     name: '@rush-temp/evm-abi'
     version: 0.0.0
@@ -7655,7 +7677,6 @@ packages:
       - '@vitest/coverage-istanbul'
       - '@vitest/coverage-v8'
       - '@vitest/ui'
-      - bufferutil
       - esbuild
       - happy-dom
       - jiti
@@ -7668,13 +7689,27 @@ packages:
       - sugarss
       - terser
       - tsx
-      - utf-8-validate
       - yaml
+    dev: false
+
+  file:projects/evm-codec-bench.tgz:
+    resolution: {integrity: sha512-KkpAD2oGzk1XWhdoBTCukYOh6Mlk3+RQjcNKSl85Usk/YK0WQduzEv6MEehJYR1dA8BnNfQgZSx5VwaQ54LQgw==, tarball: file:projects/evm-codec-bench.tgz}
+    name: '@rush-temp/evm-codec-bench'
+    version: 0.0.0
+    dependencies:
+      '@types/node': 24.0.15
+      evm-abi-old: /@subsquid/evm-abi@0.3.1
+      evm-codec-old: /@subsquid/evm-codec@0.3.0
+      typescript: 5.5.4
+      viem: 2.21.10(typescript@5.5.4)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
       - zod
     dev: false
 
   file:projects/evm-codec.tgz(tsx@4.21.0):
-    resolution: {integrity: sha512-yZHHoigbWyWAGHqPRWIa1xzew0sFfWi5BT0KCBpXRMTjcE5shndLtY+XPNjwlMKBN24IkmyzKvrGs4rDN09xoQ==, tarball: file:projects/evm-codec.tgz}
+    resolution: {integrity: sha512-sDudZgb4ZnX9hZlcSQ9gD5cBJm4PmNE3APgU6UzSUiy1HbjB+9gjRU9By7Oa5NmabK6xCLgBqNNQGP6OgVllVQ==, tarball: file:projects/evm-codec.tgz}
     id: file:projects/evm-codec.tgz
     name: '@rush-temp/evm-codec'
     version: 0.0.0
@@ -7694,7 +7729,6 @@ packages:
       - '@vitest/coverage-istanbul'
       - '@vitest/coverage-v8'
       - '@vitest/ui'
-      - bufferutil
       - esbuild
       - happy-dom
       - jiti
@@ -7707,9 +7741,7 @@ packages:
       - sugarss
       - terser
       - tsx
-      - utf-8-validate
       - yaml
-      - zod
     dev: false
 
   file:projects/evm-data-service.tgz:
