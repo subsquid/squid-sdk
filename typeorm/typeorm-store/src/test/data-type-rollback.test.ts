@@ -288,36 +288,7 @@ describe('TypeormDatabase — data-type rollback fidelity', function () {
     })
 
     describe('FK cascade limitations', () => {
-        // FIXME: TEST NEEDS TO BE FIXED — documents a known limitation of
-        // ChangeTracker that has no fix today.
-        //
-        // What's wrong: when a hot-block handler calls `store.remove(parent)`
-        // against an entity that has children pointing at it via
-        // `ON DELETE CASCADE`, PostgreSQL silently removes the children as part
-        // of the same statement. ChangeTracker only observes the parent
-        // deletion (that's the only call it was handed) and only logs that one
-        // DELETE to hot_change_log. On rollback, the parent row is correctly
-        // reconstructed from the log, but the children — whose deletions
-        // were never tracked — stay gone.
-        //
-        // The user-facing effect is a partial-restore: the schema looks
-        // healthy at the top level but rows that existed before the hot block
-        // are permanently lost. Reorgs involving parent-table deletes should
-        // not be possible to execute as cascades until this is addressed.
-        //
-        // Two possible fixes in typeorm-store:
-        //   (A) Track FK dependencies at ChangeTracker-creation time and log
-        //       synthetic DELETE records for every child row that an
-        //       ON DELETE CASCADE on an affected parent would remove.
-        //   (B) Refuse to run `store.remove` on any entity whose table is a
-        //       cascade target for a child table that has live rows, forcing
-        //       handlers to enumerate the removals explicitly.
-        //
-        // Wrapped in `it.fails` so the suite stays green today. When
-        // typeorm-store gains handling for cascades, vitest will report an
-        // unexpected pass — the signal to remove this FIXME and replace
-        // `it.fails(...)` with a regular `it(...)`.
-        it.fails('restores children when the parent was deleted via FK cascade', async () => {
+        it('restores children when the parent was deleted via FK cascade', async () => {
             await db.connect()
 
             await db.transact(

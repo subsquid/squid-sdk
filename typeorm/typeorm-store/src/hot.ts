@@ -1,8 +1,54 @@
 import {assertNotNull} from '@subsquid/util-internal'
-import type {EntityManager, EntityMetadata} from 'typeorm'
+import type {DataSource, EntityManager, EntityMetadata} from 'typeorm'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
 import {escapeIdentifier} from './misc'
 import {Entity, EntityClass} from './store'
+
+
+interface ChildCascade {
+    meta: EntityMetadata
+    column: string
+}
+
+
+const CASCADE_MAP_CACHE = new WeakMap<DataSource, Promise<Map<string, ChildCascade[]>>>()
+
+
+async function buildCascadeMap(em: EntityManager): Promise<Map<string, ChildCascade[]>> {
+    let metasByTable = new Map<string, EntityMetadata>()
+    for (let meta of em.connection.entityMetadatas) {
+        metasByTable.set(meta.tableName, meta)
+    }
+
+    // Discover ON DELETE CASCADE FKs from the live schema. Entity decorators
+    // don't always carry onDelete (e.g. when the cascade clause lives only in
+    // the SQL migration), so introspecting pg_catalog is the source of truth.
+    let rows: {child_table: string; child_column: string; parent_table: string}[] = await em.query(
+        `SELECT
+            cl_child.relname AS child_table,
+            att_child.attname AS child_column,
+            cl_parent.relname AS parent_table
+           FROM pg_constraint c
+           JOIN pg_class cl_child ON cl_child.oid = c.conrelid
+           JOIN pg_class cl_parent ON cl_parent.oid = c.confrelid
+           JOIN pg_attribute att_child
+             ON att_child.attrelid = c.conrelid AND att_child.attnum = c.conkey[1]
+          WHERE c.contype = 'f' AND c.confdeltype = 'c'`
+    )
+
+    let map = new Map<string, ChildCascade[]>()
+    for (let r of rows) {
+        let childMeta = metasByTable.get(r.child_table)
+        if (!childMeta) continue
+        let bucket = map.get(r.parent_table)
+        if (!bucket) {
+            bucket = []
+            map.set(r.parent_table, bucket)
+        }
+        bucket.push({meta: childMeta, column: r.child_column})
+    }
+    return map
+}
 
 
 export interface RowRef {
@@ -42,7 +88,9 @@ export interface ChangeRow {
 
 
 export class ChangeTracker {
-    private index = 0
+    // index 0 is reserved for the per-block sentinel inserted by
+    // database.ts:insertHotBlock; user-tracked changes start at 1.
+    private index = 1
 
     constructor(
         private em: EntityManager,
@@ -96,17 +144,51 @@ export class ChangeTracker {
 
     async trackDelete(type: EntityClass<Entity>, ids: string[]): Promise<void> {
         let meta = this.getEntityMetadata(type)
-        let deletedEntities = await this.fetchEntities(meta, ids)
-        return this.writeChangeRows(deletedEntities.map(e => {
-            let {id, ...fields} = e
-            return {
-                kind: 'delete',
-                table: meta.tableName,
-                id: id,
-                fields
-            }
-        }))
+        let cascadeMap = await this.getCascadeMap()
+        let changes: ChangeRecord[] = []
+        await this.collectCascadeDeletes(meta, ids, cascadeMap, changes)
+        return this.writeChangeRows(changes)
     }
+
+    private async collectCascadeDeletes(
+        meta: EntityMetadata,
+        ids: string[],
+        cascadeMap: Map<string, ChildCascade[]>,
+        out: ChangeRecord[],
+    ): Promise<void> {
+        if (ids.length === 0) return
+
+        let children = cascadeMap.get(meta.tableName) ?? []
+        for (let child of children) {
+            let childIds: string[] = (
+                await this.em.query(
+                    `SELECT id FROM ${this.escape(child.meta.tableName)} WHERE ${this.escape(child.column)} = ANY($1::text[])`,
+                    [ids]
+                )
+            ).map((r: {id: string}) => r.id)
+            if (childIds.length === 0) continue
+            // Recurse so descendants land in `out` before this child level;
+            // rollback iterates DESC, so the top-level parent is restored
+            // first and grandchildren last — matching insert-order FK rules.
+            await this.collectCascadeDeletes(child.meta, childIds, cascadeMap, out)
+        }
+
+        let parentRows = await this.fetchEntities(meta, ids)
+        for (let row of parentRows) {
+            let {id, ...fields} = row
+            out.push({kind: 'delete', table: meta.tableName, id, fields})
+        }
+    }
+
+    private async getCascadeMap(): Promise<Map<string, ChildCascade[]>> {
+        let connection = this.em.connection
+        let cached = CASCADE_MAP_CACHE.get(connection)
+        if (cached) return cached
+        let promise = buildCascadeMap(this.em)
+        CASCADE_MAP_CACHE.set(connection, promise)
+        return promise
+    }
+
 
     private async fetchEntities(meta: EntityMetadata, ids: string[]): Promise<Entity[]> {
         let entities = await this.em.query(

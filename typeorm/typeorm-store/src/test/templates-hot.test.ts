@@ -105,43 +105,7 @@ describe('TypeormDatabase — template registry on the hot path', function () {
         expect(rows.map((r: {height: number | string}) => Number(r.height))).toEqual([5])
     })
 
-    // FIXME: TEST NEEDS TO BE FIXED — documents a subtle mismatch between the
-    // registry insert-conflict key and the rollback delete key.
-    //
-    // What's wrong: TemplateRegistryTracker inserts rows into template_registry
-    // with
-    //     INSERT ... (key, value, type, block_number, height) VALUES ...
-    //     ON CONFLICT (key, value, type, block_number) DO NOTHING
-    // i.e. the conflict key IGNORES height. When a hot block "re-registers" a
-    // template whose (key, value, type, block_number) tuple was already
-    // inserted by a finalized earlier block, the INSERT is silently dropped
-    // and no row is created at the hot block's height.
-    //
-    // Consequence on reconnect: state.top[i].templates is rebuilt by
-    //     SELECT … FROM template_registry WHERE height = <hot block height>
-    // which returns zero rows, so the hot block's templates list comes back
-    // empty — even though its handler explicitly asked to register the
-    // template. Callers reading `state.top[i].templates` as "what did block i
-    // declare" see a view inconsistent with what the handler actually did.
-    //
-    // Possible fixes in templates.ts / hot.ts:
-    //   (A) Change the INSERT conflict key to include `height`, so a
-    //       re-registration at a different height creates its own row. The
-    //       existing DELETE WHERE height = ... then cleans it up on rollback.
-    //   (B) On reconnect, derive state.top[i].templates by asking
-    //       "which in-flight (finalized + prior hot) templates is this block
-    //       re-asserting?" rather than a naked SELECT-by-height.
-    //   (C) Document this as the intended contract and spell out that callers
-    //       must union state.templates with every state.top[j].templates
-    //       (j ≤ i) to get block i's effective view — in which case the test
-    //       should flip to asserting the empty templates list and naming the
-    //       contract explicitly.
-    //
-    // Wrapped in `it.fails`. When the behavior changes, vitest reports an
-    // unexpected pass — the signal to remove this FIXME and replace
-    // `it.fails(...)` with a regular `it(...)` (or update the assertion to
-    // match the decided contract from (C)).
-    it.fails('hot block re-registering a finalized template is reflected in state.top[i].templates', async function () {
+    it('hot block re-registering a finalized template is reflected in state.top[i].templates', async function () {
         await db.connect()
 
         // Phase 1: finalized block 5 registers template X at block_number=5.
