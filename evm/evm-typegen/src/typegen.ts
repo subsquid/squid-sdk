@@ -1,6 +1,7 @@
 import type {Logger} from '@subsquid/logger'
 import {FileOutput, type OutDir} from '@subsquid/util-internal-code-printer'
 import type {Abi} from 'abitype'
+import * as fs from 'node:fs'
 import {type ContractDef, type DocDef, type EventDef, type FieldDef, type FunctionDef, type NatSpec, type TypeDef, describe} from './description'
 
 type Import = {name: string; alias?: string; type?: boolean}
@@ -17,6 +18,18 @@ export class Typegen {
         private log: Logger,
         natspec?: NatSpec,
     ) {
+        // Earlier versions of typegen emitted a single `${basename}.ts` file
+        // alongside the output dir. The current layout is a directory
+        // (`${basename}/index.ts` etc.). When TypeScript resolves
+        // `import './abi/foo'` it prefers `foo.ts` over `foo/index.ts`, so
+        // a stale legacy file would silently shadow the freshly generated
+        // module — builds keep passing against the old contents. Detect and
+        // remove the legacy file before we lay down the new directory.
+        const legacy = dest.path(`${basename}.ts`)
+        if (fs.existsSync(legacy) && fs.statSync(legacy).isFile()) {
+            log.warn(`removing stale ${legacy} from a previous typegen layout`)
+            fs.unlinkSync(legacy)
+        }
         this.dest = dest.child(basename)
         this.contract = describe(abi, natspec)
     }
