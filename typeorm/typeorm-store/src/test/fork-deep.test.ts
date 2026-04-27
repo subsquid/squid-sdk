@@ -92,45 +92,12 @@ describe('TypeormDatabase — deep fork scenarios', function () {
         expect(state.top.map((b) => b.hash)).toEqual(['main-0', ...forkBlocks.map((b) => b.hash)])
     })
 
-    // FIXME: TEST NEEDS TO BE FIXED — the production code it targets is buggy.
-    //
-    // What's wrong: transactHot2 in database.ts batches unfinalized blocks
-    // into groups of
-    //     groupSize = Math.max(1, Math.floor(newBlocks.length / 100))
-    // to avoid transaction timeouts. It then inserts ONLY the last block of
-    // each group into the hot_block table, while still calling the user
-    // callback for every block in the slice.
-    //
-    // Consequence: for any transactHot call with 200+ unfinalized blocks
-    // (groupSize >= 2), mid-group heights never get a hot_block row. A
-    // subsequent fork at one of those mid-group heights cannot locate its
-    // baseHead in `chain = [state, ...state.top]` — the `findIndex` on
-    // baseHead.hash returns -1 and the next line,
-    //     assert(baseHeadPos >= 0, RACE_MSG),
-    // fires a "status table was updated by foreign process" error which is
-    // doubly misleading: it's not a concurrency problem, and the suggested
-    // mitigation (kill duplicate processor) has nothing to do with the real
-    // cause. The processor crashes on what should be a legal reorg.
-    //
-    // The fix in database.ts is one of:
-    //   (A) Persist every block in hot_block — drop the group-writes-only-last
-    //       optimization; change tracking can still group the callback-side
-    //       work, but every block needs its own row so any height is
-    //       addressable as baseHead.
-    //   (B) Round-down baseHead on arrival — accept it at the last persisted
-    //       checkpoint at or below the requested height and replay the
-    //       in-group suffix from the incoming stream.
-    //
-    // Wrapped in `it.fails` so the suite stays green today. When database.ts
-    // is fixed, vitest reports an unexpected pass — the signal to remove
-    // this FIXME block and replace `it.fails(...)` with a regular `it(...)`.
-    it.fails('accepts a fork at a mid-group baseHead with 200+ hot blocks', async function () {
+    it('accepts a fork at a mid-group baseHead with 200+ hot blocks', async function () {
         await db.connect()
 
-        // Feed 200 hot blocks. groupSize = floor(200 / 100) = 2, so
-        // hot_block receives only heights 1, 3, 5, ..., 199 — the last
-        // block of each 2-block slice. Heights 0, 2, 4, ..., 198 exist
-        // only in memory during the callback; they leave no persisted trace.
+        // Feed 200 hot blocks. transactHot2 groups the user callback for
+        // performance, but every block in every group still gets its own
+        // hot_block row so any height is addressable as baseHead.
         const mainBlocks = Array.from({length: 200}, (_, i) => ({
             height: i,
             hash: `main-${i}`,
@@ -142,26 +109,16 @@ describe('TypeormDatabase — deep fork scenarios', function () {
                 newBlocks: mainBlocks,
                 finalizedHead: {height: -1, hash: '0x'},
             },
-            async () => {}, // no data writes — we only care about hot_block rows
+            async () => {},
         )
 
-        // Sanity-check the persisted state: odd heights only, because the
-        // grouping writes the second block of each pair.
         const em = await getEntityManager()
         const rows: {height: number}[] = await em.query('SELECT height FROM squid_processor.hot_block ORDER BY height')
-        const persistedHeights = rows.map((r) => r.height)
-        expect(persistedHeights[0]).toBe(1)
-        expect(persistedHeights.every((h) => h % 2 === 1)).toBe(true)
-        expect(persistedHeights).not.toContain(72)
+        const persistedHeights = rows.map((r) => Number(r.height))
+        expect(persistedHeights).toEqual(mainBlocks.map((b) => b.height))
 
-        // Fork at height 72 — an even, mid-group block the processor saw
-        // and acknowledged on the main chain but that was never persisted
-        // to hot_block. The follow-up transactHot should succeed and
-        // produce a valid rolled-back state on the alternate branch.
-        //
-        // Currently this throws RACE_MSG because state.top (reconstructed
-        // from hot_block) has no entry for hash 'main-72', so baseHeadPos
-        // lands at -1.
+        // Fork at a mid-group height — the processor must locate baseHead
+        // in state.top and roll back cleanly.
         await db.transactHot(
             {
                 baseHead: {height: 72, hash: 'main-72'},
@@ -170,5 +127,10 @@ describe('TypeormDatabase — deep fork scenarios', function () {
             },
             async () => {},
         )
+
+        const after: {height: number; hash: string}[] = await em.query(
+            'SELECT height, hash FROM squid_processor.hot_block ORDER BY height',
+        )
+        expect(after[after.length - 1]).toMatchObject({height: 73, hash: 'fork-73'})
     })
 })
