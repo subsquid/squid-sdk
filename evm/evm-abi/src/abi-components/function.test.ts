@@ -79,9 +79,11 @@ describe('Function', () => {
     it('return tuple (round-trip through Sink)', () => {
         // Hand-build the ABI-encoded return blob using Sink so the test
         // doesn't depend on a third-party encoder.
-        const sink = new BytesSink(1)
-        sink.openTail()
+        // struct({_0: uint256, b: string}) has 2 head slots: _0 directly,
+        // b as a pointer to the tail. BytesSink(2) allocates both slots.
+        const sink = new BytesSink(2)
         sink.u256(100n)
+        sink.openTail()
         sink.string('hello')
         sink.closeTail()
 
