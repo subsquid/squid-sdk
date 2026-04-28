@@ -1,7 +1,7 @@
 import {Rpc, EvmRpcDataSource, EvmRpcClient} from '@subsquid/evm-rpc'
 import {Block, DataSource} from '@subsquid/util-internal-data-service'
-import {createLogger} from '@subsquid/logger';
-import {Mapping} from './mapping';
+import {createLogger} from '@subsquid/logger'
+import {Mapping} from './mapping'
 
 
 const log = createLogger('sqd:evm-data-service/data-source')
@@ -25,6 +25,7 @@ export interface DataSourceOptions {
     verifyTxSender?: boolean
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
+    verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
     assertLogIndex?: boolean
     useGasUsedForReceiptsRoot?: boolean
@@ -49,6 +50,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         verifyTxRoot: options.verifyTxRoot,
         verifyTxSender: options.verifyTxSender,
         verifyReceiptsRoot: options.verifyReceiptsRoot,
+        verifyWithdrawalsRoot: options.verifyWithdrawalsRoot,
         verifyLogsBloom: options.verifyLogsBloom,
         assertLogIndex: options.assertLogIndex,
         useGasUsedForReceiptsRoot: options.useGasUsedForReceiptsRoot

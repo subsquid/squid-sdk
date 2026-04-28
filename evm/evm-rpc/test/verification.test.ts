@@ -1,3 +1,4 @@
+import {assertNotNull} from '@subsquid/util-internal'
 import {describe, it, expect} from 'vitest'
 import {loadBlock, loadReceipts, loadAllReceipts, hasReceipts, listFixtures, getChainId} from './helpers/fixture-loader'
 import {ChainUtils} from '../src/chain-utils'
@@ -12,8 +13,6 @@ describe('Verification Functions', () => {
                 const err = GetBlock.validate(block)
                 expect(err).toBeUndefined()
             })
-
-            
 
             it.skipIf(
                 // Cosmos/Tendermint EVM chains use SHA-256 Merkle trees, not Keccak-256
@@ -73,6 +72,17 @@ describe('Verification Functions', () => {
                     expect(computed).toEqual(block.logsBloom)
                 })
             }
+
+            it('withdrawalsRoot verification', async () => {
+                const block = loadBlock(fixture.chain, fixture.blockNumber)
+                if (block.withdrawalsRoot == null) return
+
+                const chainId = getChainId(fixture.chain)
+                const utils = new ChainUtils(chainId)
+                const withdrawals = assertNotNull(block.withdrawals)
+                const computed = await utils.calculateWithdrawalsRoot(withdrawals)
+                expect(computed).toEqual(block.withdrawalsRoot)
+            })
 
             it('transaction sender recovery', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
