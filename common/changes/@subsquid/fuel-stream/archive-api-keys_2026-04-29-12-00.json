@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-stream",
+      "comment": "allow GatewaySettings to provide a Subsquid Network API key.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/fuel-stream"
+}

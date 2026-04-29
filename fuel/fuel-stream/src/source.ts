@@ -1,6 +1,6 @@
 import {BlockHeader} from '@subsquid/fuel-normalization'
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
-import {Logger} from '@subsquid/logger'
+import {createLogger, Logger} from '@subsquid/logger'
 import {def, addErrorContext, last} from '@subsquid/util-internal'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
@@ -55,6 +55,10 @@ export interface GatewaySettings {
      * Subsquid Network Gateway url
      */
     url: string
+    /**
+     * Subsquid Network API key. Defaults to SQD_API_KEY.
+     */
+    apiKey?: string
     /**
      * Request timeout in ms
      */
@@ -384,18 +388,23 @@ class FuelDataSource implements DataSource<PartialBlock> {
     private createGateway(agent?: HttpAgent): FuelGateway {
         assert(this.gatewaySettings)
 
+        let log = createLogger('sqd:processor').child('archive')
+
         let http = new HttpClient({
             headers: {
                 'x-squid-id': this.getSquidId()
             },
-            agent
+            agent,
+            log
         })
 
         return new FuelGateway(
             new ArchiveClient({
                 http,
                 url: this.gatewaySettings.url,
+                apiKey: this.gatewaySettings.apiKey,
                 queryTimeout: this.gatewaySettings.requestTimeout,
+                log
             })
         )
     }

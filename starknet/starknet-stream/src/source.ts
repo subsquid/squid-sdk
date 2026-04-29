@@ -17,6 +17,7 @@ import {
 import {addErrorContext, def, last} from '@subsquid/util-internal'
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {ArchiveClient} from '@subsquid/util-internal-archive-client'
+import {createLogger} from '@subsquid/logger'
 import assert from 'assert'
 import {getFields} from './fields'
 import {PartialBlock} from './data/data-partial'
@@ -31,6 +32,10 @@ export interface GatewaySettings {
      * Subsquid Network Gateway url
      */
     url: string
+    /**
+     * Subsquid Network API key. Defaults to SQD_API_KEY.
+     */
+    apiKey?: string
     /**
      * Request timeout in ms
      */
@@ -342,18 +347,23 @@ class StarknetDataSource implements DataSource<PartialBlock> {
     private createGateway(agent?: HttpAgent): StarknetGateway {
         assert(this.gatewaySettings)
 
+        let log = createLogger('sqd:processor').child('archive')
+
         let http = new HttpClient({
             headers: {
                 'x-squid-id': this.getSquidId()
             },
-            agent
+            agent,
+            log
         })
 
         return new StarknetGateway(
             new ArchiveClient({
                 http,
                 url: this.gatewaySettings.url,
+                apiKey: this.gatewaySettings.apiKey,
                 queryTimeout: this.gatewaySettings.requestTimeout,
+                log
             })
         )
     }
