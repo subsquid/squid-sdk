@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/starknet-stream",
+      "comment": "allow GatewaySettings to provide a Subsquid Network API key.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/starknet-stream"
+}
