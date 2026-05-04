@@ -78,7 +78,7 @@ function* mapDebugFrame(
                         from: frame.from.toLowerCase(),
                         value: frame.value ?? undefined,
                         gas: frame.gas,
-                        init: frame.input,
+                        init: assertNotNull(frame.input),
                     },
                 }
 
@@ -114,7 +114,7 @@ function* mapDebugFrame(
                         to: assertNotNull(frame.to).toLowerCase(),
                         value: frame.value ?? undefined,
                         gas: frame.gas,
-                        input: frame.input,
+                        input: assertNotNull(frame.input),
                     }
                 }
 

@@ -539,7 +539,7 @@ export const DebugFrame: Validator<DebugFrame> = object({
     type: STRING,
     from: BYTES,
     to: option(BYTES),
-    input: BYTES,
+    input: option(BYTES),
     output: option(BYTES),
     error: option(STRING),
     revertReason: option(STRING),
@@ -554,7 +554,7 @@ export interface DebugFrame {
     type: string
     from: Bytes
     to?: Bytes | null
-    input: Bytes
+    input?: Bytes | null
     output?: Bytes | null
     error?: string | null
     revertReason?: string | null
