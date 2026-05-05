@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-archive-client",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "ArrowSquid archive API",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",

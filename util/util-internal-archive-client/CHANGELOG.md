@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-archive-client
 
-This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+This log was last generated on Tue, 05 May 2026 07:41:38 GMT and should not be manually modified.
+
+## 0.2.0
+Tue, 05 May 2026 07:41:38 GMT
+
+### Minor changes
+
+- add archive API key authorization, router header forwarding, sunset warnings and typed credentials errors
 
 ## 0.1.2
 Sun, 17 Mar 2024 23:20:20 GMT

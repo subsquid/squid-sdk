@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Wed, 18 Mar 2026 10:55:26 GMT and should not be manually modified.
+This log was last generated on Tue, 05 May 2026 07:41:38 GMT and should not be manually modified.
+
+## 8.8.0
+Tue, 05 May 2026 07:41:38 GMT
+
+### Minor changes
+
+- allow GatewaySettings to provide an API key
 
 ## 8.7.0
 Wed, 18 Mar 2026 10:55:26 GMT
