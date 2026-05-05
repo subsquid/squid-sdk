@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/tron-processor",
-      "comment": "allow GatewaySettings to provide a Subsquid Network API key.",
+      "comment": "allow GatewaySettings to provide an API key",
       "type": "minor"
     }
   ],

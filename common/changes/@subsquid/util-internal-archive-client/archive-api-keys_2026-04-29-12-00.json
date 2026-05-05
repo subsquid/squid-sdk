@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/util-internal-archive-client",
-      "comment": "Add Router API key headers, sunset warnings, and typed credentials errors.",
+      "comment": "add archive API key authorization, router header forwarding, sunset warnings and typed credentials errors",
       "type": "minor"
     }
   ],
