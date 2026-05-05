@@ -127,7 +127,6 @@ export class ArchiveClient {
 		if (this.apiKey == null) return {};
 		return {
 			Authorization: `Bearer ${this.apiKey}`,
-			Token: this.apiKey,
 		};
 	}
 
