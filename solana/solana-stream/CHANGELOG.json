@@ -2,6 +2,26 @@
   "name": "@subsquid/solana-stream",
   "entries": [
     {
+      "version": "0.5.0",
+      "tag": "@subsquid/solana-stream_v0.5.0",
+      "date": "Tue, 05 May 2026 07:41:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow GatewaySettings to provide an API key"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-client\" from `^0.1.2` to `0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.4` to `1.1.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.4.0",
       "tag": "@subsquid/solana-stream_v0.4.0",
       "date": "Mon, 08 Dec 2025 14:27:13 GMT",

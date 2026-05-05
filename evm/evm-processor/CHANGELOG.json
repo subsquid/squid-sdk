@@ -2,6 +2,26 @@
   "name": "@subsquid/evm-processor",
   "entries": [
     {
+      "version": "1.30.0",
+      "tag": "@subsquid/evm-processor_v1.30.0",
+      "date": "Tue, 05 May 2026 07:41:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow GatewaySettings to provide an API key"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-client\" from `^0.1.2` to `0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.4` to `1.1.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.29.1",
       "tag": "@subsquid/evm-processor_v1.29.1",
       "date": "Mon, 13 Apr 2026 13:57:31 GMT",

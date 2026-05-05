@@ -1,4 +1,5 @@
 import {HttpAgent, HttpClient} from '@subsquid/http-client'
+import {createLogger} from '@subsquid/logger'
 import {BlockInfo} from '@subsquid/solana-rpc'
 import {Base58Bytes} from '@subsquid/solana-rpc-data'
 import {addErrorContext, def, last} from '@subsquid/util-internal'
@@ -36,6 +37,10 @@ export interface GatewaySettings {
      * Subsquid Network Gateway url
      */
     url: string
+    /**
+     * API key. Defaults to SQD_API_KEY.
+     */
+    apiKey?: string
     /**
      * Request timeout in ms
      */
@@ -369,18 +374,23 @@ class SolanaDataSource implements DataSource<PartialBlock> {
     private createArchive(agent?: HttpAgent): SolanaArchive {
         assert(this.archiveSettings)
 
+        let log = createLogger('sqd:processor').child('archive')
+
         let http = new HttpClient({
             headers: {
                 'x-squid-id': this.getSquidId()
             },
-            agent
+            agent,
+            log
         })
 
         return new SolanaArchive(
             new ArchiveClient({
                 http,
                 url: this.archiveSettings.url,
+                apiKey: this.archiveSettings.apiKey,
                 queryTimeout: this.archiveSettings.requestTimeout,
+                log
             })
         )
     }

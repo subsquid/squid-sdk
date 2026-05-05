@@ -2,6 +2,21 @@
   "name": "@subsquid/solana-objects",
   "entries": [
     {
+      "version": "0.0.6",
+      "tag": "@subsquid/solana-objects_v0.0.6",
+      "date": "Tue, 05 May 2026 07:41:38 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-stream\" from `^0.4.0` to `0.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/solana-stream\" from `^0.4.0` to `0.5.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.5",
       "tag": "@subsquid/solana-objects_v0.0.5",
       "date": "Mon, 08 Dec 2025 14:27:13 GMT",

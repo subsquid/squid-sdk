@@ -101,6 +101,10 @@ export interface GatewaySettings {
      */
     url: string
     /**
+     * Subsquid Network API key. Defaults to SQD_API_KEY.
+     */
+    apiKey?: string
+    /**
      * Request timeout in ms
      */
     requestTimeout?: number
@@ -523,6 +527,7 @@ export class EvmBatchProcessor<F extends FieldSelection = {}> {
             new ArchiveClient({
                 http,
                 url: archive.url,
+                apiKey: archive.apiKey,
                 queryTimeout: archive.requestTimeout,
                 log
             })

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Mon, 13 Apr 2026 13:57:31 GMT and should not be manually modified.
+This log was last generated on Tue, 05 May 2026 07:41:38 GMT and should not be manually modified.
+
+## 1.30.0
+Tue, 05 May 2026 07:41:38 GMT
+
+### Minor changes
+
+- allow GatewaySettings to provide an API key
 
 ## 1.29.1
 Mon, 13 Apr 2026 13:57:31 GMT
