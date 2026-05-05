@@ -127,13 +127,14 @@ export class ArchiveClient {
 		if (this.apiKey == null) return {};
 		return {
 			Authorization: `Bearer ${this.apiKey}`,
+			Token: this.apiKey,
 		};
 	}
 
 	private getWorkerHeaders(
 		headers?: HttpResponse["headers"],
 	): Record<string, string> | undefined {
-		const result = this.getRouterHeaders();
+		const result: Record<string, string> = {};
 		if (headers == null) return result;
 		for (const [name, value] of headers) {
 			if (!name.startsWith("x-sqd-")) continue;
@@ -145,18 +146,20 @@ export class ArchiveClient {
 	private warnAboutMissingApiKey(): void {
 		if (this.apiKey != null || missingApiKeyWarningEmitted) return;
 		missingApiKeyWarningEmitted = true;
-		process.stderr.write(
-			"v2 Archive will require API keys after 19 May 2026 — get yours at portal.sqd.dev\n",
+		this.log?.warn(
+			"v2 Archive will require API keys after 19 May 2026 — get yours at https://portal.sqd.dev",
 		);
 	}
 
 	private handleRouterResponse(res: HttpResponse): void {
 		const sunset = res.headers.get("x-sqd-sunset");
 		if (sunset == null) return;
+		if (sunsetWarningEmitted) return;
 
 		const date = parseHttpDate(sunset);
 		if (!Number.isFinite(date.getTime())) return;
 
+		sunsetWarningEmitted = true;
 		this.log?.warn(
 			{
 				sunsetDate: date.toUTCString(),
@@ -214,6 +217,7 @@ export class ArchiveClient {
 }
 
 let missingApiKeyWarningEmitted = false;
+let sunsetWarningEmitted = false;
 
 interface CredentialsErrorBody {
 	error: string;
