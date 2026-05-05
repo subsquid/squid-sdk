@@ -21,7 +21,7 @@
     "@subsquid/util-internal-range": "^0.3.0"
   },
   "peerDependencies": {
-    "@subsquid/util-internal-archive-client": "^0.2.0"
+    "@subsquid/util-internal-archive-client": "^0.2.1"
   },
   "peerDependenciesMeta": {
     "@subsquid/util-internal-archive-client": {
@@ -29,7 +29,7 @@
     }
   },
   "devDependencies": {
-    "@subsquid/util-internal-archive-client": "^0.2.0",
+    "@subsquid/util-internal-archive-client": "^0.2.1",
     "@types/node": "^18.18.14",
     "typescript": "~5.5.4"
   }

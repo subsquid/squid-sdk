@@ -22,7 +22,7 @@
     "@subsquid/substrate-data": "^4.4.6",
     "@subsquid/substrate-data-raw": "^1.2.0",
     "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-archive-client": "^0.2.0",
+    "@subsquid/util-internal-archive-client": "^0.2.1",
     "@subsquid/util-internal-hex": "^1.2.2",
     "@subsquid/util-internal-ingest-tools": "^1.1.5",
     "@subsquid/util-internal-json": "^1.2.3",
