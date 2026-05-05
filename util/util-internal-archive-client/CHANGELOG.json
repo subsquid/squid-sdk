@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-archive-client",
   "entries": [
     {
+      "version": "0.2.1",
+      "tag": "@subsquid/util-internal-archive-client_v0.2.1",
+      "date": "Tue, 05 May 2026 10:02:44 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "send archive API keys only to routers and log warnings once"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/util-internal-archive-client_v0.2.0",
       "date": "Tue, 05 May 2026 07:41:38 GMT",

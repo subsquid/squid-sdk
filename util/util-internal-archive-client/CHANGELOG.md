@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-archive-client
 
-This log was last generated on Tue, 05 May 2026 07:41:38 GMT and should not be manually modified.
+This log was last generated on Tue, 05 May 2026 10:02:45 GMT and should not be manually modified.
+
+## 0.2.1
+Tue, 05 May 2026 10:02:44 GMT
+
+### Patches
+
+- send archive API keys only to routers and log warnings once
 
 ## 0.2.0
 Tue, 05 May 2026 07:41:38 GMT
