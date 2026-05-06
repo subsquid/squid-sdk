@@ -224,6 +224,21 @@ describe('Processor', () => {
         expect(recorder.state).toMatchObject({height: 4, hash: '0x4'})
     })
 
+    it('rejects non-continuous block order inside a batch', async () => {
+        const chain: TestBlock[] = [
+            {header: {number: 0, hash: '0x0'}},
+            {header: {number: 2, hash: '0x2'}},
+            {header: {number: 1, hash: '0x1'}},
+        ]
+
+        const src = new InProcessSource(chain)
+        const db = new RecordingFinalDatabase()
+        const processor = new Processor<TestBlock, RecorderStore>(src, db, async () => {})
+
+        await expect(processor.run()).rejects.toThrow(/Data is not continuous/)
+        expect(db.transacts).toHaveLength(0)
+    })
+
     it('drives linear progress through a HotDatabase via transactHot2', async () => {
         // Same five blocks, but fed through a HotDatabase. BlockBatch carries
         // no finalizedHead, so every block is treated as unfinalized and
@@ -246,8 +261,7 @@ describe('Processor', () => {
         expect(db.hotTransacts).toHaveLength(1)
         const only = db.hotTransacts[0]
         expect(only.info.baseHead).toMatchObject({height: -1, hash: '0x'})
-        // With no finalizedHead in the batch, Processor falls back to the
-        // tip of newBlocks for its own finalizedHead argument.
+        expect(only.info.finalizedHead).toMatchObject({height: -1, hash: '0x'})
         expect(only.info.newBlocks.map((b) => ({height: b.height, hash: b.hash}))).toEqual([
             {height: 0, hash: '0x0'},
             {height: 1, hash: '0x1'},
@@ -512,31 +526,7 @@ describe('Processor', () => {
         await expect(processor.run()).rejects.toThrow(/simulated handler crash/)
     })
 
-    // FIXME: TEST NEEDS TO BE FIXED — the production code it targets is buggy.
-    //
-    // What's wrong: processBatch in run.ts starts with
-    //     if (blocks.length === 0) return
-    // before any of the finalizedHead forwarding logic. A BlockBatch that
-    // carries no new blocks but advances finalizedHead is silently dropped:
-    // state.finalizedHead never updates, no transactHot2 is issued, and the
-    // persistence layer never learns that finality moved. If a real data
-    // source emits such a batch (e.g. a Portal response with no new blocks
-    // but a fresh X-Sqd-Finalized-Head-* header), the processor sits stale
-    // until the next new tip arrives.
-    //
-    // This is the same class of bug as hot.ts:56 (HotProcessor.goto() early
-    // return). Both layers need to update finality when only finality has
-    // moved; skipping on `blocks.length === 0` discards a legitimate signal.
-    //
-    // Fix direction in run.ts: drop the early return, or gate it on
-    // `blocks.length === 0 && finalizedHeadData == null`. Any batch that
-    // carries at least one non-null signal (blocks OR finalizedHead) must
-    // be processed.
-    //
-    // Wrapped in `it.fails`. When run.ts is fixed, vitest reports an
-    // unexpected pass — the signal to remove this FIXME and replace
-    // `it.fails(...)` with a regular `it(...)`.
-    it.fails('processes a finality-only batch (empty blocks, advanced finalizedHead)', async () => {
+    it('processes a finality-only batch (empty blocks, advanced finalizedHead)', async () => {
         const chain = wrap(buildChain({from: 0, to: 2}))
         const src = new ProgrammableSource(chain).addStreamCall([
             // Initial batch with three blocks and no finality.
@@ -551,10 +541,8 @@ describe('Processor', () => {
 
         await processor.run()
 
-        // Expected behavior: the finality-only batch reaches the database as
-        // a transactHot2 call whose info.finalizedHead is the advanced head.
-        // Actual: processBatch returns early on blocks.length === 0, so only
-        // one transactHot2 call is ever issued.
+        // The finality-only batch must still reach the database so hot rows
+        // can be promoted even when no new best block arrived.
         expect(db.hotTransacts).toHaveLength(2)
         expect(db.hotTransacts[1].info.finalizedHead).toMatchObject({height: 2, hash: '0x2'})
         expect(db.hotTransacts[1].info.newBlocks).toEqual([])

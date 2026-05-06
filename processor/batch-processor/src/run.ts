@@ -1,12 +1,6 @@
 import {createLogger} from '@subsquid/logger'
 import {last, maybeLast, runProgram, Throttler} from '@subsquid/util-internal'
-import {
-    Database,
-    DatabaseTransactResult,
-    FinalDatabaseState,
-    HashAndHeight,
-    HotDatabaseState,
-} from './database'
+import {Database, DatabaseTransactResult, FinalDatabaseState, HashAndHeight, HotDatabaseState} from './database'
 import {DataSource, isForkException, BlockRef, type BlockBatch} from '@subsquid/util-internal-data-source'
 import assert from 'assert'
 import {PrometheusServer, RunnerMetrics} from '@subsquid/util-internal-processor-tools'
@@ -48,20 +42,22 @@ export function run<Block extends BlockBase, Store>(
     src: DataSource<Block>,
     db: Database<Store>,
     dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<DatabaseTransactResult | void>,
-    opts?: RunOptions
+    opts?: RunOptions,
 ): void {
-    runProgram(() => {
-        return new Processor(src, db, dataHandler, opts).run()
-    }, err => {
-        log.fatal(err)
-    })
+    runProgram(
+        () => {
+            return new Processor(src, db, dataHandler, opts).run()
+        },
+        (err) => {
+            log.fatal(err)
+        },
+    )
 }
 
 interface ProcessorStateInit {
     finalizedHead?: BlockRef
     unfinalizedHeads?: BlockRef[]
 }
-
 
 class ProcessorState {
     finalizedHead: BlockRef | undefined = undefined
@@ -100,7 +96,7 @@ export class Processor<B extends BlockBase, S> {
         private src: DataSource<B>,
         private db: Database<S>,
         private handler: (ctx: DataHandlerContext<B, S>) => Promise<DatabaseTransactResult | void>,
-        private readonly opts?: RunOptions
+        private readonly opts?: RunOptions,
     ) {
         this.metrics = new RunnerMetrics(
             src.getBlocksCountInRange?.bind(src) ?? ((range) => Math.max(0, range.to - range.from + 1)),
@@ -137,7 +133,7 @@ export class Processor<B extends BlockBase, S> {
                         await chainHeight.get(),
                         async (store: S, sliceBlocks: B[], isOnTop: boolean) => {
                             return this.handler({store, blocks: sliceBlocks, isHead: isOnTop})
-                        }
+                        },
                     )
                 }
                 break
@@ -177,17 +173,18 @@ export class Processor<B extends BlockBase, S> {
     private async processBatch(
         data: BlockBatch<B>,
         chainHeight: number,
-        map: (store: S, blocks: B[], isOnTop: boolean) => Promise<DatabaseTransactResult | void>
+        map: (store: S, blocks: B[], isOnTop: boolean) => Promise<DatabaseTransactResult | void>,
     ): Promise<void> {
         let {blocks, finalizedHead: finalizedHeadData} = data
+        let hasBlocks = blocks.length > 0
 
-        if (blocks.length === 0) return
+        if (!hasBlocks && finalizedHeadData == null) return
 
         let prevHead = this.state.head
 
-        if (prevHead && prevHead.number >= blocks[0].header.number) {
-            throw new Error('Data is not continuous')
-        }
+        if (!hasBlocks && !this.db.supportsHotBlocks) return
+
+        assertBlocksContinuity(prevHead, blocks)
 
         if (
             finalizedHeadData != null &&
@@ -196,23 +193,28 @@ export class Processor<B extends BlockBase, S> {
         ) {
             finalizedHeadData = this.state.finalizedHead
         }
+        finalizedHeadData = maxBlockRef(finalizedHeadData, this.state.finalizedHead)
 
         let unfinalizedIndex =
-            finalizedHeadData == null ? 0 : blocks.findIndex((b) => b.header.number > finalizedHeadData!.number)
+            finalizedHeadData == null ? 0 : blocks.findIndex((b) => b.header.number > finalizedHeadData.number)
+        unfinalizedIndex = unfinalizedIndex < 0 ? blocks.length : unfinalizedIndex
 
-        let nextHead = last(blocks).header
+        let nextHead = maybeLast(blocks)?.header ?? prevHead ?? finalizedHeadData
+        if (nextHead == null) return
+
         let isOnTop = nextHead.number >= chainHeight
 
         let mappingStartTime = process.hrtime.bigint()
 
         if (this.db.supportsHotBlocks) {
-            let finalizedRef: BlockRef | undefined
-            if (unfinalizedIndex < 0) {
-                finalizedRef = last(blocks).header
+            let finalizedHead: BlockRef | undefined
+            if (!hasBlocks || unfinalizedIndex === 0) {
+                finalizedHead = finalizedHeadData
+            } else if (unfinalizedIndex === blocks.length) {
+                finalizedHead = last(blocks).header
             } else {
-                finalizedRef = finalizedHeadData ?? blocks[unfinalizedIndex - 1]?.header
+                finalizedHead = blocks[unfinalizedIndex - 1]?.header
             }
-            let finalizedHead = maxBlockRef(finalizedRef, this.state.finalizedHead)
             let unfinalizedSliceHeads: BlockRef[] = []
             await this.db.transactHot2(
                 {
@@ -223,11 +225,11 @@ export class Processor<B extends BlockBase, S> {
                 async (store, start, end) => {
                     let sliceBlocks = start === 0 && end === blocks.length ? blocks : blocks.slice(start, end)
                     if (sliceBlocks.length === 0) return
-                    if (unfinalizedIndex >= 0 && end > unfinalizedIndex) {
+                    if (end > unfinalizedIndex) {
                         unfinalizedSliceHeads.push(last(sliceBlocks).header)
                     }
                     return map(store, sliceBlocks, isOnTop)
-                }
+                },
             )
 
             let newFinalizedHead = finalizedHead ?? this.state.finalizedHead
@@ -239,7 +241,7 @@ export class Processor<B extends BlockBase, S> {
             this.state.finalizedHead = newFinalizedHead
             this.state.unfinalizedHeads = unfinalizedHeads.concat(unfinalizedSliceHeads)
         } else {
-            assert(unfinalizedIndex < 0, 'non-hot database received unfinalized blocks')
+            assert(unfinalizedIndex === blocks.length, 'non-hot database received unfinalized blocks')
 
             await this.db.transact(
                 {
@@ -247,7 +249,7 @@ export class Processor<B extends BlockBase, S> {
                     nextHead: toHashAndHeight(nextHead),
                     isOnTop,
                 },
-                (store) => map(store, blocks, isOnTop)
+                (store) => map(store, blocks, isOnTop),
             )
 
             this.state.finalizedHead = nextHead
@@ -332,7 +334,7 @@ function toProcessorStateInit(dbState: FinalDatabaseState | HotDatabaseState): P
     let top = 'top' in dbState ? dbState.top : undefined
     return {
         finalizedHead: dbState.height < 0 ? undefined : toBlockRef(dbState),
-        unfinalizedHeads: top?.map(b => toBlockRef(b)),
+        unfinalizedHeads: top?.map((b) => toBlockRef(b)),
     }
 }
 
@@ -340,4 +342,14 @@ function maxBlockRef(a: BlockRef | undefined, b: BlockRef | undefined): BlockRef
     if (a == null) return b
     if (b == null) return a
     return a.number >= b.number ? a : b
+}
+
+function assertBlocksContinuity<B extends BlockBase>(prevHead: BlockRef | undefined, blocks: B[]): void {
+    let prev = prevHead
+    for (let block of blocks) {
+        if (prev && prev.number >= block.header.number) {
+            throw new Error('Data is not continuous')
+        }
+        prev = block.header
+    }
 }
