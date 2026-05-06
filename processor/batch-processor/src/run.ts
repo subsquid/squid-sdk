@@ -85,7 +85,7 @@ class ProcessorState {
         } else {
             let rollbackHead = chain[rollbackIndex]
             log.info(`navigating a fork on a common base ${formatHead(rollbackHead)}`)
-            this.unfinalizedHeads = chain.slice(1, rollbackIndex + 1)
+            this.unfinalizedHeads = chain.slice(this.finalizedHead ? 1 : 0, rollbackIndex + 1)
         }
     }
 }
@@ -213,6 +213,7 @@ export class Processor<B extends BlockBase, S> {
                 finalizedRef = finalizedHeadData ?? blocks[unfinalizedIndex - 1]?.header
             }
             let finalizedHead = maxBlockRef(finalizedRef, this.state.finalizedHead)
+            let unfinalizedSliceHeads: BlockRef[] = []
             await this.db.transactHot2(
                 {
                     finalizedHead: toHashAndHeight(finalizedHead),
@@ -222,6 +223,9 @@ export class Processor<B extends BlockBase, S> {
                 async (store, start, end) => {
                     let sliceBlocks = start === 0 && end === blocks.length ? blocks : blocks.slice(start, end)
                     if (sliceBlocks.length === 0) return
+                    if (unfinalizedIndex >= 0 && end > unfinalizedIndex) {
+                        unfinalizedSliceHeads.push(last(sliceBlocks).header)
+                    }
                     return map(store, sliceBlocks, isOnTop)
                 }
             )
@@ -229,17 +233,11 @@ export class Processor<B extends BlockBase, S> {
             let newFinalizedHead = finalizedHead ?? this.state.finalizedHead
             let unfinalizedHeads = this.state.unfinalizedHeads
             if (newFinalizedHead) {
-                let idx = unfinalizedHeads.findIndex((h) => h.number > newFinalizedHead!.number)
+                let idx = unfinalizedHeads.findIndex((h) => h.number > newFinalizedHead.number)
                 unfinalizedHeads = idx < 0 ? [] : unfinalizedHeads.slice(idx)
             }
-            if (unfinalizedIndex >= 0) {
-                unfinalizedHeads = [
-                    ...unfinalizedHeads,
-                    ...blocks.slice(unfinalizedIndex).map((b) => ({number: b.header.number, hash: b.header.hash})),
-                ]
-            }
             this.state.finalizedHead = newFinalizedHead
-            this.state.unfinalizedHeads = unfinalizedHeads
+            this.state.unfinalizedHeads = unfinalizedHeads.concat(unfinalizedSliceHeads)
         } else {
             assert(unfinalizedIndex < 0, 'non-hot database received unfinalized blocks')
 

@@ -251,9 +251,7 @@ export class TypeormDatabase {
                     for (let i = unfinalizedStart; i < info.newBlocks.length; i += groupSize) {
                         let sliceEnd = Math.min(i + groupSize, info.newBlocks.length)
                         let lastBlock = info.newBlocks[sliceEnd - 1]
-                        for (let j = i; j < sliceEnd; j++) {
-                            await this.insertHotBlock(em, info.newBlocks[j])
-                        }
+                        await this.insertHotBlock(em, lastBlock)
                         await this.performUpdates(
                             async (store) => map(store, i, sliceEnd),
                             em,
