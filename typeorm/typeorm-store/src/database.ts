@@ -98,9 +98,18 @@ export class TypeormDatabase {
                 `type boolean not null, ` +
                 `block_number int not null, ` +
                 `height int not null, ` +
-                `PRIMARY KEY (key, value, type, block_number)` +
+                `PRIMARY KEY (key, value, type, block_number, height)` +
                 `)`
         )
+
+        // Migration: pre-existing tables had PK (key, value, type, block_number)
+        // — a hot block re-registering a template at a different height was
+        // silently dropped by ON CONFLICT. Promote the PK to include height
+        // so re-registrations land at the hot block's height and are visible
+        // to state.top[i].templates after reconnect.
+        await this.migrateTemplateRegistryPk(em)
+
+        await this.repairOrphans(em)
 
         let status: (HashAndHeight & {nonce: number})[] = await em.query(
             `SELECT height, hash, nonce FROM ${schema}.status WHERE id = 0`
@@ -208,10 +217,12 @@ export class TypeormDatabase {
 
             let baseHeadPos = chain.findIndex(b => b.hash === info.baseHead.hash)
             assert(baseHeadPos >= 0, RACE_MSG)
-            if (info.newBlocks.length == 0) {
-                assert(baseHeadPos === chain.length - 1, RACE_MSG)
-            }
-            assert(chain[0].height <= info.finalizedHead.height, RACE_MSG)
+
+            // Stale finalizedHead from upstream is normal during gateway→RPC
+            // handoff. Clamp to our committed finalized state so we never
+            // regress status, but still process the new hot blocks.
+            let effectiveFinalizedHead =
+                info.finalizedHead.height >= chain[0].height ? info.finalizedHead : chain[0]
 
             let rollbackPos = baseHeadPos + 1
 
@@ -220,7 +231,7 @@ export class TypeormDatabase {
             }
 
             if (info.newBlocks.length) {
-                let unfinalizedStart = info.newBlocks.findIndex(b => b.height > info.finalizedHead.height)
+                let unfinalizedStart = info.newBlocks.findIndex(b => b.height > effectiveFinalizedHead.height)
                 if (unfinalizedStart < 0) {
                     unfinalizedStart = info.newBlocks.length
                 }
@@ -228,12 +239,14 @@ export class TypeormDatabase {
                     await this.performUpdates(
                         async (store) => map(store, 0, unfinalizedStart),
                         em,
-                        new TemplateRegistryTracker(em, this.statusSchema, info.finalizedHead.height)
+                        new TemplateRegistryTracker(em, this.statusSchema, effectiveFinalizedHead.height)
                     )
                 }
                 if (unfinalizedStart < info.newBlocks.length) {
                     // To prevent transaction timeouts when handling many unfinalized blocks,
-                    // we group them instead of handling each block individually.
+                    // we group the user callback instead of handling each block individually.
+                    // Every block in the slice still gets its own hot_block row so any
+                    // height in the chain is addressable as a future baseHead.
                     let groupSize = Math.max(1, Math.floor((info.newBlocks.length - unfinalizedStart) / 100))
                     for (let i = unfinalizedStart; i < info.newBlocks.length; i += groupSize) {
                         let sliceEnd = Math.min(i + groupSize, info.newBlocks.length)
@@ -251,10 +264,63 @@ export class TypeormDatabase {
 
             chain = chain.slice(0, rollbackPos).concat(info.newBlocks)
 
-            await this.deleteHotBlocks(em, info.finalizedHead.height)
+            await this.deleteHotBlocks(em, effectiveFinalizedHead.height)
 
-            await this.updateStatus(em, state.nonce, info.finalizedHead)
+            await this.updateStatus(em, state.nonce, effectiveFinalizedHead)
         })
+    }
+
+    private async migrateTemplateRegistryPk(em: EntityManager): Promise<void> {
+        let schema = this.escapedSchema()
+        let pkCols: {attname: string}[] = await em.query(
+            `SELECT a.attname
+               FROM pg_index i
+               JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+               JOIN pg_class c ON c.oid = i.indrelid
+               JOIN pg_namespace n ON n.oid = c.relnamespace
+              WHERE c.relname = 'template_registry' AND n.nspname = $1 AND i.indisprimary`,
+            [this.statusSchema]
+        )
+        if (pkCols.length === 0 || pkCols.some(r => r.attname === 'height')) return
+
+        let cons: {conname: string}[] = await em.query(
+            `SELECT conname FROM pg_constraint
+              WHERE contype = 'p' AND conrelid = '${this.statusSchema}.template_registry'::regclass`
+        )
+        if (cons.length) {
+            await em.query(`ALTER TABLE ${schema}.template_registry DROP CONSTRAINT "${cons[0].conname}"`)
+        }
+        await em.query(
+            `ALTER TABLE ${schema}.template_registry ADD PRIMARY KEY (key, value, type, block_number, height)`
+        )
+    }
+
+    private async repairOrphans(em: EntityManager): Promise<void> {
+        let schema = this.escapedSchema()
+
+        // Orphan hot_change_log rows whose block_height has no matching
+        // hot_block. Normally the FK + cascade prevents this, but it can be
+        // reached via manual constraint disable, partial restores, etc.
+        await em.query(
+            `DELETE FROM ${schema}.hot_change_log
+              WHERE block_height NOT IN (SELECT height FROM ${schema}.hot_block)`
+        )
+
+        // Orphan hot_block rows that have no sentinel/change-log entry —
+        // they did not go through insertHotBlock. The cascade FK on
+        // hot_change_log cleans up the (empty) child rows automatically.
+        await em.query(
+            `DELETE FROM ${schema}.hot_block
+              WHERE height NOT IN (SELECT block_height FROM ${schema}.hot_change_log)`
+        )
+
+        // Orphan template_registry rows whose height matches neither a
+        // finalized state nor any surviving hot_block.
+        await em.query(
+            `DELETE FROM ${schema}.template_registry
+              WHERE height > COALESCE((SELECT height FROM ${schema}.status WHERE id = 0), -1)
+                AND height NOT IN (SELECT height FROM ${schema}.hot_block)`
+        )
     }
 
     private deleteHotBlocks(em: EntityManager, finalizedHeight: number): Promise<void> {
@@ -264,10 +330,20 @@ export class TypeormDatabase {
         )
     }
 
-    private insertHotBlock(em: EntityManager, block: HashAndHeight): Promise<void> {
-        return em.query(
-            `INSERT INTO ${this.escapedSchema()}.hot_block (height, hash) VALUES ($1, $2)`,
+    private async insertHotBlock(em: EntityManager, block: HashAndHeight): Promise<void> {
+        let schema = this.escapedSchema()
+        await em.query(
+            `INSERT INTO ${schema}.hot_block (height, hash) VALUES ($1, $2)`,
             [block.height, block.hash]
+        )
+        // Sentinel marker so connect() can distinguish a hot_block row that
+        // was inserted via the official path (always paired with this row)
+        // from one that was inserted out-of-band (manual SQL, partial restore).
+        // The marker has an unrecognized `kind`; rollbackBlock's switch falls
+        // through and ignores it.
+        await em.query(
+            `INSERT INTO ${schema}.hot_change_log (block_height, index, change) VALUES ($1, 0, $2::jsonb)`,
+            [block.height, JSON.stringify({kind: 'sentinel'})]
         )
     }
 

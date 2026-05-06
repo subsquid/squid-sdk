@@ -28,34 +28,7 @@ describe('TypeormDatabase — hot-path edge cases', function () {
 
     afterEach(() => db?.disconnect())
 
-    // FIXME: TEST NEEDS TO BE FIXED — the production code it targets is buggy.
-    //
-    // What's wrong: transactHot2 in database.ts asserts
-    //     assert(chain[0].height <= info.finalizedHead.height, RACE_MSG)
-    // where chain[0] is the current finalized head stored in the status table.
-    // This fires whenever an incoming hot update carries a finalizedHead
-    // value older than what we already have committed — which is the normal
-    // shape of a gateway→RPC handoff:
-    //   1. The gateway-backed `transact` path commits a large finalized
-    //      batch, advancing status.height to, say, 999.
-    //   2. The first RPC hot update arrives a moment later, carrying its
-    //      own (slightly stale) view of finality, say 995.
-    //   3. 999 <= 995 is false → RACE_MSG fires, claiming a concurrent
-    //      writer even though the only writer is this processor itself.
-    //
-    // The user-facing impact is a crash with a message that misdirects
-    // operators toward "another processor is running" when the actual cause
-    // is normal skew between gateway and RPC finality views.
-    //
-    // Fix direction in database.ts: either relax the assertion (finalization
-    // is allowed to trail what we already committed — just don't regress
-    // status) or, if we want to reject the update, throw a specific
-    // "stale finalized head" error rather than RACE_MSG.
-    //
-    // Wrapped in `it.fails`. When database.ts is fixed, vitest reports an
-    // unexpected pass — the signal to remove this FIXME and replace
-    // `it.fails(...)` with a regular `it(...)`.
-    it.fails('processes a hot update whose finalizedHead trails our committed finalized state', async function () {
+    it('processes a hot update whose finalizedHead trails our committed finalized state', async function () {
         await db.connect()
 
         // Gateway commits blocks 0..999 as finalized in a single big batch.
@@ -80,31 +53,7 @@ describe('TypeormDatabase — hot-path edge cases', function () {
         )
     })
 
-    // FIXME: TEST NEEDS TO BE FIXED — the production code it targets emits a
-    // misleading error on an otherwise reachable code path.
-    //
-    // What's wrong: transactHot2 in database.ts has
-    //     if (info.newBlocks.length == 0) {
-    //         assert(baseHeadPos === chain.length - 1, RACE_MSG)
-    //     }
-    // Empty newBlocks with a baseHead anywhere below the current chain tip
-    // fires RACE_MSG, which makes an operator look for a concurrent writer
-    // when the real situation is "someone asked me to acknowledge a
-    // baseHead that's not at the tip, with no blocks to apply."
-    //
-    // Two legitimate interpretations:
-    //   (A) Accept the call as a rollback-to-baseHead (roll back every hot
-    //       block above baseHead, then commit). This makes empty newBlocks a
-    //       first-class "rewind" operation.
-    //   (B) Reject it explicitly with an error that names the actual
-    //       problem ("empty update with non-tip baseHead") rather than
-    //       conflating it with concurrency.
-    //
-    // Either way, the current RACE_MSG is wrong. Wrapped in `it.fails`. When
-    // database.ts is fixed, vitest reports an unexpected pass — the signal
-    // to remove this FIXME and replace `it.fails(...)` with a regular
-    // `it(...)`.
-    it.fails('does not emit RACE_MSG for empty newBlocks with a non-tip baseHead', async function () {
+    it('does not emit RACE_MSG for empty newBlocks with a non-tip baseHead', async function () {
         await db.connect()
 
         // Establish a 3-block hot chain.
@@ -249,13 +198,21 @@ describe('TypeormDatabase — hot-path edge cases', function () {
         // Insert hot_block rows with deliberate gaps — the kind of shape a
         // Solana-style chain (skipped slots) would produce. The typeorm-store
         // invariant on top[] is strictly increasing, NOT strictly +1, so
-        // these rows must survive a round-trip through connect().
+        // these rows must survive a round-trip through connect(). Each row
+        // is paired with its sentinel hot_change_log marker so connect()'s
+        // orphan-cleanup keeps them.
         const em = await getEntityManager()
         await em.query(`
             INSERT INTO squid_processor.hot_block (height, hash) VALUES
                 (100, 'slot-100'),
                 (103, 'slot-103'),
                 (105, 'slot-105')
+        `)
+        await em.query(`
+            INSERT INTO squid_processor.hot_change_log (block_height, index, change) VALUES
+                (100, 0, '{"kind":"sentinel"}'::jsonb),
+                (103, 0, '{"kind":"sentinel"}'::jsonb),
+                (105, 0, '{"kind":"sentinel"}'::jsonb)
         `)
 
         // Re-bind a fresh instance because the original was disconnected.

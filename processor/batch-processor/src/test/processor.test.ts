@@ -112,6 +112,8 @@ class RecordingHotDatabase implements HotDatabase<RecorderStore> {
     transacts: RecordedTransact[] = []
     hotTransacts: RecordedHotTransact[] = []
 
+    constructor(private readonly hotGroupSize = Number.POSITIVE_INFINITY) {}
+
     async connect(): Promise<HotDatabaseState> {
         return this.state
     }
@@ -133,7 +135,9 @@ class RecordingHotDatabase implements HotDatabase<RecorderStore> {
         cb: (store: RecorderStore, sliceBeg: number, sliceEnd: number) => Promise<unknown>,
     ): Promise<void> {
         const store: RecorderStore = {blocks: []}
-        await cb(store, 0, info.newBlocks.length)
+        for (let sliceBeg = 0; sliceBeg < info.newBlocks.length; sliceBeg += this.hotGroupSize) {
+            await cb(store, sliceBeg, Math.min(sliceBeg + this.hotGroupSize, info.newBlocks.length))
+        }
         this.hotTransacts.push({info, blocks: store.blocks})
     }
 }
@@ -220,6 +224,21 @@ describe('Processor', () => {
         expect(recorder.state).toMatchObject({height: 4, hash: '0x4'})
     })
 
+    it('rejects non-continuous block order inside a batch', async () => {
+        const chain: TestBlock[] = [
+            {header: {number: 0, hash: '0x0'}},
+            {header: {number: 2, hash: '0x2'}},
+            {header: {number: 1, hash: '0x1'}},
+        ]
+
+        const src = new InProcessSource(chain)
+        const db = new RecordingFinalDatabase()
+        const processor = new Processor<TestBlock, RecorderStore>(src, db, async () => {})
+
+        await expect(processor.run()).rejects.toThrow(/Data is not continuous/)
+        expect(db.transacts).toHaveLength(0)
+    })
+
     it('drives linear progress through a HotDatabase via transactHot2', async () => {
         // Same five blocks, but fed through a HotDatabase. BlockBatch carries
         // no finalizedHead, so every block is treated as unfinalized and
@@ -242,8 +261,7 @@ describe('Processor', () => {
         expect(db.hotTransacts).toHaveLength(1)
         const only = db.hotTransacts[0]
         expect(only.info.baseHead).toMatchObject({height: -1, hash: '0x'})
-        // With no finalizedHead in the batch, Processor falls back to the
-        // tip of newBlocks for its own finalizedHead argument.
+        expect(only.info.finalizedHead).toMatchObject({height: -1, hash: '0x'})
         expect(only.info.newBlocks.map((b) => ({height: b.height, hash: b.hash}))).toEqual([
             {height: 0, hash: '0x0'},
             {height: 1, hash: '0x1'},
@@ -254,43 +272,13 @@ describe('Processor', () => {
         expect(only.blocks.map((b) => b.header.number)).toEqual([0, 1, 2, 3, 4])
     })
 
-    it('handles a shallow reorg via ForkException: second getStream call resumes on the new branch', async () => {
-        // Main chain: 0..4. Fork at height 2 (common ancestor) with 2
-        // divergent blocks on top (3a, 4a). First getStream yields the
-        // main chain, then throws ForkException(previousBlocks = main
-        // with divergent 3/4 — this is what a Portal-like source would
-        // emit when its view differs at the tip). Processor catches
-        // the ForkException, rewinds state.unfinalizedHeads to the
-        // common-ancestor point (height 2), and re-requests the stream.
-        // Second getStream yields the alternate branch (3a, 4a) from
-        // parentHash = main[2].hash.
-        const mainHeaders = buildChain({from: 0, to: 4})
-        const main = wrap(mainHeaders)
-        const forkHeaders = forkAt(mainHeaders, {at: 2, length: 2, suffix: 'a'})
-        const fork = wrap(forkHeaders)
+    it('builds hot state from transactHot2 slice tips only', async () => {
+        const chain = wrap(buildChain({from: 0, to: 4}))
 
-        // previousBlocks tells Processor "these are the blocks I (the data
-        // source) claim I've already served"; the hash divergence at height 3
-        // is what triggers the rollback. The common prefix with the
-        // Processor's committed state is [0, 1, 2].
-        const forkException = new ForkException(5, '0x4a', [
-            {number: 0, hash: '0x0'},
-            {number: 1, hash: '0x1'},
-            {number: 2, hash: '0x2'},
-            {number: 3, hash: '0x3a'},
-            {number: 4, hash: '0x4a'},
+        const src = new ProgrammableSource(chain).addStreamCall([
+            {kind: 'yield', batch: {blocks: chain, finalizedHead: undefined}},
         ])
-
-        const src = new ProgrammableSource(main)
-            // Call 1: yield main, then fork.
-            .addStreamCall([
-                {kind: 'yield', batch: {blocks: main, finalizedHead: undefined}},
-                {kind: 'fork', fork: forkException},
-            ])
-            // Call 2 (post-handleFork): yield the alternate branch.
-            .addStreamCall([{kind: 'yield', batch: {blocks: fork, finalizedHead: undefined}}])
-
-        const db = new RecordingHotDatabase()
+        const db = new RecordingHotDatabase(2)
 
         const processor = new Processor<TestBlock, RecorderStore>(src, db, async (ctx) => {
             for (const block of ctx.blocks) {
@@ -300,29 +288,70 @@ describe('Processor', () => {
 
         await processor.run()
 
-        // Two transactHot2 calls, one per branch.
-        expect(db.hotTransacts).toHaveLength(2)
+        expect(db.hotTransacts).toHaveLength(1)
+        expect(db.hotTransacts[0].blocks.map((b) => b.header.number)).toEqual([0, 1, 2, 3, 4])
+        expect(
+            (processor as unknown as {state: {unfinalizedHeads: BlockRef[]}}).state.unfinalizedHeads
+        ).toEqual([
+            {number: 1, hash: '0x1'},
+            {number: 3, hash: '0x3'},
+            {number: 4, hash: '0x4'},
+        ])
+    })
 
-        const firstPass = db.hotTransacts[0]
-        expect(firstPass.info.baseHead).toMatchObject({height: -1, hash: '0x'})
-        expect(firstPass.info.newBlocks.map((b) => b.hash)).toEqual(['0x0', '0x1', '0x2', '0x3', '0x4'])
+    it('rolls back to the nearest known sparse head', async () => {
+        // Current sparse state is [1, 2, 6]. The fork view reaches block 4
+        // through the same block 2, so Processor should rewind
+        // state.unfinalizedHeads to the nearest known common point [1, 2]
+        // and re-request the stream from parentHash = 0x2.
+        const forkException = new ForkException(4, '0x4-fork', [
+            {number: 1, hash: '0x1'},
+            {number: 2, hash: '0x2'},
+            {number: 4, hash: '0x4-fork'},
+        ])
+        const forkBlocks: TestBlock[] = [
+            {header: {number: 3, hash: '0x3-fork'}},
+            {header: {number: 4, hash: '0x4-fork'}},
+        ]
 
-        const reorg = db.hotTransacts[1]
-        // baseHead at the common-ancestor block (height 2, hash 0x2).
-        expect(reorg.info.baseHead).toMatchObject({height: 2, hash: '0x2'})
-        expect(reorg.info.newBlocks.map((b) => b.hash)).toEqual(['0x3a', '0x4a'])
+        const src = new ProgrammableSource(forkBlocks)
+            .addStreamCall([{kind: 'fork', fork: forkException}])
+            .addStreamCall([{kind: 'yield', batch: {blocks: forkBlocks, finalizedHead: undefined}}])
+
+        const db = new RecordingHotDatabase()
+        db.state = {
+            height: -1,
+            hash: '0x',
+            top: [
+                {height: 1, hash: '0x1'},
+                {height: 2, hash: '0x2'},
+                {height: 6, hash: '0x6'},
+            ],
+        }
+
+        const processor = new Processor<TestBlock, RecorderStore>(src, db, async () => {})
+
+        await processor.run()
+
+        expect(db.hotTransacts).toHaveLength(1)
+        // baseHead at the nearest known sparse common block (height 2, hash 0x2).
+        expect(db.hotTransacts[0].info.baseHead).toMatchObject({height: 2, hash: '0x2'})
+        expect(db.hotTransacts[0].info.newBlocks.map(b => b.hash)).toEqual(['0x3-fork', '0x4-fork'])
     })
 
     it('handles a deep reorg (>10 blocks) via ForkException', async () => {
         // Main 0..12 (13 blocks). Fork at height 3, length 9 → replaces
         // blocks 4..12 with 4a..12a. ForkException.previousBlocks carries
         // the source's new view so findRollbackIndex can locate the common
-        // prefix [0, 1, 2, 3].
+        // prefix when sparse hot state has it; otherwise the processor is
+        // allowed to roll back deeper.
         const mainHeaders = buildChain({from: 0, to: 12})
         const main = wrap(mainHeaders)
         const forkHeaders = forkAt(mainHeaders, {at: 3, length: 9, suffix: 'a'})
-        const fork = wrap(forkHeaders)
+        const replay = wrap(joinFork(mainHeaders, forkHeaders))
 
+        // previousBlocks tells Processor what the source now considers the
+        // already-served chain. Hash divergence at height 4 triggers rollback.
         const forkException = new ForkException(13, '0x12a', [
             {number: 0, hash: '0x0'},
             {number: 1, hash: '0x1'},
@@ -344,7 +373,7 @@ describe('Processor', () => {
                 {kind: 'yield', batch: {blocks: main, finalizedHead: undefined}},
                 {kind: 'fork', fork: forkException},
             ])
-            .addStreamCall([{kind: 'yield', batch: {blocks: fork, finalizedHead: undefined}}])
+            .addStreamCall([{kind: 'yield', batch: {blocks: replay, finalizedHead: undefined}}])
 
         const db = new RecordingHotDatabase()
 
@@ -358,19 +387,8 @@ describe('Processor', () => {
 
         expect(db.hotTransacts).toHaveLength(2)
         const reorg = db.hotTransacts[1]
-        expect(reorg.info.baseHead).toMatchObject({height: 3, hash: '0x3'})
-        expect(reorg.info.newBlocks).toHaveLength(9)
-        expect(reorg.info.newBlocks.map((b) => b.hash)).toEqual([
-            '0x4a',
-            '0x5a',
-            '0x6a',
-            '0x7a',
-            '0x8a',
-            '0x9a',
-            '0x10a',
-            '0x11a',
-            '0x12a',
-        ])
+        expect(reorg.info.baseHead).toMatchObject({height: -1, hash: '0x'})
+        expect(reorg.info.newBlocks.map((b) => b.hash)).toEqual(replay.map((b) => b.header.hash))
     })
 
     it('handles cascading reorgs: two sequential ForkExceptions', async () => {
@@ -378,17 +396,18 @@ describe('Processor', () => {
         // fork A:                 3 — 4a — 5a    (common ancestor at height 3)
         // fork B:         1 — 2 — 3b — 4b — 5b — 6b — 7b (deeper — common at 1)
         //
-        // Three getStream calls, three transactHot2 commits, each baseHead
-        // sitting progressively deeper than the previous.
+        // Three getStream calls, three transactHot2 commits. With dense hot
+        // state each baseHead would sit progressively deeper than the previous;
+        // with sparse state, rollback can land on an earlier known slice head.
         const mainHeaders = buildChain({from: 0, to: 4})
         const main = wrap(mainHeaders)
 
         const branchAHeaders = forkAt(mainHeaders, {at: 3, length: 2, suffix: 'a'}) // 4a, 5a
-        const branchA = wrap(branchAHeaders)
         const afterAHeaders = joinFork(mainHeaders, branchAHeaders)
+        const replayA = wrap(afterAHeaders).slice(1)
 
         const branchBHeaders = forkAt(afterAHeaders, {at: 1, length: 6, suffix: 'b'}) // 2b..7b
-        const branchB = wrap(branchBHeaders)
+        const replayB = wrap(joinFork(afterAHeaders, branchBHeaders)).slice(1)
 
         // First ForkException: source realises its chain at heights 4..5 (or
         // beyond) differs from what it served. The fork view here retains
@@ -403,9 +422,9 @@ describe('Processor', () => {
         ])
 
         // Second ForkException: now the source's view has shifted deeper —
-        // diverges from the Processor's committed chain (which currently
-        // holds [1, 2, 3, 4a, 5a] in unfinalizedHeads) at height 2.
-        // previousBlocks shows the fork B chain starting from height 1.
+        // diverges from the Processor's committed chain. With sparse hot
+        // state, previousBlocks can prove the finalized genesis base, but not
+        // every intermediate hot block.
         const forkB = new ForkException(8, '0x7b', [
             {number: 0, hash: '0x0'},
             {number: 1, hash: '0x1'},
@@ -419,10 +438,9 @@ describe('Processor', () => {
 
         // Pin finalizedHead at genesis in every batch so that ProcessorState's
         // chain = [finalizedHead, ...unfinalizedHeads] always has a stable
-        // chain[0] to drop in chain.slice(1, …). Without this anchor, the
-        // slice drops the first *unfinalized* block and state drifts after
-        // cascading reorgs — a latent slicing asymmetry that would show up
-        // as baseHead resetting to genesis on the third commit.
+        // chain[0] to drop in chain.slice(1, ...). Without this anchor, the
+        // slice drops the first unfinalized block and state drifts after
+        // cascading reorgs.
         const anchoredFinalized = {number: 0, hash: '0x0'}
         const src = new ProgrammableSource(main)
             .addStreamCall([
@@ -430,10 +448,10 @@ describe('Processor', () => {
                 {kind: 'fork', fork: forkA},
             ])
             .addStreamCall([
-                {kind: 'yield', batch: {blocks: branchA, finalizedHead: anchoredFinalized}},
+                {kind: 'yield', batch: {blocks: replayA, finalizedHead: anchoredFinalized}},
                 {kind: 'fork', fork: forkB},
             ])
-            .addStreamCall([{kind: 'yield', batch: {blocks: branchB, finalizedHead: anchoredFinalized}}])
+            .addStreamCall([{kind: 'yield', batch: {blocks: replayB, finalizedHead: anchoredFinalized}}])
 
         const db = new RecordingHotDatabase()
 
@@ -447,22 +465,15 @@ describe('Processor', () => {
         expect(db.hotTransacts[0].info.baseHead).toMatchObject({height: -1, hash: '0x'})
         expect(db.hotTransacts[0].info.newBlocks.map((b) => b.hash)).toEqual(['0x0', '0x1', '0x2', '0x3', '0x4'])
 
-        // Second commit: after rolling back to the common ancestor at height 3.
-        expect(db.hotTransacts[1].info.baseHead).toMatchObject({height: 3, hash: '0x3'})
-        expect(db.hotTransacts[1].info.newBlocks.map((b) => b.hash)).toEqual(['0x4a', '0x5a'])
+        // Second commit: the real common ancestor is height 3, but sparse
+        // state only proves finalized genesis, so replay starts from block 1.
+        expect(db.hotTransacts[1].info.baseHead).toMatchObject({height: 0, hash: '0x0'})
+        expect(db.hotTransacts[1].info.newBlocks.map((b) => b.hash)).toEqual(replayA.map((b) => b.header.hash))
 
-        // Third commit: after rolling back to the deeper common ancestor at
-        // height 1 — the cascading reorg has collapsed the entire branch A
-        // suffix on top of its second rollback.
-        expect(db.hotTransacts[2].info.baseHead).toMatchObject({height: 1, hash: '0x1'})
-        expect(db.hotTransacts[2].info.newBlocks.map((b) => b.hash)).toEqual([
-            '0x2b',
-            '0x3b',
-            '0x4b',
-            '0x5b',
-            '0x6b',
-            '0x7b',
-        ])
+        // Third commit: the real common ancestor is height 1, but the
+        // cascading sparse rollback again starts from finalized genesis.
+        expect(db.hotTransacts[2].info.baseHead).toMatchObject({height: 0, hash: '0x0'})
+        expect(db.hotTransacts[2].info.newBlocks.map((b) => b.hash)).toEqual(replayB.map((b) => b.header.hash))
     })
 
     it('forwards BlockBatch.finalizedHead into transactHot2.info.finalizedHead', async () => {
@@ -515,31 +526,7 @@ describe('Processor', () => {
         await expect(processor.run()).rejects.toThrow(/simulated handler crash/)
     })
 
-    // FIXME: TEST NEEDS TO BE FIXED — the production code it targets is buggy.
-    //
-    // What's wrong: processBatch in run.ts starts with
-    //     if (blocks.length === 0) return
-    // before any of the finalizedHead forwarding logic. A BlockBatch that
-    // carries no new blocks but advances finalizedHead is silently dropped:
-    // state.finalizedHead never updates, no transactHot2 is issued, and the
-    // persistence layer never learns that finality moved. If a real data
-    // source emits such a batch (e.g. a Portal response with no new blocks
-    // but a fresh X-Sqd-Finalized-Head-* header), the processor sits stale
-    // until the next new tip arrives.
-    //
-    // This is the same class of bug as hot.ts:56 (HotProcessor.goto() early
-    // return). Both layers need to update finality when only finality has
-    // moved; skipping on `blocks.length === 0` discards a legitimate signal.
-    //
-    // Fix direction in run.ts: drop the early return, or gate it on
-    // `blocks.length === 0 && finalizedHeadData == null`. Any batch that
-    // carries at least one non-null signal (blocks OR finalizedHead) must
-    // be processed.
-    //
-    // Wrapped in `it.fails`. When run.ts is fixed, vitest reports an
-    // unexpected pass — the signal to remove this FIXME and replace
-    // `it.fails(...)` with a regular `it(...)`.
-    it.fails('processes a finality-only batch (empty blocks, advanced finalizedHead)', async () => {
+    it('processes a finality-only batch (empty blocks, advanced finalizedHead)', async () => {
         const chain = wrap(buildChain({from: 0, to: 2}))
         const src = new ProgrammableSource(chain).addStreamCall([
             // Initial batch with three blocks and no finality.
@@ -554,10 +541,8 @@ describe('Processor', () => {
 
         await processor.run()
 
-        // Expected behavior: the finality-only batch reaches the database as
-        // a transactHot2 call whose info.finalizedHead is the advanced head.
-        // Actual: processBatch returns early on blocks.length === 0, so only
-        // one transactHot2 call is ever issued.
+        // The finality-only batch must still reach the database so hot rows
+        // can be promoted even when no new best block arrived.
         expect(db.hotTransacts).toHaveLength(2)
         expect(db.hotTransacts[1].info.finalizedHead).toMatchObject({height: 2, hash: '0x2'})
         expect(db.hotTransacts[1].info.newBlocks).toEqual([])

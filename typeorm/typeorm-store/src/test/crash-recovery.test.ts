@@ -135,14 +135,13 @@ describe('TypeormDatabase — crash recovery', function () {
     })
 
     describe('connect() with corrupted internal state', () => {
-        it('handles hot blocks that wrote no change-log entries (no-op handler)', async function () {
+        it('handles hot blocks where the user handler made no writes', async function () {
             await db.connect()
 
             // Three hot blocks, each processed by a no-op handler. hot_block
-            // gets three rows; hot_change_log stays empty. This is an
-            // entirely legitimate state — a block that didn't write anything
-            // shouldn't leave any change-log entries — but it exercises the
-            // "orphan hot_block" reconstruction path on reconnect.
+            // gets three rows; hot_change_log holds the per-block sentinel
+            // marker rows that connect() uses to distinguish official inserts
+            // from manual corruption.
             await db.transactHot2(
                 {
                     baseHead: {height: -1, hash: '0x'},
@@ -162,7 +161,7 @@ describe('TypeormDatabase — crash recovery', function () {
             ).toBe(3)
             expect(
                 Number((await em.query('SELECT COUNT(*)::int AS n FROM squid_processor.hot_change_log'))[0].n),
-            ).toBe(0)
+            ).toBe(3)
 
             // Reconnect: state reflects all three hot blocks, each with
             // empty templates.
@@ -177,42 +176,7 @@ describe('TypeormDatabase — crash recovery', function () {
             ])
         })
 
-        // FIXME: TEST NEEDS TO BE FIXED — documents a latent integrity gap in
-        // connect()'s state reconstruction.
-        //
-        // What's wrong: connect() builds state from three sources:
-        //     - status (the single finalized head row)
-        //     - hot_block (one row per unfinalized block)
-        //     - template_registry (indexed by height)
-        // Finalized templates come from `WHERE height <= status.height`, and
-        // each hot block's templates come from `WHERE height = block.height`.
-        // A template_registry row whose height is neither ≤ status.height nor
-        // present in hot_block is simply ignored — the row stays in the table
-        // forever, invisible to state and leaking one slot of disk + index
-        // pressure per occurrence.
-        //
-        // How an orphan can appear today: in principle every template-registry
-        // insert happens inside the same submit() transaction that inserts
-        // the hot_block row, so a successful commit leaves them in sync. But
-        // the state can diverge if:
-        //   - a human (or migration) manually edits these tables;
-        //   - a future refactor separates template writes from hot_block writes
-        //     into distinct transactions;
-        //   - a bug we haven't found yet causes a half-commit.
-        // The symptom is silent data loss — the template "disappears" from
-        // the processor's view without any indication anything is wrong.
-        //
-        // Fix direction: on connect(), either (a) delete every
-        // template_registry row whose height is > status.height and not in
-        // hot_block (with a warning log), or (b) refuse to start and surface
-        // the orphan heights so operators can decide. The delete option is
-        // safe because the row was already invisible to state.
-        //
-        // Wrapped in `it.fails`. When connect() gains orphan handling, vitest
-        // reports an unexpected pass — the signal to remove this FIXME and
-        // replace `it.fails(...)` with a regular `it(...)` (or update the
-        // assertion to match a different decided policy).
-        it.fails('removes orphan template_registry rows whose height matches no state', async function () {
+        it('removes orphan template_registry rows whose height matches no state', async function () {
             await db.connect()
 
             // Seed an orphan: height 999 is way past anything status or
@@ -235,35 +199,7 @@ describe('TypeormDatabase — crash recovery', function () {
             expect(Number(remaining)).toBe(0)
         })
 
-        // FIXME: TEST NEEDS TO BE FIXED — documents the "orphan hot_block"
-        // corruption mode (inv-16 case A).
-        //
-        // What's wrong: if a transactHot2 commits the hot_block INSERT but
-        // somehow fails to insert any hot_change_log entries for that
-        // height (e.g. mid-write crash of the database itself, manual
-        // intervention, restore from a partial backup), reconnect leaves
-        // the table in a state where `hot_block` has a row at height H
-        // but `hot_change_log` has none.
-        //
-        // The existing "no-op handler" test above pins the LEGITIMATE case:
-        // a block whose user handler made zero writes. There's no way at
-        // connect() time to tell the legitimate case apart from the
-        // pathological corruption — both produce exactly the same table
-        // state. Reconnect silently accepts and, on the next fork, the
-        // rollback of that height reverts zero user-table rows, orphaning
-        // whatever the crashed transactHot2 actually committed to the user
-        // tables before dying.
-        //
-        // Fix direction: have transactHot2 always INSERT at least one
-        // sentinel row into hot_change_log per hot block (a no-op marker),
-        // so connect() can detect the difference between "legit no-op"
-        // (marker present) and "pathological" (nothing at all). Or: at
-        // connect(), cross-check the data layer for any evidence that the
-        // block's writes landed, and surface an error if inconsistent.
-        //
-        // Wrapped in `it.fails`. When the ambiguity is resolved, this flips
-        // to pass — signal to re-assess what connect() should actually do.
-        it.fails('detects or repairs an orphan hot_block row (hot_block without change-log entries)', async function () {
+        it('detects or repairs an orphan hot_block row (hot_block without change-log entries)', async function () {
             await db.connect()
 
             // Simulate the corruption directly: an INSERT of a hot_block
@@ -288,39 +224,7 @@ describe('TypeormDatabase — crash recovery', function () {
             expect(Number(surviving)).toBe(0)
         })
 
-        // FIXME: TEST NEEDS TO BE FIXED — documents the "orphan hot_change_log"
-        // corruption mode (inv-16 case B).
-        //
-        // What's wrong: hot_change_log has a FK `block_height references
-        // hot_block(height) on delete cascade`, so in normal operation a
-        // log row without a matching hot_block row cannot exist — the FK
-        // prevents the INSERT and the cascade removes entries when
-        // hot_block is deleted.
-        //
-        // It can still be reached out-of-band:
-        //   - manual DB intervention (DBA deletes from hot_block bypassing
-        //     the cascade via ALTER TABLE / constraint disable);
-        //   - partial restore from a backup taken mid-transaction;
-        //   - future refactor that relaxes the FK.
-        // In all three cases, connect() reads hot_change_log without
-        // cross-checking against hot_block. Dangling log rows accumulate
-        // and silently contribute no rollback work (a later rollbackBlock
-        // for a no-longer-existing height matches them via DELETE but
-        // doesn't replay them in reverse as part of any active block).
-        //
-        // Fix direction: on connect(), either (a) delete any hot_change_log
-        // row whose block_height is not in hot_block (with a warning log),
-        // or (b) refuse to start and surface the count.
-        //
-        // This test temporarily drops the FK so we can install an orphan
-        // log row deterministically on both Postgres and CockroachDB
-        // (DISABLE TRIGGER ALL requires superuser on Postgres and doesn't
-        // exist on CockroachDB, making the trigger-disable approach non-
-        // portable).
-        //
-        // Wrapped in `it.fails`. When connect() gains orphan handling, it
-        // flips to pass.
-        it.fails('removes orphan hot_change_log rows whose block_height matches no hot_block', async function () {
+        it('removes orphan hot_change_log rows whose block_height matches no hot_block', async function () {
             await db.connect()
 
             const em = await getEntityManager()

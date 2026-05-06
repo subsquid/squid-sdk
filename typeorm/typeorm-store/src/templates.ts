@@ -23,7 +23,7 @@ export class TemplateRegistryTracker {
             await this.em.query(
                 `INSERT INTO ${s}.template_registry (key, value, type, block_number, height) ` +
                     `VALUES ($1, $2, $3, $4, $5) ` +
-                    `ON CONFLICT (key, value, type, block_number) DO NOTHING`,
+                    `ON CONFLICT (key, value, type, block_number, height) DO NOTHING`,
                 [m.key, m.value, m.type === 'add', m.blockNumber, this.height]
             )
         }
