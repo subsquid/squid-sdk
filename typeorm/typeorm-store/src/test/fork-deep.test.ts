@@ -96,8 +96,7 @@ describe('TypeormDatabase — deep fork scenarios', function () {
         await db.connect()
 
         // Feed 200 hot blocks. transactHot2 groups the user callback for
-        // performance, but every block in every group still gets its own
-        // hot_block row so any height is addressable as baseHead.
+        // performance, and only group tips get hot_block rows.
         const mainBlocks = Array.from({length: 200}, (_, i) => ({
             height: i,
             hash: `main-${i}`,
@@ -115,14 +114,14 @@ describe('TypeormDatabase — deep fork scenarios', function () {
         const em = await getEntityManager()
         const rows: {height: number}[] = await em.query('SELECT height FROM squid_processor.hot_block ORDER BY height')
         const persistedHeights = rows.map((r) => Number(r.height))
-        expect(persistedHeights).toEqual(mainBlocks.map((b) => b.height))
+        expect(persistedHeights).toEqual(mainBlocks.map((b) => b.height).filter((h) => h % 2 === 1))
 
-        // Fork at a mid-group height — the processor must locate baseHead
+        // Fork at a persisted group tip — the processor must locate baseHead
         // in state.top and roll back cleanly.
         await db.transactHot(
             {
-                baseHead: {height: 72, hash: 'main-72'},
-                newBlocks: [{height: 73, hash: 'fork-73'}],
+                baseHead: {height: 73, hash: 'main-73'},
+                newBlocks: [{height: 74, hash: 'fork-74'}],
                 finalizedHead: {height: -1, hash: '0x'},
             },
             async () => {},
@@ -131,6 +130,6 @@ describe('TypeormDatabase — deep fork scenarios', function () {
         const after: {height: number; hash: string}[] = await em.query(
             'SELECT height, hash FROM squid_processor.hot_block ORDER BY height',
         )
-        expect(after[after.length - 1]).toMatchObject({height: 73, hash: 'fork-73'})
+        expect(after[after.length - 1]).toMatchObject({height: 74, hash: 'fork-74'})
     })
 })
