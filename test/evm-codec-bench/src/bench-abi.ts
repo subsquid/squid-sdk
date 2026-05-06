@@ -1,15 +1,13 @@
 /**
- * Facade-level benchmark for `AbiEvent.decode` and `AbiFunction.encode`
- * / `AbiFunction.decode`.
+ * Facade-level benchmark for `AbiEvent.encode` / `AbiEvent.decode` and
+ * `AbiFunction.encode` / `AbiFunction.decode`.
  *
  * Three variants go through the same timing loop:
  *   - `new (JIT)`  — locally built `@subsquid/evm-abi`
  *   - `old (loop)` — last published baseline from npm (alias `evm-abi-old`)
- *   - `viem`       — `decodeEventLog` / `encodeFunctionData` /
+ *   - `viem`       — `encodeEventTopics` + `encodeAbiParameters` /
+ *                    `decodeEventLog` / `encodeFunctionData` /
  *                    `decodeFunctionData`
- *
- * Viem doesn't have a direct `AbiEvent.encode` analogue, so there is no
- * `viem` variant in the event-encode section — only decode is compared.
  */
 import * as NEW_ABI from '@subsquid/evm-abi'
 import * as NEW_CODEC from '@subsquid/evm-codec'
@@ -19,8 +17,10 @@ import {strict as assert} from 'node:assert'
 import {
     type AbiEvent as ViemAbiEvent,
     type AbiFunction as ViemAbiFunction,
+    encodeAbiParameters,
     decodeEventLog,
     decodeFunctionData,
+    encodeEventTopics,
     encodeFunctionData,
     parseAbiItem,
 } from 'viem'
@@ -71,8 +71,9 @@ const ERC20_TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a116
 const TRANSFER_EVENT = parseAbiItem(
     'event Transfer(address indexed from, address indexed to, uint256 value)',
 ) as ViemAbiEvent
+const TRANSFER_DATA_PARAMS = [{type: 'uint256'}] as const
 
-function buildEventDecodeVariants(): Variant[] {
+function buildEventVariants(): Variant[] {
     const newEvent = NEW_ABI.event(ERC20_TRANSFER_TOPIC, {
         from: NEW_ABI.indexed(NEW_CODEC.address),
         to: NEW_ABI.indexed(NEW_CODEC.address),
@@ -86,10 +87,18 @@ function buildEventDecodeVariants(): Variant[] {
     })
 
     return [
-        {label: 'new (JIT)', decode: (rec: any) => newEvent.decode(rec)},
+        {label: 'new (JIT)', encode: (args: any) => newEvent.encode(args), decode: (rec: any) => newEvent.decode(rec)},
         {label: 'old (loop)', decode: (rec: any) => oldEvent.decode(rec)},
         {
             label: 'viem',
+            encode: (args: any) => ({
+                topics: encodeEventTopics({
+                    abi: [TRANSFER_EVENT],
+                    eventName: 'Transfer',
+                    args: {from: args.from, to: args.to},
+                }),
+                data: encodeAbiParameters(TRANSFER_DATA_PARAMS, [args.value]),
+            }),
             decode: (rec: any) => {
                 const {args} = decodeEventLog({abi: [TRANSFER_EVENT], topics: rec.topics, data: rec.data})
                 return args
@@ -99,19 +108,38 @@ function buildEventDecodeVariants(): Variant[] {
 }
 
 function benchTransferEventDecode(): void {
-    console.log('\n=== AbiEvent.decode: ERC-20 Transfer (200,000 iters) ===')
+    console.log('\n=== AbiEvent.encode/decode: ERC-20 Transfer (200,000 iters) ===')
     const iters = 200_000
-
-    const rec = {
-        topics: [
-            ERC20_TRANSFER_TOPIC,
-            `0x${'00'.repeat(12)}${ADDR_FROM.slice(2)}`,
-            `0x${'00'.repeat(12)}${ADDR_TO.slice(2)}`,
-        ],
-        data: `0x${(123_456_789_012_345n).toString(16).padStart(64, '0')}`,
+    const args = {
+        from: ADDR_FROM,
+        to: ADDR_TO,
+        value: 123_456_789_012_345n,
     }
 
-    const variants = buildEventDecodeVariants()
+    const variants = buildEventVariants()
+
+    const encodeVariants = variants.filter((v) => v.encode)
+    const encodedAll: Record<string, {topics: string[]; data: string}> = {}
+    for (const v of encodeVariants) encodedAll[v.label] = v.encode!(args)
+    const encodeParity =
+        new Set(Object.values(encodedAll).map((rec) => asJson({
+            topics: rec.topics.map((topic) => topic.toLowerCase()),
+            data: rec.data.toLowerCase(),
+        }))).size === 1
+    console.log(`  encode parity: ${encodeParity ? 'OK' : 'MISMATCH'}`)
+    if (!encodeParity) {
+        for (const [k, rec] of Object.entries(encodedAll)) console.log(`    ${k}: ${asJson(rec)}`)
+    }
+
+    console.log('  encode:')
+    const encOps: Record<string, number> = {}
+    for (const v of encodeVariants) {
+        encOps[v.label] = timeIt(v.label, iters, () => {
+            v.encode!(args)
+        })
+    }
+
+    const rec = encodedAll['new (JIT)']
 
     // Parity: all three must produce deep-equal decoded args. viem
     // returns lowercase addresses with checksum mixing — so compare by
@@ -137,7 +165,7 @@ function benchTransferEventDecode(): void {
             v.decode(rec)
         })
     }
-    printSpeedup({decode: decOps}, ['old (loop)', 'viem'], ['decode'])
+    printSpeedup({encode: encOps, decode: decOps}, ['old (loop)', 'viem'], ['encode', 'decode'])
 }
 
 // ----------------------------------------------------------------------

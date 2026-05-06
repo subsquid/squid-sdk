@@ -143,7 +143,7 @@ describe('Event', () => {
 
         // Replace topic 1 with an invalid hex string so that uint256 decoding
         // throws (BigInt rejects non-hex digits).  rec.data remains valid.
-        const badTopic = '0x' + 'zz'.repeat(32)
+        const badTopic = `0x${'zz'.repeat(32)}`
         let err: Error | undefined
         try {
             event.decode({topics: [TOPIC, badTopic], data: rec.data})
