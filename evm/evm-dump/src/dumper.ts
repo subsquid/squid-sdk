@@ -16,6 +16,7 @@ interface Options extends DumperOptions {
     verifyTxSender?: boolean
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
+    verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
     assertLogIndex?: boolean
     useGasUsedForReceiptsRoot?: boolean
@@ -36,6 +37,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.option('--verify-tx-sender', 'Check if transaction sender matches sender recovered from signature')
         program.option('--verify-tx-root', 'Verify block transactions against transactions root')
         program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
+        program.option('--verify-withdrawals-root', 'Verify block withdrawals against withdrawals root')
         program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
         program.option('--assert-log-index', 'Assert that log indices within a block are sequential')
         program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
@@ -78,6 +80,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 verifyTxSender: this.options().verifyTxSender,
                 verifyTxRoot: this.options().verifyTxRoot,
                 verifyReceiptsRoot: this.options().verifyReceiptsRoot,
+                verifyWithdrawalsRoot: this.options().verifyWithdrawalsRoot,
                 verifyLogsBloom: this.options().verifyLogsBloom,
                 assertLogIndex: this.options().assertLogIndex,
                 useGasUsedForReceiptsRoot: this.options().useGasUsedForReceiptsRoot,

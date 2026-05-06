@@ -10,7 +10,7 @@ import {
     object,
     Validator
 } from '@subsquid/util-internal-validation'
-import { addErrorContext, groupBy, last } from '@subsquid/util-internal'
+import { addErrorContext, assertNotNull, groupBy, last } from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     GetBlock,
@@ -40,6 +40,7 @@ export interface RpcOptions {
     verifyTxSender?: boolean
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
+    verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
     assertLogIndex?: boolean
     useGasUsedForReceiptsRoot?: boolean
@@ -53,6 +54,7 @@ export class Rpc {
     private verifyTxSender?: boolean
     private verifyTxRoot?: boolean
     private verifyReceiptsRoot?: boolean
+    private verifyWithdrawalsRoot?: boolean
     private verifyLogsBloom?: boolean
     private assertLogIndex?: boolean
     private useGasUsedForReceiptsRoot?: boolean
@@ -67,6 +69,7 @@ export class Rpc {
         this.verifyTxSender = options.verifyTxSender
         this.verifyTxRoot = options.verifyTxRoot
         this.verifyReceiptsRoot = options.verifyReceiptsRoot
+        this.verifyWithdrawalsRoot = options.verifyWithdrawalsRoot
         this.verifyLogsBloom = options.verifyLogsBloom
         this.assertLogIndex = options.assertLogIndex
         this.useGasUsedForReceiptsRoot = options.useGasUsedForReceiptsRoot
@@ -192,6 +195,12 @@ export class Rpc {
                     })
                 }
             }
+        }
+
+        if (this.verifyWithdrawalsRoot && block.withdrawalsRoot != null) {
+            let withdrawals = assertNotNull(block.withdrawals)
+            let withdrawalsRoot = await utils.calculateWithdrawalsRoot(withdrawals)
+            assert.equal(block.withdrawalsRoot, withdrawalsRoot, 'failed to verify withdrawals root')
         }
 
         return {

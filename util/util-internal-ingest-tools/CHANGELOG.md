@@ -1,6 +1,11 @@
 # Change Log - @subsquid/util-internal-ingest-tools
 
-This log was last generated on Wed, 15 May 2024 13:21:08 GMT and should not be manually modified.
+This log was last generated on Tue, 05 May 2026 07:41:38 GMT and should not be manually modified.
+
+## 1.1.5
+Tue, 05 May 2026 07:41:38 GMT
+
+_Version update only_
 
 ## 1.1.4
 Wed, 15 May 2024 13:21:08 GMT
