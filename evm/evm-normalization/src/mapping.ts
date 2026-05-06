@@ -78,7 +78,7 @@ function* mapDebugFrame(
                         from: frame.from.toLowerCase(),
                         value: frame.value ?? undefined,
                         gas: frame.gas,
-                        init: frame.input,
+                        init: assertNotNull(frame.input),
                     },
                 }
 
@@ -114,7 +114,7 @@ function* mapDebugFrame(
                         to: assertNotNull(frame.to).toLowerCase(),
                         value: frame.value ?? undefined,
                         gas: frame.gas,
-                        input: frame.input,
+                        input: assertNotNull(frame.input),
                     }
                 }
 
@@ -563,7 +563,10 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         cumulativeGasUsed: receipt?.cumulativeGasUsed,
         effectiveGasPrice: receipt?.effectiveGasPrice ?? undefined,
         gasUsed: receipt?.gasUsed,
+        logsBloom: receipt?.logsBloom,
         status: receipt?.status ? qty2Int(receipt.status) : undefined,
+        blobGasUsed: receipt?.blobGasUsed ?? undefined,
+        blobGasPrice: receipt?.blobGasPrice ?? undefined,
         l1BaseFeeScalar: receipt?.l1BaseFeeScalar ? qty2Int(receipt.l1BaseFeeScalar) : undefined,
         l1BlobBaseFee: receipt?.l1BlobBaseFee ?? undefined,
         l1BlobBaseFeeScalar: receipt?.l1BlobBaseFeeScalar ? qty2Int(receipt.l1BlobBaseFeeScalar) : undefined,

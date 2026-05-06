@@ -89,6 +89,10 @@ export interface GatewaySettings {
      */
     url: string
     /**
+     * Subsquid Network API key. Defaults to SQD_API_KEY.
+     */
+    apiKey?: string
+    /**
      * Request timeout in ms
      */
     requestTimeout?: number
@@ -526,6 +530,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             client: new ArchiveClient({
                 http,
                 url: options.url,
+                apiKey: options.apiKey,
                 queryTimeout: options.requestTimeout,
                 log
             }),

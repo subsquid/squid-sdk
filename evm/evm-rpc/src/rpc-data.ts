@@ -316,6 +316,8 @@ export const Receipt = object({
     status: SMALL_QTY,
     to: option(BYTES),
     type: SMALL_QTY,
+    blobGasUsed: option(QTY),
+    blobGasPrice: option(QTY),
     l1Fee: option(QTY),
     l1FeeScalar: option(STRING_FLOAT),
     l1BaseFeeScalar: option(SMALL_QTY),
@@ -537,7 +539,7 @@ export const DebugFrame: Validator<DebugFrame> = object({
     type: STRING,
     from: BYTES,
     to: option(BYTES),
-    input: BYTES,
+    input: option(BYTES),
     output: option(BYTES),
     error: option(STRING),
     revertReason: option(STRING),
@@ -552,7 +554,7 @@ export interface DebugFrame {
     type: string
     from: Bytes
     to?: Bytes | null
-    input: Bytes
+    input?: Bytes | null
     output?: Bytes | null
     error?: string | null
     revertReason?: string | null

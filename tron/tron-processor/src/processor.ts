@@ -59,6 +59,10 @@ export interface GatewaySettings {
      */
     url: string
     /**
+     * Subsquid Network API key. Defaults to SQD_API_KEY.
+     */
+    apiKey?: string
+    /**
      * Request timeout in ms
      */
     requestTimeout?: number
@@ -288,6 +292,7 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
             new ArchiveClient({
                 http,
                 url: gateway.url,
+                apiKey: gateway.apiKey,
                 queryTimeout: gateway.requestTimeout,
                 log
             }),

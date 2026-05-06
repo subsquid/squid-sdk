@@ -18,6 +18,7 @@ import {
     GetBlock,
     Log,
     Receipt,
+    Withdrawal,
 } from './rpc-data'
 import {qty2Int} from './util'
 import {Bytes20, Bytes32, Qty} from './types'
@@ -881,4 +882,28 @@ export function calculateStateSyncTxHash(blockNum: Qty, blockHash: Bytes32) {
         decodeHex(blockHash)
     ])
     return toHex(keccak256(receiptKey))
+}
+
+
+function encodeWithdrawal(withdrawal: Withdrawal) {
+    return RLP.encode([
+        BigInt(withdrawal.index),
+        BigInt(withdrawal.validatorIndex),
+        decodeHex(withdrawal.address),
+        BigInt(withdrawal.amount),
+    ])
+}
+
+
+export async function withdrawalsRoot(withdrawals: Withdrawal[]) {
+    let trie = await createMPT()
+
+    for (let idx = 0; idx < withdrawals.length; idx++) {
+        let withdrawal = withdrawals[idx]
+        let key = RLP.encode(idx)
+        let value = encodeWithdrawal(withdrawal)
+        await trie.put(key, value)
+    }
+
+    return toHex(trie.root())
 }

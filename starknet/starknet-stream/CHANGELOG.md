@@ -1,6 +1,13 @@
 # Change Log - @subsquid/starknet-stream
 
-This log was last generated on Thu, 21 Aug 2025 10:51:03 GMT and should not be manually modified.
+This log was last generated on Tue, 05 May 2026 07:41:38 GMT and should not be manually modified.
+
+## 1.1.0
+Tue, 05 May 2026 07:41:38 GMT
+
+### Minor changes
+
+- allow GatewaySettings to provide an API key
 
 ## 1.0.0
 Thu, 21 Aug 2025 10:51:03 GMT
