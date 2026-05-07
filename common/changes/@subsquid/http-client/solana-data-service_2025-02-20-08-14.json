@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/http-client",
-      "comment": "handle ECONNRESET as retryable error",
+      "comment": "handle HTTP 408 and ECONNRESET as retryable errors",
       "type": "patch"
     }
   ],

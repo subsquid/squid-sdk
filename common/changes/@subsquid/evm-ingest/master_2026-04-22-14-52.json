@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-ingest",
-      "comment": "",
-      "type": "none"
+      "comment": "init EVM ingest CLI",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/evm-ingest"

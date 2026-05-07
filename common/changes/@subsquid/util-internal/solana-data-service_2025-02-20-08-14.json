@@ -14,6 +14,16 @@
       "packageName": "@subsquid/util-internal",
       "comment": "`concurrentMap()`: accept `Iterable` as stream",
       "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "add reusable array item removal helper",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "add maybe-last helper for optional arrays",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/util-internal"

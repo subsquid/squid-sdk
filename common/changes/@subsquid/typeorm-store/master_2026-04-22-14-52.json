@@ -2,6 +2,16 @@
   "changes": [
     {
       "packageName": "@subsquid/typeorm-store",
+      "comment": "harden hot block rollback and crash recovery handling",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "",
+      "type": "none"
+    },
+    {
+      "packageName": "@subsquid/typeorm-store",
       "comment": "",
       "type": "none"
     }

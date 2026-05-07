@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/hyperliquid-fills-ingest",
-      "comment": "",
-      "type": "none"
+      "comment": "init Hyperliquid fills ingest CLI",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/hyperliquid-fills-ingest"

@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/bitcoin-ingest",
-      "comment": "",
-      "type": "none"
+      "comment": "init Bitcoin ingest CLI",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/bitcoin-ingest"

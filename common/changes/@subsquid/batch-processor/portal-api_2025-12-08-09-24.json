@@ -1,10 +1,15 @@
 {
-    "changes": [
-      {
-        "packageName": "@subsquid/batch-processor",
-        "comment": "add support for unfinalized data sources",
-        "type": "minor"
-      }
-    ],
-    "packageName": "@subsquid/batch-processor"
-  }
+  "changes": [
+    {
+      "packageName": "@subsquid/batch-processor",
+      "comment": "use shared `DataSource` interfaces for finalized and unfinalized streams",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/batch-processor",
+      "comment": "add support for unfinalized data sources",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/batch-processor"
+}

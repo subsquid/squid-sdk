@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/bitcoin-data-service",
-      "comment": "",
-      "type": "none"
+      "comment": "init Bitcoin data service",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/bitcoin-data-service"

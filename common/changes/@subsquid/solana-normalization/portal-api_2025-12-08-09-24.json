@@ -4,6 +4,21 @@
       "packageName": "@subsquid/solana-normalization",
       "comment": "rename `slot` to `number`",
       "type": "major"
+    },
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "simplify instruction parsing procedure",
+      "type": "major"
+    },
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "allow to forgive log <-> instruction matching errors",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "",
+      "type": "none"
     }
   ],
   "packageName": "@subsquid/solana-normalization"

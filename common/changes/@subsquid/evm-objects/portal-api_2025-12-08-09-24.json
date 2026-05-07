@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-objects",
-      "comment": "init",
+      "comment": "init EVM object model helpers",
       "type": "patch"
     }
   ],

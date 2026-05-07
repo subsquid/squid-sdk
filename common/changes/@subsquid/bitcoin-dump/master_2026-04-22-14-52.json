@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/bitcoin-dump",
-      "comment": "",
-      "type": "none"
+      "comment": "init Bitcoin dump CLI",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/bitcoin-dump"

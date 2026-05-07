@@ -2,7 +2,12 @@
   "changes": [
     {
       "packageName": "@subsquid/util-internal-data-service",
-      "comment": "Added metrics for tracking block processing times and SLO compliance",
+      "comment": "init data service runtime helpers",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/util-internal-data-service",
+      "comment": "add metrics for block processing times and SLO compliance",
       "type": "minor"
     }
   ],

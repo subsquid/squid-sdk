@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/hyperliquid-fills-data-service",
-      "comment": "",
-      "type": "none"
+      "comment": "init Hyperliquid fills data service",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/hyperliquid-fills-data-service"

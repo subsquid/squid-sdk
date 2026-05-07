@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/util-internal-worker-thread",
-      "comment": "",
-      "type": "none"
+      "comment": "init worker thread RPC helpers",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/util-internal-worker-thread"

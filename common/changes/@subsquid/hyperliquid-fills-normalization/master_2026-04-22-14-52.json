@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/hyperliquid-fills-normalization",
-      "comment": "",
-      "type": "none"
+      "comment": "init Hyperliquid fills normalization pipeline",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/hyperliquid-fills-normalization"

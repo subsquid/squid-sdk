@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/bitcoin-normalization",
-      "comment": "",
-      "type": "none"
+      "comment": "init Bitcoin normalization pipeline",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/bitcoin-normalization"

@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-normalization",
-      "comment": "",
-      "type": "none"
+      "comment": "init EVM normalization pipeline",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/evm-normalization"

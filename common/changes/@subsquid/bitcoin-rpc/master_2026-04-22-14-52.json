@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/bitcoin-rpc",
-      "comment": "",
-      "type": "none"
+      "comment": "init Bitcoin RPC data source",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/bitcoin-rpc"

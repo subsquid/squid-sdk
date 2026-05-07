@@ -4,6 +4,16 @@
       "packageName": "@subsquid/rpc-client",
       "comment": "resend subscription request on connection loss",
       "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "treat HTTP 408 responses as retryable RPC errors",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "include snake_case average response time in RPC metrics",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/rpc-client"

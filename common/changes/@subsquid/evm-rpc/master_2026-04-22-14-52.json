@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-rpc",
-      "comment": "",
-      "type": "none"
+      "comment": "init EVM RPC data source",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/evm-rpc"

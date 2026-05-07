@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-data-service",
-      "comment": "",
-      "type": "none"
+      "comment": "init EVM data service",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/evm-data-service"

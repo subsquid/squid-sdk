@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-dump",
-      "comment": "",
-      "type": "none"
+      "comment": "init EVM dump CLI",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/evm-dump"

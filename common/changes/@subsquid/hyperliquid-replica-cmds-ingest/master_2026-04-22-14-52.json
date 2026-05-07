@@ -2,8 +2,8 @@
   "changes": [
     {
       "packageName": "@subsquid/hyperliquid-replica-cmds-ingest",
-      "comment": "",
-      "type": "none"
+      "comment": "init Hyperliquid replica command ingest CLI",
+      "type": "patch"
     }
   ],
   "packageName": "@subsquid/hyperliquid-replica-cmds-ingest"

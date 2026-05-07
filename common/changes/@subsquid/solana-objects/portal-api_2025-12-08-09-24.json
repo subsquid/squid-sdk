@@ -4,6 +4,11 @@
       "packageName": "@subsquid/solana-objects",
       "comment": "rename `slot` to `number`",
       "type": "major"
+    },
+    {
+      "packageName": "@subsquid/solana-objects",
+      "comment": "add item helpers for Portal-backed Solana data",
+      "type": "minor"
     }
   ],
   "packageName": "@subsquid/solana-objects"
