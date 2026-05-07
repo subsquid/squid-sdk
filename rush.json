@@ -61,7 +61,7 @@
      * The default value is false to avoid legacy compatibility issues.
      * It is strongly recommended to set strictPeerDependencies=true.
      */
-    // "strictPeerDependencies": true,
+    "strictPeerDependencies": true,
     /**
      * Configures the strategy used to select versions during installation.
      *
@@ -91,7 +91,7 @@
      *
      * The default value is false.
      */
-    // "preventManualShrinkwrapChanges": true,
+    "preventManualShrinkwrapChanges": true,
     /**
      * If true, then `rush install` will use the PNPM workspaces feature to perform the
      * install.
@@ -146,7 +146,7 @@
    * version. In those cases, you will need to add an entry to the "allowedAlternativeVersions"
    * section of the common-versions.json.
    */
-  // "ensureConsistentVersions": true,
+  "ensureConsistentVersions": true,
 
   /**
    * Large monorepos can become intimidating for newcomers if project folder paths don't follow

@@ -53,7 +53,7 @@ Running tests requires a recent version of [docker](https://www.docker.com).
 rush test
 
 # Run tests requiring git-lfs files
-rush data-test
+rush test:lfs
 
 # Run end to end test suite
 rush e2e
