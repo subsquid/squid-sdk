@@ -241,6 +241,48 @@ describe('HotProcessor', () => {
             // head; otherwise consumers would treat the tip as rolled back.
             expect(updates[1].baseHead).toMatchObject({height: 5, hash: '0x5'})
         })
+
+        it('retries finality-only updates when processing fails', async () => {
+            const main = buildChain({from: 1, to: 5})
+            const source = createMockDataSource<MockBlock>(main)
+            const updates: HotUpdate<MockBlock>[] = []
+            let failNextFinalityOnlyUpdate = false
+
+            const processor = new HotProcessor<MockBlock>(GENESIS, {
+                process: async (u) => {
+                    if (failNextFinalityOnlyUpdate && u.blocks.length === 0) {
+                        failNextFinalityOnlyUpdate = false
+                        throw new Error('transient process failure')
+                    }
+                    updates.push(u)
+                },
+                getBlock: source.getBlock,
+                getBlockRange: source.getBlockRange,
+                getHeader: source.getHeader,
+                getFinalizedBlockHeight: source.getFinalizedBlockHeight,
+            })
+
+            await processor.goto({best: main[4], finalized: main[0]})
+            expect(updates).toHaveLength(1)
+
+            failNextFinalityOnlyUpdate = true
+            await expect(processor.goto({
+                best: main[4],
+                finalized: main[2],
+            })).rejects.toThrow('transient process failure')
+
+            expect(updates).toHaveLength(1)
+
+            await processor.goto({
+                best: main[4],
+                finalized: main[2],
+            })
+
+            expect(updates).toHaveLength(2)
+            expect(updates[1].blocks).toEqual([])
+            expect(updates[1].finalizedHead).toMatchObject({height: 3, hash: '0x3'})
+            expect(processor.getFinalizedHeight()).toBe(3)
+        })
     })
 
     describe('finalize() edge cases', () => {

@@ -74,17 +74,18 @@ export class HotProcessor<B> {
         this.finalizedHead = heads.finalized
         if (this.isKnownBlock(heads.best)) {
             let prevFinalized = this.chain[0]
-            this.chain = await this.finalize(this.chain)
+            let chain = await this.finalize(this.chain)
             // Emit a no-block update so downstream consumers (DB writers,
             // rollback logic) actually observe the advanced finality;
             // updating internal state alone would leave them blind to it
             // until the next new tip arrives.
-            if (this.chain[0].height !== prevFinalized.height) {
+            if (chain[0].height !== prevFinalized.height) {
                 await this.o.process({
                     blocks: [],
-                    baseHead: last(this.chain),
-                    finalizedHead: this.chain[0],
+                    baseHead: last(chain),
+                    finalizedHead: chain[0],
                 })
+                this.chain = chain
             }
             return
         }
