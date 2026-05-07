@@ -9,6 +9,10 @@ export {
 } from './abi-components/function'
 export {event, AbiEvent, type EventRecord, type EventParams, type EventArgumentsInput, type TopicFilter, type IndexedTopicFilter} from './abi-components/event'
 export * from './errors'
-import keccak256 from 'keccak256'
+import {decodeHex, isHex} from '@subsquid/util-internal-hex'
+import {keccak_256} from 'js-sha3'
 
-export {keccak256}
+export function keccak256(data: Uint8Array | string): Buffer {
+    if (isHex(data)) data = decodeHex(data)
+    return Buffer.from(keccak_256.arrayBuffer(data))
+}

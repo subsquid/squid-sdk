@@ -15,9 +15,9 @@ const U64_MASK = 0xffffffffffffffffn
 const U128_MASK = (1n << 128n) - 1n
 
 export class BytesSink implements Sink {
-    private pos = 0
-    private buf: Uint8Array
-    private view: DataView
+    protected pos = 0
+    protected buf: Uint8Array
+    protected view: DataView
     private stack: {start: number; jumpBackPtr: number; size: number; countWord: boolean}[] = []
 
     constructor(fields: number, capacity = 1280) {
@@ -43,15 +43,43 @@ export class BytesSink implements Sink {
 
     reserve(additional: number): void {
         if (this.buf.length - this.pos < additional) {
-            this.#allocate(this.pos + additional)
+            this.allocate(this.pos + additional)
         }
+    }
+
+    written(): Uint8Array {
+        return this.buf.subarray(0, this.pos)
+    }
+
+    mark(): number {
+        return this.pos
+    }
+
+    raw(val: Uint8Array | string): void {
+        const bytes = typeof val === 'string' ? this.#stringToBytes(val) : val
+        this.reserve(bytes.length)
+        this.buf.set(bytes, this.pos)
+        this.pos += bytes.length
+    }
+
+    utf8(val: string): void {
+        this.raw(TEXT_ENCODER.encode(val))
+    }
+
+    padFrom(pos: number): void {
+        const rem = (this.pos - pos) % WORD_SIZE
+        if (rem === 0) return
+        const pad = WORD_SIZE - rem
+        this.reserve(pad)
+        this.buf.fill(0, this.pos, this.pos + pad)
+        this.pos += pad
     }
 
     size() {
         return this.stack[this.stack.length - 1].size
     }
 
-    #allocate(cap: number): void {
+    protected allocate(cap: number): void {
         cap = Math.max(cap, this.buf.length * 2)
         const buf = new Uint8Array(cap)
         buf.set(this.buf)

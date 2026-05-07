@@ -1,5 +1,6 @@
 import type {Simplify} from '../indexed'
 import {
+    BytesSink,
     HexSink,
     HexSrc,
     propAccess,
@@ -8,7 +9,7 @@ import {
     type DecodedStruct,
     type EncodedStruct,
 } from '@subsquid/evm-codec'
-import keccak256 from 'keccak256'
+import {keccak_256} from 'js-sha3'
 import {
     EventDecodingError,
     EventEmptyTopicsError,
@@ -63,182 +64,15 @@ export type IndexedTopicFilter<T extends EventArgs> = {
 }
 
 type NamedCodec = [string, Codec<any>]
-const U256_BASE = 1n << 256n
-const U256_MAX = U256_BASE - 1n
-const I256_MIN = -(1n << 255n)
-const I256_MAX = (1n << 255n) - 1n
 
 /** True when `codec` represents a Solidity reference type (must be hashed when indexed). */
 function isReferenceType(codec: Codec<any>): boolean {
     return codec.isDynamic || codec.baseType === 'array' || codec.baseType === 'struct'
 }
 
-function hexToBytes(hex: string): Buffer {
-    const h = hex.startsWith('0x') || hex.startsWith('0X') ? hex.slice(2) : hex
-    return Buffer.from(h, 'hex')
-}
-
-function toRawBytes(val: Uint8Array | string): Buffer {
-    if (typeof val === 'string') return hexToBytes(val)
-    return Buffer.from(val.buffer, val.byteOffset, val.byteLength)
-}
-
-class TopicSink {
-    private pos = 0
-    private buf = Buffer.allocUnsafe(256)
-
-    result(): Buffer {
-        return this.buf.subarray(0, this.pos)
-    }
-
-    mark(): number {
-        return this.pos
-    }
-
-    raw(bytes: Uint8Array): void {
-        this.reserve(bytes.length)
-        this.buf.set(bytes, this.pos)
-        this.pos += bytes.length
-    }
-
-    utf8(val: string): void {
-        const len = Buffer.byteLength(val, 'utf8')
-        this.reserve(len)
-        this.buf.write(val, this.pos, len, 'utf8')
-        this.pos += len
-    }
-
-    u8(val: number): void {
-        this.u256(BigInt(val))
-    }
-
-    i8(val: number): void {
-        this.i256(BigInt(val))
-    }
-
-    u16(val: number): void {
-        this.u256(BigInt(val))
-    }
-
-    i16(val: number): void {
-        this.i256(BigInt(val))
-    }
-
-    u32(val: number): void {
-        this.u256(BigInt(val))
-    }
-
-    i32(val: number): void {
-        this.i256(BigInt(val))
-    }
-
-    u64(val: bigint): void {
-        this.u256(val)
-    }
-
-    i64(val: bigint): void {
-        this.i256(val)
-    }
-
-    u128(val: bigint): void {
-        this.u256(val)
-    }
-
-    i128(val: bigint): void {
-        this.i256(val)
-    }
-
-    u256(val: bigint): void {
-        if (val < 0n || val > U256_MAX) throw new Error(`${val} is out of bounds for uint256`)
-        this.word(val)
-    }
-
-    i256(val: bigint): void {
-        if (val < I256_MIN || val > I256_MAX) throw new Error(`${val} is out of bounds for int256`)
-        this.word(val >= 0n ? val : val + U256_BASE)
-    }
-
-    bool(val: boolean): void {
-        this.u8(val ? 1 : 0)
-    }
-
-    address(val: string): void {
-        if (val.length === 42 && val.charCodeAt(0) === 0x30 && val.charCodeAt(1) === 0x78) {
-            this.reserve(32)
-            this.buf.fill(0, this.pos, this.pos + 12)
-            this.buf.write(val.slice(2), this.pos + 12, 20, 'hex')
-            this.pos += 32
-            return
-        }
-        this.u256(BigInt(val))
-    }
-
-    staticBytes(len: number, val: Uint8Array | string): void {
-        if (len > 32) throw new Error(`bytes${len} is not a valid type`)
-        const bytes = typeof val === 'string' ? hexToBytes(val) : val
-        if (bytes.length > len) throw new Error(`invalid data size for bytes${len}`)
-        this.reserve(32)
-        this.buf.fill(0, this.pos, this.pos + 32)
-        this.buf.set(bytes, this.pos)
-        this.pos += 32
-    }
-
-    bytes(): never {
-        throw new Error('dynamic bytes must be encoded by topic encoder')
-    }
-
-    string(): never {
-        throw new Error('dynamic string must be encoded by topic encoder')
-    }
-
-    openTail(): never {
-        throw new Error('dynamic ABI tails are not valid in topic encoder')
-    }
-
-    openArray(): never {
-        throw new Error('dynamic ABI arrays are not valid in topic encoder')
-    }
-
-    closeTail(): never {
-        throw new Error('dynamic ABI tails are not valid in topic encoder')
-    }
-
-    toString(): string {
-        return `0x${this.result().toString('hex')}`
-    }
-
-    padFrom(pos: number): void {
-        const rem = (this.pos - pos) % 32
-        if (rem === 0) return
-        const pad = 32 - rem
-        this.reserve(pad)
-        this.buf.fill(0, this.pos, this.pos + pad)
-        this.pos += pad
-    }
-
-    private word(val: bigint): void {
-        let hex = val.toString(16)
-        if (hex.length % 2) hex = `0${hex}`
-        if (hex.length > 64) throw new Error(`hex string too long for one word: ${hex.length} chars`)
-        this.reserve(32)
-        this.buf.fill(0, this.pos, this.pos + 32)
-        this.buf.write(hex, this.pos + 32 - hex.length / 2, hex.length / 2, 'hex')
-        this.pos += 32
-    }
-
-    private reserve(size: number): void {
-        if (this.buf.length - this.pos >= size) return
-        let cap = this.buf.length
-        while (cap - this.pos < size) cap *= 2
-        const buf = Buffer.allocUnsafe(cap)
-        this.buf.copy(buf, 0, 0, this.pos)
-        this.buf = buf
-    }
-}
-
 function addTopicByteHelpers(names: string[], values: any[]) {
-    names.push('TopicSink', 'toRawBytes', 'keccak256')
-    values.push(TopicSink, toRawBytes, keccak256)
+    names.push('BytesSink', 'keccak_256')
+    values.push(BytesSink, keccak_256)
 }
 
 function topicBytesSink(codec: Codec<any>, val: string, sink: string, names: string[], values: any[]): string {
@@ -246,7 +80,7 @@ function topicBytesSink(codec: Codec<any>, val: string, sink: string, names: str
         return `${sink}.utf8(${val});`
     }
     if (codec.baseType === 'bytes' && codec.isDynamic) {
-        return `${sink}.raw(toRawBytes(${val}));`
+        return `${sink}.raw(${val});`
     }
     if (codec.baseType === 'array') {
         const item: Codec<any> = (codec as any).item
@@ -356,7 +190,7 @@ export class AbiEvent<const T extends EventArgs> {
             body += `if(${vals}!=null){const __r${i}=new Array(${vals}.length);for(let __i=0;__i<${vals}.length;__i++){const __v=${vals}[__i];`
             if (isReferenceType(codec)) {
                 const sink = `__ts${i}`
-                body += `const ${sink}=new TopicSink();${topicBytesSink(codec, '__v', sink, names, values)}__r${i}[__i]=\`0x\${keccak256(${sink}.result()).toString('hex')}\`;`
+                body += `const ${sink}=new BytesSink(0,256);${topicBytesSink(codec, '__v', sink, names, values)}__r${i}[__i]=\`0x\${keccak_256(${sink}.written())}\`;`
             } else {
                 const enc = `__te${i}`
                 names.push(enc)
@@ -389,7 +223,7 @@ export class AbiEvent<const T extends EventArgs> {
             const topic = `__t${i}`
             if (isReferenceType(codec)) {
                 const sink = `__ts${i}`
-                body += `const ${sink}=new TopicSink();${topicBytesSink(codec, `args${propAccess(name)}`, sink, names, values)}const ${topic}=\`0x\${keccak256(${sink}.result()).toString('hex')}\`;`
+                body += `const ${sink}=new BytesSink(0,256);${topicBytesSink(codec, `args${propAccess(name)}`, sink, names, values)}const ${topic}=\`0x\${keccak_256(${sink}.written())}\`;`
             } else {
                 const enc = `__te${i}`
                 names.push(enc)

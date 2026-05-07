@@ -19,6 +19,11 @@ const u256Bytes = (n: bigint) => {
 }
 
 describe('Event', () => {
+    it('keccak256 accepts text and 0x-prefixed hex strings', () => {
+        expect(keccak256('hello')).toEqual(keccak256(Buffer.from('hello', 'utf8')))
+        expect(keccak256('0x1234')).toEqual(keccak256(Buffer.from('1234', 'hex')))
+    })
+
     it('decodes a simple record produced by encode', () => {
         const event = _event(TOPIC, {
             a: indexed(uint256),

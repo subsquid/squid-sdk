@@ -442,6 +442,9 @@ importers:
       '@subsquid/util-internal-archive-client':
         specifier: ^0.1.2
         version: 0.1.2
+      '@subsquid/util-internal-hex':
+        specifier: ^1.2.2
+        version: 1.2.2
       '@substrate/calc':
         specifier: ^0.2.8
         version: 0.2.8
@@ -556,9 +559,9 @@ importers:
       jsonc-parser:
         specifier: ^3.2.0
         version: 3.2.0
-      keccak256:
-        specifier: ^1.0.6
-        version: 1.0.6
+      js-sha3:
+        specifier: ^0.9.3
+        version: 0.9.3
       keyv:
         specifier: ~4.5.4
         version: 4.5.4
@@ -3358,6 +3361,9 @@ packages:
     resolution: {integrity: sha512-POQXvpdL69+CluYsillJ7SUhKvytYjW9vG/GKpnf+xP8UWgYEM/RaMzHHofbALDiKbbP1W8UEYmgGl39WkPZsg==}
     engines: {'0': node >= 0.2.0}
 
+  js-sha3@0.9.3:
+    resolution: {integrity: sha512-BcJPCQeLg6WjEx3FE591wVAevlli8lxsxm9/FzV4HXkV49TmBH38Yvrpce6fjbADGMKFrBMGTqrVz3qPIZ88Gg==}
+
   keccak256@1.0.6:
     resolution: {integrity: sha512-8GLiM01PkdJVGUhR1e6M/AvWnSqYS0HaERI+K/QtStGDGlSTx2B1zTqZk4Zlqu5TxHJNTxWAdP9Y+WI50OApUw==}
 
@@ -5756,8 +5762,9 @@ snapshots:
 
   '@rush-temp/evm-abi@file:projects/evm-abi.tgz(esbuild@0.27.7)(tsx@4.21.0)':
     dependencies:
+      '@subsquid/util-internal-hex': 1.2.2
       '@types/node': 24.0.15
-      keccak256: 1.0.6
+      js-sha3: 0.9.3
       typescript: 5.5.4
       vitest: 4.1.5(@types/node@24.0.15)(esbuild@0.27.7)(tsx@4.21.0)
     transitivePeerDependencies:
@@ -9115,6 +9122,8 @@ snapshots:
   jsonc-parser@3.2.0: {}
 
   jsonparse@1.3.1: {}
+
+  js-sha3@0.9.3: {}
 
   keccak256@1.0.6:
     dependencies:
