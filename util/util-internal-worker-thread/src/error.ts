@@ -28,6 +28,12 @@ export class RemoteError extends Error {
         this.#name = origin.name
         this.#stack = origin.stack
 
+        // Remove own `stack` accessor installed by Error() so the
+        // prototype getter can return the worker-thread stack.
+        if (origin.stack) {
+            delete (this as any).stack
+        }
+
         let key: keyof SerializedError
         for (key in origin) {
             switch(key) {
