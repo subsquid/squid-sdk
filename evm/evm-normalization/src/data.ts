@@ -182,7 +182,10 @@ export interface Transaction {
     cumulativeGasUsed?: Qty,
     effectiveGasPrice?: Qty,
     gasUsed?: Qty,
+    logsBloom?: Bytes
     status?: number,
+    blobGasUsed?: Qty,
+    blobGasPrice?: Qty,
     l1BaseFeeScalar?: number,
     l1BlobBaseFee?: Qty,
     l1BlobBaseFeeScalar?: number,

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/fuel-stream
 
-This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+This log was last generated on Tue, 05 May 2026 07:41:38 GMT and should not be manually modified.
+
+## 1.1.0
+Tue, 05 May 2026 07:41:38 GMT
+
+### Minor changes
+
+- allow GatewaySettings to provide an API key
 
 ## 1.0.4
 Sat, 09 Aug 2025 06:10:24 GMT

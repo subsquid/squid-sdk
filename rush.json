@@ -26,7 +26,7 @@
    * Specify one of: "pnpmVersion", "npmVersion", or "yarnVersion".  See the Rush documentation
    * for details about these alternatives.
    */
-  "pnpmVersion": "8.8.0",
+  "pnpmVersion": "9.15.4",
 
   // "npmVersion": "6.14.15",
   // "yarnVersion": "1.9.4",
@@ -1077,6 +1077,11 @@
     {
       "packageName": "erc20-transfers",
       "projectFolder": "test/erc20-transfers",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "evm-codec-bench",
+      "projectFolder": "test/evm-codec-bench",
       "shouldPublish": false
     },
     {

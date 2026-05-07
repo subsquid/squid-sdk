@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-stream
 
-This log was last generated on Mon, 08 Dec 2025 14:27:13 GMT and should not be manually modified.
+This log was last generated on Tue, 05 May 2026 07:41:38 GMT and should not be manually modified.
+
+## 0.5.0
+Tue, 05 May 2026 07:41:38 GMT
+
+### Minor changes
+
+- allow GatewaySettings to provide an API key
 
 ## 0.4.0
 Mon, 08 Dec 2025 14:27:13 GMT

@@ -1,5 +1,5 @@
 import {assertNotNull} from '@subsquid/util-internal'
-import {GetBlock, Log, Receipt, Transaction} from './rpc-data'
+import {GetBlock, Log, Receipt, Transaction, Withdrawal} from './rpc-data'
 import {Qty} from './types'
 import {
     blockHash,
@@ -8,7 +8,8 @@ import {
     receiptsRoot,
     recoverTxSender,
     transactionsRoot,
-    calculateStateSyncTxHash
+    calculateStateSyncTxHash,
+    withdrawalsRoot
 } from './verification'
 import {getTxHash, qty2Int} from './util'
 
@@ -135,6 +136,10 @@ export class ChainUtils {
         }
 
         return receiptsRoot(receipts)
+    }
+
+    calculateWithdrawalsRoot(withdrawals: Withdrawal[]) {
+        return withdrawalsRoot(withdrawals)
     }
 
     recoverTxSender(transaction: Transaction) {
