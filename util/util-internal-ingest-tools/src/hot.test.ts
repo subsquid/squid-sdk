@@ -1,5 +1,6 @@
 import {buildChain, createMockDataSource, forkAt, joinFork, type MockBlock} from '@subsquid/util-internal-testing'
 import {describe, expect, it} from 'vitest'
+import {isDataConsistencyError} from './consistency-error'
 import {HotProcessor} from './hot'
 import type {HotState, HotUpdate} from './interfaces'
 
@@ -216,32 +217,13 @@ describe('HotProcessor', () => {
     })
 
     describe('finality-only update', () => {
-        // FIXME: TEST NEEDS TO BE FIXED — the production code it targets is buggy.
-        //
-        // What's wrong: HotProcessor.goto() in hot.ts returns early when
-        // `isKnownBlock(heads.best)` is true, BEFORE the line
-        // `this.finalizedHead = heads.finalized` runs. As a result, a stream
-        // that advances ONLY finality (same `best`, newer `finalized`) is
-        // silently dropped until the next new tip arrives. Finality can trail
-        // reality indefinitely, which blocks downstream consumers (database
-        // writers, rollback logic) from ever learning that more blocks became
-        // safe to commit.
-        //
-        // The fix in hot.ts is to update `this.finalizedHead` (and invoke
-        // `finalize()` on the current chain) BEFORE the `isKnownBlock` short-
-        // circuit, so finality always takes effect even without a new tip.
-        //
-        // Wrapped in `it.fails` so the suite stays green today. Once hot.ts
-        // is fixed, vitest will report this as an unexpected pass — that is
-        // the signal to:
-        //   1. Remove this FIXME block,
-        //   2. Replace `it.fails(...)` with a regular `it(...)`.
-        it.fails('advances the finalized head when best is unchanged', async () => {
+        it('advances the finalized head when best is unchanged', async () => {
             const main = buildChain({from: 1, to: 5})
-            const {processor} = makeProcessor(main)
+            const {processor, updates} = makeProcessor(main)
 
             await processor.goto({best: main[4], finalized: main[0]})
             expect(processor.getFinalizedHeight()).toBe(1)
+            expect(updates).toHaveLength(1)
 
             // Same best, but finality has moved forward to block 3.
             await processor.goto({
@@ -249,70 +231,113 @@ describe('HotProcessor', () => {
                 finalized: main[2],
             })
 
-            // Expected: finalized head advances.
-            // Actual: still 1 because goto() short-circuits on isKnownBlock(best).
+            expect(processor.getFinalizedHeight()).toBe(3)
+            // A no-block update must be emitted so downstream consumers see
+            // the advanced finality without waiting for the next new tip.
+            expect(updates).toHaveLength(2)
+            expect(updates[1].blocks).toEqual([])
+            expect(updates[1].finalizedHead).toMatchObject({height: 3, hash: '0x3'})
+            // baseHead is the unchanged tip — block 5 — not the new finalized
+            // head; otherwise consumers would treat the tip as rolled back.
+            expect(updates[1].baseHead).toMatchObject({height: 5, hash: '0x5'})
+        })
+
+        it('retries finality-only updates when processing fails', async () => {
+            const main = buildChain({from: 1, to: 5})
+            const source = createMockDataSource<MockBlock>(main)
+            const updates: HotUpdate<MockBlock>[] = []
+            let failNextFinalityOnlyUpdate = false
+
+            const processor = new HotProcessor<MockBlock>(GENESIS, {
+                process: async (u) => {
+                    if (failNextFinalityOnlyUpdate && u.blocks.length === 0) {
+                        failNextFinalityOnlyUpdate = false
+                        throw new Error('transient process failure')
+                    }
+                    updates.push(u)
+                },
+                getBlock: source.getBlock,
+                getBlockRange: source.getBlockRange,
+                getHeader: source.getHeader,
+                getFinalizedBlockHeight: source.getFinalizedBlockHeight,
+            })
+
+            await processor.goto({best: main[4], finalized: main[0]})
+            expect(updates).toHaveLength(1)
+
+            failNextFinalityOnlyUpdate = true
+            await expect(processor.goto({
+                best: main[4],
+                finalized: main[2],
+            })).rejects.toThrow('transient process failure')
+
+            expect(updates).toHaveLength(1)
+
+            await processor.goto({
+                best: main[4],
+                finalized: main[2],
+            })
+
+            expect(updates).toHaveLength(2)
+            expect(updates[1].blocks).toEqual([])
+            expect(updates[1].finalizedHead).toMatchObject({height: 3, hash: '0x3'})
             expect(processor.getFinalizedHeight()).toBe(3)
         })
     })
 
     describe('finalize() edge cases', () => {
-        // FIXME: TEST NEEDS TO BE FIXED — the production code it targets is buggy.
-        //
-        // What's wrong: HotProcessor.finalize() in hot.ts silently accepts a
-        // finalizedHead whose height is beyond the known chain tip. The code
-        // clamps `pos = Math.min(pos, chain.length - 1)` and only runs the
-        // `chain[pos].hash === finalizedHead.hash` assertion when `pos` falls
-        // within the chain — so a finalizedHead that claims height 10 while
-        // the tip is only at 5 passes through unchecked. The processor then
-        // reports getFinalizedHeight() = 10 even though nothing past height 5
-        // has been verified.
-        //
-        // Downstream consequence: database writers may permanently commit
-        // blocks as finalized based on an unverifiable claim from the data
-        // source (e.g. a malicious or broken RPC), with no rollback path.
-        //
-        // The fix in hot.ts is to either (a) refuse finalization beyond the
-        // known tip (throw), or (b) defer it until enough blocks have been
-        // fetched to cover the claimed height — never clamp silently.
-        //
-        // Wrapped in `it.fails` so the suite stays green today. When hot.ts
-        // is fixed, vitest reports an unexpected pass — the signal to remove
-        // this FIXME block and replace `it.fails(...)` with a regular `it(...)`.
-        it.fails('rejects finalizedHead ahead of the known chain tip', async () => {
+        it('rejects finalizedHead ahead of best (data source lying)', async () => {
             const main = buildChain({from: 1, to: 5})
             const {processor} = makeProcessor(main)
 
-            // finalizedHead points to height 10 — five blocks past our tip.
-            // Hash is unknown; cannot possibly be verified.
-            await expect(
-                processor.goto({
-                    best: main[4],
+            // finalized > best is the actual invariant violation: a block
+            // cannot be finalized before it has been observed as the tip.
+            let caught: unknown
+            try {
+                await processor.goto({
+                    best: main[4], // height 5
                     finalized: {height: 10, hash: '0xunverifiable'},
-                }),
-            ).rejects.toThrow()
+                })
+            } catch (e) {
+                caught = e
+            }
+            expect(caught).toBeDefined()
+            // Must be classified as a data-consistency error so upstream
+            // hot-ingest loops apply their retry path.
+            expect(isDataConsistencyError(caught)).toBe(true)
         })
 
-        // FIXME: TEST NEEDS TO BE FIXED — the production code it targets is buggy.
-        //
-        // What's wrong: HotProcessor.finalize() computes the finalized height
-        // from a hash-only BlockRef with
-        //     finalizedHeight = chain.find(b => b.hash == ...)?.height
-        //         || await this.getFinalizedBlockHeight(...)
-        // The `||` treats the integer 0 as falsy. When the finalized block IS
-        // the genesis (height 0) and IS already in the local chain, `?.height`
-        // correctly returns 0, but `|| await fetch(...)` discards it and calls
-        // the fetcher anyway — wasting work at best, and crashing if the
-        // fetcher cannot be reached (e.g. offline, or genesis not indexed by
-        // whatever backend serves getFinalizedBlockHeight).
-        //
-        // The fix in hot.ts is to change `||` to `??`, which coalesces only
-        // on null/undefined, so a legitimate height of 0 short-circuits the
-        // fetcher as intended.
-        //
-        // Wrapped in `it.fails`. Once hot.ts is fixed, this test will start
-        // passing — that is the signal to remove this FIXME block and
-        // replace `it.fails(...)` with a regular `it(...)`.
-        it.fails('accepts finalized hash at genesis (height=0) without invoking the fetcher', async () => {
+        it('defers (does not throw) when finalized is ahead of the current batch but ≤ best', async () => {
+            // Realistic case: RPC reports finalized=4 with best=5, but
+            // getBlockRange yields blocks 1..5 in two batches. After the
+            // first batch (blocks 1..3), finalize() runs with finalizedHeight
+            // = 4 — past the in-progress chain tip of 3. This must NOT throw;
+            // the next batch brings block 4 and finalize() trims then.
+            const main = buildChain({from: 1, to: 5})
+            const source = createMockDataSource<MockBlock>(main, {batchSize: 3})
+            const updates: HotUpdate<MockBlock>[] = []
+            const processor = new HotProcessor<MockBlock>(GENESIS, {
+                process: async (u) => {
+                    updates.push(u)
+                },
+                getBlock: source.getBlock,
+                getBlockRange: source.getBlockRange,
+                getHeader: source.getHeader,
+                getFinalizedBlockHeight: source.getFinalizedBlockHeight,
+            })
+
+            await processor.goto({
+                best: main[4], // height 5
+                finalized: main[3], // height 4 — past tip of first batch (3)
+            })
+
+            // Both batches were processed and finality settled correctly.
+            expect(updates).toHaveLength(2)
+            expect(processor.getHeight()).toBe(5)
+            expect(processor.getFinalizedHeight()).toBe(4)
+        })
+
+        it('accepts finalized hash at genesis (height=0) without invoking the fetcher', async () => {
             const main = buildChain({from: 1, to: 3})
             const source = createMockDataSource<MockBlock>(main)
             // Pre-register the genesis block in the pool so that IF the
@@ -439,41 +464,7 @@ describe('HotProcessor', () => {
     })
 
     describe('divergence below chain[0]', () => {
-        // FIXME: TEST NEEDS TO BE FIXED — documents an edge case in
-        // moveToBlocks where the error surface is present but uninformative.
-        //
-        // Scenario: an inconsistent data source keeps returning coherent-
-        // looking parents on backtrack, so the inner while loop in
-        // moveToBlocks
-        //     while (last(chain).hash !== head.hash) {
-        //         ...
-        //         chain.pop()
-        //     }
-        // pops its local slice past index 0. On the next iteration,
-        // `last(chain)` runs against an empty array.
-        //
-        // Today `last()` from @subsquid/util-internal guards its own
-        // precondition — `assert(array.length > 0)` — and throws a generic
-        // AssertionError whose message is just the expression text
-        // ("(array.length > 0)"). That's good enough to avoid a hang or a
-        // raw TypeError, but operators see a cryptic stack trace with no
-        // indication that the real cause is "the fork diverged below what
-        // we could locally resolve from state". There is no way to tell
-        // that condition apart from any other empty-array assertion.
-        //
-        // Fix direction in hot.ts: add a guard to the second while loop
-        // that checks `chain.length === 0` explicitly and throws a typed
-        // "common ancestor below known state" error with the observed
-        // `head` included in the message. This preserves the existing
-        // safety (we never access undefined.hash) while giving operators
-        // a domain-level signal.
-        //
-        // The test asserts the error message contains one of several
-        // domain-specific tokens. Wrapped in `it.fails` because today the
-        // message is just the raw expression; when the typed error lands,
-        // vitest reports an unexpected pass — the signal to remove this
-        // FIXME and replace `it.fails(...)` with a regular `it(...)`.
-        it.fails('throws a domain-specific error when the fork sinks below chain[0]', async () => {
+        it('throws a domain-specific error when the fork sinks below chain[0]', async () => {
             // State already "finalized" up to height 5 on the main chain.
             const state: HotState = {height: 5, hash: '0x5', top: []}
 
@@ -511,11 +502,12 @@ describe('HotProcessor', () => {
             }
 
             expect(caught).toBeDefined()
-            // Current: generic AssertionError with the expression text from
-            // `last([])`'s precondition — "(array.length > 0)" — no domain
-            // context. Desired: a message that names the situation so operators
-            // can understand what happened without reading hot.ts.
+            // Message must name the situation so operators understand what
+            // happened without reading hot.ts.
             expect(caught?.message ?? '').toMatch(/common ancestor|fork too deep|below known state|diverged below/i)
+            // And the error must be classified as data-consistency so upstream
+            // hot-ingest loops apply their retry path.
+            expect(isDataConsistencyError(caught)).toBe(true)
         })
     })
 })
