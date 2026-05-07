@@ -28,6 +28,11 @@ export async function* limitUpperBoundary(
     upstream: AsyncIterable<IngestBatch>,
 ): AsyncIterable<IngestBatch> {
     for await (let batch of upstream) {
+        if (batch.blocks.length === 0) {
+            yield batch
+            continue
+        }
+
         if (last(batch.blocks).slot >= to) {
             batch.blocks = batch.blocks.filter((b) => b.slot <= to)
             if (batch.blocks.length > 0) {

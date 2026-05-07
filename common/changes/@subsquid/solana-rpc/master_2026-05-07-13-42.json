@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-rpc",
+      "comment": "Handle empty batches while applying the upper boundary limit",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-rpc"
+}
