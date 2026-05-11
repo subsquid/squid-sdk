@@ -1,6 +1,6 @@
-const fs = require('fs')
-const path = require('path')
-const {execSync} = require('child_process')
+const {execSync} = require('node:child_process')
+const fs = require('node:fs')
+const path = require('node:path')
 
 const DEFAULT_BASELINE_DATE = '2026-03-01'
 
@@ -12,9 +12,47 @@ function stripJsonComments(text) {
     return text.replace(/("(?:[^"\\]|\\.)*")|\/\*[\s\S]*?\*\/|\/\/.*/g, '$1')
 }
 
+function stripJsonTrailingCommas(text) {
+    let out = ''
+    let inString = false
+    let escaped = false
+
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i]
+
+        if (inString) {
+            out += ch
+            if (escaped) {
+                escaped = false
+            } else if (ch === '\\') {
+                escaped = true
+            } else if (ch === '"') {
+                inString = false
+            }
+            continue
+        }
+
+        if (ch === '"') {
+            inString = true
+            out += ch
+            continue
+        }
+
+        if (ch === ',') {
+            let j = i + 1
+            while (/\s/.test(text[j])) j++
+            if (text[j] === '}' || text[j] === ']') continue
+        }
+
+        out += ch
+    }
+
+    return out
+}
+
 function getRushProjects() {
     const raw = fs.readFileSync(path.resolve('rush.json'), 'utf8')
-    return JSON.parse(stripJsonComments(raw)).projects
+    return JSON.parse(stripJsonTrailingCommas(stripJsonComments(raw))).projects
 }
 
 function findBaselineRef() {
@@ -77,7 +115,7 @@ function extractNewEntries(changelogPath, baselineRef) {
         .map((e) => {
             e.body = e.body
                 .filter((l) => !/^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4}/.test(l))
-                .map((l) => (l.startsWith('### ') ? '#' + l : l))
+                .map((l) => (l.startsWith('### ') ? `#${l}` : l))
             return e
         })
         .filter((e) => {
@@ -110,9 +148,7 @@ function buildReleaseNotes(changedPaths, baselineRef, projectMap) {
 }
 
 function getContributors(baselineRef) {
-    const shas = exec(
-        `git log ${baselineRef}..HEAD --no-merges --format="%H %aE" -- . ":!common/changes"`
-    )
+    const shas = exec(`git log ${baselineRef}..HEAD --no-merges --format="%H %aE" -- . ":!common/changes"`)
     if (!shas) return []
 
     const emailToSha = new Map()
@@ -185,10 +221,9 @@ function main() {
 
     exec(`git tag ${releaseTag}`)
     exec(`git push origin ${releaseTag}`)
-    execSync(
-        `gh release create ${releaseTag} --title ${releaseTag} --notes-file ${notesFile} --verify-tag`,
-        {stdio: 'inherit'}
-    )
+    execSync(`gh release create ${releaseTag} --title ${releaseTag} --notes-file ${notesFile} --verify-tag`, {
+        stdio: 'inherit',
+    })
 }
 
 main()
