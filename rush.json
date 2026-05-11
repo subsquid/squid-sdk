@@ -423,8 +423,7 @@
     {
       "packageName": "@subsquid/bitcoin-dump",
       "projectFolder": "bitcoin/bitcoin-dump",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/bitcoin-ingest",
@@ -435,8 +434,7 @@
     {
       "packageName": "@subsquid/bitcoin-rpc",
       "projectFolder": "bitcoin/bitcoin-rpc",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/bitcoin-normalization",
@@ -447,14 +445,12 @@
     {
       "packageName": "@subsquid/bitcoin-data-service",
       "projectFolder": "bitcoin/bitcoin-data-service",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/evm-dump",
       "projectFolder": "evm/evm-dump",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/evm-ingest",
@@ -465,8 +461,7 @@
     {
       "packageName": "@subsquid/evm-rpc",
       "projectFolder": "evm/evm-rpc",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/evm-normalization",
@@ -513,8 +508,7 @@
     {
       "packageName": "@subsquid/evm-data-service",
       "projectFolder": "evm/evm-data-service",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/graphql-server",
@@ -565,14 +559,12 @@
     {
       "packageName": "@subsquid/solana-data-service",
       "projectFolder": "solana/solana-data-service",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/solana-dump",
       "projectFolder": "solana/solana-dump",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/solana-ingest",
@@ -595,8 +587,7 @@
     {
       "packageName": "@subsquid/solana-rpc",
       "projectFolder": "solana/solana-rpc",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/solana-rpc-data",
@@ -667,8 +658,7 @@
     {
       "packageName": "@subsquid/substrate-dump",
       "projectFolder": "substrate/substrate-dump",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/substrate-ingest",
@@ -715,8 +705,7 @@
     {
       "packageName": "@subsquid/tron-dump",
       "projectFolder": "tron/tron-dump",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/tron-ingest",
@@ -757,8 +746,7 @@
     {
       "packageName": "@subsquid/fuel-dump",
       "projectFolder": "fuel/fuel-dump",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/fuel-ingest",
@@ -775,50 +763,42 @@
     {
       "packageName": "@subsquid/hyperliquid-fills-data",
       "projectFolder": "hyperliquid/hyperliquid-fills-data",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/hyperliquid-fills-data-service",
       "projectFolder": "hyperliquid/hyperliquid-fills-data-service",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/hyperliquid-fills-ingest",
       "projectFolder": "hyperliquid/hyperliquid-fills-ingest",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/hyperliquid-fills-normalization",
       "projectFolder": "hyperliquid/hyperliquid-fills-normalization",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/hyperliquid-replica-cmds-data",
       "projectFolder": "hyperliquid/hyperliquid-replica-cmds-data",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/hyperliquid-replica-cmds-data-service",
       "projectFolder": "hyperliquid/hyperliquid-replica-cmds-data-service",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/hyperliquid-replica-cmds-ingest",
       "projectFolder": "hyperliquid/hyperliquid-replica-cmds-ingest",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/hyperliquid-replica-cmds-normalization",
       "projectFolder": "hyperliquid/hyperliquid-replica-cmds-normalization",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/typeorm-codegen",
@@ -931,8 +911,7 @@
     {
       "packageName": "@subsquid/util-internal-data-service",
       "projectFolder": "util/util-internal-data-service",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/util-internal-data-source",
@@ -943,8 +922,7 @@
     {
       "packageName": "@subsquid/util-internal-dump-cli",
       "projectFolder": "util/util-internal-dump-cli",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/util-internal-fs",
@@ -1038,8 +1016,7 @@
     {
       "packageName": "@subsquid/util-internal-worker-thread",
       "projectFolder": "util/util-internal-worker-thread",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/util-naming",
@@ -1166,8 +1143,7 @@
     {
       "packageName": "@subsquid/starknet-rpc",
       "projectFolder": "starknet/starknet-rpc",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "shouldPublish": false
     }
 //    {
 //      "packageName": "starknet-indexer",
