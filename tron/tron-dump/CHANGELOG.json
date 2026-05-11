@@ -2,6 +2,29 @@
   "name": "@subsquid/tron-dump",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "@subsquid/tron-dump_v0.1.2",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "base on a new `util-internal-dump-cli` package"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/tron-data\" from `^0.0.4` to `0.0.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^1.1.1` to `2.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/tron-dump_v0.1.1",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",

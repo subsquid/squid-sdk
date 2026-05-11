@@ -1,6 +1,13 @@
 # Change Log - @subsquid/logger
 
-This log was last generated on Wed, 18 Mar 2026 10:55:26 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 1.6.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Minor changes
+
+- do not exclude reserved log record properties, but include them with `_` prefix
 
 ## 1.5.0
 Wed, 18 Mar 2026 10:55:26 GMT

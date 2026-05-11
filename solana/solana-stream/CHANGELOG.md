@@ -1,6 +1,17 @@
 # Change Log - @subsquid/solana-stream
 
-This log was last generated on Tue, 05 May 2026 07:41:38 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 1.0.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Breaking changes
+
+- rework for SQD Portal support
+
+### Minor changes
+
+- add Portal request builder and merge helpers
 
 ## 0.5.0
 Tue, 05 May 2026 07:41:38 GMT

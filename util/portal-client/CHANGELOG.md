@@ -1,6 +1,11 @@
 # Change Log - @subsquid/portal-client
 
-This log was last generated on Sun, 05 Apr 2026 22:03:07 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 0.5.1
+Mon, 11 May 2026 05:34:26 GMT
+
+_Version update only_
 
 ## 0.5.0
 Sun, 05 Apr 2026 22:03:07 GMT

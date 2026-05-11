@@ -1,0 +1,28 @@
+{
+  "name": "@subsquid/hyperliquid-replica-cmds-normalization",
+  "entries": [
+    {
+      "version": "0.0.2",
+      "tag": "@subsquid/hyperliquid-replica-cmds-normalization_v0.0.2",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "init Hyperliquid replica command normalization pipeline"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/hyperliquid-replica-cmds-data\" from `^0.0.1` to `0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.8.0` to `0.9.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

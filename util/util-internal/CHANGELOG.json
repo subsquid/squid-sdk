@@ -2,6 +2,30 @@
   "name": "@subsquid/util-internal",
   "entries": [
     {
+      "version": "3.3.0",
+      "tag": "@subsquid/util-internal_v3.3.0",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "`AsyncQueue`: allow multiple concurrent puts"
+          },
+          {
+            "comment": "`AsyncQueue`: add `.removeCloseListener()`"
+          },
+          {
+            "comment": "`concurrentMap()`: accept `Iterable` as stream"
+          },
+          {
+            "comment": "add reusable array item removal helper"
+          },
+          {
+            "comment": "add maybe-last helper for optional arrays"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.2.0",
       "tag": "@subsquid/util-internal_v3.2.0",
       "date": "Wed, 17 Apr 2024 12:46:35 GMT",

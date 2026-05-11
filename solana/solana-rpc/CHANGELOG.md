@@ -1,6 +1,21 @@
 # Change Log - @subsquid/solana-rpc
 
-This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 1.0.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Breaking changes
+
+- hide all data fetching tools under new `DataSource` interface
+
+### Minor changes
+
+- add fork-aware finalized and unfinalized RPC streams
+
+### Patches
+
+- Handle empty batches while applying the upper boundary limit
 
 ## 0.1.3
 Sat, 09 Aug 2025 06:10:24 GMT

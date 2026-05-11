@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Thu, 16 Apr 2026 08:15:17 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 1.9.1
+Mon, 11 May 2026 05:34:26 GMT
+
+### Patches
+
+- harden hot block rollback and crash recovery handling
 
 ## 1.9.0
 Thu, 16 Apr 2026 08:15:17 GMT

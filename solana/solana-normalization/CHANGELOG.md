@@ -1,6 +1,18 @@
 # Change Log - @subsquid/solana-normalization
 
-This log was last generated on Wed, 21 Jan 2026 13:21:57 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 1.0.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Breaking changes
+
+- rename `slot` to `number`
+- simplify instruction parsing procedure
+
+### Minor changes
+
+- allow to forgive log <-> instruction matching errors
 
 ## 0.1.4
 Wed, 21 Jan 2026 13:21:57 GMT

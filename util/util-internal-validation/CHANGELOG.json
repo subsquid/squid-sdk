@@ -2,6 +2,31 @@
   "name": "@subsquid/util-internal-validation",
   "entries": [
     {
+      "version": "0.9.0",
+      "tag": "@subsquid/util-internal-validation_v0.9.0",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "tagged union: make the tag to be the first field, not the last"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "`ANY_INT`: accept signed bigint strings"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.5.0` to `1.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.5.0` to `1.6.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.8.0",
       "tag": "@subsquid/util-internal-validation_v0.8.0",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",

@@ -2,6 +2,37 @@
   "name": "@subsquid/solana-normalization",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/solana-normalization_v1.0.0",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "rename `slot` to `number`"
+          },
+          {
+            "comment": "simplify instruction parsing procedure"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "allow to forgive log <-> instruction matching errors"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^0.2.1` to `1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.8.0` to `0.9.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.4",
       "tag": "@subsquid/solana-normalization_v0.1.4",
       "date": "Wed, 21 Jan 2026 13:21:57 GMT",

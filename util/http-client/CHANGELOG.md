@@ -1,6 +1,13 @@
 # Change Log - @subsquid/http-client
 
-This log was last generated on Tue, 04 Nov 2025 07:29:46 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 1.8.1
+Mon, 11 May 2026 05:34:26 GMT
+
+### Patches
+
+- handle HTTP 408 and ECONNRESET as retryable errors
 
 ## 1.8.0
 Tue, 04 Nov 2025 07:29:46 GMT

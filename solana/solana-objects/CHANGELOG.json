@@ -2,6 +2,34 @@
   "name": "@subsquid/solana-objects",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/solana-objects_v1.0.0",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "rename `slot` to `number`"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "add item helpers for Portal-backed Solana data"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/solana-stream\" from `^0.5.0` to `1.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/solana-stream\" from `^0.5.0` to `1.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.6",
       "tag": "@subsquid/solana-objects_v0.0.6",
       "date": "Tue, 05 May 2026 07:41:38 GMT",

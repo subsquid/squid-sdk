@@ -2,6 +2,21 @@
   "name": "@subsquid/starknet-data",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "@subsquid/starknet-data_v0.1.2",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.5.0` to `1.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.8.0` to `0.9.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/starknet-data_v0.1.1",
       "date": "Wed, 26 Nov 2025 10:50:55 GMT",

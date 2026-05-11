@@ -1,0 +1,33 @@
+{
+  "name": "@subsquid/util-internal-data-service",
+  "entries": [
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/util-internal-data-service_v0.1.0",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "init data service runtime helpers"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "add metrics for block processing times and SLO compliance"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.5.0` to `1.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.8.0` to `0.9.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

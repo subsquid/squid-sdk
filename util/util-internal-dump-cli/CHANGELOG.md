@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-dump-cli
 
-This log was last generated on Mon, 09 Jun 2025 13:01:23 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 2.0.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Breaking changes
+
+- implement new raw archive data conventions
 
 ## 1.1.1
 Mon, 09 Jun 2025 13:01:23 GMT

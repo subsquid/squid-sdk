@@ -2,6 +2,23 @@
   "name": "@subsquid/logger",
   "entries": [
     {
+      "version": "1.6.0",
+      "tag": "@subsquid/logger_v1.6.0",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "do not exclude reserved log record properties, but include them with `_` prefix"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.2.2` to `1.2.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.5.0",
       "tag": "@subsquid/logger_v1.5.0",
       "date": "Wed, 18 Mar 2026 10:55:26 GMT",

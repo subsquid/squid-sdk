@@ -2,6 +2,32 @@
   "name": "@subsquid/util-internal-dump-cli",
   "entries": [
     {
+      "version": "2.0.0",
+      "tag": "@subsquid/util-internal-dump-cli_v2.0.0",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "implement new raw archive data conventions"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.5.0` to `1.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.14.0` to `4.15.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-layout\" from `^1.0.0` to `2.0.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.1",
       "tag": "@subsquid/util-internal-dump-cli_v1.1.1",
       "date": "Mon, 09 Jun 2025 13:01:23 GMT",

@@ -2,6 +2,29 @@
   "name": "@subsquid/substrate-dump",
   "entries": [
     {
+      "version": "0.6.1",
+      "tag": "@subsquid/substrate-dump_v0.6.1",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "base on a new `util-internal-dump-cli` package"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^1.1.1` to `2.0.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.2.2` to `1.2.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.6.0",
       "tag": "@subsquid/substrate-dump_v0.6.0",
       "date": "Mon, 09 Jun 2025 12:15:37 GMT",

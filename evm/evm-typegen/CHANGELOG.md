@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-typegen
 
-This log was last generated on Mon, 26 Jan 2026 19:17:25 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 5.0.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Breaking changes
+
+- generate ABI facades as importable modules with typed event topic filters
 
 ## 4.6.0
 Mon, 26 Jan 2026 19:17:25 GMT

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/tron-dump
 
-This log was last generated on Sat, 09 Aug 2025 06:10:24 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 0.1.2
+Mon, 11 May 2026 05:34:26 GMT
+
+### Patches
+
+- base on a new `util-internal-dump-cli` package
 
 ## 0.1.1
 Sat, 09 Aug 2025 06:10:24 GMT

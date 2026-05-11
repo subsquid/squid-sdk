@@ -2,6 +2,18 @@
   "name": "@subsquid/tron-normalization",
   "entries": [
     {
+      "version": "0.0.5",
+      "tag": "@subsquid/tron-normalization_v0.0.5",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/tron-data\" from `^0.0.4` to `0.0.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.4",
       "tag": "@subsquid/tron-normalization_v0.0.4",
       "date": "Sat, 09 Aug 2025 06:10:24 GMT",

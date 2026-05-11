@@ -1,6 +1,11 @@
 # Change Log - @subsquid/starknet-data
 
-This log was last generated on Wed, 26 Nov 2025 10:50:55 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 0.1.2
+Mon, 11 May 2026 05:34:26 GMT
+
+_Version update only_
 
 ## 0.1.1
 Wed, 26 Nov 2025 10:50:55 GMT

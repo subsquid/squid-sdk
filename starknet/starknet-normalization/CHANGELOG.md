@@ -1,6 +1,11 @@
 # Change Log - @subsquid/starknet-normalization
 
-This log was last generated on Thu, 21 Aug 2025 10:51:03 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 0.1.1
+Mon, 11 May 2026 05:34:26 GMT
+
+_Version update only_
 
 ## 0.1.0
 Thu, 21 Aug 2025 10:51:03 GMT
