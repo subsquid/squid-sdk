@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/bitcoin-dump",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Data archiving tool for Bitcoin blockchain",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -19,9 +19,9 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/bitcoin-rpc": "^0.0.0",
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-dump-cli": "^1.1.1"
+    "@subsquid/bitcoin-rpc": "^0.0.1",
+    "@subsquid/util-internal": "^3.3.0",
+    "@subsquid/util-internal-dump-cli": "^2.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/hyperliquid-replica-cmds-normalization",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Hyperliquid replica cmds data model",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -16,9 +16,9 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/hyperliquid-replica-cmds-data": "^0.0.1",
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-validation": "^0.8.0"
+    "@subsquid/hyperliquid-replica-cmds-data": "^0.0.2",
+    "@subsquid/util-internal": "^3.3.0",
+    "@subsquid/util-internal-validation": "^0.9.0"
   },
   "devDependencies": {
     "@subsquid/util-internal-json": "^1.2.3",

@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/hyperliquid-replica-cmds-ingest",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Data fetcher and normalizer for Hyperliquid replica cmds",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -20,13 +20,13 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.462.0",
-    "@subsquid/hyperliquid-replica-cmds-data": "^0.0.1",
-    "@subsquid/hyperliquid-replica-cmds-normalization": "^0.0.1",
-    "@subsquid/logger": "^1.5.0",
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-ingest-cli": "^0.2.0",
+    "@subsquid/hyperliquid-replica-cmds-data": "^0.0.2",
+    "@subsquid/hyperliquid-replica-cmds-normalization": "^0.0.2",
+    "@subsquid/logger": "^1.6.0",
+    "@subsquid/util-internal": "^3.3.0",
+    "@subsquid/util-internal-ingest-cli": "^0.2.1",
     "@subsquid/util-internal-json": "^1.2.3",
-    "@subsquid/util-internal-validation": "^0.8.0",
+    "@subsquid/util-internal-validation": "^0.9.0",
     "@subsquid/util-internal-fs": "^0.2.0",
     "@subsquid/util-internal-range": "^0.3.0",
     "lz4": "^0.6.4"

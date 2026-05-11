@@ -16,15 +16,15 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/fuel-data": "^1.1.5",
-    "@subsquid/fuel-normalization": "^1.2.4",
-    "@subsquid/util-internal": "^3.2.0"
+    "@subsquid/fuel-data": "^1.1.6",
+    "@subsquid/fuel-normalization": "^1.2.5",
+    "@subsquid/util-internal": "^3.3.0"
   },
   "peerDependencies": {
-    "@subsquid/fuel-stream": "^1.1.0"
+    "@subsquid/fuel-stream": "^1.1.1"
   },
   "devDependencies": {
-    "@subsquid/fuel-stream": "^1.1.0",
+    "@subsquid/fuel-stream": "^1.1.1",
     "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }

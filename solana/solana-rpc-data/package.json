@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/solana-rpc-data",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "Solana RPC data definitions",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -16,10 +16,10 @@
     "build": "rm -rf lib && tsc"
   },
   "peerDependencies": {
-    "@subsquid/util-internal-validation": "^0.8.0"
+    "@subsquid/util-internal-validation": "^0.9.0"
   },
   "devDependencies": {
-    "@subsquid/util-internal-validation": "^0.8.0",
+    "@subsquid/util-internal-validation": "^0.9.0",
     "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }

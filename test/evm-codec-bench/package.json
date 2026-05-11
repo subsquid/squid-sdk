@@ -10,8 +10,8 @@
     "verify": "node lib/verify-abi.js"
   },
   "dependencies": {
-    "@subsquid/evm-abi": "^0.3.1",
-    "@subsquid/evm-codec": "^0.3.0",
+    "@subsquid/evm-abi": "^1.0.0",
+    "@subsquid/evm-codec": "^1.0.0",
     "evm-abi-old": "npm:@subsquid/evm-abi@0.3.1",
     "evm-codec-old": "npm:@subsquid/evm-codec@0.3.0",
     "viem": "^2.8.14"

@@ -19,7 +19,7 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^3.2.0"
+    "@subsquid/util-internal": "^3.3.0"
   },
   "peerDependencies": {
     "@subsquid/substrate-runtime": "^2.0.1",

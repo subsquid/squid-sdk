@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/solana-objects",
-  "version": "0.0.6",
+  "version": "1.0.0",
   "description": "Augmented Solana data model",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -16,13 +16,13 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^3.2.0"
+    "@subsquid/util-internal": "^3.3.0"
   },
   "peerDependencies": {
-    "@subsquid/solana-stream": "^0.5.0"
+    "@subsquid/solana-stream": "^1.0.0"
   },
   "devDependencies": {
-    "@subsquid/solana-stream": "^0.5.0",
+    "@subsquid/solana-stream": "^1.0.0",
     "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }

@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal-hex": "^1.2.2"
+    "@subsquid/util-internal-hex": "^1.2.3"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

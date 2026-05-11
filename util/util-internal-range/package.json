@@ -17,7 +17,7 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/util-internal": "^3.3.0",
     "@subsquid/util-internal-binary-heap": "^1.0.0"
   },
   "devDependencies": {
