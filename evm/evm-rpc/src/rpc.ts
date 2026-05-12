@@ -127,16 +127,21 @@ export class Rpc {
         let block_promise = this.getBlocks([number], req?.transactions ?? false);
         let logs_promise = null
         let receipts_promise = null
+        let traces_promise = null
         if (req?.logs) {
             logs_promise = this.fetchLogs(number)
         }
         if (req?.receipts) {
             receipts_promise = this.fetchReceiptsByBlock(number)
         }
+        if ((req?.traces || req?.stateDiffs) && number !== 0) {
+            traces_promise = this.fetchTracesData(hash, req)
+        }
 
-        let [[block], logs, receipts] = await Promise.all([block_promise, logs_promise, receipts_promise]);
+        let [[block], logs, receipts, tracesData] = await Promise.all([block_promise, logs_promise, receipts_promise, traces_promise]);
         console.log(`[EVM-RPC] getFastBlock: fetch data took ${Date.now() - startTime}ms`)
 
+        let addDataStart = Date.now()
         if (req?.logs && block) {
             if (logs) {
                 this.processLogs(block, logs)
@@ -153,15 +158,17 @@ export class Rpc {
                 block._errorMessage = 'eth_getBlockReceipts returned null'
             }
         }
+        if ((req?.traces || req?.stateDiffs) && block && tracesData) {
+            await this.processTracesData(block, tracesData, req!)
+        }
+        console.log(`[EVM-RPC] getFastBlock: add requested data took ${Date.now() - addDataStart}ms`)
+        console.log(`[EVM-RPC] getFastBlock: total time = ${Date.now() - startTime}ms`)
 
         return block
     }
 
     async getBlockBatch(numbers: number[], req?: DataRequest): Promise<Block[]> {
-        let startTime = Date.now()
-        console.log(`[EVM-RPC] getBlockBatch: batch size = ${numbers.length}, heights = [${numbers[0]}..${numbers[numbers.length-1]}]`)
         let blocks = await this.getBlocks(numbers, req?.transactions ?? false);
-        console.log(`[EVM-RPC] getBlockBatch: getBlocks took ${Date.now() - startTime}ms, received ${blocks.length} blocks`)
 
         let chain: Block[] = []
 
@@ -172,10 +179,7 @@ export class Rpc {
             chain.push(block)
         }
 
-        let addDataStart = Date.now()
         await this.addRequestedData(chain, req)
-        console.log(`[EVM-RPC] getBlockBatch: addRequestedData took ${Date.now() - addDataStart}ms, chain size = ${chain.length}`)
-        console.log(`[EVM-RPC] getBlockBatch: total time = ${Date.now() - startTime}ms`)
 
         return chain
     }
@@ -1089,6 +1093,244 @@ export class Rpc {
         await Promise.all(tasks)
     }
 
+    /**
+     * Fetches all trace/stateDiff data for a single block identified by hash.
+     * All sub-requests that can run independently are issued in parallel.
+     * Returns a raw bundle consumed by processTracesData.
+     */
+    private async fetchTracesData(hash: string, req: DataRequest): Promise<FetchedTracesData> {
+        let replayTraces: TraceReplayTraces = {}
+
+        let debugStateDiffsPromise: Promise<DebugStateDiffResult[] | null> = Promise.resolve(undefined as any)
+        let debugFramesPromise: Promise<DebugFrameResult[] | null> = Promise.resolve(undefined as any)
+        let traceBlockPromise: Promise<TraceFrame[] | undefined> = Promise.resolve(undefined)
+        let traceTxReplaysPromise: Promise<any[] | null> = Promise.resolve(undefined as any)
+
+        let fetchDebugStateDiffs = false
+        let fetchDebugFrames = false
+        let fetchTraceBlock = false
+        let fetchTxReplays = false
+
+        if (req.stateDiffs) {
+            if (req.useDebugApiForStateDiffs) {
+                fetchDebugStateDiffs = true
+                debugStateDiffsPromise = this.fetchDebugStateDiffs(hash, req)
+            } else {
+                replayTraces.stateDiff = true
+            }
+        }
+
+        if (req.traces) {
+            if (req.useTraceApi) {
+                if (isEmpty(replayTraces)) {
+                    fetchTraceBlock = true
+                    traceBlockPromise = this.fetchTraceBlockTraces(hash)
+                } else {
+                    replayTraces.trace = true
+                }
+            } else {
+                fetchDebugFrames = true
+                debugFramesPromise = this.fetchDebugFrames(hash, req)
+            }
+        }
+
+        if (!isEmpty(replayTraces)) {
+            fetchTxReplays = true
+            traceTxReplaysPromise = this.fetchTraceTxReplays(hash, replayTraces)
+        }
+
+        let [debugStateDiffs, debugFrames, traceBlock, traceTxReplays] = await Promise.all([
+            debugStateDiffsPromise,
+            debugFramesPromise,
+            traceBlockPromise,
+            traceTxReplaysPromise,
+        ])
+
+        return {
+            debugStateDiffs: fetchDebugStateDiffs ? debugStateDiffs : undefined,
+            debugFrames: fetchDebugFrames ? debugFrames : undefined,
+            traceBlock: fetchTraceBlock ? traceBlock : undefined,
+            traceTxReplays: fetchTxReplays ? traceTxReplays : undefined,
+            replayTraces
+        }
+    }
+
+    /**
+     * Applies fetched trace/stateDiff data (from fetchTracesData) onto a single block.
+     */
+    private async processTracesData(block: Block, data: FetchedTracesData, req: DataRequest): Promise<void> {
+        let utils = await this.getChainUtils()
+
+        if (data.debugStateDiffs !== undefined) {
+            let diffs = data.debugStateDiffs
+            if (diffs == null) {
+                block._isInvalid = true
+                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
+            } else if (block.block.transactions.length === diffs.length) {
+                block.debugStateDiffs = diffs
+            } else {
+                block.debugStateDiffs = this.matchDebugTrace('debug state diff', block, diffs, utils)
+            }
+        }
+
+        if (data.debugFrames !== undefined) {
+            let frames = data.debugFrames
+            if (frames == null) {
+                block._isInvalid = true
+                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
+            } else if (block.block.transactions.length === frames.length) {
+                block.debugFrames = frames
+            } else {
+                block.debugFrames = this.matchDebugTrace('debug call frame', block, frames, utils)
+            }
+        }
+
+        if (data.traceBlock !== undefined) {
+            let frames = data.traceBlock!
+            if (frames.length == 0) {
+                if (block.block.transactions.length > 0) {
+                    block._isInvalid = true
+                    block._errorMessage = 'missing traces for some transactions'
+                }
+            } else {
+                let wrongBlock = frames.some(f => f.blockHash !== block.block.hash)
+                if (wrongBlock) {
+                    block._isInvalid = true
+                    block._errorMessage = 'trace_block returned a trace of a different block'
+                } else {
+                    block.traceReplays = []
+                    let byTx = groupBy(frames, f => f.transactionHash)
+                    for (let [transactionHash, txFrames] of byTx.entries()) {
+                        if (transactionHash) {
+                            block.traceReplays.push({
+                                transactionHash,
+                                trace: txFrames
+                            })
+                        }
+                    }
+                }
+            }
+        }
+
+        if (data.traceTxReplays !== undefined) {
+            let replays = data.traceTxReplays!
+            let txs = new Set(block.block.transactions.map(getTxHash))
+
+            for (let rep of replays) {
+                if (!rep.transactionHash) {
+                    let txHash: Bytes32 | null | undefined = undefined
+                    for (let frame of rep.trace || []) {
+                        assert(txHash == null || txHash === frame.transactionHash)
+                        txHash = txHash || frame.transactionHash
+                    }
+                    assert(txHash, "can't match transaction replay with its transaction")
+                    rep.transactionHash = txHash
+                }
+
+                if (!txs.has(rep.transactionHash)) {
+                    block._isInvalid = true
+                    block._errorMessage = 'trace_replayBlockTransactions returned a trace of a different block'
+                }
+            }
+
+            block.traceReplays = replays
+        }
+    }
+
+    private async fetchTraceBlockTraces(hash: string): Promise<TraceFrame[]> {
+        let results = await this.reduceBatchOnRetry([{
+            method: 'trace_block',
+            params: [hash]
+        }], {
+            validateResult: getResultValidator(array(TraceFrame))
+        })
+        return results[0]
+    }
+
+    private async fetchDebugStateDiffs(hash: string, req: DataRequest): Promise<DebugStateDiffResult[] | null> {
+        let traceConfig = {
+            tracer: 'prestateTracer',
+            tracerConfig: {
+                onlyTopCall: false,
+                diffMode: true,
+            },
+            timeout: req.debugTraceTimeout
+        }
+
+        let results = await this.reduceBatchOnRetry([{
+            method: 'debug_traceBlockByHash',
+            params: [hash, traceConfig]
+        }], {
+            validateResult: getResultValidator(array(DebugStateDiffResult)),
+            validateError: info => {
+                if (info.message.includes('not found')) return null
+                if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                throw new RpcError(info)
+            }
+        })
+        return results[0]
+    }
+
+    private async fetchDebugFrames(hash: string, req: DataRequest): Promise<DebugFrameResult[] | null> {
+        let traceConfig = {
+            tracer: 'callTracer',
+            tracerConfig: {
+                onlyTopCall: false,
+                withLog: true,
+            },
+            timeout: req.debugTraceTimeout,
+        }
+
+        let validateFrameResult = getResultValidator(array(DebugFrameResult))
+
+        let results = await this.reduceBatchOnRetry([{
+            method: 'debug_traceBlockByHash',
+            params: [hash, traceConfig]
+        }], {
+            validateResult: result => {
+                if (Array.isArray(result)) {
+                    // Moonbeam quirk
+                    for (let i = 0; i < result.length; i++) {
+                        if (!('result' in result[i])) {
+                            result[i] = { result: result[i] }
+                        }
+                    }
+                }
+                return validateFrameResult(result)
+            },
+            validateError: info => {
+                if (info.message.includes('not found')) return null
+                if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                throw new RpcError(info)
+            }
+        })
+        return results[0]
+    }
+
+    private async fetchTraceTxReplays(hash: string, traces: TraceReplayTraces): Promise<any[] | null> {
+        let tracers: string[] = []
+
+        if (traces.trace) {
+            tracers.push('trace')
+        }
+
+        if (traces.stateDiff) {
+            tracers.push('stateDiff')
+        }
+
+        if (tracers.length == 0) return null
+
+        let results = await this.reduceBatchOnRetry([{
+            method: 'trace_replayBlockTransactions',
+            params: [hash, tracers]
+        }], {
+            validateResult: getResultValidator(
+                array(getTraceTransactionReplayValidator(traces))
+            )
+        })
+        return results[0]
+    }
+
     private async addTraceBlockTraces(blocks: Block[]) {
         let call = blocks.map(block => ({
             method: 'trace_block',
@@ -1344,6 +1586,15 @@ export type LatestBlockhash = GetSrcType<typeof LatestBlockhash>
 
 
 type GetReceiptsMethod = 'eth_getTransactionReceipt' | 'eth_getBlockReceipts'
+
+
+interface FetchedTracesData {
+    debugStateDiffs?: DebugStateDiffResult[] | null
+    debugFrames?: DebugFrameResult[] | null
+    traceBlock?: TraceFrame[]
+    traceTxReplays?: any[] | null
+    replayTraces: TraceReplayTraces
+}
 
 
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
