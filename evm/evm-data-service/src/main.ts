@@ -35,7 +35,8 @@ runProgram(async () => {
     program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
     program.option('--verify-withdrawals-root', 'Verify block withdrawals against withdrawals root')
     program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
-    program.option('--assert-log-index', 'Assert that log indices within a block are sequential')
+    program.option('--skip-log-index-check', 'Do not check log indices within a block are sequential')
+    program.option('--skip-cumulative-gas-used-check', 'Do not check cumulativeGasUsed consistency across transactions')
     program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
     program.option('--auto-adjust-finalized-head', 'Automatically adjust finalized head when block cache is full and finalized head is not in the new range')
     program.parse()
@@ -62,7 +63,8 @@ runProgram(async () => {
         verifyReceiptsRoot?: boolean
         verifyWithdrawalsRoot?: boolean
         verifyLogsBloom?: boolean
-        assertLogIndex?: boolean
+        skipLogIndexCheck?: boolean
+        skipCumulativeGasUsedCheck?: boolean
         useGasUsedForReceiptsRoot?: boolean
         autoAdjustFinalizedHead?: boolean
     }
@@ -86,7 +88,8 @@ runProgram(async () => {
         verifyReceiptsRoot: args.verifyReceiptsRoot,
         verifyWithdrawalsRoot: args.verifyWithdrawalsRoot,
         verifyLogsBloom: args.verifyLogsBloom,
-        assertLogIndex: args.assertLogIndex,
+        skipLogIndexCheck: args.skipLogIndexCheck,
+        skipCumulativeGasUsedCheck: args.skipCumulativeGasUsedCheck,
         useGasUsedForReceiptsRoot: args.useGasUsedForReceiptsRoot
     }
 

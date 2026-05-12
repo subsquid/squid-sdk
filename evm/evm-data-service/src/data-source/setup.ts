@@ -27,7 +27,8 @@ export interface DataSourceOptions {
     verifyReceiptsRoot?: boolean
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
-    assertLogIndex?: boolean
+    skipLogIndexCheck?: boolean
+    skipCumulativeGasUsedCheck?: boolean
     useGasUsedForReceiptsRoot?: boolean
 }
 
@@ -52,7 +53,8 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         verifyReceiptsRoot: options.verifyReceiptsRoot,
         verifyWithdrawalsRoot: options.verifyWithdrawalsRoot,
         verifyLogsBloom: options.verifyLogsBloom,
-        assertLogIndex: options.assertLogIndex,
+        checkLogIndex: !options.skipLogIndexCheck,
+        checkCumulativeGasUsed: !options.skipCumulativeGasUsedCheck,
         useGasUsedForReceiptsRoot: options.useGasUsedForReceiptsRoot
     })
     let rpcSource = new EvmRpcDataSource({
@@ -73,6 +75,5 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
     return new Mapping(rpcSource, {
         withTraces: options.withTraces,
         withStateDiffs: options.withStatediffs,
-        assertLogIndex: options.assertLogIndex,
     })
 }

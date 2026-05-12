@@ -7,7 +7,8 @@ import {toJSON} from '@subsquid/util-internal-json'
 interface Options extends IngestOptions {
     withTraces?: boolean
     withStatediffs?: boolean
-    assertLogIndex?: boolean
+    skipLogIndexCheck?: boolean
+    skipCumulativeGasUsedCheck?: boolean
 }
 
 
@@ -29,7 +30,8 @@ export class EvmIngest extends Ingest<Options> {
         })
         program.option('--with-traces', 'Include EVM call traces')
         program.option('--with-statediffs', 'Include EVM state updates')
-        program.option('--assert-log-index', 'Assert that log indices within a block are sequential')
+        program.option('--skip-log-index-check', 'Do not check log indices within a block are sequential')
+        program.option('--skip-cumulative-gas-used-check', 'Do not check cumulativeGasUsed consistency across transactions')
     }
 
     protected async *getBlocks(range: Range): AsyncIterable<object[]> {
@@ -39,7 +41,8 @@ export class EvmIngest extends Ingest<Options> {
                     let block = mapRawBlock(raw, {
                         withTraces: this.options().withTraces,
                         withStateDiffs: this.options().withStatediffs,
-                        assertLogIndex: this.options().assertLogIndex,
+                        checkLogIndex: !this.options().skipLogIndexCheck,
+                        checkCumulativeGasUsed: !this.options().skipCumulativeGasUsedCheck
                     })
                     return toJSON(block)
                 } catch(err: any) {

@@ -44,7 +44,6 @@ for (let fix of listFixtures()) {
         let actual = mapRpcBlock(block, {
             withTraces: true,
             withStateDiffs: true,
-            assertLogIndex: true,
         })
         actual = normalizeJson(actual)
         try {

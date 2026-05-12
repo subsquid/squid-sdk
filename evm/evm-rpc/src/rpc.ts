@@ -42,7 +42,8 @@ export interface RpcOptions {
     verifyReceiptsRoot?: boolean
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
-    assertLogIndex?: boolean
+    checkLogIndex?: boolean
+    checkCumulativeGasUsed?: boolean
     useGasUsedForReceiptsRoot?: boolean
 }
 
@@ -56,7 +57,8 @@ export class Rpc {
     private verifyReceiptsRoot?: boolean
     private verifyWithdrawalsRoot?: boolean
     private verifyLogsBloom?: boolean
-    private assertLogIndex?: boolean
+    private checkLogIndex?: boolean
+    private checkCumulativeGasUsed?: boolean
     private useGasUsedForReceiptsRoot?: boolean
     private log: Logger
     private receiptsMethod?: GetReceiptsMethod
@@ -71,7 +73,8 @@ export class Rpc {
         this.verifyReceiptsRoot = options.verifyReceiptsRoot
         this.verifyWithdrawalsRoot = options.verifyWithdrawalsRoot
         this.verifyLogsBloom = options.verifyLogsBloom
-        this.assertLogIndex = options.assertLogIndex
+        this.checkLogIndex = options.checkLogIndex
+        this.checkCumulativeGasUsed = options.checkCumulativeGasUsed
         this.useGasUsedForReceiptsRoot = options.useGasUsedForReceiptsRoot
         this.log = createLogger('sqd:evm-rpc')
     }
@@ -253,7 +256,7 @@ export class Rpc {
             let logs = logsByBlock.get(block.hash) || []
 
             try {
-                if (this.assertLogIndex) {
+                if (this.checkLogIndex) {
                     let logIndex = 0
                     for (let log of logs) {
                         assert.equal(qty2Int(log.logIndex), logIndex++)
@@ -377,10 +380,19 @@ export class Rpc {
             }
 
             try {
-                if (this.assertLogIndex) {
+                if (this.checkLogIndex) {
                     let logIndex = 0
                     for (let log of logs) {
                         assert.equal(qty2Int(log.logIndex), logIndex++)
+                    }
+                }
+
+                if (this.checkCumulativeGasUsed) {
+                    let prevCumulativeGasUsed = 0n
+                    for (let receipt of receipts) {
+                        let cumulativeGasUsed = BigInt(receipt.cumulativeGasUsed)
+                        assert.equal(cumulativeGasUsed, prevCumulativeGasUsed + BigInt(receipt.gasUsed))
+                        prevCumulativeGasUsed = cumulativeGasUsed
                     }
                 }
 
@@ -823,10 +835,19 @@ export class Rpc {
             }
 
             try {
-                if (this.assertLogIndex) {
+                if (this.checkLogIndex) {
                     let logIndex = 0
                     for (let log of logs) {
                         assert.equal(qty2Int(log.logIndex), logIndex++)
+                    }
+                }
+
+                if (this.checkCumulativeGasUsed) {
+                    let prevCumulativeGasUsed = 0n
+                    for (let receipt of receipts) {
+                        let cumulativeGasUsed = BigInt(receipt.cumulativeGasUsed)
+                        assert.equal(cumulativeGasUsed, prevCumulativeGasUsed + BigInt(receipt.gasUsed))
+                        prevCumulativeGasUsed = cumulativeGasUsed
                     }
                 }
 

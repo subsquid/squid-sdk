@@ -18,7 +18,8 @@ interface Options extends DumperOptions {
     verifyReceiptsRoot?: boolean
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
-    assertLogIndex?: boolean
+    skipLogIndexCheck?: boolean
+    skipCumulativeGasUsedCheck?: boolean
     useGasUsedForReceiptsRoot?: boolean
 }
 
@@ -39,7 +40,8 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
         program.option('--verify-withdrawals-root', 'Verify block withdrawals against withdrawals root')
         program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
-        program.option('--assert-log-index', 'Assert that log indices within a block are sequential')
+        program.option('--skip-log-index-check', 'Do not check log indices within a block are sequential')
+        program.option('--skip-cumulative-gas-used-check', 'Do not check cumulativeGasUsed consistency across transactions')
         program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
     }
 
@@ -82,7 +84,8 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 verifyReceiptsRoot: this.options().verifyReceiptsRoot,
                 verifyWithdrawalsRoot: this.options().verifyWithdrawalsRoot,
                 verifyLogsBloom: this.options().verifyLogsBloom,
-                assertLogIndex: this.options().assertLogIndex,
+                checkLogIndex: !this.options().skipCumulativeGasUsedCheck,
+                checkCumulativeGasUsed: !this.options().skipCumulativeGasUsedCheck,
                 useGasUsedForReceiptsRoot: this.options().useGasUsedForReceiptsRoot,
             }),
             req: {

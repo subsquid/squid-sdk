@@ -617,7 +617,8 @@ function mapBlockHeader(src: rpc.GetBlock): BlockHeader {
 export interface MappingOptions {
     withTraces?: boolean
     withStateDiffs?: boolean
-    assertLogIndex?: boolean
+    checkLogIndex?: boolean
+    checkCumulativeGasUsed?: boolean
 }
 
 
@@ -719,6 +720,7 @@ export function mapRawBlock(raw: RawBlock, options?: MappingOptions): Block {
         stateDiffs: options?.withStateDiffs ? [] : undefined
     }
 
+    let prevCumulativeGasUsed = 0n
     for (let tx of raw.transactions) {
         let transactionIndex = qty2Int(tx.transactionIndex)
         block.transactions.push(mapTransaction(tx, tx.receipt_))
@@ -727,6 +729,12 @@ export function mapRawBlock(raw: RawBlock, options?: MappingOptions): Block {
             for (let log of tx.receipt_.logs) {
                 let normalized = mapLog(log)
                 block.logs.push(normalized)
+            }
+
+            if (options?.checkCumulativeGasUsed) {
+                let cumulativeGasUsed = BigInt(tx.receipt_.cumulativeGasUsed)
+                assert.equal(cumulativeGasUsed, prevCumulativeGasUsed + BigInt(tx.receipt_.gasUsed))
+                prevCumulativeGasUsed = cumulativeGasUsed
             }
         }
 
@@ -765,7 +773,7 @@ export function mapRawBlock(raw: RawBlock, options?: MappingOptions): Block {
         }
     }
 
-    if (options?.assertLogIndex) {
+    if (options?.checkLogIndex) {
         let logIndex = 0
         for (let log of block.logs) {
             assert.equal(log.logIndex, logIndex++)
