@@ -436,6 +436,9 @@ importers:
       '@subsquid/graphiql-console':
         specifier: ^0.3.0
         version: 0.3.0
+      '@subsquid/util-internal-archive-client':
+        specifier: ^0.1.2
+        version: 0.1.2
       '@substrate/calc':
         specifier: ^0.2.8
         version: 0.2.8
@@ -1333,11 +1336,11 @@ packages:
     resolution: {integrity: sha512-n8iosDOt6Ig1UhJ2AYqoIhHWh/isz0xpicHTzpKBeotdVsTEcxsSA/i3EVM7gQAj0rU27OLAxCjzlj15IWY7bg==}
 
   '@rush-temp/astar-erc20@file:projects/astar-erc20.tgz':
-    resolution: {integrity: sha512-s6P9QmJxCWxeP5mInAeb2n0logL27nU2asgpH/mSF78c9imS1DD6WaJEFjxoGrBar/LrmYhhlLFvWmHotQdXzQ==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-PgbNjXm+YLjNMl4kc8wq1AZFSen41qeEiu7lhvA0u32O3MU1deyFh+jy99EnFsdud8PvFngYW6e8cUdshOG7HA==, tarball: file:projects/astar-erc20.tgz}
     version: 0.0.0
 
   '@rush-temp/balances@file:projects/balances.tgz':
-    resolution: {integrity: sha512-iIG8zejLuYoTtnyKNu8AOfyO/puEn+x6tewqx1vpHLl9Jxe4vPv/Si+UEUkPjIPTyeBK8tiSltxQ0dEZ0TjkyA==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-tZqJDrohzc+J7ruKko2++dtRWt4LUtoL+ig9+dutsyd87gw+JA8KblQDi7dnJAN8VpcBZS362v4e4543NzJPiA==, tarball: file:projects/balances.tgz}
     version: 0.0.0
 
   '@rush-temp/batch-processor@file:projects/batch-processor.tgz':
@@ -1417,7 +1420,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/evm-processor@file:projects/evm-processor.tgz':
-    resolution: {integrity: sha512-9kUlwUJKPFgdvS7WmITa35GKH6cXlaKonj1z2MNHi7sZjtbhqYKDAlfCua1bu4YW2vh5JjTf0UJAnqC2mSUJFQ==, tarball: file:projects/evm-processor.tgz}
+    resolution: {integrity: sha512-5HueJ+fnK1T+6kkjgO0O1K3sNgkMTH0u51IQKbcYtsRyALfrTvlfGi5nunOQb+Z/p2N0GS4t7E9v5PyiCm/gDw==, tarball: file:projects/evm-processor.tgz}
     version: 0.0.0
 
   '@rush-temp/evm-rpc@file:projects/evm-rpc.tgz':
@@ -1425,7 +1428,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/evm-stream@file:projects/evm-stream.tgz':
-    resolution: {integrity: sha512-5N2nrUTYz+EloovJTSm1f3iOUQdJGrX8xbboAFlvWe4x7Gn5ocV7YJlOmVZl1GWOU3HbJHE66lya8xgVkZRKyw==, tarball: file:projects/evm-stream.tgz}
+    resolution: {integrity: sha512-Vc4kgasysNHe1jwKxPErmc3JHrTEOmzgrAbrplio1ATOY3gilyEFfi/7HLh9+bOlD9g3k6YIVBlMe+7RNIg+Vw==, tarball: file:projects/evm-stream.tgz}
     version: 0.0.0
 
   '@rush-temp/evm-typegen@file:projects/evm-typegen.tgz':
@@ -1437,7 +1440,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/fuel-data@file:projects/fuel-data.tgz':
-    resolution: {integrity: sha512-/O3aZ897OH9td79ZS11zarduPVikcwlZ5J0Yx2jWXJZLiNY0ED7UzoHVIdD8/eF9CQDAn7MUBrT0I/Y0x3LuMw==, tarball: file:projects/fuel-data.tgz}
+    resolution: {integrity: sha512-xLiCRrjZDIiEZ3/CiSkJHmuYm8j1rp/svD+ipM2qoVfub5FXHMjMpfYaLK4JKioqxiNJYr5rcJslpxQMPeV7Ag==, tarball: file:projects/fuel-data.tgz}
     version: 0.0.0
 
   '@rush-temp/fuel-dump@file:projects/fuel-dump.tgz':
@@ -1449,15 +1452,15 @@ packages:
     version: 0.0.0
 
   '@rush-temp/fuel-normalization@file:projects/fuel-normalization.tgz':
-    resolution: {integrity: sha512-rQb4FRuxZXLZbRtcNa1R8FJIye4uylZozWSvG5RY/ZDJG5tJ8BKCNaGyKepC510i9vgrYcc04r/D7+VFC97CpA==, tarball: file:projects/fuel-normalization.tgz}
+    resolution: {integrity: sha512-8FS+4Ew0AKK0/KP52Y0Pda0QuP8OZpPCJHFVyJM+pbKgh9CazZQRCpN7XTpm/nS9V7BwgEDI0qFep/vD8CRdSg==, tarball: file:projects/fuel-normalization.tgz}
     version: 0.0.0
 
   '@rush-temp/fuel-objects@file:projects/fuel-objects.tgz':
-    resolution: {integrity: sha512-3NDsAVqzYrY+brhMqFX9lpo6GX0zQsXoNkQMdiv4ZHPO4BHs6QQsfjw9cPgcpRRY6xgY8uKVDVntggQYuP388Q==, tarball: file:projects/fuel-objects.tgz}
+    resolution: {integrity: sha512-nh6YG/bJ6KSZlywOrZlXUA/0Y1MyB6JcnzZzcEKDxFd6phje+ouWlF4pamcH9nVxuQlNTrAGmCao2K6W2b2onA==, tarball: file:projects/fuel-objects.tgz}
     version: 0.0.0
 
   '@rush-temp/fuel-stream@file:projects/fuel-stream.tgz':
-    resolution: {integrity: sha512-+Z4NMczikw+rYMK7/fNuj8CAfcOqxClU4tKbsGyertHvccoXtwx702aJjl/uL4l88T/CY7nXgERnaptJYo8/zA==, tarball: file:projects/fuel-stream.tgz}
+    resolution: {integrity: sha512-pvtqCSRNpSBPVCmP90pnXztLHM9HxsbAQDe7LKK+wTetEXYGJXmreh/PP7DGBbUGfa9GZB/5ZwwdjKrfLCUzPQ==, tarball: file:projects/fuel-stream.tgz}
     version: 0.0.0
 
   '@rush-temp/gql-test-client@file:projects/gql-test-client.tgz':
@@ -1525,7 +1528,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/polkavm-erc20@file:projects/polkavm-erc20.tgz':
-    resolution: {integrity: sha512-XgsD8yrqwLJbVDtHSGBwJ/gDV/dKmuQlVohIsEA4X/g9NSYSu20cbdiyEYEM27K7ULFqB7ESh3nO1LWIW1h88w==, tarball: file:projects/polkavm-erc20.tgz}
+    resolution: {integrity: sha512-tutR2Jw3sOeWh1/V/yMks6MK7VRKV7Z04hR05iIsoHBi3MWRMH29nZ9XmscZo4FHJ/79h2NpL3oNowweh4OixQ==, tarball: file:projects/polkavm-erc20.tgz}
     version: 0.0.0
 
   '@rush-temp/portal-client@file:projects/portal-client.tgz':
@@ -1545,11 +1548,11 @@ packages:
     version: 0.0.0
 
   '@rush-temp/shibuya-erc20@file:projects/shibuya-erc20.tgz':
-    resolution: {integrity: sha512-XGHg3Y2eiL86lOjNuxWT9qTArWOGLFX0XNIdggMbb/7XyIzhlkGeS3UQMmswUXWd+ORksFwI96AocZLezHpp7w==, tarball: file:projects/shibuya-erc20.tgz}
+    resolution: {integrity: sha512-4dxPI+pCEqO0fCcct+7YfOgdhWShD3/YpO9l2/XE+6rS5OlC+DbkrAaIgfcNuz2bLOo9kd9/tXzY4RvqA0GuRw==, tarball: file:projects/shibuya-erc20.tgz}
     version: 0.0.0
 
   '@rush-temp/shibuya-psp22@file:projects/shibuya-psp22.tgz':
-    resolution: {integrity: sha512-xncwKaLJA1GDQ15sVKALgXL7p20SA5a5qqRmJBnlDsCPkA+Bh79EtifOSBaQPAMjsJCBk8OR3BDIcrG/ZGdjgw==, tarball: file:projects/shibuya-psp22.tgz}
+    resolution: {integrity: sha512-e8Tp1x7CxLc19y20OLV/FXhp5st01tUJMy48Xvrt9vIp8zLgo4y1nqYKL1lXrpT6H1aGSrpLTRcLi06zcSoE4A==, tarball: file:projects/shibuya-psp22.tgz}
     version: 0.0.0
 
   '@rush-temp/solana-data-service@file:projects/solana-data-service.tgz':
@@ -1561,7 +1564,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/solana-example@file:projects/solana-example.tgz':
-    resolution: {integrity: sha512-4Zb3Gi2vCOSl+M7yRlSZeyHEZIInhx1sCTy37sSZxZenkRDglSq8nr3vsPlO9/a+f/VlBSUwgSSjCP+0n1xE5g==, tarball: file:projects/solana-example.tgz}
+    resolution: {integrity: sha512-14c0welu5Jvi5LHnf/fRoMHTaPBZA8gbppgcK8pgF6DSLD265cdrjnjhXcu8T0g8dxzkCeGK0S+DuSYYPuaiqw==, tarball: file:projects/solana-example.tgz}
     version: 0.0.0
 
   '@rush-temp/solana-ingest@file:projects/solana-ingest.tgz':
@@ -1573,7 +1576,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/solana-objects@file:projects/solana-objects.tgz':
-    resolution: {integrity: sha512-2tBXknO8CMJTj3SQJxCn4zGi4iqmDUXd1KN2gz1ZA1aHUItsMn3liOKEq0JFrs84GYESkJskiODxCagfPr6hzA==, tarball: file:projects/solana-objects.tgz}
+    resolution: {integrity: sha512-voCRDegoNTmfhUqrghGkOYpzw/w9TlztkyadljK6Qe7sAjzo1WaX+cea1JRvrl9i5PeP3YsdpMVXIOlTXH46fQ==, tarball: file:projects/solana-objects.tgz}
     version: 0.0.0
 
   '@rush-temp/solana-rpc-data@file:projects/solana-rpc-data.tgz':
@@ -1589,7 +1592,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/solana-stream@file:projects/solana-stream.tgz':
-    resolution: {integrity: sha512-7uoONn4dvZbozhjAnMWxS9jhcANCa7ZX9tfvQD+BNxWIjJ+RBWV4TH9BPlOUXf+BC4QNdPnavNMxC0FUO+LwHg==, tarball: file:projects/solana-stream.tgz}
+    resolution: {integrity: sha512-qe0rFZgP60aGk1ps3+433Z+5mbGd59UdIYVFBTUmM51o2pKxldob4+wVHKu3m3ymgDcV55PF/mKZwOe0wPVwGg==, tarball: file:projects/solana-stream.tgz}
     version: 0.0.0
 
   '@rush-temp/solana-typegen@file:projects/solana-typegen.tgz':
@@ -1609,27 +1612,27 @@ packages:
     version: 0.0.0
 
   '@rush-temp/starknet-normalization@file:projects/starknet-normalization.tgz':
-    resolution: {integrity: sha512-d7goYw/rV1q/zYAcPP76EsHuf/jjF2xjII/uyXW7vOzs/PDZmpB9FO/r51MmfefoAVx51QEHJe63q5ycx5cxUg==, tarball: file:projects/starknet-normalization.tgz}
+    resolution: {integrity: sha512-PZWRrY3Wr4j+3IQ+r8sDUfzywlZXBcTGN/xmpHtz1ROeWzddIk57H9pUhgG3/kTXXziYWRFoWQ9PJWn5OfHY1g==, tarball: file:projects/starknet-normalization.tgz}
     version: 0.0.0
 
   '@rush-temp/starknet-objects@file:projects/starknet-objects.tgz':
-    resolution: {integrity: sha512-nmp2smmGZSPxHc14rfYs74UjR2CAy94IC2jnfT11zAbUHrlI+8sfsg4e/bxdXg64Ss5Ji+WvUOyqv57FkYtR9g==, tarball: file:projects/starknet-objects.tgz}
+    resolution: {integrity: sha512-ZXWmYgakLneYLdHl5hRz5lt0Bc0DYilQ23uRdUUxf+MRYgKala8l887aSEsGxxTB1l4bvERTb6NTU5uW6Nf+Ow==, tarball: file:projects/starknet-objects.tgz}
     version: 0.0.0
 
   '@rush-temp/starknet-rpc@file:projects/starknet-rpc.tgz':
-    resolution: {integrity: sha512-sqotjazD+jv3N1//DlM4e8AfI8WSl6W4BwcmMegIHQlJL/0f3+UVONMxcO7RvIFdOBQZEtVm8ut1JjljtDUZPg==, tarball: file:projects/starknet-rpc.tgz}
+    resolution: {integrity: sha512-t7lwyYascVqGHG/KxDqyOSEwHZmVEF4ASiYL4deu8mo/KBXQa24cABOHhsgHEQbwJa74z+xSR+mmsQnA4O/1fA==, tarball: file:projects/starknet-rpc.tgz}
     version: 0.0.0
 
   '@rush-temp/starknet-stream@file:projects/starknet-stream.tgz':
-    resolution: {integrity: sha512-Ykl/IX1o4rRvAE30vYpKEExOd8zdxm2CtwOQ6Xy8k/k2IuVq1lQjGnhys7NNoGfTw4YSo116g4WEvDLks2zk8g==, tarball: file:projects/starknet-stream.tgz}
+    resolution: {integrity: sha512-uwyg3UaPGc9C0w1d7TWbcm/tGMzCsARJjXvyhHwWXjA5wxuDOo6C77ygS+/kKpTehBnJQmcxYSmdP8VXDQcyxA==, tarball: file:projects/starknet-stream.tgz}
     version: 0.0.0
 
   '@rush-temp/substrate-data-raw@file:projects/substrate-data-raw.tgz':
-    resolution: {integrity: sha512-FIlf+QVZCeGCs4dpGnVCbNvEpX+3wlAoK3xHW1SQDjUUX3Q9wkkUqZuRCyCWMsLWgnsqaLcGezskL4baepZjNA==, tarball: file:projects/substrate-data-raw.tgz}
+    resolution: {integrity: sha512-9cygACE+XBh+cCG21f3QCHz5FGUMZLbVpQKK+ev5DLghFkHqjPsIJaFWdtdt1yG5JsmXQxZ6Cm/SOYlJLN4Glw==, tarball: file:projects/substrate-data-raw.tgz}
     version: 0.0.0
 
   '@rush-temp/substrate-data@file:projects/substrate-data.tgz':
-    resolution: {integrity: sha512-VhEyYI9YmEqU8cTqIMGbJcfMF7UF79hKZjgiKmwJP6WsibSsMCWFihaKM8vCn6GvPP0F/1UUvPTptpkIyBXa7w==, tarball: file:projects/substrate-data.tgz}
+    resolution: {integrity: sha512-hnVELFjK/YI4Np9EVj7+CqaAvc84KjB1P1n3+jzCXTRZnKiaAIkS9CefBWRkHBIPG6Ol20LI2y9COsaP4VbVEA==, tarball: file:projects/substrate-data.tgz}
     version: 0.0.0
 
   '@rush-temp/substrate-dump@file:projects/substrate-dump.tgz':
@@ -1649,7 +1652,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/substrate-processor@file:projects/substrate-processor.tgz':
-    resolution: {integrity: sha512-o7dEuG8RKqEioAw3Twpwh1QlfGuJCLjPMBpw51DQgmGCWx9jqoaEQt62dDvPbqFl3GZdz53z5YYLatCL25ifHg==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-ZYgoRiJfoNKgYu4vwZbKVPYyOSvWs5Q+R57uK0x0EGSX3+zZ5fV73uybqvU2QlnWxR4d0SJ7WAmSonTArdDcBQ==, tarball: file:projects/substrate-processor.tgz}
     version: 0.0.0
 
   '@rush-temp/substrate-runtime@file:projects/substrate-runtime.tgz':
@@ -1661,7 +1664,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/tron-data@file:projects/tron-data.tgz':
-    resolution: {integrity: sha512-vZzq1bGD/cRq4WNWnhAEj1H+Rcp1AbfgpYSWSwN6y7DqMCmLHh1NVvQCAL4hMaJkJ+YFLaWlVq9VWfKnHD4hNg==, tarball: file:projects/tron-data.tgz}
+    resolution: {integrity: sha512-lCG3hOb+HSIu05MK8bf+IW/S6dqwTqcrIgRR74ZXUDvuXfFdAjtMXQSm/8bA9CxDIFe9Q3MgHX7LQVDRZodCKg==, tarball: file:projects/tron-data.tgz}
     version: 0.0.0
 
   '@rush-temp/tron-dump@file:projects/tron-dump.tgz':
@@ -1677,11 +1680,11 @@ packages:
     version: 0.0.0
 
   '@rush-temp/tron-processor@file:projects/tron-processor.tgz':
-    resolution: {integrity: sha512-Z0n0IojYnMhgrEOs4mRrK6G+Fe4uLopRQ/3RwLl9zgpmEzP2EV9heYSd39DJEkKdqU2FQhOUnae4CUO5Ff66EA==, tarball: file:projects/tron-processor.tgz}
+    resolution: {integrity: sha512-M3eRZMURZc617wL8oTu/SazesFPPipGZKiGV2OMaNKBi8AbaGTfgcwbriBD4H4Pveo/fB4Zm3FMp5AN+MsnlYw==, tarball: file:projects/tron-processor.tgz}
     version: 0.0.0
 
   '@rush-temp/tron-usdt@file:projects/tron-usdt.tgz':
-    resolution: {integrity: sha512-R3WHZyPMmQcW8O9vH2gMs35GveP3GwOsQevmmMp6FzCHD8qYN7Mttb7z3u5pWdN3HUDZOgS+rlkmlXj6y1pw+g==, tarball: file:projects/tron-usdt.tgz}
+    resolution: {integrity: sha512-OSrVsE9Fn6hALmtf05X5SgqUC6F4vuBFHFpOA1bJ0GbvxgFgw7H4ISNWHm5NS/ezkLqkG3Cen2rVAEnAHQ5N1A==, tarball: file:projects/tron-usdt.tgz}
     version: 0.0.0
 
   '@rush-temp/typeorm-codegen@file:projects/typeorm-codegen.tgz':
@@ -1761,7 +1764,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/util-internal-ingest-tools@file:projects/util-internal-ingest-tools.tgz':
-    resolution: {integrity: sha512-r6zc3pqRvdtK+S4DgQ+DUAQ4XezoOHFN76Gr8LaGMj2MSQxJ/F2evy2B5sgXuw2ekwfZNQ1k1/xS9G/ufxHVGQ==, tarball: file:projects/util-internal-ingest-tools.tgz}
+    resolution: {integrity: sha512-JdhMTxbZlbMOPHTixPHk0iHnEOSLluA1eu7+ILJgwy/3/27neRGoDCCy0zlpvVO+idRCU7f2ZNrRn4DDo+NcJA==, tarball: file:projects/util-internal-ingest-tools.tgz}
     version: 0.0.0
 
   '@rush-temp/util-internal-json-fix-unsafe-integers@file:projects/util-internal-json-fix-unsafe-integers.tgz':
@@ -2176,6 +2179,24 @@ packages:
 
   '@subsquid/graphiql-console@0.3.0':
     resolution: {integrity: sha512-C89mus6IXnNi0xMQrZqUFBZwLj8tbuq9lye8Gq/lHmmERAUpi6UsWEyLdJLx2mneZzF3JtY8eNiiZ16jmjtvfw==}
+
+  '@subsquid/util-internal-archive-client@0.1.2':
+    resolution: {integrity: sha512-XATZWOIHUqIuqzb9hxaFIsz/BItb5qLoYjk6uhFcR9ART2AExXLU5l26SvSrq3hUnqfznIkQMZVQ1SKqnGzx4g==}
+    peerDependencies:
+      '@subsquid/http-client': ^1.4.0
+      '@subsquid/logger': ^1.3.3
+    peerDependenciesMeta:
+      '@subsquid/logger':
+        optional: true
+
+  '@subsquid/util-internal-binary-heap@1.0.0':
+    resolution: {integrity: sha512-88auuc8yNFmCZugmJSTYzS7WM/nN2obKGQCgrl8Jty5rJUFbqazGSi8icqftKhv6MPtUMJ3PSTRLiTFXAUGnAA==}
+
+  '@subsquid/util-internal-range@0.3.0':
+    resolution: {integrity: sha512-5/oDNW0TS66o4vWRzYSYXEfNnFRZsAzoi4pZNdPn7n1l+xV7ZTa0Y57XA6cP5hrWCaIYav4z1zECPngLDV/qeQ==}
+
+  '@subsquid/util-internal@3.2.0':
+    resolution: {integrity: sha512-foNCjOmZaP8MKMa9sNe2GXTjFSDM9UqA0I0C0/ZvCxM1lCmG3mxZb70f8Wyi7TePXC/eV8eARbIqFyz0GjQmzA==}
 
   '@substrate/calc@0.2.8':
     resolution: {integrity: sha512-1c3mxf35FBeOswduhy0Wil9s4exHahXFo974qa0Ci2AORX8JTxmwhBb10+3Ls9iWoTFwvgOaFr9v1HeRL5tCig==}
@@ -5886,12 +5907,15 @@ snapshots:
 
   '@rush-temp/evm-stream@file:projects/evm-stream.tgz(esbuild@0.27.7)(tsx@4.21.0)':
     dependencies:
+      '@subsquid/util-internal-archive-client': 0.1.2
       '@types/node': 24.12.2
       typescript: 5.5.4
       vitest: 4.1.5(@types/node@24.12.2)(esbuild@0.27.7)(tsx@4.21.0)
     transitivePeerDependencies:
       - '@edge-runtime/vm'
       - '@opentelemetry/api'
+      - '@subsquid/http-client'
+      - '@subsquid/logger'
       - '@vitejs/devtools'
       - '@vitest/browser-playwright'
       - '@vitest/browser-preview'
@@ -7728,6 +7752,20 @@ snapshots:
       - encoding
 
   '@subsquid/graphiql-console@0.3.0': {}
+
+  '@subsquid/util-internal-archive-client@0.1.2':
+    dependencies:
+      '@subsquid/util-internal': 3.2.0
+      '@subsquid/util-internal-range': 0.3.0
+
+  '@subsquid/util-internal-binary-heap@1.0.0': {}
+
+  '@subsquid/util-internal-range@0.3.0':
+    dependencies:
+      '@subsquid/util-internal': 3.2.0
+      '@subsquid/util-internal-binary-heap': 1.0.0
+
+  '@subsquid/util-internal@3.2.0': {}
 
   '@substrate/calc@0.2.8': {}
 
