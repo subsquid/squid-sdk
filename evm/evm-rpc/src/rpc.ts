@@ -116,8 +116,52 @@ export class Rpc {
         return this.getBlockBatch(finalized)
     }
 
+    async canDoFastBlock(): Promise<boolean> {
+        return 'eth_getBlockReceipts' === await this.getReceiptsMethod()
+    }
+
+    async getFastBlock(number: number, hash: string, req?: DataRequest): Promise<Block | null> {
+        let startTime = Date.now()
+        console.log(`[EVM-RPC] getFastBlock: number = ${number}, hash = ${hash}`)
+
+        let block_promise = this.getBlocks([number], req?.transactions ?? false);
+        let logs_promise = null
+        let receipts_promise = null
+        if (req?.logs) {
+            logs_promise = this.fetchLogs(number)
+        }
+        if (req?.receipts) {
+            receipts_promise = this.fetchReceiptsByBlock(number)
+        }
+
+        let [[block], logs, receipts] = await Promise.all([block_promise, logs_promise, receipts_promise]);
+        console.log(`[EVM-RPC] getFastBlock: fetch data took ${Date.now() - startTime}ms`)
+
+        if (req?.logs && block) {
+            if (logs) {
+                this.processLogs(block, logs)
+            } else {
+                block._isInvalid = true
+                block._errorMessage = 'eth_getLogs returned null'
+            }
+        }
+        if (req?.receipts && block) {
+            if (receipts) {
+                this.processReceipts(block, receipts)
+            } else {
+                block._isInvalid = true
+                block._errorMessage = 'eth_getBlockReceipts returned null'
+            }
+        }
+
+        return block
+    }
+
     async getBlockBatch(numbers: number[], req?: DataRequest): Promise<Block[]> {
-        let blocks = await this.getBlocks(numbers, req?.transactions ?? false)
+        let startTime = Date.now()
+        console.log(`[EVM-RPC] getBlockBatch: batch size = ${numbers.length}, heights = [${numbers[0]}..${numbers[numbers.length-1]}]`)
+        let blocks = await this.getBlocks(numbers, req?.transactions ?? false);
+        console.log(`[EVM-RPC] getBlockBatch: getBlocks took ${Date.now() - startTime}ms, received ${blocks.length} blocks`)
 
         let chain: Block[] = []
 
@@ -128,7 +172,10 @@ export class Rpc {
             chain.push(block)
         }
 
+        let addDataStart = Date.now()
         await this.addRequestedData(chain, req)
+        console.log(`[EVM-RPC] getBlockBatch: addRequestedData took ${Date.now() - addDataStart}ms, chain size = ${chain.length}`)
+        console.log(`[EVM-RPC] getBlockBatch: total time = ${Date.now() - startTime}ms`)
 
         return chain
     }
@@ -226,6 +273,166 @@ export class Rpc {
         }
 
         await Promise.all(subtasks)
+    }
+
+    private async fetchLogs(number: number): Promise<Map<string, Log[]>> {
+        let results = await this.call('eth_getLogs', [{
+            fromBlock: number,
+            toBlock: number
+        }], {
+            validateResult: getResultValidator(array(Log)),
+            validateError: info => {
+                if (info.message.includes('after last accepted block')) {
+                    // Regular EVM networks simply return an empty array in case
+                    // of out of range request, but Avalanche returns an error.
+                    return []
+                }
+                throw new RpcError(info)
+            }
+        })
+        let logsByBlock = groupBy(results, log => log.blockHash)
+        return logsByBlock
+    }
+
+    private async processLogs(block: Block, logsByBlock: Map<string, Log[]>) {
+
+        let utils = await this.getChainUtils()
+        let logs = logsByBlock.get(block.hash) || []
+
+        try {
+            if (this.assertLogIndex) {
+                let logIndex = 0
+                for (let log of logs) {
+                    assert.equal(qty2Int(log.logIndex), logIndex++)
+                }
+            }
+
+            if (this.verifyLogsBloom) {
+                let logsBloom = utils.calculateLogsBloom(block.block, logs)
+                assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
+            }
+        } catch (err: any) {
+            throw addErrorContext(err, {
+                blockNumber: block.number,
+                blockHash: block.hash
+            })
+        }
+
+        block.logs = logs
+    }
+
+    private async fetchReceiptsByBlock(number: number) : Promise<(Receipt | null)[] | null> {
+        let call = {
+            method: 'eth_getBlockReceipts',
+            params: ["0x" + number.toString(16)]
+        }
+
+        let result = await this.reduceBatchOnRetry([call], {
+            validateResult: getResultValidator(nullable(array(nullable(Receipt)))),
+            validateError: info => {
+                if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
+                throw new RpcError(info)
+            }
+        })
+        return result[0]
+    }
+
+    private async processReceipts(block: Block, rawReceipts: (Receipt | null)[]) {
+        let utils = await this.getChainUtils()
+
+        // Some RPCs occasionally return null entries inside the receipts
+        // array (e.g. dRPC for Cronos). Drop them here — length-mismatch follow-ups
+        // (phantom-tx handling, per-tx recovery, final invalidity check)
+        // will decide how to deal with the missing ones.
+        let nullCount = 0
+        let receipts: Receipt[] = []
+        for (let r of rawReceipts) {
+            if (r == null) {
+                nullCount++
+            } else {
+                receipts.push(r)
+            }
+        }
+        if (nullCount > 0) {
+            this.log.warn(
+                {
+                    rpcEndpoint: this.client.url,
+                    blockNumber: block.number,
+                    blockHash: block.hash,
+                    nullCount
+                },
+                'eth_getBlockReceipts returned null entries in the receipts array - stripping them'
+            )
+        }
+
+        for (let receipt of receipts) {
+            if (receipt.blockHash !== block.block.hash) {
+                block._isInvalid = true
+                block._errorMessage = 'eth_getBlockReceipts returned receipts for a different block'
+            }
+        }
+
+        // Handle Cronos (Ethermint) phantom transactions BEFORE any verification.
+        // Phantom txs are stripped from both block.block.transactions and receipts,
+        // so that subsequent checks (bloom, receipts root, count) see a consistent view.
+        // Only runs on blocks affected by the Ethermint bug window — past that cutoff
+        // the chain is fixed and mismatches would indicate a real problem.
+        let phantomTxHashes: Bytes32[] = []
+        if (utils.isCronosEthermintBugBlock(block.block.number) && !block._isInvalid) {
+            phantomTxHashes = await this.handleCronosPhantomTransactions(block, receipts)
+            if (block.block.transactions.length !== receipts.length) {
+                // Any tx still missing a receipt after phantom handling genuinely
+                // executed (nonce advanced) but was omitted by eth_getBlockReceipts
+                // — fall back to eth_getTransactionReceipt per tx.
+                await this.recoverMissingCronosReceipts(block, receipts)
+            }
+        }
+
+        block.receipts = receipts
+
+        let logs = []
+        for (let receipt of receipts) {
+            logs.push(...receipt.logs)
+        }
+
+        try {
+            if (this.assertLogIndex) {
+                let logIndex = 0
+                for (let log of logs) {
+                    assert.equal(qty2Int(log.logIndex), logIndex++)
+                }
+            }
+
+            if (this.verifyLogsBloom) {
+                let computed = utils.calculateLogsBloom(block.block, logs)
+                if (computed !== block.block.logsBloom) {
+                    if (utils.isCronosEthermintBugBlock(block.block.number)) {
+                        // Cronos blocks may have extra bits in the header bloom from
+                        // leaked pre-revert logs. Try to verify those extras via tracing.
+                        await this.verifyCronosLeakedLogsBloom(
+                            block, logs, computed, phantomTxHashes, receipts
+                        )
+                    } else {
+                        assert.equal(block.block.logsBloom, computed, 'failed to verify logs bloom')
+                    }
+                }
+            }
+
+            if (this.verifyReceiptsRoot) {
+                let root = await utils.calculateReceiptsRoot(block.block, receipts)
+                assert.equal(block.block.receiptsRoot, root, 'failed to verify receipts root')
+            }
+        } catch (err: any) {
+            throw addErrorContext(err, {
+                blockNumber: block.number,
+                blockHash: block.hash
+            })
+        }
+
+        if (block.block.transactions.length !== receipts.length) {
+            block._isInvalid = true
+            block._errorMessage = `got invalid number of receipts from eth_getBlockReceipts`
+        }
     }
 
     private async addLogs(blocks: Block[]) {

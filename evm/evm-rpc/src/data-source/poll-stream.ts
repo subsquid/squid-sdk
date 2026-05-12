@@ -18,6 +18,7 @@ export class PollStream {
     private req: DataRequest
     private strideSize: number
     private head?: number
+    private head_hash?: string
     private lastRead?: number
     private from: number
 
@@ -35,6 +36,7 @@ export class PollStream {
 
     reset(pos: number): void {
         this.head = undefined
+        this.head_hash = undefined
         this.lastRead = undefined
         this.from = pos
     }
@@ -51,6 +53,7 @@ export class PollStream {
 
     private async fetchHead(): Promise<number> {
         let head = await this.rpc.getLatestBlockhash(this.commitment)
+        this.head_hash = head.hash
         return this.head = head.number
     }
 
@@ -66,7 +69,17 @@ export class PollStream {
 
     private async fetchBlocks(): Promise<Block[]> {
         let plan = this.makePlan()
-        let blocks = await this.rpc.getBlockBatch(plan, this.req)
+        let block = null;
+        let blocks;
+        let can_fast_block = await this.rpc.canDoFastBlock();
+        if (can_fast_block && (plan.length == 1) && (plan[0] == this.head) && this.head_hash) {
+            block = await this.rpc.getFastBlock(this.head, this.head_hash, this.req);
+        }
+        if (!block) {
+            blocks = await this.rpc.getBlockBatch(plan, this.req)
+        } else {
+            blocks = [block]
+        }
 
         for (let i = 0; i < blocks.length; i++) {
             if (blocks[i]._isInvalid) {
