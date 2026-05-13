@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Drop DEFAULT_FIELDS; .setFields() is now the sole source of selected fields",
+      "type": "none",
+      "packageName": "@subsquid/solana-stream"
+    }
+  ],
+  "packageName": "@subsquid/solana-stream",
+  "email": "abernatskiy@toha.li"
+}
