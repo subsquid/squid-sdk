@@ -37,23 +37,6 @@ export interface FieldSelection {
 }
 
 
-export const DEFAULT_FIELDS = {
-    block: {
-        time: true
-    },
-    transaction: {
-        hash: true,
-        type: true,
-        status: true
-    },
-    receipt: {
-        receiptType: true
-    },
-    input: {},
-    output: {},
-} as const
-
-
 type Item<
     Data,
     RequiredFields extends keyof Data,
@@ -61,7 +44,7 @@ type Item<
     K extends keyof FieldSelection
 > = Simplify<
     Pick<Data, RequiredFields> &
-    Select<Data, GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, K>>
+    Select<Data, GetFields<FieldSelection, F, K>>
 >
 
 

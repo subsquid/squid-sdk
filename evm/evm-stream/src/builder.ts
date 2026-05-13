@@ -1,7 +1,7 @@
 import {PortalClient, type PortalClientOptions} from '@subsquid/portal-client'
 import {type Range, type RangeRequest, type RangeRequestList, applyRangeBound, mergeRangeRequests} from '@subsquid/util-internal-range'
 import assert from 'assert'
-import {DEFAULT_FIELDS, type FieldSelection} from './data/model'
+import type {FieldSelection} from './data/model'
 import type {DataRequest, LogRequest, StateDiffRequest, TraceRequest, TransactionRequest} from './data/request'
 import {PortalEvmDataSource} from './portal/source'
 import {type Query, QueryBuilder} from './query'
@@ -11,7 +11,7 @@ interface BlockRange {
     range?: Range
 }
 
-export class DataSourceBuilder<F extends FieldSelection = typeof DEFAULT_FIELDS> {
+export class DataSourceBuilder<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
@@ -163,6 +163,6 @@ export class DataSourceBuilder<F extends FieldSelection = typeof DEFAULT_FIELDS>
         assert(this.portal, 'Portal settings not set')
 
         let portal = this.portal instanceof PortalClient ? this.portal : new PortalClient(this.portal)
-        return new PortalEvmDataSource<F>(portal, (this.fields ?? DEFAULT_FIELDS) as F, this.getRequests())
+        return new PortalEvmDataSource<F>(portal, (this.fields ?? {}) as F, this.getRequests())
     }
 }

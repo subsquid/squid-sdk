@@ -50,35 +50,6 @@ export interface FieldSelection {
 export type FieldKey = keyof FieldSelection
 
 /**
- * Default field set applied when {@link DataSourceBuilder#setFields} is not
- * called.  `as const` preserves the literal `true` values so they feed through
- * {@link GetFields} correctly.
- */
-export const DEFAULT_FIELDS = {
-    block: {
-        timestamp: true,
-    },
-    log: {
-        address: true,
-        topics: true,
-        data: true,
-    },
-    transaction: {
-        from: true,
-        to: true,
-        hash: true,
-    },
-    trace: {
-        error: true,
-    },
-    stateDiff: {
-        kind: true,
-        next: true,
-        prev: true,
-    },
-} as const satisfies FieldSelection
-
-/**
  * A concrete item type derived from a raw data shape, the always-present
  * required keys, and a per-section field selection.
  */
