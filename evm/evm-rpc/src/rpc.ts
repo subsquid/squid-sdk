@@ -298,6 +298,7 @@ export class Rpc {
             validateResult: getResultValidator(nullable(array(nullable(Receipt)))),
             validateError: info => {
                 if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
+                if (info.code === -32603 && info.message.includes('substrate parent block hash')) throw new RetryError() // Dwellir/Substrate transient internal error
                 throw new RpcError(info)
             }
         })
