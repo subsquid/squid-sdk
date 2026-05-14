@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-stream",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/evm-stream_v0.1.0",
+      "date": "Thu, 14 May 2026 13:44:27 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Drop DEFAULT_FIELDS; .setFields() is now the sole source of selected fields"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/evm-stream_v0.0.1",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

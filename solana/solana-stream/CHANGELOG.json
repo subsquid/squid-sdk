@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-stream",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/solana-stream_v1.1.0",
+      "date": "Thu, 14 May 2026 13:44:27 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Drop DEFAULT_FIELDS; .setFields() is now the sole source of selected fields"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.0",
       "tag": "@subsquid/solana-stream_v1.0.0",
       "date": "Mon, 11 May 2026 05:34:26 GMT",
