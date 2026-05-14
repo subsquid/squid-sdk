@@ -21,10 +21,10 @@
     "@subsquid/util-internal": "^3.3.0"
   },
   "peerDependencies": {
-    "@subsquid/fuel-stream": "^1.1.1"
+    "@subsquid/fuel-stream": "^1.2.0"
   },
   "devDependencies": {
-    "@subsquid/fuel-stream": "^1.1.1",
+    "@subsquid/fuel-stream": "^1.2.0",
     "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }
