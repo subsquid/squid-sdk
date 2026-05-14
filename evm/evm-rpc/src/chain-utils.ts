@@ -112,7 +112,11 @@ export class ChainUtils {
             let transactions = block.transactions as Transaction[]
             let txByHash = new Map(transactions.map(tx => [getTxHash(tx), tx]))
             logs = logs.filter(log => {
-                let tx = assertNotNull(txByHash.get(log.transactionHash))
+                let tx = txByHash.get(log.transactionHash)
+                // Hyperliquid can produce logs whose transactionHash references a system
+                // transaction that is absent from block.transactions. Treat those as
+                // system-tx logs and filter them out rather than asserting non-null.
+                if (tx == null) return false
                 return !isHyperliquidSystemTx(tx)
             })
         }
