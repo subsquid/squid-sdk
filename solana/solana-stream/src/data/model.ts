@@ -33,50 +33,6 @@ export interface FieldSelection {
 export type FieldKey = keyof FieldSelection
 
 /**
- * Default field set applied when {@link DataSourceBuilder#setFields} is not
- * called.  `as const` preserves the literal `true` values so they feed through
- * {@link GetFields} correctly.
- */
-export const DEFAULT_FIELDS = {
-    block: {
-        timestamp: true,
-    },
-    transaction: {
-        signatures: true,
-        err: true,
-    },
-    instruction: {
-        programId: true,
-        accounts: true,
-        data: true,
-        isCommitted: true,
-    },
-    log: {
-        programId: true,
-        kind: true,
-        message: true,
-    },
-    balance: {
-        pre: true,
-        post: true,
-    },
-    tokenBalance: {
-        preMint: true,
-        preDecimals: true,
-        preOwner: true,
-        preAmount: true,
-        postMint: true,
-        postDecimals: true,
-        postOwner: true,
-        postAmount: true,
-    },
-    reward: {
-        lamports: true,
-        rewardType: true,
-    },
-} as const satisfies FieldSelection
-
-/**
  * A concrete item type derived from a raw data shape, the always-present
  * required keys, and a per-section field selection.
  */

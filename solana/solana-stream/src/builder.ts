@@ -2,7 +2,7 @@ import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
-import {DEFAULT_FIELDS, FieldSelection} from './data/model'
+import {FieldSelection} from './data/model'
 import {
     BalanceRequest,
     DataRequest,
@@ -20,7 +20,7 @@ interface BlockRange {
     range?: Range
 }
 
-export class DataSourceBuilder<F extends FieldSelection = typeof DEFAULT_FIELDS> {
+export class DataSourceBuilder<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
@@ -198,7 +198,7 @@ export class DataSourceBuilder<F extends FieldSelection = typeof DEFAULT_FIELDS>
         assert(this.portal, 'Portal settings not set')
 
         let portal = this.portal instanceof PortalClient ? this.portal : new PortalClient(this.portal)
-        return new PortalSolanaDataSource<F>(portal, this.fields ?? DEFAULT_FIELDS, () => this.getRequests(), {
+        return new PortalSolanaDataSource<F>(portal, (this.fields ?? {}) as F, () => this.getRequests(), {
             squidId: getOrGenerateSquidId(),
         })
     }
