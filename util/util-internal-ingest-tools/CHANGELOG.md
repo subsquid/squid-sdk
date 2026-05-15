@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-ingest-tools
 
-This log was last generated on Tue, 05 May 2026 07:41:38 GMT and should not be manually modified.
+This log was last generated on Fri, 15 May 2026 13:56:18 GMT and should not be manually modified.
+
+## 1.2.0
+Fri, 15 May 2026 13:56:18 GMT
+
+### Minor changes
+
+- relax continuity check in hot processor
 
 ## 1.1.5
 Tue, 05 May 2026 07:41:38 GMT
