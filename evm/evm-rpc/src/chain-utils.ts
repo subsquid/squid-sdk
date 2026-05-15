@@ -112,7 +112,9 @@ export class ChainUtils {
             let transactions = block.transactions as Transaction[]
             let txByHash = new Map(transactions.map(tx => [getTxHash(tx), tx]))
             logs = logs.filter(log => {
-                let tx = assertNotNull(txByHash.get(log.transactionHash))
+                let tx = txByHash.get(log.transactionHash)
+                // System txs are absent from block.transactions; treat their logs as system logs
+                if (tx == null) return false
                 return !isHyperliquidSystemTx(tx)
             })
         }
