@@ -84,7 +84,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 verifyReceiptsRoot: this.options().verifyReceiptsRoot,
                 verifyWithdrawalsRoot: this.options().verifyWithdrawalsRoot,
                 verifyLogsBloom: this.options().verifyLogsBloom,
-                checkLogIndex: !this.options().skipCumulativeGasUsedCheck,
+                checkLogIndex: !this.options().skipLogIndexCheck,
                 checkCumulativeGasUsed: !this.options().skipCumulativeGasUsedCheck,
                 useGasUsedForReceiptsRoot: this.options().useGasUsedForReceiptsRoot,
             }),
