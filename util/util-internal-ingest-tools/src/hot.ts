@@ -33,7 +33,7 @@ export class HotProcessor<B> {
         this.o = options
         this.chain = [state, ...state.top]
         for (let i = 1; i < this.chain.length; i++) {
-            assert(this.chain[i].height == this.chain[i-1].height + 1)
+            assert(this.chain[i].height >= this.chain[i-1].height + 1)
         }
     }
 
