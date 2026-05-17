@@ -360,6 +360,13 @@ export class Rpc {
                 }
             }
 
+            if (utils.isHyperliquidMainnet || utils.isHyperliquidTestnet) {
+                // Hyperliquid system receipts (cumulativeGasUsed=0x0) are returned by
+                // eth_getBlockReceipts but have no corresponding entry in block.transactions.
+                // Strip them before the tx-count check and before storing block.receipts.
+                receipts = receipts.filter(r => r.cumulativeGasUsed !== '0x0')
+            }
+
             block.receipts = receipts
 
             let logs = []
