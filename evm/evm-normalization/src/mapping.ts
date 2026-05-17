@@ -103,8 +103,7 @@ function* mapDebugFrame(
             case 'CALLCODE':
             case 'DELEGATECALL':
             case 'delegateCall':
-            case 'STATICCALL':
-            case 'INVALID': {
+            case 'STATICCALL': {
                 trace = {
                     ...base,
                     type: 'call',
@@ -115,6 +114,34 @@ function* mapDebugFrame(
                         value: frame.value ?? undefined,
                         gas: frame.gas,
                         input: frame.input,
+                    }
+                }
+
+                let result: Partial<TraceCallResult> = {}
+                if (frame.gasUsed) {
+                    result.gasUsed = frame.gasUsed
+                }
+                if (frame.output) {
+                    result.output = frame.output
+                }
+                if (!isEmpty(result)) {
+                    trace.result = result
+                }
+                break
+            }
+            case 'INVALID': {
+                // EVM INVALID opcode (0xFE) has no destination address; handle separately
+                // so assertNotNull(frame.to) in the CALL branch does not throw on null.
+                trace = {
+                    ...base,
+                    type: 'call',
+                    action: {
+                        callType: 'invalid',
+                        from: frame.from.toLowerCase(),
+                        to: (frame.to ?? '') as Bytes20,
+                        value: frame.value ?? undefined,
+                        gas: frame.gas,
+                        input: frame.input ?? '',
                     }
                 }
 
