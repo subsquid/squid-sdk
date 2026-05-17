@@ -111,8 +111,11 @@ export class ChainUtils {
         if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
             let transactions = block.transactions as Transaction[]
             let txByHash = new Map(transactions.map(tx => [getTxHash(tx), tx]))
+            // Hyperliquid system txs (gasPrice=0x0) appear in block receipts/logs but not
+            // in block.transactions. Skip logs whose tx hash is absent from the tx map.
             logs = logs.filter(log => {
-                let tx = assertNotNull(txByHash.get(log.transactionHash))
+                let tx = txByHash.get(log.transactionHash)
+                if (tx == null) return false
                 return !isHyperliquidSystemTx(tx)
             })
         }
