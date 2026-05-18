@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-stream",
+      "comment": "remove @subsquid/rpc-client and @subsquid/solana-rpc dependencies",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-stream"
+}

@@ -19,11 +19,8 @@
   "dependencies": {
     "@subsquid/http-client": "^1.8.1",
     "@subsquid/logger": "^1.6.0",
-    "@subsquid/rpc-client": "^4.15.0",
     "@subsquid/portal-client": "^0.5.1",
     "@subsquid/solana-normalization": "^1.0.0",
-    "@subsquid/solana-rpc": "^1.0.0",
-    "@subsquid/solana-rpc-data": "^1.0.0",
     "@subsquid/util-internal": "^3.3.0",
     "@subsquid/util-internal-hex": "^1.2.3",
     "@subsquid/util-internal-ingest-tools": "^1.2.0",

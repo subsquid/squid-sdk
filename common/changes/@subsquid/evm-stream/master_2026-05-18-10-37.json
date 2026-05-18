@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-stream",
+      "comment": "remove @subsquid/rpc-client dependency",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-stream"
+}
