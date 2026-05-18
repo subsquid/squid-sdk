@@ -112,7 +112,10 @@ export class ChainUtils {
             let transactions = block.transactions as Transaction[]
             let txByHash = new Map(transactions.map(tx => [getTxHash(tx), tx]))
             logs = logs.filter(log => {
-                let tx = assertNotNull(txByHash.get(log.transactionHash))
+                let tx = txByHash.get(log.transactionHash)
+                // Hyperliquid emits logs for hidden system transactions that are absent
+                // from block.transactions; skip those logs in the bloom calculation.
+                if (tx == null) return false
                 return !isHyperliquidSystemTx(tx)
             })
         }
@@ -183,5 +186,3 @@ function isHyperliquidSystemReceipt(receipt: Receipt) {
     // https://github.com/hl-archive-node/nanoreth/blob/732f8c574db2dde90344a29b0292189a5cddd2d1/src/addons/hl_node_compliance.rs#L365
     return receipt.cumulativeGasUsed == '0x0'
 }
-
-
