@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-stream
 
-This log was last generated on Thu, 14 May 2026 13:44:27 GMT and should not be manually modified.
+This log was last generated on Mon, 18 May 2026 10:40:02 GMT and should not be manually modified.
+
+## 0.1.1
+Mon, 18 May 2026 10:40:02 GMT
+
+### Patches
+
+- remove @subsquid/rpc-client dependency
 
 ## 0.1.0
 Thu, 14 May 2026 13:44:27 GMT
