@@ -50,7 +50,8 @@ function* traverseDebugFrame(frame: rpc.DebugFrame, traceAddress: number[]): Ite
 
 function* mapDebugFrame(
     transactionIndex: number,
-    debugFrameResult: {result: rpc.DebugFrame}
+    debugFrameResult: {result: rpc.DebugFrame},
+    blockNumber: number
 ): Iterable<Trace> {
     if (debugFrameResult.result.type == 'STOP') {
         assert(!debugFrameResult.result.calls?.length)
@@ -131,12 +132,21 @@ function* mapDebugFrame(
                 break
             }
             case 'SELFDESTRUCT': {
+                let address, refundAddress
+                if (blockNumber < 25130500) {
+                    address = assertNotNull(frame.to).toLowerCase()
+                    refundAddress = frame.from.toLowerCase()
+                } else {
+                    address = frame.from.toLowerCase()
+                    refundAddress = assertNotNull(frame.to).toLowerCase()
+                }
+
                 trace = {
                     ...base,
                     type: 'selfdestruct',
                     action: {
-                        address: frame.from.toLowerCase(),
-                        refundAddress: assertNotNull(frame.to).toLowerCase(),
+                        address,
+                        refundAddress,
                         balance: frame.value ?? undefined
                     }
                 }
@@ -666,7 +676,7 @@ export function mapRpcBlock(src: rpc.Block, options?: MappingOptions): Block {
             for (let i = 0; i < src.debugFrames.length; i++) {
                 let frame = src.debugFrames[i]
                 if (frame == null) continue
-                for (let trace of mapDebugFrame(i, frame)) {
+                for (let trace of mapDebugFrame(i, frame, block.header.number)) {
                     block.traces!.push(trace)
                 }
             }
@@ -740,7 +750,7 @@ export function mapRawBlock(raw: RawBlock, options?: MappingOptions): Block {
 
         if (options?.withTraces) {
             if (tx.debugFrame_) {
-                for (let frame of mapDebugFrame(transactionIndex, tx.debugFrame_)) {
+                for (let frame of mapDebugFrame(transactionIndex, tx.debugFrame_, block.header.number)) {
                     block.traces!.push(frame)
                 }
             } else if (tx.traceReplay_?.trace) {
