@@ -103,8 +103,7 @@ function* mapDebugFrame(
             case 'CALLCODE':
             case 'DELEGATECALL':
             case 'delegateCall':
-            case 'STATICCALL':
-            case 'INVALID': {
+            case 'STATICCALL': {
                 trace = {
                     ...base,
                     type: 'call',
@@ -112,6 +111,34 @@ function* mapDebugFrame(
                         callType: frame.type.toLowerCase(),
                         from: frame.from.toLowerCase(),
                         to: assertNotNull(frame.to).toLowerCase(),
+                        value: frame.value ?? undefined,
+                        gas: frame.gas,
+                        input: frame.input,
+                    }
+                }
+
+                let result: Partial<TraceCallResult> = {}
+                if (frame.gasUsed) {
+                    result.gasUsed = frame.gasUsed
+                }
+                if (frame.output) {
+                    result.output = frame.output
+                }
+                if (!isEmpty(result)) {
+                    trace.result = result
+                }
+                break
+            }
+            case 'INVALID': {
+                // INVALID opcode traces may have a null `to` (e.g. Solidity assert() failures).
+                // Handle separately so assertNotNull(frame.to) in the CALL branch is not triggered.
+                trace = {
+                    ...base,
+                    type: 'call',
+                    action: {
+                        callType: 'invalid',
+                        from: frame.from.toLowerCase(),
+                        to: frame.to ? frame.to.toLowerCase() : undefined,
                         value: frame.value ?? undefined,
                         gas: frame.gas,
                         input: frame.input,
