@@ -17,6 +17,7 @@ describe('Verification Functions', () => {
             it.skipIf(
                 // Cosmos/Tendermint EVM chains use SHA-256 Merkle trees, not Keccak-256
                 fixture.chain === 'stable' ||
+                fixture.chain === 'stable-testnet' ||
                 fixture.chain === 'bittensor-testnet' ||
                 fixture.chain === 'cronos'
             )('blockHash verification', async () => {

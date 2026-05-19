@@ -71,6 +71,32 @@ describe('Rpc Class Integration', () => {
             expect(blocks[0].receipts).toBeTruthy()
             expect(blocks[0].receipts!.length).toBeGreaterThan(0)
         })
+
+        it('fixes invalid receipt logIndex values returned by RPC', async () => {
+            const fixtureBlock = loadBlock('stable-testnet', 42767022)
+            const fixtureReceipts = loadReceipts('stable-testnet', 42767022)
+            expect(fixtureReceipts.flatMap(r => r.logs).map(log => log.logIndex)).toEqual([
+                '0x0',
+                '0x1',
+                '0x2',
+                '0x3',
+                '0x0',
+            ])
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0x899')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(42767022), true], fixtureBlock)
+            mockClient.setFixture('eth_getBlockReceipts', ['latest'], fixtureReceipts)
+            mockClient.setFixture('eth_getBlockReceipts', [toQty(42767022)], fixtureReceipts)
+
+            const rpc = new Rpc({ client: mockClient as any, checkLogIndex: true })
+
+            const blocks = await rpc.getBlockBatch([42767022], { receipts: true, transactions: true })
+            expect(blocks).toHaveLength(1)
+
+            const logs = blocks[0].receipts!.flatMap(r => r.logs)
+            expect(logs.map(log => log.logIndex)).toEqual(['0x0', '0x1', '0x2', '0x3', '0x4'])
+        })
     })
 
     describe('Verification integration', () => {

@@ -14,6 +14,7 @@ const CHAIN_IDS: Record<string, string> = {
     tempoModerato: '0xa5bf',
     cronos: '0x19',
     stable: '0x3dc',
+    'stable-testnet': '0x899',
     'bittensor-testnet': '0x3b1',
 }
 

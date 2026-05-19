@@ -255,6 +255,10 @@ export class Rpc {
             let block = blocks[i]
             let logs = logsByBlock.get(block.hash) || []
 
+            if (utils.isStable) {
+                this.fixLogIndexes(logs)
+            }
+
             try {
                 if (this.checkLogIndex) {
                     let logIndex = 0
@@ -377,6 +381,10 @@ export class Rpc {
             let logs = []
             for (let receipt of receipts) {
                 logs.push(...receipt.logs)
+            }
+
+            if (utils.isStable) {
+                this.fixLogIndexes(logs)
             }
 
             try {
@@ -834,6 +842,10 @@ export class Rpc {
                 continue
             }
 
+            if (utils.isStable) {
+                this.fixLogIndexes(logs)
+            }
+
             try {
                 if (this.checkLogIndex) {
                     let logIndex = 0
@@ -1144,6 +1156,13 @@ export class Rpc {
         if (err instanceof RpcError && err.message == 'response too large') return true
         if (err instanceof RpcError && err.code == -32000) return true
         return false
+    }
+
+    private fixLogIndexes(logs: Log[]) {
+        let logIndex = 0
+        for (let log of logs) {
+            log.logIndex = toQty(logIndex++)
+        }
     }
 }
 
