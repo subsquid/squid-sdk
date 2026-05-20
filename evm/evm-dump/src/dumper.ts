@@ -12,6 +12,7 @@ interface Options extends DumperOptions {
     withStatediffs?: boolean
     useTraceApi?: boolean
     useDebugApiForStatediffs?: boolean
+    useDebugTraceBlockByNumber?: boolean
     verifyBlockHash?: boolean
     verifyTxSender?: boolean
     verifyTxRoot?: boolean
@@ -34,6 +35,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.option('--with-statediffs', 'Fetch EVM state updates')
         program.option('--use-trace-api', 'Use trace_* API for statediffs and call traces')
         program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
+        program.option('--use-debug-trace-block-by-number', 'Use debug_traceBlockByNumber instead of debug_traceBlockByHash')
         program.option('--verify-block-hash', 'Verify block header against block hash')
         program.option('--verify-tx-sender', 'Check if transaction sender matches sender recovered from signature')
         program.option('--verify-tx-root', 'Verify block transactions against transactions root')
@@ -95,6 +97,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 traces: this.options().withTraces,
                 stateDiffs: this.options().withStatediffs,
                 useDebugApiForStateDiffs: this.options().useDebugApiForStatediffs,
+                useDebugTraceBlockByNumber: this.options().useDebugTraceBlockByNumber,
                 useTraceApi: this.options().useTraceApi,
                 debugTraceTimeout: '60s'
             },

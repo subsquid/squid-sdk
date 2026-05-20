@@ -970,10 +970,19 @@ export class Rpc {
             timeout: req.debugTraceTimeout
         }
 
-        let call = blocks.map(block => ({
-            method: 'debug_traceBlockByHash',
-            params: [block.hash, traceConfig]
-        }))
+        let call = blocks.map(block => {
+            if (req.useDebugTraceBlockByNumber) {
+                return {
+                    method: 'debug_traceBlockByNumber',
+                    params: [block.block.number, traceConfig]
+                }
+            } else {
+                return {
+                    method: 'debug_traceBlockByHash',
+                    params: [block.hash, traceConfig]
+                }
+            }
+        })
 
         let results = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(array(DebugStateDiffResult)),
@@ -990,7 +999,7 @@ export class Rpc {
             let diffs = results[i]
             if (diffs == null) {
                 block._isInvalid = true
-                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
+                block._errorMessage = "failed to get debug state diffs for a block"
             } else if (block.block.transactions.length === diffs.length) {
                 block.debugStateDiffs = diffs
             } else {
@@ -1009,10 +1018,19 @@ export class Rpc {
             timeout: req.debugTraceTimeout,
         }
 
-        let call = blocks.map(block => ({
-            method: 'debug_traceBlockByHash',
-            params: [block.hash, traceConfig]
-        }))
+        let call = blocks.map(block => {
+            if (req.useDebugTraceBlockByNumber) {
+                return {
+                    method: 'debug_traceBlockByNumber',
+                    params: [block.block.number, traceConfig]
+                }
+            } else {
+                return {
+                    method: 'debug_traceBlockByHash',
+                    params: [block.hash, traceConfig]
+                }
+            }
+        })
 
         let validateFrameResult = getResultValidator(array(DebugFrameResult))
 
@@ -1041,7 +1059,7 @@ export class Rpc {
             let frames = results[i]
             if (frames == null) {
                 block._isInvalid = true
-                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
+                block._errorMessage = "failed to get debug call frames for a block"
             } else if (block.block.transactions.length === frames.length) {
                 block.debugFrames = frames
             } else {

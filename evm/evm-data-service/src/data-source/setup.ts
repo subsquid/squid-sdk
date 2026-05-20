@@ -21,6 +21,7 @@ export interface DataSourceOptions {
     withStatediffs?: boolean,
     useTraceApi?: boolean,
     useDebugApiForStateDiffs?: boolean
+    useDebugTraceBlockByNumber?: boolean
     verifyBlockHash?: boolean
     verifyTxSender?: boolean
     verifyTxRoot?: boolean
@@ -67,6 +68,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
             stateDiffs: options.withStatediffs,
             useTraceApi: options.useTraceApi,
             useDebugApiForStateDiffs: options.useDebugApiForStateDiffs,
+            useDebugTraceBlockByNumber: options.useDebugTraceBlockByNumber,
             debugTraceTimeout: '60s',
         },
         strideSize: options.httpRpcStrideSize,
