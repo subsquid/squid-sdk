@@ -218,7 +218,7 @@ export const Transaction = object({
     input: option(BYTES),
     maxFeePerGas: option(QTY),
     maxPriorityFeePerGas: option(QTY),
-    nonce: SMALL_QTY,
+    nonce: option(SMALL_QTY),
     v: option(QTY),
     r: option(BYTES),
     s: option(BYTES),
