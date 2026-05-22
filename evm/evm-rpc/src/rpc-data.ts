@@ -218,7 +218,8 @@ export const Transaction = object({
     input: option(BYTES),
     maxFeePerGas: option(QTY),
     maxPriorityFeePerGas: option(QTY),
-    nonce: SMALL_QTY,
+    // Optional for OP Stack 0x7e deposit transactions which have no nonce
+    nonce: option(SMALL_QTY),
     v: option(QTY),
     r: option(BYTES),
     s: option(BYTES),
