@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-processor",
+      "comment": "Rewrite EVM processor to use SQD Portal through evm-stream and batch-processor.",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/evm-processor"
+}

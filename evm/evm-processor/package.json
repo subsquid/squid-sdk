@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/evm-processor",
-  "version": "1.30.1",
+  "version": "2.0.0",
   "description": "Data fetcher and mappings executor for EVM-based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -8,27 +8,22 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "files": [
-    "lib",
-    "src"
-  ],
+  "files": ["lib", "src"],
   "main": "lib/index.js",
   "scripts": {
     "build": "rm -rf lib && tsc",
     "test": "vitest --run"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.8.1",
+    "@subsquid/batch-processor": "^1.0.0",
+    "@subsquid/evm-objects": "^0.0.3",
+    "@subsquid/evm-stream": "^0.1.1",
     "@subsquid/logger": "^1.6.0",
     "@subsquid/rpc-client": "^4.15.0",
     "@subsquid/util-internal": "^3.3.0",
-    "@subsquid/util-internal-archive-client": "^0.2.1",
     "@subsquid/util-internal-hex": "^1.2.3",
-    "@subsquid/util-internal-ingest-tools": "^1.2.0",
-    "@subsquid/util-internal-processor-tools": "^4.4.0",
     "@subsquid/util-internal-range": "^0.3.0",
-    "@subsquid/util-internal-validation": "^0.9.0",
-    "@subsquid/util-timeout": "^2.3.2"
+    "@subsquid/util-internal-validation": "^0.9.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

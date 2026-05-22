@@ -1,12 +1,9 @@
-import {FieldSelection} from '../interfaces/data'
+import type {FieldSelection} from '../interfaces/data'
 import {object, option, BOOLEAN} from '@subsquid/util-internal-validation'
-
 
 type GetFieldSelectionSchema<T> = {[K in keyof T]-?: typeof FIELD}
 
-
 const FIELD = option(BOOLEAN)
-
 
 export function getBlockHeaderSelectionValidator() {
     let fields: GetFieldSelectionSchema<FieldSelection['block']> = {
@@ -30,7 +27,6 @@ export function getBlockHeaderSelectionValidator() {
     }
     return object(fields)
 }
-
 
 export function getTxSelectionValidator() {
     let fields: GetFieldSelectionSchema<FieldSelection['transaction']> = {
@@ -68,7 +64,6 @@ export function getTxSelectionValidator() {
     return object(fields)
 }
 
-
 export function getLogSelectionValidator() {
     let fields: GetFieldSelectionSchema<FieldSelection['log']> = {
         transactionHash: FIELD,
@@ -78,7 +73,6 @@ export function getLogSelectionValidator() {
     }
     return object(fields)
 }
-
 
 export function getTraceSelectionValidator() {
     let fields: GetFieldSelectionSchema<FieldSelection['trace']> = {
@@ -111,7 +105,6 @@ export function getTraceSelectionValidator() {
     return object(fields)
 }
 
-
 export function getStateDiffSelectionValidator() {
     let fields: GetFieldSelectionSchema<FieldSelection['stateDiff']> = {
         kind: FIELD,
@@ -120,7 +113,6 @@ export function getStateDiffSelectionValidator() {
     }
     return object(fields)
 }
-
 
 export function getFieldSelectionValidator() {
     return object({
