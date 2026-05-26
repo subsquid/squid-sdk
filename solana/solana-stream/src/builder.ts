@@ -1,3 +1,4 @@
+import {HttpClient} from '@subsquid/http-client'
 import {PortalClient, PortalClientOptions} from '@subsquid/portal-client'
 import {getOrGenerateSquidId} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
@@ -37,9 +38,14 @@ export class DataSourceBuilder<F extends FieldSelection = {}> {
      */
     setPortal(portal: string | PortalClientOptions | PortalClient): this {
         if (typeof portal == 'string') {
-            this.portal = {url: portal}
-        } else {
+            this.portal = {url: portal, http: {retryAttempts: Infinity}}
+        } else if (portal instanceof PortalClient) {
             this.portal = portal
+        } else {
+            this.portal = {
+                ...portal,
+                http: portal.http instanceof HttpClient ? portal.http : {retryAttempts: Infinity, ...portal.http},
+            }
         }
         return this
     }
