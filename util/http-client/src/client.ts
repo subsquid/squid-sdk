@@ -75,7 +75,7 @@ export class HttpClient {
         this.setBaseUrl(options.baseUrl)
         this.agent = options.agent || defaultAgentProvider
         this.retrySchedule = options.retrySchedule || [10, 100, 500, 2000, 10000, 20000]
-        this.retryAttempts = options.retryAttempts || 0
+        this.retryAttempts = options.retryAttempts || 6
         this.httpTimeout = options.httpTimeout ?? 20000
     }
 
