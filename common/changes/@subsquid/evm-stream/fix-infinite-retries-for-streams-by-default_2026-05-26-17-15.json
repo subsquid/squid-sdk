@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-stream",
+      "comment": "Use an HTTP client with infinite retries by default",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-stream"
+}
