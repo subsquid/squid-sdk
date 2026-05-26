@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "Default retry attempts on non-fatal errors increased to six (6)",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}
