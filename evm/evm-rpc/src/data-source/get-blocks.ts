@@ -4,25 +4,6 @@ import {Rpc} from '../rpc'
 import {Block, DataRequest} from '../types'
 
 
-async function requestInvalidBlocks(
-    rpc: Rpc,
-    req: DataRequest,
-    blocks: Block[]
-) {
-    let invalid: number[] = []
-    for (let i = 0; i < blocks.length; i++) {
-        if (blocks[i]._isInvalid || invalid.length != 0) {
-            invalid.push(i)
-        }
-    }
-
-    let result = await rpc.getBlockBatch(invalid.map(i => blocks[i].number), req)
-    for (let i = 0; i < invalid.length; i++) {
-        blocks[invalid[i]] = result[i]
-    }
-}
-
-
 export async function getBlocks(
     rpc: Rpc,
     req: DataRequest,
@@ -33,19 +14,27 @@ export async function getBlocks(
 
     let retries = 0
     while (true) {
-        let invalid = blocks.find(b => b == null || b._isInvalid)
-
-        if (invalid) {
-            if (retries == 5) {
-                throw new Error(invalid._errorMessage)
-            } else {
-                await wait(100)
-
-                await requestInvalidBlocks(rpc, req, blocks)
-                retries += 1
+        let indices: number[] = []
+        for (let i = 0; i < numbers.length; i++) {
+            if (blocks[i] == null || blocks[i]._isInvalid) {
+                indices.push(i)
             }
-        } else {
-            return blocks
         }
+
+        if (indices.length == 0) return blocks
+
+        if (retries == 5) {
+            let invalid = blocks.find(b => b?._isInvalid)
+            if (invalid) throw new Error(invalid._errorMessage)
+            throw new Error(`failed to load blocks: ${indices.map(i => numbers[i]).join(', ')}`)
+        }
+
+        await wait(100)
+        let result = await rpc.getBlockBatch(indices.map(i => numbers[i]), req)
+        for (let i = 0; i < result.length; i++) {
+            blocks[indices[i]] = result[i]
+        }
+
+        retries += 1
     }
 }
