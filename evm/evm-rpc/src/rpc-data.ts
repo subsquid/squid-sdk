@@ -218,7 +218,8 @@ export const Transaction = object({
     input: option(BYTES),
     maxFeePerGas: option(QTY),
     maxPriorityFeePerGas: option(QTY),
-    nonce: SMALL_QTY,
+    // OP Stack deposit txs (type 0x7e) omit nonce in RPC responses
+    nonce: option(SMALL_QTY),
     v: option(QTY),
     r: option(BYTES),
     s: option(BYTES),
