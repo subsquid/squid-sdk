@@ -721,8 +721,10 @@ export function mapRawBlock(raw: RawBlock, options?: MappingOptions): Block {
     }
 
     let prevCumulativeGasUsed = 0n
+    let transactionIdx = 0
     for (let tx of raw.transactions) {
         let transactionIndex = qty2Int(tx.transactionIndex)
+        assert.equal(transactionIndex, transactionIdx++)
         block.transactions.push(mapTransaction(tx, tx.receipt_))
 
         if (tx.receipt_) {
@@ -771,6 +773,11 @@ export function mapRawBlock(raw: RawBlock, options?: MappingOptions): Block {
             let normalized = mapLog(log)
             block.logs.push(normalized)
         }
+    }
+
+    let logIndex = 0
+    for (let log of block.logs) {
+        log.logIndex = logIndex++
     }
 
     if (options?.checkLogIndex) {
