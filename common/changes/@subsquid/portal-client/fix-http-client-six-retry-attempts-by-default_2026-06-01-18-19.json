@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "Portal client now makes six retry attempts by default",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}

@@ -250,6 +250,7 @@ export class PortalClient {
     private request<T = any>(method: string, url: string, options: RequestOptions & HttpBody = {}) {
         return this.client.request<T>(method, url, {
             ...options,
+            retryAttempts: options.retryAttempts ?? 6,
             headers: {
                 'User-Agent': USER_AGENT,
                 ...options?.headers,
