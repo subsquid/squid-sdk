@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-rpc",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/evm-rpc_v0.0.2",
+      "date": "Mon, 01 Jun 2026 19:32:22 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "The log ordering issue fix + support for debug_traceBlockByNumber"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/evm-rpc_v0.0.1",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/portal-client
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Mon, 01 Jun 2026 19:32:22 GMT and should not be manually modified.
+
+## 0.5.2
+Mon, 01 Jun 2026 19:32:22 GMT
+
+### Patches
+
+- Portal client now makes six retry attempts by default
 
 ## 0.5.1
 Mon, 11 May 2026 05:34:26 GMT

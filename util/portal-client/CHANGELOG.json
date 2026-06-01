@@ -2,6 +2,18 @@
   "name": "@subsquid/portal-client",
   "entries": [
     {
+      "version": "0.5.2",
+      "tag": "@subsquid/portal-client_v0.5.2",
+      "date": "Mon, 01 Jun 2026 19:32:22 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Portal client now makes six retry attempts by default"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.5.1",
       "tag": "@subsquid/portal-client_v0.5.1",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

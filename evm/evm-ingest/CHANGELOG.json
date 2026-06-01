@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-ingest",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/evm-ingest_v0.0.2",
+      "date": "Mon, 01 Jun 2026 19:32:22 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.1` to `0.0.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/evm-ingest_v0.0.1",
       "date": "Mon, 11 May 2026 05:34:26 GMT",
