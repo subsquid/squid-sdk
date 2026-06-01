@@ -20,7 +20,7 @@
   "dependencies": {
     "@subsquid/http-client": "^1.8.1",
     "@subsquid/logger": "^1.6.0",
-    "@subsquid/portal-client": "^0.5.1",
+    "@subsquid/portal-client": "^0.5.2",
     "@subsquid/util-internal": "^3.3.0",
     "@subsquid/util-internal-data-source": "^0.0.0",
     "@subsquid/util-internal-hex": "^1.2.3",
