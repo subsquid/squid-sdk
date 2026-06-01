@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-data-service",
+      "comment": "Adding support for debug_traceBlockByNumber",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-data-service"
+}
