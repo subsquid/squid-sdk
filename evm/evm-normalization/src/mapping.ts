@@ -136,7 +136,7 @@ function* mapDebugFrame(
                     type: 'selfdestruct',
                     action: {
                         address: frame.from.toLowerCase(),
-                        refundAddress: assertNotNull(frame.to).toLowerCase(),
+                        refundAddress: frame.to ? frame.to.toLowerCase() : undefined,
                         balance: frame.value ?? undefined
                     }
                 }
