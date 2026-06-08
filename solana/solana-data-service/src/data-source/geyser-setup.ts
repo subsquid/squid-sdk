@@ -9,9 +9,11 @@ export interface GeyserOptions {
 
 
 export function createGeyser(options: GeyserOptions): Geyser {
-    let rpc = new RpcClient({
-        url: options.geyserProxy,
-        requestTimeout: 10_000
-    })
-    return new Geyser(rpc, options.geyserBlockQueueSize)
+    return new Geyser(
+        () => new RpcClient({
+            url: options.geyserProxy,
+            requestTimeout: 10_000
+        }),
+        options.geyserBlockQueueSize
+    )
 }
