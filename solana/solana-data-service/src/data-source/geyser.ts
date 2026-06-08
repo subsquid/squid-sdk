@@ -21,7 +21,7 @@ interface IngestBatch {
 
 export class Geyser {
     constructor(
-        private geyserProxy: RpcClient,
+        private rpcFactory: () => RpcClient,
         private blockBufferSize = 10,
         private log = createLogger('sqd:solana-data-service:geyser')
     ) {
@@ -34,8 +34,9 @@ export class Geyser {
 
         let run = async () => {
             while (!queue.isClosed()) {
+                let rpc = this.rpcFactory()
                 try {
-                    await this.subscribe(queue)
+                    await this.subscribe(queue, rpc)
                 } catch(err: any) {
                     if (yielded) {
                         this.log.error(err)
@@ -44,6 +45,8 @@ export class Geyser {
                         queue.forcePut(err)
                         return
                     }
+                } finally {
+                    rpc.close()
                 }
             }
         }
@@ -60,7 +63,7 @@ export class Geyser {
         }
     }
 
-    private subscribe(queue: AsyncQueue<IngestBatch | Error>): Promise<void> {
+    private subscribe(queue: AsyncQueue<IngestBatch | Error>, geyserProxy: RpcClient): Promise<void> {
         let future = createFuture<void>()
 
         let timer = new Timer(10_000, () => {
@@ -71,7 +74,7 @@ export class Geyser {
 
         timer.start()
 
-        let handle = this.geyserProxy.subscribe({
+        let handle = geyserProxy.subscribe({
             method: 'geyser_blockSubscribe',
             notification: 'geyser_blockNotification',
             unsubscribe: 'geyser_blockUnsubscribe',
