@@ -35,6 +35,13 @@ export function runProgram(main: () => Promise<void>, log?: (err: Error) => void
         process.exit(1)
     }
 
+    // A rejection escaping via a detached promise (or a throw on an event
+    // path) bypasses the main() chain below and terminates the process as
+    // bare stderr text outside the structured logger — a crash-looping pod
+    // then shows no machine-readable cause in its last lines.
+    process.on('unhandledRejection', onerror)
+    process.on('uncaughtException', onerror)
+
     try {
         main().then(() => process.exit(0), onerror)
     } catch(e: unknown) {

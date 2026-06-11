@@ -1,5 +1,5 @@
 import {FiniteRange, rangeToArray} from '@subsquid/util-internal-range'
-import {wait} from '@subsquid/util-internal'
+import {addErrorContext, wait} from '@subsquid/util-internal'
 import {Rpc} from '../rpc'
 import {Block, DataRequest} from '../types'
 
@@ -24,9 +24,28 @@ export async function getBlocks(
         if (indices.length == 0) return blocks
 
         if (retries == 5) {
+            // When a provider silently stops serving some blocks or a method,
+            // the bare "failed to load blocks: N" message names neither the
+            // endpoint nor the reason. Attach both so a single log line
+            // localizes the failure.
+            let failedBlocks = indices.map(i => numbers[i])
             let invalid = blocks.find(b => b?._isInvalid)
-            if (invalid) throw new Error(invalid._errorMessage)
-            throw new Error(`failed to load blocks: ${indices.map(i => numbers[i]).join(', ')}`)
+            if (invalid) {
+                throw addErrorContext(new Error(invalid._errorMessage), {
+                    rpcUrl: rpc.endpoint,
+                    failedBlocks,
+                    retries
+                })
+            }
+            throw addErrorContext(
+                new Error(`failed to load blocks: ${failedBlocks.join(', ')}`),
+                {
+                    rpcUrl: rpc.endpoint,
+                    failedBlocks,
+                    retries,
+                    reason: 'rpc returned null for these blocks (provider may not serve them or the method)'
+                }
+            )
         }
 
         await wait(100)
