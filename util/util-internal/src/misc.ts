@@ -39,8 +39,11 @@ export function runProgram(main: () => Promise<void>, log?: (err: Error) => void
     // path) bypasses the main() chain below and terminates the process as
     // bare stderr text outside the structured logger — a crash-looping pod
     // then shows no machine-readable cause in its last lines.
-    process.on('unhandledRejection', onerror)
-    process.on('uncaughtException', onerror)
+    // Some bundled runtimes ship a `process` shim without `.on`.
+    if (typeof process.on === 'function') {
+        process.on('unhandledRejection', onerror)
+        process.on('uncaughtException', onerror)
+    }
 
     try {
         main().then(() => process.exit(0), onerror)

@@ -3,7 +3,8 @@ import {getBlocks} from './get-blocks'
 import type {Block, DataRequest} from '../types'
 import type {Rpc} from '../rpc'
 
-vi.mock('@subsquid/util-internal', () => ({
+vi.mock('@subsquid/util-internal', async (importOriginal) => ({
+    ...await importOriginal<typeof import('@subsquid/util-internal')>(),
     wait: vi.fn().mockResolvedValue(undefined)
 }))
 
