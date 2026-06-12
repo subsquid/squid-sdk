@@ -12,6 +12,7 @@ const CHAIN_IDS: Record<string, string> = {
     arbitrum: '0xa4b1',
     hyperliquid: '0x3e7',
     tempoModerato: '0xa5bf',
+    'tempo-mainnet': '0x1079',
     cronos: '0x19',
     stable: '0x3dc',
     'stable-testnet': '0x899',

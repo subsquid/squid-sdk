@@ -122,7 +122,20 @@ export interface TempoSignedAuthorization {
 
 export interface TempoTokenLimit {
     token: Bytes20,
-    limit: Qty
+    limit: Qty,
+    period?: Qty
+}
+
+
+export interface TempoSelectorRule {
+    selector: Bytes,
+    recipients?: Bytes20[]
+}
+
+
+export interface TempoCallScope {
+    target: Bytes20,
+    selectorRules?: TempoSelectorRule[]
 }
 
 
@@ -132,6 +145,10 @@ export interface TempoSignedKeyAuthorization {
     keyId: Bytes20,
     expiry?: Qty,
     limits?: TempoTokenLimit[],
+    allowedCalls?: TempoCallScope[],
+    witness?: Bytes,
+    isAdmin?: boolean,
+    account?: Bytes20,
     signature: TempoPrimitiveSignature
 }
 

@@ -15,6 +15,9 @@ import {
     TempoKeychainSignature,
     TempoSignedAuthorization,
     TempoSignedKeyAuthorization,
+    TempoTokenLimit,
+    TempoCallScope,
+    TempoSelectorRule,
     GetBlock,
     Log,
     Receipt,
@@ -431,32 +434,85 @@ function tempoSignatureTypeToU8(keyType: string): number {
 }
 
 
+// `selector`/`recipients` are non-optional `Vec`s in the Tempo spec: an empty
+// allowlist is always encoded as an empty RLP list (0xc0), never omitted.
+function encodeTempoSelectorRule(rule: TempoSelectorRule): any[] {
+    return [
+        decodeHex(rule.selector),
+        (rule.recipients ?? []).map(decodeHex),
+    ]
+}
+
+
+// `target`/`selectorRules` are non-optional in the Tempo spec: an empty rule
+// list is always encoded as an empty RLP list (0xc0), never omitted.
+function encodeTempoCallScope(scope: TempoCallScope): any[] {
+    return [
+        decodeHex(scope.target),
+        (scope.selectorRules ?? []).map(encodeTempoSelectorRule),
+    ]
+}
+
+
+// Placeholder for an absent (but non-trailing) optional RLP field: 0x80 (empty string).
+const RLP_ABSENT = Buffer.alloc(0)
+
+
+function encodeTempoTokenLimit(limit: TempoTokenLimit): any[] {
+    // period is encoded as Option<NonZeroU64>: present only when non-zero (trailing canonical).
+    let fields: any[] = [decodeHex(limit.token), BigInt(limit.limit)]
+    if (limit.period != null && BigInt(limit.period) !== 0n) {
+        fields.push(BigInt(limit.period))
+    }
+    return fields
+}
+
+
 /**
- * Encode a SignedKeyAuthorization for RLP: [[chain_id, key_type, key_id, expiry?, limits?], signature_bytes]
+ * Encode a list of trailing optional RLP fields using canonical encoding:
+ * trailing absent fields are dropped, while an absent field followed by a
+ * present one is emitted as a placeholder (0x80).
  *
- * The inner KeyAuthorization is a nested RLP list with trailing optional fields.
+ * Each entry provides the field value when present, or `undefined` when absent.
+ */
+function encodeTrailingOptional(fields: (() => any)[]): any[] {
+    let lastPresent = -1
+    for (let i = 0; i < fields.length; i++) {
+        if (fields[i]() !== undefined) lastPresent = i
+    }
+    let result: any[] = []
+    for (let i = 0; i <= lastPresent; i++) {
+        let value = fields[i]()
+        result.push(value === undefined ? RLP_ABSENT : value)
+    }
+    return result
+}
+
+
+/**
+ * Encode a SignedKeyAuthorization for RLP: [[chain_id, key_type, key_id, expiry?, limits?, allowed_calls?, witness?, is_admin?, account?], signature_bytes]
+ *
+ * The inner KeyAuthorization is a nested RLP list with trailing optional fields
+ * using canonical encoding (None → omitted, Some → encoded).
  * The signature is encoded as an RLP byte string.
  *
  * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/key_authorization.rs
  */
 function encodeTempoSignedKeyAuthorization(auth: TempoSignedKeyAuthorization): any[] {
-    // Inner KeyAuthorization as nested RLP list
     let authFields: any[] = [
         BigInt(auth.chainId),
         tempoSignatureTypeToU8(auth.keyType),
         decodeHex(auth.keyId),
+        ...encodeTrailingOptional([
+            () => auth.expiry != null ? BigInt(auth.expiry) : undefined,
+            () => auth.limits != null ? auth.limits.map(encodeTempoTokenLimit) : undefined,
+            () => auth.allowedCalls != null ? auth.allowedCalls.map(encodeTempoCallScope) : undefined,
+            () => auth.witness != null ? decodeHex(auth.witness) : undefined,
+            // is_admin is encoded as Option<NonZeroU64>: Some(1) when true, omitted otherwise
+            () => auth.isAdmin ? BigInt(1) : undefined,
+            () => auth.account != null ? decodeHex(auth.account) : undefined,
+        ]),
     ]
-
-    // Trailing optional fields — only encode if present (or if a later field is present)
-    if (auth.expiry != null || auth.limits != null) {
-        authFields.push(auth.expiry != null ? BigInt(auth.expiry) : Buffer.alloc(0))
-    }
-    if (auth.limits != null) {
-        authFields.push(auth.limits.map(limit => [
-            decodeHex(limit.token),
-            BigInt(limit.limit),
-        ]))
-    }
 
     return [
         authFields,

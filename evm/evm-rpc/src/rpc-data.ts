@@ -183,10 +183,33 @@ export type TempoSignedAuthorization = GetSrcType<typeof TempoSignedAuthorizatio
 export const TempoTokenLimit = object({
     token: BYTES,
     limit: QTY,
+    period: option(QTY),
 })
 
 
 export type TempoTokenLimit = GetSrcType<typeof TempoTokenLimit>
+
+
+// Tempo selector-level rule within a call scope
+// https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/key_authorization.rs
+export const TempoSelectorRule = object({
+    selector: BYTES,
+    recipients: option(array(BYTES)),
+})
+
+
+export type TempoSelectorRule = GetSrcType<typeof TempoSelectorRule>
+
+
+// Tempo per-target call scope for an access key
+// https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/key_authorization.rs
+export const TempoCallScope = object({
+    target: BYTES,
+    selectorRules: option(array(TempoSelectorRule)),
+})
+
+
+export type TempoCallScope = GetSrcType<typeof TempoCallScope>
 
 
 // Tempo signed key authorization for provisioning access keys
@@ -197,6 +220,10 @@ export const TempoSignedKeyAuthorization = object({
     keyId: BYTES,
     expiry: option(QTY),
     limits: option(array(TempoTokenLimit)),
+    allowedCalls: option(array(TempoCallScope)),
+    witness: option(BYTES),
+    isAdmin: option(BOOLEAN),
+    account: option(BYTES),
     signature: TempoPrimitiveSignature,
 })
 

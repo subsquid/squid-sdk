@@ -14,6 +14,8 @@ import {
     TempoSignature,
     TempoSignedAuthorization,
     TempoTokenLimit,
+    TempoSelectorRule,
+    TempoCallScope,
     TempoSignedKeyAuthorization,
     TempoFeePayerSignature,
     Log,
@@ -502,6 +504,23 @@ function mapTempoTokenLimit(src: rpc.TempoTokenLimit): TempoTokenLimit {
     return {
         token: src.token.toLowerCase(),
         limit: src.limit,
+        period: src.period ?? undefined
+    }
+}
+
+
+function mapTempoSelectorRule(src: rpc.TempoSelectorRule): TempoSelectorRule {
+    return {
+        selector: src.selector,
+        recipients: src.recipients?.map(r => r.toLowerCase())
+    }
+}
+
+
+function mapTempoCallScope(src: rpc.TempoCallScope): TempoCallScope {
+    return {
+        target: src.target.toLowerCase(),
+        selectorRules: src.selectorRules?.map(mapTempoSelectorRule)
     }
 }
 
@@ -514,6 +533,10 @@ function mapTempoSignedKeyAuthorization(src: rpc.TempoSignedKeyAuthorization): T
         expiry: src.expiry ?? undefined,
         limits: src.limits?.map(mapTempoTokenLimit),
         signature: mapTempoPrimitiveSignature(src.signature),
+        allowedCalls: src.allowedCalls?.map(mapTempoCallScope),
+        witness: src.witness ?? undefined,
+        isAdmin: src.isAdmin ?? undefined,
+        account: src.account ? src.account.toLowerCase() : undefined
     }
 }
 
