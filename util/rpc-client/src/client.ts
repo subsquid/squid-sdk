@@ -60,15 +60,31 @@ export interface RpcClientOptions {
      */
     headers?: HttpHeaders
     log?: Logger | null
+    /**
+     * Canonical provider identity for per-upstream metrics, e.g. 'alchemy' | 'drpc'.
+     * Pass it from your deployment config (infra) — do NOT derive it from the URL host:
+     * a provider may use several hosts (e.g. direct.drpc.org and lb.drpc.live), so the
+     * config name is the authoritative label.
+     */
+    provider?: string
+    /**
+     * Chain/dataset identity for per-upstream metrics (e.g. chainId or network name).
+     */
+    chain?: string
 }
 
 // Add interface for RPC metrics
 export interface RpcMetrics {
     url: string
+    provider?: string
+    chain?: string
     requestsServed: number
     connectionErrors: number
     notificationsReceived: number
     avg_response_time: number
+    // per-method tally counted by BATCH ELEMENTS (not HTTP calls), split by outcome — lets a
+    // Prometheus exporter emit {provider, chain, method, outcome} for billing reconciliation.
+    methods: Record<string, {success: number, failure: number}>
 }
 
 
@@ -130,6 +146,9 @@ export class RpcClient {
     private connectionErrorsInRow = 0
     private connectionErrors = 0
     private requestsServed = 0
+    public readonly provider?: string
+    public readonly chain?: string
+    private methodStats: Record<string, {success: number, failure: number}> = {}
     private notificationsReceived = 0
     private totalResponseTime = 0
     private backoffEpoch = 0
@@ -140,6 +159,8 @@ export class RpcClient {
 
     constructor(options: RpcClientOptions) {
         this.url = trimCredentials(options.url)
+        this.provider = options.provider
+        this.chain = options.chain
         this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false, options.headers)
         this.maxBatchCallSize = options.maxBatchCallSize ?? Number.MAX_SAFE_INTEGER
         this.capacity = this.maxCapacity = options.capacity || 10
@@ -201,12 +222,27 @@ export class RpcClient {
     getMetrics(): RpcMetrics {
         return {
             url: this.url,
+            provider: this.provider,
+            chain: this.chain,
             requestsServed: this.requestsServed,
             connectionErrors: this.connectionErrors,
             notificationsReceived: this.notificationsReceived,
             // FIXME: only one of these metrics should remain; decide which to keep
             avg_response_time: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
             avgResponseTime: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
+            methods: this.methodStats
+        }
+    }
+
+    // Count each JSON-RPC call by BATCH ELEMENT (a batch is one HTTP call but N billable items)
+    // and by outcome, keyed by method. Retried attempts are counted again — that mirrors what the
+    // provider actually receives/bills.
+    private countMethods(call: RpcRequest | RpcRequest[], outcome: 'success' | 'failure'): void {
+        let calls = Array.isArray(call) ? call : [call]
+        for (let c of calls) {
+            let s = this.methodStats[c.method]
+            if (!s) s = this.methodStats[c.method] = {success: 0, failure: 0}
+            s[outcome] += 1
         }
     }
 
@@ -408,12 +444,14 @@ export class RpcClient {
             const responseTimeSeconds = (Date.now() - startTime) / 1000
             this.totalResponseTime += responseTimeSeconds
             this.requestsServed += 1
+            this.countMethods(req.call, 'success')
             if (this.backoffEpoch == backoffEpoch) {
                 this.connectionErrorsInRow = 0
             }
             req.resolve(result)
         }, err => {
             if (this.closed) return req.reject(err)
+            this.countMethods(req.call, 'failure')
             if (this.isConnectionError(err)) {
                 if (req.retryAttempts > 0) {
                     req.retryAttempts -= 1
