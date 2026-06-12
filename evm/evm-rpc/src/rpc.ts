@@ -79,6 +79,12 @@ export class Rpc {
         this.log = createLogger('sqd:evm-rpc')
     }
 
+    /** RPC endpoint URL — exposed so error paths outside this class can name
+     * the failing provider in logs and error context. */
+    get endpoint(): string {
+        return this.client.url
+    }
+
     getConcurrency(): number {
         return this.client.getConcurrency()
     }
@@ -263,7 +269,7 @@ export class Rpc {
                 if (this.checkLogIndex) {
                     let logIndex = 0
                     for (let log of logs) {
-                        assert.equal(qty2Int(log.logIndex), logIndex++)
+                        assert.equal(qty2Int(log.logIndex), logIndex++, 'unexpected log index in eth_getLogs response')
                     }
                 }
 
@@ -274,7 +280,9 @@ export class Rpc {
             } catch (err: any) {
                 throw addErrorContext(err, {
                     blockNumber: block.number,
-                    blockHash: block.hash
+                    blockHash: block.hash,
+                    rpcUrl: this.client.url,
+                    rpcMethod: 'eth_getLogs'
                 })
             }
 
@@ -391,7 +399,7 @@ export class Rpc {
                 if (this.checkLogIndex) {
                     let logIndex = 0
                     for (let log of logs) {
-                        assert.equal(qty2Int(log.logIndex), logIndex++)
+                        assert.equal(qty2Int(log.logIndex), logIndex++, 'unexpected log index in receipt logs')
                     }
                 }
 
@@ -399,7 +407,14 @@ export class Rpc {
                     let prevCumulativeGasUsed = 0n
                     for (let receipt of receipts) {
                         let cumulativeGasUsed = BigInt(receipt.cumulativeGasUsed)
-                        assert.equal(cumulativeGasUsed, prevCumulativeGasUsed + BigInt(receipt.gasUsed))
+                        // This assertion used to fire bare ("0n == 77629n") with no
+                        // hint of the failing data — name the receipt so it is
+                        // identifiable from a single log line.
+                        assert.equal(
+                            cumulativeGasUsed,
+                            prevCumulativeGasUsed + BigInt(receipt.gasUsed),
+                            `cumulativeGasUsed mismatch at receipt of tx ${receipt.transactionHash}`
+                        )
                         prevCumulativeGasUsed = cumulativeGasUsed
                     }
                 }
@@ -426,7 +441,9 @@ export class Rpc {
             } catch (err: any) {
                 throw addErrorContext(err, {
                     blockNumber: block.number,
-                    blockHash: block.hash
+                    blockHash: block.hash,
+                    rpcUrl: this.client.url,
+                    rpcMethod: 'receipts validation (receipts-by-block path)'
                 })
             }
 
@@ -858,7 +875,11 @@ export class Rpc {
                     let prevCumulativeGasUsed = 0n
                     for (let receipt of receipts) {
                         let cumulativeGasUsed = BigInt(receipt.cumulativeGasUsed)
-                        assert.equal(cumulativeGasUsed, prevCumulativeGasUsed + BigInt(receipt.gasUsed))
+                        assert.equal(
+                            cumulativeGasUsed,
+                            prevCumulativeGasUsed + BigInt(receipt.gasUsed),
+                            `cumulativeGasUsed mismatch at receipt of tx ${receipt.transactionHash}`
+                        )
                         prevCumulativeGasUsed = cumulativeGasUsed
                     }
                 }
@@ -875,7 +896,9 @@ export class Rpc {
             } catch (err: any) {
                 throw addErrorContext(err, {
                     blockNumber: block.number,
-                    blockHash: block.hash
+                    blockHash: block.hash,
+                    rpcUrl: this.client.url,
+                    rpcMethod: 'receipts validation (eth_getTransactionReceipt path)'
                 })
             }
 
