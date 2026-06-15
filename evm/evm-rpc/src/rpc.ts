@@ -16,6 +16,8 @@ import {
     GetBlock,
     Receipt,
     TraceFrame,
+    DebugFrame,
+    DebugStateDiff,
     DebugStateDiffResult,
     DebugFrameResult,
     TraceReplayTraces,
@@ -1007,11 +1009,12 @@ export class Rpc {
             }
         })
 
-        let results = await this.reduceBatchOnRetry(call, {
+        let results = await this.reduceBatchOnRetry<DebugStateDiffResult[] | null | typeof RESPONSE_TOO_BIG>(call, {
             validateResult: getResultValidator(array(DebugStateDiffResult)),
             validateError: info => {
                 if (info.message.includes('not found')) return null
                 if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                if (isResponseTooBigError(new RpcError(info))) return RESPONSE_TOO_BIG
                 throw new RpcError(info)
             }
         })
@@ -1020,6 +1023,17 @@ export class Rpc {
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let diffs = results[i]
+            if (diffs === RESPONSE_TOO_BIG) {
+                // The whole-block trace is too large for the endpoint to return.
+                // Fall back to tracing every transaction of the block individually.
+                try {
+                    diffs = await this.stateDiffsByTransaction(block, traceConfig)
+                } catch (err: any) {
+                    block._isInvalid = true
+                    block._errorMessage = `failed to get debug state diffs for a block via per-transaction fallback: ${err.message}`
+                    continue
+                }
+            }
             if (diffs == null) {
                 block._isInvalid = true
                 block._errorMessage = "failed to get debug state diffs for a block"
@@ -1029,6 +1043,36 @@ export class Rpc {
                 block.debugStateDiffs = this.matchDebugTrace('debug state diff', block, diffs, utils)
             }
         }
+    }
+
+    /**
+     * Per-transaction fallback for {@link addDebugStateDiffs}. Used when
+     * `debug_traceBlockBy*` rejects the whole-block prestate diff with a
+     * "response is too big" error. Traces each transaction of the block
+     * with a separate `debug_traceTransaction` call and reassembles the
+     * results into the same shape the whole-block call would have produced.
+     */
+    private async stateDiffsByTransaction(
+        block: Block,
+        traceConfig: unknown
+    ): Promise<DebugStateDiffResult[]> {
+        let txHashes = block.block.transactions.map(getTxHash)
+
+        let call = txHashes.map(txHash => ({
+            method: 'debug_traceTransaction',
+            params: [txHash, traceConfig]
+        }))
+
+        let validateDiff = getResultValidator(DebugStateDiff)
+
+        let results = await this.reduceBatchOnRetry(call, {
+            validateResult: validateDiff
+        })
+
+        return results.map((result, i) => {
+            assert(result != null, 'missing debug state diff for a transaction')
+            return {result, txHash: txHashes[i]}
+        })
     }
 
     private async addDebugFrames(blocks: Block[], req: DataRequest): Promise<void> {
@@ -1057,7 +1101,7 @@ export class Rpc {
 
         let validateFrameResult = getResultValidator(array(DebugFrameResult))
 
-        let results = await this.reduceBatchOnRetry(call, {
+        let results = await this.reduceBatchOnRetry<DebugFrameResult[] | null | typeof RESPONSE_TOO_BIG>(call, {
             validateResult: result => {
                 if (Array.isArray(result)) {
                     // Moonbeam quirk
@@ -1072,6 +1116,7 @@ export class Rpc {
             validateError: info => {
                 if (info.message.includes('not found')) return null
                 if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                if (isResponseTooBigError(new RpcError(info))) return RESPONSE_TOO_BIG
                 throw new RpcError(info)
             }
         })
@@ -1080,6 +1125,17 @@ export class Rpc {
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let frames = results[i]
+            if (frames === RESPONSE_TOO_BIG) {
+                // The whole-block trace is too large for the endpoint to return.
+                // Fall back to tracing every transaction of the block individually.
+                try {
+                    frames = await this.traceBlockFramesByTransaction(block, traceConfig)
+                } catch (err: any) {
+                    block._isInvalid = true
+                    block._errorMessage = `failed to get debug call frames for a block via per-transaction fallback: ${err.message}`
+                    continue
+                }
+            }
             if (frames == null) {
                 block._isInvalid = true
                 block._errorMessage = "failed to get debug call frames for a block"
@@ -1089,6 +1145,42 @@ export class Rpc {
                 block.debugFrames = this.matchDebugTrace('debug call frame', block, frames, utils)
             }
         }
+    }
+
+    /**
+     * Per-transaction fallback for {@link addDebugFrames}. Used when
+     * `debug_traceBlockBy*` rejects the whole-block call trace with a
+     * "response is too big" error. Traces each transaction of the block
+     * with a separate `debug_traceTransaction` call and reassembles the
+     * results into the same shape the whole-block call would have produced.
+     */
+    private async traceBlockFramesByTransaction(
+        block: Block,
+        traceConfig: unknown
+    ): Promise<DebugFrameResult[]> {
+        let txHashes = block.block.transactions.map(getTxHash)
+
+        let call = txHashes.map(txHash => ({
+            method: 'debug_traceTransaction',
+            params: [txHash, traceConfig]
+        }))
+
+        let validateFrame = getResultValidator(DebugFrame)
+
+        let results = await this.reduceBatchOnRetry(call, {
+            validateResult: result => {
+                // Moonbeam quirk: some endpoints wrap the frame in `{result}`.
+                if (result != null && typeof result === 'object' && 'result' in (result as any)) {
+                    result = (result as any).result
+                }
+                return validateFrame(result)
+            }
+        })
+
+        return results.map((result, i) => {
+            assert(result != null, 'missing debug call frame for a transaction')
+            return {result, txHash: txHashes[i]}
+        })
     }
 
     private matchDebugTrace<T extends { txHash?: Bytes | null }>(
@@ -1229,6 +1321,27 @@ function getResultValidator<V extends Validator>(validator: V): (result: unknown
             return result as any
         }
     }
+}
+
+
+/**
+ * Sentinel returned from `validateError` when a whole-block `debug_traceBlockBy*`
+ * call is rejected because the response is too large. Blocks marked with this
+ * value are retried via a per-transaction `debug_traceTransaction` fallback.
+ */
+const RESPONSE_TOO_BIG = Symbol('RESPONSE_TOO_BIG')
+
+
+/**
+ * Matches the "response is too big" family of RPC errors raised when a
+ * whole-block debug trace exceeds the endpoint's response size limit
+ * (e.g. Alchemy Base Sepolia for block 42363870).
+ */
+function isResponseTooBigError(err: unknown): boolean {
+    if (!(err instanceof RpcError)) return false
+    if (/response is too big/i.test(err.message)) return true
+    if (/response too large/i.test(err.message)) return true
+    return false
 }
 
 
