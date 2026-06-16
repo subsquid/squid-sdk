@@ -111,7 +111,9 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
 
     protected async* getBlocks(range: Range): AsyncIterable<RawBlock[]> {
         for await (let batch of this.dataSource().getFinalizedStream(range)) {
-            yield batch.blocks.map(toRawBlock)
+            for (let block of batch.blocks) {
+                yield [toRawBlock(block)]
+            }
         }
     }
 }
