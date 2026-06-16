@@ -113,7 +113,14 @@ export class ChainUtils {
             let transactions = block.transactions as Transaction[]
             let txByHash = new Map(transactions.map(tx => [getTxHash(tx), tx]))
             logs = logs.filter(log => {
-                let tx = assertNotNull(txByHash.get(log.transactionHash))
+                let tx = txByHash.get(log.transactionHash)
+                // Hyperliquid system transactions can emit logs while being absent
+                // from the canonical block.transactions list. Such a log has no
+                // matching transaction here; treat it as a system-tx log and drop
+                // it from the bloom (the canonical header bloom also omits system-tx
+                // logs) instead of crashing on assertNotNull. A genuinely missing
+                // non-system log is still caught by the subsequent logs-bloom check.
+                if (tx == null) return false
                 return !isHyperliquidSystemTx(tx)
             })
         }
