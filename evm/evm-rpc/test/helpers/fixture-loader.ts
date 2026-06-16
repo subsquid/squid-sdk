@@ -1,4 +1,4 @@
-import { GetBlock, Receipt } from '../../src/rpc-data'
+import { GetBlock, Receipt, DebugFrame, DebugStateDiff } from '../../src/rpc-data'
 import * as fs from 'fs'
 import * as Path from 'path'
 
@@ -17,6 +17,7 @@ const CHAIN_IDS: Record<string, string> = {
     stable: '0x3dc',
     'stable-testnet': '0x899',
     'bittensor-testnet': '0x3b1',
+    'base-sepolia': '0x14a34',
 }
 
 
@@ -76,6 +77,39 @@ export function loadAllReceipts(chain: string, blockNumber: number): Receipt[] {
 export function hasReceipts(chain: string, blockNumber: number): boolean {
     const path = Path.join(FIXTURES_DIR, chain, blockNumber.toString(), 'receipts.json')
     return fs.existsSync(path)
+}
+
+
+function loadPerTxFixtures<T>(chain: string, blockNumber: number, subdir: string): Map<string, T> {
+    const dir = Path.join(FIXTURES_DIR, chain, blockNumber.toString(), subdir)
+    if (!fs.existsSync(dir)) {
+        throw new Error(`Fixture not found: ${dir}`)
+    }
+    const out = new Map<string, T>()
+    for (const entry of fs.readdirSync(dir)) {
+        if (!entry.endsWith('.json')) continue
+        const txHash = entry.slice(0, -'.json'.length)
+        out.set(txHash, JSON.parse(fs.readFileSync(Path.join(dir, entry), 'utf-8')))
+    }
+    return out
+}
+
+
+/**
+ * Loads per-transaction `debug_traceTransaction` callTracer frames captured
+ * under `<block>/traces/<txHash>.json`, keyed by transaction hash.
+ */
+export function loadTraces(chain: string, blockNumber: number): Map<string, DebugFrame> {
+    return loadPerTxFixtures<DebugFrame>(chain, blockNumber, 'traces')
+}
+
+
+/**
+ * Loads per-transaction `debug_traceTransaction` prestate diffs captured
+ * under `<block>/state-diffs/<txHash>.json`, keyed by transaction hash.
+ */
+export function loadStateDiffs(chain: string, blockNumber: number): Map<string, DebugStateDiff> {
+    return loadPerTxFixtures<DebugStateDiff>(chain, blockNumber, 'state-diffs')
 }
 
 

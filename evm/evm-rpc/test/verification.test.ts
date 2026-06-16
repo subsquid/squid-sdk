@@ -78,6 +78,15 @@ describe('Verification Functions', () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 if (block.withdrawalsRoot == null) return
 
+                // OP-stack chains (e.g. Base) post-Canyon set `withdrawalsRoot`
+                // to the storage root of the L2ToL1MessagePasser predeploy while
+                // leaving `withdrawals` empty, so it is not a Keccak withdrawals
+                // trie root and cannot be recomputed here.
+                if ((block.withdrawals == null || block.withdrawals.length === 0) &&
+                    fixture.chain.startsWith('base')) {
+                    return
+                }
+
                 const chainId = getChainId(fixture.chain)
                 const utils = new ChainUtils(chainId)
                 const withdrawals = assertNotNull(block.withdrawals)

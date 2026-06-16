@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import * as fs from 'fs'
 import * as Path from 'path'
-import { loadBlock, loadReceipts } from './helpers/fixture-loader'
+import { RpcError } from '@subsquid/rpc-client'
+import { loadBlock, loadReceipts, loadTraces, loadStateDiffs, getChainId } from './helpers/fixture-loader'
 import { MockRpcClient } from './helpers/mock-rpc-client'
 import { Rpc } from '../src/rpc'
 import { toQty } from '../src/util'
@@ -705,6 +706,136 @@ describe('Rpc Class Integration', () => {
             const blocks = await rpc.getBlockBatch([6646068], { transactions: true })
             expect(blocks).toBeTruthy()
             expect(blocks.length).toEqual(1)
+        })
+    })
+
+    describe('debug trace "response is too big" fallback', () => {
+        // Some endpoints (e.g. Alchemy Base Sepolia for very large blocks such
+        // as 42363870 with 7232 transactions) reject the whole-block
+        // debug_traceBlockBy* call with a "Response is too big" error. In that
+        // case we must fall back to per-transaction debug_traceTransaction calls
+        // and reassemble the result. These tests use a real (smaller) Base
+        // Sepolia block captured with per-tx traces and simulate the too-big
+        // error on the whole-block call.
+
+        const CHAIN = 'base-sepolia'
+        const BLOCK = 42348318
+        const CALL_TRACE_CONFIG = {
+            tracer: 'callTracer',
+            tracerConfig: { onlyTopCall: false, withLog: true },
+            timeout: undefined,
+        }
+        const STATE_DIFF_TRACE_CONFIG = {
+            tracer: 'prestateTracer',
+            tracerConfig: { onlyTopCall: false, diffMode: true },
+            timeout: undefined,
+        }
+        const PER_TX_CALL_CONFIG = {
+            tracer: 'callTracer',
+            tracerConfig: { onlyTopCall: false, withLog: true },
+            timeout: undefined,
+        }
+        const PER_TX_STATE_DIFF_CONFIG = {
+            tracer: 'prestateTracer',
+            tracerConfig: { onlyTopCall: false, diffMode: true },
+            timeout: undefined,
+        }
+
+        function responseTooBig(): RpcError {
+            return new RpcError({ code: -32008, message: 'Response is too big. The response contains too many results.' })
+        }
+
+        function baseMocks(block: any): MockRpcClient {
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, getChainId(CHAIN))
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(BLOCK), true], block)
+            return mockClient
+        }
+
+        it('falls back to debug_traceTransaction for call frames when the whole-block trace is too big', async () => {
+            const block = loadBlock(CHAIN, BLOCK)
+            const traces = loadTraces(CHAIN, BLOCK)
+
+            const mockClient = baseMocks(block)
+            // Whole-block call trace is rejected as too big.
+            mockClient.setError('debug_traceBlockByHash', [block.hash, CALL_TRACE_CONFIG], responseTooBig())
+            // Per-transaction traces succeed.
+            for (const tx of block.transactions as any[]) {
+                mockClient.setFixture('debug_traceTransaction', [tx.hash, PER_TX_CALL_CONFIG], traces.get(tx.hash))
+            }
+
+            const rpc = new Rpc({ client: mockClient as any })
+
+            const blocks = await rpc.getBlockBatch([BLOCK], { transactions: true, traces: true })
+            expect(blocks).toHaveLength(1)
+
+            const result = blocks[0]
+            expect(result._isInvalid).toBeFalsy()
+            expect(result.debugFrames).toBeTruthy()
+            expect(result.debugFrames!.length).toEqual(block.transactions.length)
+
+            // Every transaction has a frame, correctly aligned by tx hash.
+            for (let i = 0; i < block.transactions.length; i++) {
+                const tx = block.transactions[i] as any
+                expect(result.debugFrames![i]).toBeTruthy()
+                expect(result.debugFrames![i]!.txHash).toEqual(tx.hash)
+                expect(result.debugFrames![i]!.result).toEqual(traces.get(tx.hash))
+            }
+        })
+
+        it('falls back to debug_traceTransaction for state diffs when the whole-block trace is too big', async () => {
+            const block = loadBlock(CHAIN, BLOCK)
+            const stateDiffs = loadStateDiffs(CHAIN, BLOCK)
+
+            const mockClient = baseMocks(block)
+            mockClient.setError('debug_traceBlockByHash', [block.hash, STATE_DIFF_TRACE_CONFIG], responseTooBig())
+            for (const tx of block.transactions as any[]) {
+                mockClient.setFixture('debug_traceTransaction', [tx.hash, PER_TX_STATE_DIFF_CONFIG], stateDiffs.get(tx.hash))
+            }
+
+            const rpc = new Rpc({ client: mockClient as any })
+
+            const blocks = await rpc.getBlockBatch([BLOCK], {
+                transactions: true,
+                stateDiffs: true,
+                useDebugApiForStateDiffs: true,
+            })
+            expect(blocks).toHaveLength(1)
+
+            const result = blocks[0]
+            expect(result._isInvalid).toBeFalsy()
+            expect(result.debugStateDiffs).toBeTruthy()
+            expect(result.debugStateDiffs!.length).toEqual(block.transactions.length)
+
+            for (let i = 0; i < block.transactions.length; i++) {
+                const tx = block.transactions[i] as any
+                expect(result.debugStateDiffs![i]).toBeTruthy()
+                expect(result.debugStateDiffs![i]!.txHash).toEqual(tx.hash)
+                expect(result.debugStateDiffs![i]!.result).toEqual(stateDiffs.get(tx.hash))
+            }
+        })
+
+        it('marks the block invalid when a per-transaction call-frame fallback fails', async () => {
+            const block = loadBlock(CHAIN, BLOCK)
+            const traces = loadTraces(CHAIN, BLOCK)
+
+            const mockClient = baseMocks(block)
+            mockClient.setError('debug_traceBlockByHash', [block.hash, CALL_TRACE_CONFIG], responseTooBig())
+
+            const txs = block.transactions as any[]
+            // All but the last transaction trace successfully.
+            for (let i = 0; i < txs.length - 1; i++) {
+                mockClient.setFixture('debug_traceTransaction', [txs[i].hash, PER_TX_CALL_CONFIG], traces.get(txs[i].hash))
+            }
+            // The last transaction's per-tx trace returns null.
+            mockClient.setFixture('debug_traceTransaction', [txs[txs.length - 1].hash, PER_TX_CALL_CONFIG], null)
+
+            const rpc = new Rpc({ client: mockClient as any })
+
+            const blocks = await rpc.getBlockBatch([BLOCK], { transactions: true, traces: true })
+            expect(blocks).toHaveLength(1)
+            expect(blocks[0]._isInvalid).toEqual(true)
+            expect(blocks[0]._errorMessage).toMatch(/per-transaction fallback/)
         })
     })
 

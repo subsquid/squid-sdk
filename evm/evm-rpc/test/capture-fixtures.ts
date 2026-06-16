@@ -9,6 +9,8 @@ interface CaptureOptions {
     rpcUrl: string
     withReceipts?: boolean
     withLogs?: boolean
+    withTraces?: boolean
+    withStateDiffs?: boolean
 }
 
 
@@ -81,9 +83,72 @@ async function captureFixture(options: CaptureOptions) {
         }
     }
 
+    // Fetch and save per-transaction call-trace frames (callTracer).
+    if (options.withTraces) {
+        await capturePerTxTrace({
+            rpcCall,
+            fixtureDir,
+            transactions: rawBlock.transactions ?? [],
+            subdir: 'traces',
+            traceConfig: {
+                tracer: 'callTracer',
+                tracerConfig: {onlyTopCall: false, withLog: true}
+            },
+            label: 'traces'
+        })
+    }
+
+    // Fetch and save per-transaction prestate diffs (prestateTracer, diffMode).
+    if (options.withStateDiffs) {
+        await capturePerTxTrace({
+            rpcCall,
+            fixtureDir,
+            transactions: rawBlock.transactions ?? [],
+            subdir: 'state-diffs',
+            traceConfig: {
+                tracer: 'prestateTracer',
+                tracerConfig: {onlyTopCall: false, diffMode: true}
+            },
+            label: 'state diffs'
+        })
+    }
+
     console.log(`\n✅ Fixture captured successfully!`)
     console.log(`   Location: ${fixtureDir}`)
     console.log(`   Next step: git add ${Path.relative(process.cwd(), fixtureDir)}`)
+}
+
+
+interface PerTxTraceOptions {
+    rpcCall: (method: string, params?: any[]) => Promise<any>
+    fixtureDir: string
+    transactions: any[]
+    subdir: string
+    traceConfig: unknown
+    label: string
+}
+
+
+async function capturePerTxTrace(options: PerTxTraceOptions) {
+    if (options.transactions.length === 0) {
+        console.log(`⚠ No transactions to capture ${options.label} for`)
+        return
+    }
+
+    const dir = Path.join(options.fixtureDir, options.subdir)
+    fs.mkdirSync(dir, {recursive: true})
+
+    let count = 0
+    for (const tx of options.transactions) {
+        const hash = typeof tx === 'string' ? tx : tx.hash
+        const result = await options.rpcCall('debug_traceTransaction', [hash, options.traceConfig])
+        fs.writeFileSync(
+            Path.join(dir, `${hash}.json`),
+            JSON.stringify(result, null, 2)
+        )
+        count++
+    }
+    console.log(`✓ Saved ${options.subdir}/ (${count} ${options.label})`)
 }
 
 
@@ -96,12 +161,14 @@ const {values} = parseArgs({
         'rpc-url': {type: 'string'},
         'with-receipts': {type: 'boolean', default: false},
         'with-logs': {type: 'boolean', default: false},
+        'with-traces': {type: 'boolean', default: false},
+        'with-state-diffs': {type: 'boolean', default: false},
     },
     strict: true,
 })
 
 if (!values.chain || !values.block || !values['rpc-url']) {
-    console.error('Usage: tsx test/capture-fixtures.ts --chain <name> --block <number> --rpc-url <url> [--with-receipts] [--with-logs]')
+    console.error('Usage: tsx test/capture-fixtures.ts --chain <name> --block <number> --rpc-url <url> [--with-receipts] [--with-logs] [--with-traces] [--with-state-diffs]')
     process.exit(1)
 }
 
@@ -111,6 +178,8 @@ captureFixture({
     rpcUrl: values['rpc-url'],
     withReceipts: values['with-receipts'],
     withLogs: values['with-logs'],
+    withTraces: values['with-traces'],
+    withStateDiffs: values['with-state-diffs'],
 }).catch(error => {
     console.error('Error:', error.message)
     process.exit(1)
