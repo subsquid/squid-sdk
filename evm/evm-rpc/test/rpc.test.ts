@@ -151,6 +151,27 @@ describe('Rpc Class Integration', () => {
                 rpc.getBlockBatch([18000000], { transactions: true })
             ).rejects.toThrow()
         })
+
+        it('verifies Tempo post-fork block hash (with consensusContext)', async () => {
+            // Tempo extended its header with a trailing optional `consensusContext`
+            // field on post-fork blocks. tempoBlockHash must include it, otherwise
+            // every post-fork block fails hash verification.
+            const fixtureBlock = loadBlock('tempo-mainnet', 25403305)
+            expect(fixtureBlock.consensusContext).toBeTruthy()
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0x1079')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(25403305), false], fixtureBlock)
+
+            const rpc = new Rpc({
+                client: mockClient as any,
+                verifyBlockHash: true
+            })
+
+            const blocks = await rpc.getBlockBatch([25403305])
+            expect(blocks.length).toEqual(1)
+            expect(blocks[0].block.hash).toEqual(fixtureBlock.hash)
+        })
     })
 
     describe('Chain-specific behavior', () => {

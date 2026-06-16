@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "Include the trailing optional consensusContext field when computing the Tempo block hash, fixing block hash verification for post-fork Tempo blocks",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}

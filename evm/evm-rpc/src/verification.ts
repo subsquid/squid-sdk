@@ -36,19 +36,32 @@ export function blockHash(block: GetBlock) {
  * Compute block hash for Tempo networks.
  *
  * Tempo's TempoHeader wraps the standard Ethereum Header as a nested struct:
- *   rlp([general_gas_limit, shared_gas_limit, timestamp_millis_part, rlp([...standard_header_fields])])
+ *   rlp([general_gas_limit, shared_gas_limit, timestamp_millis_part, rlp([...standard_header_fields]), consensus_context?])
  *
  * The inner Header is RLP-encoded as its own list, producing a nested RLP structure.
+ *
+ * `consensus_context` is a trailing optional field (rlp(trailing)): present on
+ * post-fork blocks and omitted on pre-fork ones. When present it is itself an
+ * RLP list: [epoch, view, parent_view, proposer].
  *
  * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/header.rs
  */
 export function tempoBlockHash(block: GetBlock) {
-    let fields = [
+    let fields: any[] = [
         BigInt(assertNotNull(block.mainBlockGeneralGasLimit, 'block.mainBlockGeneralGasLimit is missing')),
         BigInt(assertNotNull(block.sharedGasLimit, 'block.sharedGasLimit is missing')),
         BigInt(assertNotNull(block.timestampMillisPart, 'block.timestampMillisPart is missing')),
         ethereumHeaderFields(block),
     ]
+    if (block.consensusContext != null) {
+        let ctx = block.consensusContext
+        fields.push([
+            BigInt(ctx.epoch),
+            BigInt(ctx.view),
+            BigInt(ctx.parentView),
+            decodeHex(ctx.proposer),
+        ])
+    }
     return hashBlockHeader(fields)
 }
 

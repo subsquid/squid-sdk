@@ -638,6 +638,14 @@ export const GetBlock = object({
     mainBlockGeneralGasLimit: option(QTY),
     sharedGasLimit: option(QTY),
     timestampMillisPart: option(QTY),
+    // Trailing optional consensus metadata, present on post-fork Tempo blocks.
+    // Required to reproduce the block hash (see tempoBlockHash).
+    consensusContext: option(object({
+        epoch: NAT,
+        view: NAT,
+        parentView: NAT,
+        proposer: BYTES,
+    })),
 })
 
 
