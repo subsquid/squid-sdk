@@ -1,47 +1,50 @@
-import {last, waitDrain} from '@subsquid/util-internal'
+import {waitDrain} from '@subsquid/util-internal'
 import {assertRange, Range} from '@subsquid/util-internal-range'
 import assert from 'assert'
-import {StringDecoder} from 'node:string_decoder'
 import zlib from 'zlib'
 
 
-export async function* splitLines(bytes: AsyncIterable<Buffer>): AsyncIterable<string[]> {
-    let splitter = new LineSplitter()
+export async function* splitBufferLines(bytes: AsyncIterable<Buffer>): AsyncIterable<Buffer[]> {
+    let splitter = new BufferLineSplitter()
     for await (let buf of bytes) {
         let lines = splitter.push(buf)
-        if (lines) yield lines
+        if (lines && lines.length > 0) yield lines
     }
     let lastLine = splitter.end()
     if (lastLine) yield [lastLine]
 }
 
 
-class LineSplitter {
-    private decoder = new StringDecoder('utf-8')
-    private line = ''
+class BufferLineSplitter {
+    private pending: Buffer[] = []
 
-    push(data: Buffer): string[] | undefined {
-        let s = this.decoder.write(data)
-        if (!s) return
-        let lines = s.split('\n')
-        if (lines.length == 1) {
-            this.line += lines[0]
-        } else {
-            let result: string[] = []
-            lines[0] = this.line + lines[0]
-            this.line = last(lines)
-            for (let i = 0; i < lines.length - 1; i++) {
-                let line = lines[i]
-                if (line) {
-                    result.push(line)
+    push(data: Buffer): Buffer[] | undefined {
+        let lines: Buffer[] = []
+        let start = 0
+
+        for (let i = 0; i < data.length; i++) {
+            if (data[i] === 0x0A) {
+                if (this.pending.length > 0) {
+                    this.pending.push(data.subarray(start, i))
+                    lines.push(Buffer.concat(this.pending))
+                    this.pending = []
+                } else {
+                    lines.push(data.subarray(start, i))
                 }
+                start = i + 1
             }
-            if (result.length > 0) return result
         }
+
+        if (start < data.length) {
+            this.pending.push(Buffer.from(data.subarray(start)))
+        }
+
+        return lines.length > 0 ? lines : undefined
     }
 
-    end(): string | undefined {
-        if (this.line) return this.line
+    end(): Buffer | undefined {
+        if (this.pending.length === 0) return undefined
+        return Buffer.concat(this.pending)
     }
 }
 

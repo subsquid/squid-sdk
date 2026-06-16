@@ -1,4 +1,6 @@
 export * from './chunk'
 export * from './errors'
+export * from './json-parser'
+export * from './json-stream'
 export * from './layout'
 export * from './block'

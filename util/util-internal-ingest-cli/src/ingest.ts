@@ -1,7 +1,7 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {assertNotNull, def, runProgram, waitDrain} from '@subsquid/util-internal'
-import {ArchiveLayout} from '@subsquid/util-internal-archive-layout'
+import {ArchiveLayout, writeJson} from '@subsquid/util-internal-archive-layout'
 import {FileOrUrl, nat, positiveInt, Url} from '@subsquid/util-internal-commander'
 import {createFs} from '@subsquid/util-internal-fs'
 import {HttpApp, HttpContext, HttpError, waitForInterruption} from '@subsquid/util-internal-http-server'
@@ -143,7 +143,8 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
                 this.log().debug(`Received block ${lastBlockHeight} at ${lastBlockTimestamp}`)
 
                 for (let block of blocks) {
-                    writable.write(JSON.stringify(block) + '\n')
+                    writeJson(block, s => writable.write(s))
+                    writable.write('\n')
                 }
             }
         }

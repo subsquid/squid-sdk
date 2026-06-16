@@ -6,7 +6,8 @@ import {
     checkShorHashMatch,
     getBlockNumber,
     getParentBlockNumber,
-    RawBlock
+    RawBlock,
+    writeJson
 } from '@subsquid/util-internal-archive-layout'
 import {FileOrUrl, nat, positiveInt, positiveReal, Url} from '@subsquid/util-internal-commander'
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
@@ -251,7 +252,8 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
                 for await (let bb of this.ingest()) {
                     await waitDrain(process.stdout)
                     for (let block of bb) {
-                        process.stdout.write(JSON.stringify(block) + '\n')
+                        writeJson(block, s => process.stdout.write(s))
+                        process.stdout.write('\n')
                     }
                     const lastBlockHeight = getBlockNumber(last(bb));
                     prometheus.setLastWrittenBlock(lastBlockHeight);

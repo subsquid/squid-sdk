@@ -7,7 +7,9 @@ import {createGunzip} from 'zlib'
 import {BlockRef, formatBlockNumber, getBlockNumber, getShortHash, peekBlockRef, RawBlock} from './block'
 import {DataChunk, getChunkPath, getDataChunkErrorMessage, tryParseChunkDir, tryParseTop} from './chunk'
 import {ArchiveLayoutError, TopDirError} from './errors'
-import {getRange, GzipBuffer, splitLines} from './util'
+import {writeJson} from './json-stream'
+import {parseJsonBytes} from './json-parser'
+import {getRange, GzipBuffer, splitBufferLines} from './util'
 
 
 export interface ArchiveLayoutOptions {
@@ -243,7 +245,8 @@ export class ArchiveLayout {
                     lastBlock = peekBlockRef(last(batch))
 
                     for (let b of batch) {
-                        out.write(JSON.stringify(b) + '\n')
+                        writeJson(b, s => out.write(s))
+                        out.write('\n')
                     }
 
                     await out.drain()
@@ -286,13 +289,14 @@ export class ArchiveLayout {
                     await this.getChunkFs(chunk).readStream('blocks.jsonl.gz'),
                     createGunzip(),
                     async dataChunks => {
-                        for await (let lines of splitLines(dataChunks)) {
-                            for (let line of lines) {
-                                let block: B = JSON.parse(line)
+                        for await (let lineBuffers of splitBufferLines(dataChunks)) {
+                            for (let lineBuf of lineBuffers) {
+                                if (lineBuf.length === 0) continue
+let block: B = parseJsonBytes(lineBuf) as B
                                 let number = getBlockNumber(block)
                                 if (r.from <= number && number <= rangeEnd(r)) {
                                     blocks.push(block)
-                                    bytesBuffered += line.length
+                                    bytesBuffered += lineBuf.length
                                 }
                             }
                             if (blocks.length > 10 || bytesBuffered > 1024 * 1024) {
@@ -322,11 +326,12 @@ export class ArchiveLayout {
                 await this.getChunkFs(chunk).readStream('blocks.jsonl.gz'),
                 createGunzip(),
                 async dataChunks => {
-                    for await (let lines of splitLines(dataChunks)) {
-                        for (let line of lines) {
-                            let block: B = JSON.parse(line)
+                    for await (let lineBuffers of splitBufferLines(dataChunks)) {
+                        for (let lineBuf of lineBuffers) {
+                            if (lineBuf.length === 0) continue
+let block: B = parseJsonBytes(lineBuf) as B
                             blocks.push(block)
-                            bytesBuffered += line.length
+                            bytesBuffered += lineBuf.length
                         }
                         if (blocks.length > 10 || bytesBuffered > 1024 * 1024) {
                             await write(blocks)
