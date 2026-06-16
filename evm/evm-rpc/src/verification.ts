@@ -18,6 +18,7 @@ import {
     TempoTokenLimit,
     TempoCallScope,
     TempoSelectorRule,
+    TempoConsensusContext,
     GetBlock,
     Log,
     Receipt,
@@ -29,6 +30,21 @@ import {Bytes20, Bytes32, Qty} from './types'
 
 export function blockHash(block: GetBlock) {
     return hashBlockHeader(ethereumHeaderFields(block))
+}
+
+
+/**
+ * Encode a TempoConsensusContext for RLP: [epoch, view, parent_view, proposer_bytes]
+ *
+ * https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/header.rs
+ */
+function encodeTempoConsensusContext(ctx: TempoConsensusContext) {
+    return [
+        BigInt(ctx.epoch),
+        BigInt(ctx.view),
+        BigInt(ctx.parentView),
+        decodeHex(ctx.proposer),
+    ]
 }
 
 
@@ -49,6 +65,11 @@ export function tempoBlockHash(block: GetBlock) {
         BigInt(assertNotNull(block.timestampMillisPart, 'block.timestampMillisPart is missing')),
         ethereumHeaderFields(block),
     ]
+    // Trailing optional field: only encoded when present (post-fork blocks)
+    // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/header.rs
+    if (block.consensusContext) {
+        fields.push(encodeTempoConsensusContext(block.consensusContext))
+    }
     return hashBlockHeader(fields)
 }
 

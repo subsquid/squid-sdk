@@ -41,6 +41,15 @@ export interface BlockHeader {
     mainBlockGeneralGasLimit?: Qty,
     sharedGasLimit?: Qty,
     timestampMillisPart?: Qty,
+    consensusContext?: TempoConsensusContext,
+}
+
+
+export interface TempoConsensusContext {
+    epoch: number,
+    view: number,
+    parentView: number,
+    proposer: Bytes32,
 }
 
 

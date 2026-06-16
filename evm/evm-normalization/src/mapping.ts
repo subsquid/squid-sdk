@@ -18,6 +18,7 @@ import {
     TempoCallScope,
     TempoSignedKeyAuthorization,
     TempoFeePayerSignature,
+    TempoConsensusContext,
     Log,
     Trace,
     TraceCreateAction,
@@ -633,6 +634,17 @@ function mapBlockHeader(src: rpc.GetBlock): BlockHeader {
         mainBlockGeneralGasLimit: src.mainBlockGeneralGasLimit ?? undefined,
         sharedGasLimit: src.sharedGasLimit ?? undefined,
         timestampMillisPart: src.timestampMillisPart ?? undefined,
+        consensusContext: src.consensusContext ? mapTempoConsensusContext(src.consensusContext) : undefined,
+    }
+}
+
+
+function mapTempoConsensusContext(ctx: rpc.TempoConsensusContext): TempoConsensusContext {
+    return {
+        epoch: ctx.epoch,
+        view: ctx.view,
+        parentView: ctx.parentView,
+        proposer: ctx.proposer.toLowerCase(),
     }
 }
 

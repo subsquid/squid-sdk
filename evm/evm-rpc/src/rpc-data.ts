@@ -75,6 +75,19 @@ export type FrontierEIP7702Authorization = GetSrcType<typeof FrontierEIP7702Auth
 
 export type EIP7702AuthorizationItem = EIP7702Authorization | FrontierEIP7702Authorization
 
+// Tempo consensus context metadata (trailing optional in TempoHeader)
+// https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/header.rs
+export const TempoConsensusContext = object({
+    epoch: NAT,
+    view: NAT,
+    parentView: NAT,
+    proposer: BYTES,
+})
+
+
+export type TempoConsensusContext = GetSrcType<typeof TempoConsensusContext>
+
+
 // Tempo 0x76 transaction call entry
 // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
 export const TempoCall = object({
@@ -638,6 +651,7 @@ export const GetBlock = object({
     mainBlockGeneralGasLimit: option(QTY),
     sharedGasLimit: option(QTY),
     timestampMillisPart: option(QTY),
+    consensusContext: option(TempoConsensusContext),
 })
 
 
