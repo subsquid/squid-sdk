@@ -34,6 +34,10 @@ export class EvmIngest extends Ingest<Options> {
         program.option('--skip-cumulative-gas-used-check', 'Do not check cumulativeGasUsed consistency across transactions')
     }
 
+    protected getSocketTimeout() {
+        return 600_000
+    }
+
     protected async *getBlocks(range: Range): AsyncIterable<object[]> {
         for await (let batch of this.archive().getRawBlocks<RawBlock>(range)) {
             for (let raw of batch) {
