@@ -36,7 +36,7 @@ export class EvmIngest extends Ingest<Options> {
 
     protected async *getBlocks(range: Range): AsyncIterable<object[]> {
         for await (let batch of this.archive().getRawBlocks<RawBlock>(range)) {
-            yield batch.map(raw => {
+            for (let raw of batch) {
                 try {
                     let block = mapRawBlock(raw, {
                         withTraces: this.options().withTraces,
@@ -44,14 +44,14 @@ export class EvmIngest extends Ingest<Options> {
                         checkLogIndex: !this.options().skipLogIndexCheck,
                         checkCumulativeGasUsed: !this.options().skipCumulativeGasUsedCheck
                     })
-                    return toJSON(block)
+                    yield [toJSON(block)]
                 } catch(err: any) {
                     throw addErrorContext(err, {
                         blockNumber: raw.number,
                         blockHash: raw.hash
                     })
                 }
-            })
+            }
         }
     }
 
