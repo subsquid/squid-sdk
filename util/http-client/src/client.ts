@@ -332,6 +332,7 @@ export class HttpClient {
                 case 522:
                 case 523:
                 case 524:
+                case 529:
                     return true
                 default:
                     return error.headers.has('retry-after')
