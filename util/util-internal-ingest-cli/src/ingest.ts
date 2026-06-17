@@ -143,8 +143,9 @@ export class Ingest<O extends IngestOptions = IngestOptions> {
                 this.log().debug(`Received block ${lastBlockHeight} at ${lastBlockTimestamp}`)
 
                 for (let block of blocks) {
-                    writeJson(block, s => writable.write(s))
-                    writable.write('\n')
+                    writable.write(JSON.stringify(block) + '\n')
+                    // writeJson(block, s => writable.write(s))
+                    // writable.write('\n')
                 }
             }
         }
