@@ -1132,13 +1132,22 @@ export class Rpc {
 
         let replaysByBlock = await this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(
-                array(getTraceTransactionReplayValidator(traces))
+                nullable(array(getTraceTransactionReplayValidator(traces)))
             )
         })
 
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let replays = replaysByBlock[i]
+            // A provider can transiently return `null` for a freshly produced
+            // (tip) block whose trace index isn't ready yet. Treat it like the
+            // debug_trace* paths do — flag the block for retry instead of
+            // crashing ingestion with a fatal "null is not an array" error.
+            if (replays == null) {
+                block._isInvalid = true
+                block._errorMessage = 'failed to get trace replays for a block'
+                continue
+            }
             let txs = new Set(block.block.transactions.map(getTxHash))
 
             for (let rep of replays) {
