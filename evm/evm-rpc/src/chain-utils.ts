@@ -31,6 +31,7 @@ export class ChainUtils {
     public readonly isHyperliquidMainnet: boolean
     public readonly isHyperliquidTestnet: boolean
     public readonly isStable: boolean
+    public readonly isTac: boolean
     public readonly isTempo: boolean
     public readonly isCronosMainnet: boolean
     public readonly isShibariumMainnet: boolean
@@ -42,6 +43,7 @@ export class ChainUtils {
         this.isHyperliquidMainnet = chainId == '0x3e7'
         this.isHyperliquidTestnet = chainId == '0x3e6'
         this.isStable = chainId == '0x3dc' || chainId == '0x899' // Chain ID 988 (mainnet) or 2201 (testnet)
+        this.isTac = chainId == '0xef'
         // Tempo mainnet (4217), Moderato testnet (42431), Andantino testnet (42429)
         // https://drpc.org/chainlist/tempo-mainnet-rpc
         // https://drpc.org/chainlist/tempo-moderato-testnet-rpc

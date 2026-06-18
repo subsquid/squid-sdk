@@ -1041,6 +1041,12 @@ export class Rpc {
             timeout: req.debugTraceTimeout,
         }
 
+        let utils = await this.getChainUtils()
+        if (utils.isTac) {
+            // tac network doesn't accept traceConfig parameter
+            delete (traceConfig as any).tracerConfig
+        }
+
         let call = blocks.map(block => {
             if (req.useDebugTraceBlockByNumber) {
                 return {
@@ -1076,7 +1082,6 @@ export class Rpc {
             }
         })
 
-        let utils = await this.getChainUtils()
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let frames = results[i]
