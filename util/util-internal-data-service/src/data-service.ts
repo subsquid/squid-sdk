@@ -21,6 +21,9 @@ export class DataService {
     private stopped = false
     private firstBlockIngested = false
     private firstBlockIngestedFuture = createFuture<void>()
+    private lastHeadLog = 0
+    private lastFinalizedHeadLog = 0
+    private lastFinalizationLagLog = 0
     #chain?: Chain
 
     constructor(
@@ -248,10 +251,10 @@ export class DataService {
             }
 
             if (batch.blocks.length > 0) {
-                this.logBlockInfo(
-                    this.chain.getHeader(),
-                    'new head'
-                )
+                if (this.throttleStatusLog(this.lastHeadLog)) {
+                    this.lastHeadLog = Date.now()
+                    this.logBlockInfo(this.chain.getHeader(), 'last head')
+                }
                 if (!this.firstBlockIngested) {
                     this.firstBlockIngested = true
                     this.firstBlockIngestedFuture.resolve()
@@ -263,14 +266,17 @@ export class DataService {
                 : batch.finalizedHead
 
             if (finalizedHead && this.chain.finalize(finalizedHead)) {
-                this.logBlockInfo(
-                    this.chain.getFinalizedHeader(),
-                    'new finalized head'
-                )
+                if (this.throttleStatusLog(this.lastFinalizedHeadLog)) {
+                    this.lastFinalizedHeadLog = Date.now()
+                    this.logBlockInfo(this.chain.getFinalizedHeader(), 'last finalized head')
+                }
             }
 
             if (!this.chain.compact()) {
-                this.log.error('block finalization lags behind and prevents cache purging')
+                if (this.throttleStatusLog(this.lastFinalizationLagLog)) {
+                    this.lastFinalizationLagLog = Date.now()
+                    this.log.error('block finalization lags behind and prevents cache purging')
+                }
             }
 
             this.triggerUpdate()
@@ -285,6 +291,10 @@ export class DataService {
             blockHash: block.hash,
             blockAge: block.timestamp && Date.now() - block.timestamp,
         }, msg)
+    }
+
+    private throttleStatusLog(lastLog: number): boolean {
+        return Date.now() - lastLog >= 5000
     }
 
     private waitForBlock(number: number): Promise<void> {
