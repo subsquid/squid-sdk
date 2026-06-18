@@ -50,11 +50,12 @@ class Finalizer {
 
             if (info.hash === ref.hash) {
                 this.unshift(probes.slice(i + 1))
+                // Record the finalized head only. Emitting it as its own batch
+                // would share the `output` queue with head blocks and stall
+                // ingestion; `visit()` attaches `current` to the next head batch
+                // instead.
                 this.current = ref
-                return this.output.put({
-                    blocks: [],
-                    finalizedHead: ref
-                })
+                return
             } else {
                 probes.splice(i, 1)
             }
@@ -97,7 +98,11 @@ class Finalizer {
             }
             this.checks.forcePut(null)
             return {
-                blocks: batch.blocks
+                blocks: batch.blocks,
+                // Attach the latest finalized head to the head batch (see
+                // `probe()`). Deferring it to the next head batch is safe:
+                // finality lags the head by minutes, and the consumer max-guards it.
+                finalizedHead: this.current
             }
         }
     }
