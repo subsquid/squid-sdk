@@ -293,6 +293,12 @@ export class Rpc {
     private async getReceiptsMethod() {
         if (this.receiptsMethod) return this.receiptsMethod
 
+        let utils = await this.getChainUtils()
+        if (utils.isTac) {
+            // tac network may fail on `eth_getBlockReceipts` request to early blocks
+            return this.receiptsMethod = 'eth_getTransactionReceipt'
+        }
+
         let eth = await this.client.call('eth_getBlockReceipts', ['latest']).then(
             res => Array.isArray(res),
             () => false
