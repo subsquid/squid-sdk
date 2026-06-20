@@ -93,6 +93,16 @@ export class ChainUtils {
             transactions = txs
         }
 
+        if (this.isStable) {
+            for (let tx of transactions) {
+                if (tx.type == '0x3f') {
+                    // Stable's custom 0x3f transaction type can't be RLP-encoded from rpc data,
+                    // so for now blocks that contain this tx type aren't verified (cf. Polygon PIP-74 0x7f above)
+                    return block.transactionsRoot
+                }
+            }
+        }
+
         if (this.isHyperliquidMainnet || this.isHyperliquidTestnet) {
             transactions = transactions.filter(tx => !isHyperliquidSystemTx(tx))
         }
@@ -153,6 +163,9 @@ export class ChainUtils {
         // sent from the zero address to system contracts. They cannot be ECDSA-recovered.
         if (this.isStable) {
             if (isStableSystemTx(transaction)) return
+            // Stable's custom 0x3f transaction type can't be serialized from rpc data,
+            // so its sender can't be ECDSA-recovered.
+            if (transaction.type == '0x3f') return
         }
 
         // Tempo system transactions are legacy txs with a fake signature (r=0, s=0)
