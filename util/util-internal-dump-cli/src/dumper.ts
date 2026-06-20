@@ -1,6 +1,6 @@
 import {createLogger, Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
-import {assertNotNull, def, last, runProgram, Throttler, waitDrain} from '@subsquid/util-internal'
+import {assertNotNull, def, last, runProgram, Throttler, wait, waitDrain} from '@subsquid/util-internal'
 import {
     ArchiveLayout,
     checkShorHashMatch,
@@ -263,23 +263,52 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
                 let archive = new ArchiveLayout(this.destination(), {
                     topDirSize: this.options().topDirSize
                 })
-                await archive.appendRawBlocks({
-                    blocks: (nextBlock, prevHash) => this.ingest(nextBlock, prevHash),
-                    range: this.range(),
-                    chunkSize: chunkSize * 1024 * 1024,
-                    onSuccessWrite: ctx => {
-                        const blockHeight = ctx.blockRange.to.number;
-                        prometheus.setLastWrittenBlock(blockHeight);
 
-                        const cachedTimestamp = this.timestampCache.get(blockHeight);
-                        if (cachedTimestamp) {
-                            prometheus.setProcessedBlockMetrics(cachedTimestamp);
-                            this.log().debug(`Processed block ${blockHeight} at ${cachedTimestamp}`);
-                        } else {
-                            this.log().warn(`No cached timestamp available for height ${blockHeight}`);
+                // The finalized dump stream can throw a ForkException when the
+                // upstream RPC serves inconsistent finalized data (e.g. a
+                // load-balanced provider whose backend jumped to a recent
+                // snapshot and now reports a gapped/forked view of an already
+                // finalized slot range). Finalized blocks are immutable, so
+                // this is never a real reorg — it's transient provider noise.
+                // appendRawBlocks only persists complete chunks, so the
+                // in-flight (unflushed) buffer is discarded on throw and the
+                // resume point is re-derived from the last persisted chunk on
+                // the next call: identical to a process restart, but without
+                // crash-looping the dumper. We only give up (re-throw) when
+                // retries stop making progress, so a genuine, persistent
+                // archive/chain divergence still surfaces as a hard failure.
+                let lastWrittenBlock = -1
+                await appendWithForkRecovery(
+                    () => archive.appendRawBlocks({
+                        blocks: (nextBlock, prevHash) => this.ingest(nextBlock, prevHash),
+                        range: this.range(),
+                        chunkSize: chunkSize * 1024 * 1024,
+                        onSuccessWrite: ctx => {
+                            const blockHeight = ctx.blockRange.to.number;
+                            lastWrittenBlock = blockHeight;
+                            prometheus.setLastWrittenBlock(blockHeight);
+
+                            const cachedTimestamp = this.timestampCache.get(blockHeight);
+                            if (cachedTimestamp) {
+                                prometheus.setProcessedBlockMetrics(cachedTimestamp);
+                                this.log().debug(`Processed block ${blockHeight} at ${cachedTimestamp}`);
+                            } else {
+                                this.log().warn(`No cached timestamp available for height ${blockHeight}`);
+                            }
                         }
+                    }),
+                    () => lastWrittenBlock,
+                    async ({message, lastWrittenBlock, stuckRetries}) => {
+                        this.log().warn(
+                            {reason: message, lastWrittenBlock, attempt: stuckRetries},
+                            'finalized dump stream hit a chain-continuity error. Finalized data ' +
+                            'is immutable, so this is transient upstream/provider inconsistency ' +
+                            'rather than a real reorg. Discarding the in-flight buffer and ' +
+                            'retrying from the last persisted chunk.'
+                        )
+                        await wait(Math.min(30_000, 1000 * 2 ** stuckRetries))
                     }
-                })
+                )
             }
         }, err => {
             if (err instanceof ErrorMessage) {
@@ -295,5 +324,57 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
 export class ErrorMessage extends Error {
     constructor(msg: string) {
         super(msg)
+    }
+}
+
+
+/**
+ * A ForkException raised by a data source (it carries the `isSqdForkException`
+ * marker). Detected structurally so this package doesn't need to depend on the
+ * data-source package that defines the class.
+ */
+export function isForkException(err: unknown): boolean {
+    return err instanceof Error && (err as {isSqdForkException?: boolean}).isSqdForkException === true
+}
+
+
+/**
+ * Run `append` (a finalized archive append loop), recovering from transient
+ * ForkExceptions instead of crashing.
+ *
+ * On a ForkException the in-flight, not-yet-persisted buffer is dropped and
+ * `append` is invoked again — it re-derives its resume point from the last
+ * persisted chunk, so retrying is equivalent to a clean process restart.
+ *
+ * Recovery is bounded by progress, not a fixed attempt count: as long as a
+ * retry manages to persist a higher block than before, the counter resets.
+ * Only when `maxStuckRetries` consecutive retries fail to advance the last
+ * written block do we re-throw — that signals a genuine, persistent divergence
+ * (not transient provider noise) which must surface as a hard failure rather
+ * than be silently retried forever.
+ */
+export async function appendWithForkRecovery(
+    append: () => Promise<void>,
+    getLastWrittenBlock: () => number,
+    onForkRetry: (info: {message: string; lastWrittenBlock: number; stuckRetries: number}) => Promise<void>,
+    maxStuckRetries = 10,
+): Promise<void> {
+    let lastProgress = -1
+    let stuckRetries = 0
+    while (true) {
+        try {
+            return await append()
+        } catch (err: unknown) {
+            if (!isForkException(err)) throw err
+            let lastWrittenBlock = getLastWrittenBlock()
+            if (lastWrittenBlock > lastProgress) {
+                stuckRetries = 0
+            } else {
+                stuckRetries += 1
+            }
+            lastProgress = lastWrittenBlock
+            if (stuckRetries > maxStuckRetries) throw err
+            await onForkRetry({message: (err as Error).message, lastWrittenBlock, stuckRetries})
+        }
     }
 }
