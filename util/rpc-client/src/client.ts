@@ -526,6 +526,7 @@ export class RpcClient {
         if (isRateLimitError(err)) return true
         if (isExecutionTimeoutError(err)) return true
         if (isRequestTimedOutError(err)) return true
+        if (isNoAvailableProviderError(err)) return true
         if (err instanceof RpcConnectionError) return true
         if (isHttpConnectionError(err)) return true
         if (err instanceof HttpTimeoutError) return true
@@ -605,6 +606,15 @@ function isExecutionTimeoutError(err: unknown): boolean {
 
 function isRequestTimedOutError(err: unknown): boolean {
     return err instanceof RpcError && /request.*timed out/i.test(err.message)
+}
+
+
+function isNoAvailableProviderError(err: unknown): boolean {
+    // RPC aggregators (e.g. uniblock) reply with this error when none of their
+    // upstream providers could serve the request at that moment (a momentary
+    // upstream outage or quota hiccup). It is the JSON-RPC analog of an HTTP 503
+    // and is transient, so it must be retried rather than crash the process.
+    return err instanceof RpcError && /providers prevented the request from being fulfilled/i.test(err.message)
 }
 
 
