@@ -62,7 +62,10 @@ export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSou
         this.withStateDiffs = coarse.stateDiffs
 
         let req: RpcDataRequest = {
-            transactions: coarse.transactions,
+            // Always fetch full transaction objects: mapRpcBlock maps the block's transactions
+            // unconditionally (and traces/stateDiffs are correlated to them), so a hashes-only
+            // block fetch can't be normalized.
+            transactions: true,
             logs: coarse.logs,
             receipts: coarse.receipts,
             traces: coarse.traces,
