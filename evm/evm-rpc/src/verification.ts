@@ -836,6 +836,25 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
             decodeAuthorizationList(tx.authorizationList ?? []),
         ])
         return Buffer.concat([Buffer.from([0x04]), Buffer.from(payload)])
+    } else if (tx.type == '0x3f') {
+        // Stable native (account-abstraction) transaction type. The payload signed by the
+        // sender is an EIP-1559-style field list extended with the 2D-nonce key and the
+        // validity deadline. Verified against on-chain data: ECDSA-recovering this hash with
+        // (yParity, r, s) reproduces `tx.from` for Stable mainnet (988) and testnet (2201).
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
+            BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
+            decodeAccessList(tx.accessList ?? []),
+            BigInt(assertNotNull(tx.nonceKey, 'tx.nonceKey is missing')),
+            BigInt(assertNotNull(tx.timeoutTimestamp, 'tx.timeoutTimestamp is missing')),
+        ])
+        return Buffer.concat([Buffer.from([0x3f]), Buffer.from(payload)])
     } else if (tx.type == '0x64') {
         // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L338
         return

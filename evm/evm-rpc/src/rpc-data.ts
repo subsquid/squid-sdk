@@ -293,7 +293,10 @@ export const Transaction = object({
     // Tempo 0x76 transaction fields
     // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
     calls: option(array(TempoCall)),
+    // `nonceKey` (2D-nonce sequence key) is also present on Stable's 0x3f transactions
     nonceKey: option(BYTES),
+    // Stable 0x3f transaction field (transaction validity deadline, 0 = none)
+    timeoutTimestamp: option(QTY),
     signature: option(TempoSignatureObject),
     feeToken: option(BYTES),
     // fee_payer_signature is always a standard secp256k1 Signature (not a TempoSignature)
