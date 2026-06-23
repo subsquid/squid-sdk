@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-json
 
-This log was last generated on Sun, 17 Mar 2024 23:20:20 GMT and should not be manually modified.
+This log was last generated on Tue, 23 Jun 2026 17:42:56 GMT and should not be manually modified.
+
+## 1.2.4
+Tue, 23 Jun 2026 17:42:56 GMT
+
+### Patches
+
+- Visible Error.cause (PR#492)
 
 ## 1.2.3
 Sun, 17 Mar 2024 23:20:20 GMT

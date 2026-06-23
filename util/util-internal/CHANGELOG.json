@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal",
   "entries": [
     {
+      "version": "3.3.1",
+      "tag": "@subsquid/util-internal_v3.3.1",
+      "date": "Tue, 23 Jun 2026 17:42:56 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "More structured logs for runProgram (PR#492)"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.3.0",
       "tag": "@subsquid/util-internal_v3.3.0",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

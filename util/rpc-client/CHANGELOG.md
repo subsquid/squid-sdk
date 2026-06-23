@@ -1,6 +1,13 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Tue, 23 Jun 2026 17:42:56 GMT and should not be manually modified.
+
+## 4.15.1
+Tue, 23 Jun 2026 17:42:56 GMT
+
+### Patches
+
+- Better RPC error propagation for non-matching id values
 
 ## 4.15.0
 Mon, 11 May 2026 05:34:26 GMT
