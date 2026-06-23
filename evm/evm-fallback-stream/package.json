@@ -1,0 +1,42 @@
+{
+  "name": "@subsquid/evm-fallback-stream",
+  "version": "0.0.0",
+  "description": "Fallback EVM data source: drives the lowest-index healthy source of N",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "@subsquid/util-internal": "^3.3.0",
+    "@subsquid/util-internal-data-source": "^0.0.0",
+    "@subsquid/util-internal-range": "^0.3.0"
+  },
+  "peerDependencies": {
+    "@subsquid/evm-rpc-stream": "^0.0.0",
+    "@subsquid/evm-stream": "^0.1.1"
+  },
+  "peerDependenciesMeta": {
+    "@subsquid/evm-stream": {
+      "optional": true
+    },
+    "@subsquid/evm-rpc-stream": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
+  }
+}
