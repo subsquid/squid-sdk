@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^3.3.0"
+    "@subsquid/util-internal": "^3.3.1"
   },
   "peerDependencies": {
     "@subsquid/evm-stream": "^0.1.1"

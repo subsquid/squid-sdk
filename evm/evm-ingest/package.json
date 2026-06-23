@@ -21,9 +21,9 @@
   "dependencies": {
     "@subsquid/evm-normalization": "^0.0.2",
     "@subsquid/logger": "^1.6.0",
-    "@subsquid/util-internal": "^3.3.0",
+    "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-ingest-cli": "^0.2.1",
-    "@subsquid/util-internal-json": "^1.2.3",
+    "@subsquid/util-internal-json": "^1.2.4",
     "@subsquid/util-internal-validation": "^0.9.0"
   },
   "devDependencies": {
