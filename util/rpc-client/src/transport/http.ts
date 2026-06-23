@@ -1,7 +1,7 @@
 import {FetchRequest, FetchResponse, HttpAgent, HttpClient, HttpClientOptions} from '@subsquid/http-client'
 import {Logger} from '@subsquid/logger'
 import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
-import {RpcProtocolError} from '../errors'
+import {RpcError, RpcProtocolError} from '../errors'
 import {Connection, RpcRequest, RpcResponse} from '../interfaces'
 
 
@@ -68,6 +68,12 @@ export class HttpConnection implements Connection {
             retryAttempts: 0
         })
         if (req.id !== res.id) {
+            // Many endpoints/proxies return a JSON-RPC error envelope with `id: null`
+            // (per spec for parse/invalid-request errors, but also commonly for rate
+            // limiting, oversized requests, upstream gateway failures, etc.). Surface
+            // that as the real server error instead of masking it as a protocol error,
+            // so it carries the server's message/code and can be retried where applicable.
+            if (res.error) return res
             throw new RpcProtocolError(1008, `Got response for unknown request ${res.id}`)
         }
         return res
@@ -80,6 +86,14 @@ export class HttpConnection implements Connection {
             retryAttempts: 0
         })
         if (!Array.isArray(res)) {
+            // A server that rejects the whole batch (rate limit, oversized request,
+            // upstream failure, ...) often replies with a single JSON-RPC error
+            // envelope rather than an array. Surface that server error instead of
+            // the misleading "should be an array" protocol error.
+            let error = (res as unknown as RpcResponse | null)?.error
+            if (error) {
+                throw new RpcError(error)
+            }
             throw new RpcProtocolError(1008, `Response for a batch request should be an array`)
         }
         if (res.length != batch.length) {
