@@ -493,6 +493,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/evm-fallback-stream",
+      "projectFolder": "evm/evm-fallback-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-objects",
       "projectFolder": "evm/evm-objects",
       "shouldPublish": true,
