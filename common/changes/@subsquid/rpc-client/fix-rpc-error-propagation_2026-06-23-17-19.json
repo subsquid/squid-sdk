@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "Better RPC error propagation for non-matching id values",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}
