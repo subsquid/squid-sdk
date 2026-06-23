@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "More structured logs for runProgram (PR#492)",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}
