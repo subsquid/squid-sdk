@@ -1,9 +1,12 @@
-import {BlockRef, BlockStream, DataSource, StreamRequest, isForkException} from '@subsquid/util-internal-data-source'
+import {BlockBatch, BlockRef, BlockStream, DataSource, StreamRequest, isForkException} from '@subsquid/util-internal-data-source'
 import {FiniteRange} from '@subsquid/util-internal-range'
 
 import {SourceHealth} from './health'
 import {AllSourcesDownError, FallbackPolicy, ResolvedPolicy, resolvePolicy} from './policy'
 import {Selector} from './selector'
+
+/** Returned by the staleness-aware fetch when the active source must be failed over. */
+const STALE = Symbol('stale')
 
 export interface RankedSource<B> {
     name: string
@@ -38,6 +41,15 @@ export class FallbackDataSource<B> implements DataSource<B> {
     /** Observable state (for metrics, §4). */
     activeIndex: number | undefined
     switchCount = 0
+    /** Freshness metrics (§4 / M1): blocks behind the independent head, and source-pending ms. */
+    lag = 0
+    staleness = 0
+    chainHead: number | undefined
+    /** Set when every source is stuck at the same head (no fresher alternative to switch to). */
+    chainStalled = false
+
+    #lagArmed = false
+    #headCache: ({value: number | undefined; at: number} | undefined)[] = []
 
     constructor(options: FallbackDataSourceOptions<B>) {
         if (options.sources.length === 0) {
@@ -81,7 +93,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
                 ]()
                 try {
                     while (true) {
-                        let next = await iterator.next()
+                        let next = await this.nextWithStaleness(iterator, active, lastNumber)
+                        if (next === STALE) {
+                            // Source stopped delivering while a fresher source is ahead.
+                            this.health[active].onStreamError()
+                            break
+                        }
                         if (next.done) return // bounded stream finished
                         let batch = next.value
 
@@ -94,6 +111,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
                             lastHash = ref.hash
                         }
 
+                        // Lag-based freshness: the active fell too far behind the independent head.
+                        if (await this.laggingTooFar(active, lastNumber)) {
+                            this.health[active].onStreamError()
+                            break
+                        }
+
                         // Eager switch-up: reclaim a recovered higher-preference source at the
                         // batch boundary (never mid-batch).
                         if (this.policy.preferPrimary === 'eager' && this.selector.pickSwitchUp(active) != null) {
@@ -101,7 +124,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         }
                     }
                 } finally {
-                    await safeReturn(iterator)
+                    // Fire-and-forget: a *stalled* source's `return()` can itself hang on the
+                    // same unresolved fetch, and failover must not wait on it.
+                    safeReturn(iterator)
                 }
             } catch (e) {
                 if (isForkException(e)) throw e // propagate; do NOT switch (§3.4)
@@ -156,6 +181,116 @@ export class FallbackDataSource<B> implements DataSource<B> {
         return true
     }
 
+    /**
+     * The highest head reported by the *other* eligible sources — an independent reference that
+     * avoids the circular-lag trap (a source that stalls head and data together reads lag ≈ 0
+     * against its own head). Excludes `unhealthy` sources so a flagged-bad one can't define the
+     * tip. Heads are cached for `headTtlMs` to bound the probe rate.
+     */
+    private async chainHeadOthers(active: number): Promise<number | undefined> {
+        let results = await Promise.all(
+            this.sources.map((_, i) =>
+                i === active || this.health[i].state === 'unhealthy'
+                    ? Promise.resolve(undefined)
+                    : this.getCachedHead(i),
+            ),
+        )
+        let vals = results.filter((h): h is number => h != null)
+
+        return vals.length ? Math.max(...vals) : undefined
+    }
+
+    private async getCachedHead(i: number): Promise<number | undefined> {
+        let now = this.policy.clock()
+        let cached = this.#headCache[i]
+        if (cached && now - cached.at < this.policy.headTtlMs) return cached.value
+
+        try {
+            let head = await this.sources[i].source.getHead()
+            this.#headCache[i] = {value: head.number, at: now}
+            return head.number
+        } catch {
+            this.#headCache[i] = {value: undefined, at: now}
+            this.health[i].onLivenessFail()
+            return undefined
+        }
+    }
+
+    /** Boundary-evaluated lag trigger (armed only once the tip is first reached). */
+    private async laggingTooFar(active: number, lastNumber: number): Promise<boolean> {
+        if (this.policy.maxLagBlocks == null) return false
+
+        let others = await this.chainHeadOthers(active)
+        this.chainHead = others != null ? Math.max(others, lastNumber) : lastNumber
+        if (others == null) return false
+
+        let lag = others - lastNumber
+        this.lag = Math.max(0, lag)
+        if (lag <= this.policy.maxLagBlocks) this.#lagArmed = true // arm at tip (latched)
+
+        if (this.#lagArmed && lag > this.policy.maxLagBlocks) {
+            // A fresher alternative exists by construction (others > lastNumber + maxLagBlocks).
+            this.chainStalled = false
+            return true
+        }
+
+        return false
+    }
+
+    /**
+     * `iterator.next()` with the source-pending staleness clock. While the request is
+     * outstanding (and only then — never while parked at `yield`), a ticker checks how long it
+     * has been pending; past `maxStalenessMs` it fails the source over **iff** a fresher source
+     * is ahead. If every source sits at the same stale head, it is a global chain stall: hold the
+     * source and flag `chainStalled` instead of churning (unless `churnOnGlobalStall`).
+     */
+    private async nextWithStaleness(
+        iterator: AsyncIterator<BlockBatch<B>>,
+        active: number,
+        lastNumber: number,
+    ): Promise<IteratorResult<BlockBatch<B>> | typeof STALE> {
+        if (this.policy.maxStalenessMs == null) {
+            this.staleness = 0
+            return iterator.next()
+        }
+
+        let start = this.policy.clock()
+        let nextP = iterator.next()
+        nextP.catch(() => {}) // a later abandon must not surface as an unhandled rejection
+        let settled = nextP.then(
+            (v) => ({type: 'next' as const, v}),
+            (e) => ({type: 'error' as const, e}),
+        )
+
+        while (true) {
+            let tick = delay(this.policy.freshnessTickMs)
+            let r = await Promise.race([settled, tick.promise.then(() => ({type: 'tick' as const}))])
+            tick.cancel()
+
+            if (r.type === 'next') {
+                this.staleness = 0
+                return r.v
+            }
+            if (r.type === 'error') {
+                this.staleness = 0
+                throw r.e
+            }
+
+            let elapsed = this.policy.clock() - start
+            this.staleness = elapsed
+            if (elapsed > this.policy.maxStalenessMs) {
+                let others = await this.chainHeadOthers(active)
+                if (others != null && others > lastNumber) {
+                    this.chainStalled = false
+                    return STALE
+                }
+                this.chainStalled = true
+                if (this.policy.churnOnGlobalStall) return STALE
+                start = this.policy.clock() // hold; re-arm and keep waiting
+            }
+        }
+    }
+
     private setActive(i: number): void {
         if (this.activeIndex !== i) {
             if (this.activeIndex !== undefined) this.switchCount++
@@ -164,14 +299,28 @@ export class FallbackDataSource<B> implements DataSource<B> {
     }
 }
 
+function delay(ms: number): {promise: Promise<void>; cancel: () => void} {
+    let timer: ReturnType<typeof setTimeout>
+    let promise = new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, ms)
+    })
+
+    return {promise, cancel: () => clearTimeout(timer)}
+}
+
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function safeReturn(it: AsyncIterator<unknown>): Promise<void> {
+function safeReturn(it: AsyncIterator<unknown>): void {
     try {
-        await it.return?.()
+        // Don't await: closing the old connection must neither block failover nor surface a
+        // late rejection.
+        it.return?.()?.then(
+            () => {},
+            () => {},
+        )
     } catch {
-        /* closing the old connection must not mask the real outcome */
+        /* ignore */
     }
 }
