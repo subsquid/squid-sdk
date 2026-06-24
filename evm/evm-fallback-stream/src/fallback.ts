@@ -2,11 +2,22 @@ import {BlockBatch, BlockRef, BlockStream, DataSource, StreamRequest, isForkExce
 import {FiniteRange} from '@subsquid/util-internal-range'
 
 import {SourceHealth} from './health'
-import {AllSourcesDownError, FallbackPolicy, ResolvedPolicy, resolvePolicy} from './policy'
+import {AllSourcesDownError, FallbackPolicy, Health, ResolvedPolicy, resolvePolicy} from './policy'
 import {Selector} from './selector'
 
 /** Returned by the staleness-aware fetch when the active source must be failed over. */
 const STALE = Symbol('stale')
+
+/** A structured snapshot of the fallback's observable state, for a metrics surface (§4). */
+export interface FallbackMetrics {
+    activeIndex: number | undefined
+    switchCount: number
+    lag: number
+    staleness: number
+    chainStalled: boolean
+    chainHead: number | undefined
+    sources: {name: string; health: Health; active: boolean}[]
+}
 
 export interface RankedSource<B> {
     name: string
@@ -169,6 +180,23 @@ export class FallbackDataSource<B> implements DataSource<B> {
         }
 
         return 0
+    }
+
+    /** Snapshot of the observable state for export to a metrics surface (§4). */
+    metrics(): FallbackMetrics {
+        return {
+            activeIndex: this.activeIndex,
+            switchCount: this.switchCount,
+            lag: this.lag,
+            staleness: this.staleness,
+            chainStalled: this.chainStalled,
+            chainHead: this.chainHead,
+            sources: this.sources.map((s, i) => ({
+                name: s.name,
+                health: this.health[i].state,
+                active: this.activeIndex === i,
+            })),
+        }
     }
 
     /** Returns true if it waited (should retry), false if the all-down timeout elapsed. */
