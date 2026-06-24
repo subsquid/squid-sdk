@@ -713,6 +713,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/tron-data-service",
+      "projectFolder": "tron/tron-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
       "packageName": "@subsquid/tron-dump",
       "projectFolder": "tron/tron-dump",
       "shouldPublish": true,

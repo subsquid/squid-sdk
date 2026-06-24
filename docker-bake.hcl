@@ -14,6 +14,7 @@ group "default" {
     "substrate-metadata-service",
     "tron-dump",
     "tron-ingest",
+    "tron-data-service",
     "fuel-dump",
     "fuel-ingest",
     "hyperliquid-fills-data-service",
@@ -96,6 +97,11 @@ target "tron-dump" {
 target "tron-ingest" {
   inherits = ["_common"]
   target   = "tron-ingest"
+}
+
+target "tron-data-service" {
+  inherits = ["_common"]
+  target   = "tron-data-service"
 }
 
 target "fuel-dump" {
