@@ -20,6 +20,29 @@ export interface FallbackPolicy {
     livenessFailThreshold?: number
     /** `M` — consecutive liveness passes (with capability confirmed) required to become `healthy`. */
     livenessRecoverThreshold?: number
+    /**
+     * Fail the active source over when it falls more than this many blocks behind an
+     * *independent* chain-head reference (the max head of the other eligible sources). Armed
+     * only once the tip is first reached, so a long historical backfill never false-fires.
+     * `10` by default; `null` disables the lag trigger. (M1 / D9.)
+     */
+    maxLagBlocks?: number | null
+    /**
+     * Fail the active source over when its next-batch request stays outstanding this long (the
+     * source-pending clock — excludes time parked at `yield` awaiting the consumer). `180_000`
+     * ms by default; `null` disables the staleness trigger. (M1 / D9.)
+     */
+    maxStalenessMs?: number | null
+    /** How often the staleness clock is checked while a request is outstanding. */
+    freshnessTickMs?: number
+    /** Max age of a cached per-source head before it is re-fetched for the lag reference. */
+    headTtlMs?: number
+    /**
+     * When *every* source sits at the same stale head (the chain itself is stuck), there is
+     * nothing fresher to switch to. `false` (default) holds the active source and emits a
+     * `chain-stalled` signal instead of churning.
+     */
+    churnOnGlobalStall?: boolean
     /** Injectable clock (ms), for deterministic tests. Defaults to `Date.now`. */
     clock?: () => number
 }
@@ -31,6 +54,11 @@ export interface ResolvedPolicy {
     cooldownMs: number
     livenessFailThreshold: number
     livenessRecoverThreshold: number
+    maxLagBlocks: number | null
+    maxStalenessMs: number | null
+    freshnessTickMs: number
+    headTtlMs: number
+    churnOnGlobalStall: boolean
     clock: () => number
 }
 
@@ -41,17 +69,31 @@ export const DEFAULT_POLICY: ResolvedPolicy = {
     cooldownMs: 30_000,
     livenessFailThreshold: 2,
     livenessRecoverThreshold: 3,
+    maxLagBlocks: 10,
+    maxStalenessMs: 180_000,
+    freshnessTickMs: 1000,
+    headTtlMs: 5000,
+    churnOnGlobalStall: false,
     clock: () => Date.now(),
+}
+
+function orDefault<T>(value: T | undefined, fallback: T): T {
+    return value === undefined ? fallback : value
 }
 
 export function resolvePolicy(p?: FallbackPolicy): ResolvedPolicy {
     return {
         preferPrimary: p?.preferPrimary ?? DEFAULT_POLICY.preferPrimary,
-        allDownTimeoutMs: p?.allDownTimeoutMs === undefined ? DEFAULT_POLICY.allDownTimeoutMs : p.allDownTimeoutMs,
+        allDownTimeoutMs: orDefault(p?.allDownTimeoutMs, DEFAULT_POLICY.allDownTimeoutMs),
         allDownPollMs: p?.allDownPollMs ?? DEFAULT_POLICY.allDownPollMs,
         cooldownMs: p?.cooldownMs ?? DEFAULT_POLICY.cooldownMs,
         livenessFailThreshold: p?.livenessFailThreshold ?? DEFAULT_POLICY.livenessFailThreshold,
         livenessRecoverThreshold: p?.livenessRecoverThreshold ?? DEFAULT_POLICY.livenessRecoverThreshold,
+        maxLagBlocks: orDefault(p?.maxLagBlocks, DEFAULT_POLICY.maxLagBlocks),
+        maxStalenessMs: orDefault(p?.maxStalenessMs, DEFAULT_POLICY.maxStalenessMs),
+        freshnessTickMs: p?.freshnessTickMs ?? DEFAULT_POLICY.freshnessTickMs,
+        headTtlMs: p?.headTtlMs ?? DEFAULT_POLICY.headTtlMs,
+        churnOnGlobalStall: orDefault(p?.churnOnGlobalStall, DEFAULT_POLICY.churnOnGlobalStall),
         clock: p?.clock ?? DEFAULT_POLICY.clock,
     }
 }
