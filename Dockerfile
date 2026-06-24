@@ -141,6 +141,15 @@ COPY --from=tron-ingest-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/tron/tron-ingest/bin/run.js"]
 
 
+FROM deps AS tron-data-service-builder
+RUN node common/scripts/install-run-rush.js build --to @subsquid/tron-data-service
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/tron-data-service
+
+FROM node AS tron-data-service
+COPY --from=tron-data-service-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/tron/tron-data-service/lib/main.js"]
+
+
 FROM deps AS fuel-dump-builder
 RUN node common/scripts/install-run-rush.js build --to @subsquid/fuel-dump
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/fuel-dump

@@ -52,6 +52,17 @@ export class HttpApi {
         return this.post('wallet/getnowblock', undefined, getResultValidator(Block))
     }
 
+    /**
+     * Latest solidified (irreversible) block.
+     *
+     * In TRON a block becomes solidified once confirmed by more than 2/3 of the
+     * Super Representatives, which is the chain's actual finality point. Served
+     * by the same FullNode HTTP port as the `wallet/*` endpoints.
+     */
+    async getNowSolidifiedBlock(): Promise<Block> {
+        return this.post('walletsolidity/getnowblock', undefined, getResultValidator(Block))
+    }
+
     async post<T=any>(url: string, body?: HttpBody, validateResult?: (result: unknown) => T): Promise<T> {
         return this.http.post(url, {
             ...this.options,

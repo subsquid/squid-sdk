@@ -34,6 +34,7 @@
     "@subsquid/substrate-metadata-service",
     "@subsquid/tron-dump",
     "@subsquid/tron-ingest",
+    "@subsquid/tron-data-service",
     "@subsquid/hyperliquid-fills-data-service",
     "@subsquid/hyperliquid-fills-ingest",
     "@subsquid/hyperliquid-replica-cmds-data-service",

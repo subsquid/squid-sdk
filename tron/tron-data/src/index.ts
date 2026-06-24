@@ -1,4 +1,5 @@
 export * from './data'
 export * from './client'
 export * from './http'
+export * from './fetch'
 export * from './data-source'
