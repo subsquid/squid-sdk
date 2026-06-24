@@ -290,6 +290,8 @@ export const Transaction = object({
     retryData: option(BYTES),
     sourceHash: option(BYTES),
     mint: option(QTY),
+    // Stable 0x3f transaction field
+    timeoutTimestamp: option(QTY),
     // Tempo 0x76 transaction fields
     // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
     calls: option(array(TempoCall)),

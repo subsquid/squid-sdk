@@ -574,6 +574,7 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         maxFeePerBlobGas: src.maxFeePerBlobGas ?? undefined,
         blobVersionedHashes: src.blobVersionedHashes ?? undefined,
         authorizationList: src.authorizationList?.map(mapEIP7702Authorization),
+        timeoutTimestamp: src.timeoutTimestamp ?? undefined,
         calls: src.calls?.map(mapTempoCall),
         nonceKey: src.nonceKey ?? undefined,
         signature: src.signature ? mapTempoSignature(src.signature) : undefined,

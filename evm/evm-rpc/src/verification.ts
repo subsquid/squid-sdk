@@ -326,6 +326,26 @@ function encodeTransaction(tx: Transaction): Buffer {
             decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
         ])
         return Buffer.concat([Buffer.from([0x6a]), Buffer.from(payload)])
+    } else if (tx.type == '0x3f') {
+        // Stable v1.4.0 custom transaction type
+        // EIP-1559 base fields + nonceKey and timeoutTimestamp appended after the signature
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
+            BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            tx.input ? decodeHex(tx.input) : Buffer.alloc(0),
+            decodeAccessList(tx.accessList ?? []),
+            BigInt(tx.yParity ?? assertNotNull(tx.v, 'tx.v is missing')),
+            BigInt(assertNotNull(tx.r, 'tx.r is missing')),
+            BigInt(assertNotNull(tx.s, 'tx.s is missing')),
+            decodeHex(assertNotNull(tx.nonceKey, 'tx.nonceKey is missing')),
+            BigInt(tx.timeoutTimestamp ?? 0),
+        ])
+        return Buffer.concat([Buffer.from([0x3f]), Buffer.from(payload)])
     } else if (tx.type == '0x76') {
         // Tempo native transaction type (batched calls, multi-sig)
         // EIP-2718 encoding: 0x76 || rlp([...tx_fields, signature_bytes])
@@ -854,6 +874,22 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
     } else if (tx.type == '0x6a') {
         // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L387
         return
+    } else if (tx.type == '0x3f') {
+        // Stable v1.4.0 custom transaction type — signing payload (no signature)
+        let payload = RLP.encode([
+            BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
+            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
+            BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
+            decodeAccessList(tx.accessList ?? []),
+            decodeHex(assertNotNull(tx.nonceKey, 'tx.nonceKey is missing')),
+            BigInt(tx.timeoutTimestamp ?? 0),
+        ])
+        return Buffer.concat([Buffer.from([0x3f]), Buffer.from(payload)])
     } else if (tx.type == '0x76') {
         // Tempo native transaction type — encode_for_signing payload
         // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs

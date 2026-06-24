@@ -193,6 +193,7 @@ export interface Transaction {
     maxFeePerBlobGas?: Qty,
     blobVersionedHashes?: Bytes32[],
     authorizationList?: EIP7702Authorization[],
+    timeoutTimestamp?: Qty,
     // Tempo 0x76 transaction fields
     calls?: TempoCall[],
     nonceKey?: Bytes,
