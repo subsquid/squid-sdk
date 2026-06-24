@@ -259,6 +259,137 @@ describe('FallbackDataSource — switch-up / recovery', () => {
     })
 })
 
+const hang = () => new Promise(() => {})
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+describe('FallbackDataSource — freshness (M1)', () => {
+    it('(a) lag: fails over once it falls behind the independent head (after arming at the tip)', async () => {
+        let s1heads = [95, 110] // first read arms (lag 5), second trips (lag 19)
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(90)])
+            yield batch([blk(91)])
+            yield batch([blk(92)]) // not reached
+        })
+        let s1 = new MockSource(
+            async function* (req) {
+                expect(req.from).toBe(92)
+                yield batch([blk(92), blk(93)])
+            },
+            {head: async () => ({number: s1heads.shift() ?? 110, hash: '0x'})},
+        )
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        expect(numbers(await collect(fb.getStream({from: 90, to: 93})))).toEqual([90, 91, 92, 93])
+        expect(fb.activeIndex).toBe(1)
+    })
+
+    it('(b) historical sync: a huge lag during backfill never fails over (never armed)', async () => {
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(1)])
+            yield batch([blk(2)])
+            yield batch([blk(3)])
+        })
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: 1_000_000, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0})
+
+        expect(numbers(await collect(fb.getStream({from: 1, to: 3})))).toEqual([1, 2, 3])
+        expect(fb.activeIndex).toBe(0)
+    })
+
+    it('(c) staleness: fails over a stalled source when a fresher source is ahead', async () => {
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(1)])
+            await hang()
+        })
+        let s1 = new MockSource(
+            async function* (req) {
+                expect(req.from).toBe(2)
+                yield batch([blk(2)])
+            },
+            {head: async () => ({number: 100, hash: '0x'})},
+        )
+        let fb = fallback([s0, s1], {
+            maxStalenessMs: 30,
+            freshnessTickMs: 5,
+            headTtlMs: 0,
+            maxLagBlocks: null,
+            cooldownMs: 60_000,
+        })
+
+        expect(numbers(await collect(fb.getStream({from: 1, to: 2})))).toEqual([1, 2])
+        expect(fb.activeIndex).toBe(1)
+    }, 5000)
+
+    it('(d) global stall: no fresher source → holds + flags chainStalled, no churn', async () => {
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(50)])
+            await wait(120)
+            throw new Error('client timeout') // eventually errors, like a real client
+        })
+        let s1 = new MockSource(
+            async function* (req) {
+                expect(req.from).toBe(51)
+                yield batch([blk(51)])
+            },
+            {head: async () => ({number: 50, hash: '0x'})}, // same head → global stall
+        )
+        let fb = fallback([s0, s1], {
+            maxStalenessMs: 30,
+            freshnessTickMs: 5,
+            headTtlMs: 0,
+            maxLagBlocks: null,
+            churnOnGlobalStall: false,
+            cooldownMs: 60_000,
+        })
+
+        let it = fb.getStream({from: 50, to: 100})[Symbol.asyncIterator]()
+        expect(numbers((await it.next()).value.blocks)).toEqual([50])
+
+        let pending = it.next() // hangs; staleness climbs but no fresher source exists
+        await wait(80)
+        expect(fb.chainStalled).toBe(true)
+        expect(fb.activeIndex).toBe(0) // held — did NOT churn
+
+        // s0 finally errors → ordinary failover to s1
+        expect(numbers((await pending).value.blocks)).toEqual([51])
+        expect(fb.activeIndex).toBe(1)
+    }, 5000)
+
+    it('(e) slow-handler immunity: a slow downstream consumer does not mark the source stale', async () => {
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(1)])
+                yield batch([blk(2)])
+                yield batch([blk(3)])
+            },
+            {head: async () => ({number: 3, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: 100, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxStalenessMs: 30, freshnessTickMs: 5, headTtlMs: 0, maxLagBlocks: null})
+
+        let it = fb.getStream({from: 1, to: 3})[Symbol.asyncIterator]()
+        let got: number[] = []
+        for (let n = await it.next(); !n.done; n = await it.next()) {
+            got.push(...numbers(n.value.blocks))
+            await wait(50) // slow handler > maxStalenessMs, but parked at yield (clock not running)
+        }
+        expect(got).toEqual([1, 2, 3]) // never failed over
+        expect(fb.activeIndex).toBe(0)
+    }, 5000)
+
+    it('(f) thresholds disabled: neither lag nor staleness fires', async () => {
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(1)])
+            yield batch([blk(2)])
+        })
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: 1_000_000, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: null, maxStalenessMs: null, headTtlMs: 0})
+
+        expect(numbers(await collect(fb.getStream({from: 1, to: 2})))).toEqual([1, 2])
+        expect(fb.activeIndex).toBe(0)
+    })
+})
+
 describe('FallbackDataSource — getHead delegation', () => {
     it('delegates to the active source and fails over on error', async () => {
         let noop: StreamFn = async function* () {}
