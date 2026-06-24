@@ -404,3 +404,26 @@ describe('FallbackDataSource — getHead delegation', () => {
         expect(await fb.getHead()).toEqual({number: 7, hash: '0x7'})
     })
 })
+
+describe('FallbackDataSource — metrics', () => {
+    it('reports the active source, switch count, and per-source health', async () => {
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(1)])
+            throw new Error('boom')
+        })
+        let s1 = new MockSource(async function* () {
+            yield batch([blk(2)])
+        })
+        let fb = fallback([s0, s1])
+
+        await collect(fb.getStream({from: 1, to: 2}))
+        let m = fb.metrics()
+
+        expect(m.activeIndex).toBe(1)
+        expect(m.switchCount).toBe(1)
+        expect(m.sources).toEqual([
+            {name: 's0', health: 'unhealthy', active: false},
+            {name: 's1', health: 'unknown', active: true},
+        ])
+    })
+})
