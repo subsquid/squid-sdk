@@ -1,0 +1,1 @@
+{"changes":[{"packageName":"@subsquid/evm-rpc","comment":"fall back to per-transaction debug_traceTransaction when a whole-block state diff exceeds the provider response size limit","type":"patch"}],"packageName":"@subsquid/evm-rpc"}
