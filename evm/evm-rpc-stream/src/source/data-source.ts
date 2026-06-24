@@ -50,12 +50,15 @@ export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSou
     private flatRequests: {range: RangeRequest<DataRequest>['range']; request: FlatDataRequest}[]
     private withTraces: boolean
     private withStateDiffs: boolean
+    /** True when filter-field augmentation added fields beyond `fields`, so we must project back. */
+    private needsProjection: boolean
 
     constructor(options: EvmRpcStreamOptions<F>) {
         this.fields = options.fields
         this.requests = options.requests
         this.flatRequests = options.requests.map((r) => ({range: r.range, request: flattenRequest(r.request)}))
         this.augmentedFields = augmentFields(options.fields, this.flatRequests.map((r) => r.request))
+        this.needsProjection = selectionGrew(this.augmentedFields, options.fields)
 
         let coarse = unionRequiredData(this.flatRequests.map((r) => r.request), options.fields)
         this.withTraces = coarse.traces
@@ -120,14 +123,23 @@ export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSou
 
     private mapBlock(raw: RpcBlock): Block<F> {
         let normalized = mapRpcBlock(raw, {withTraces: this.withTraces, withStateDiffs: this.withStateDiffs})
-        let block = decodeBlock(normalized, this.augmentedFields)
+        let filtered = decodeBlock(normalized, this.augmentedFields)
 
-        let flat = this.flatRequestFor(block.header.number)
+        let flat = this.flatRequestFor(filtered.header.number)
         if (flat) {
-            filterBlock(block, flat, setUpRelations(block))
+            filterBlock(filtered, flat, setUpRelations(filtered))
         }
 
-        return block as Block<F>
+        if (!this.needsProjection) {
+            return filtered as Block<F>
+        }
+
+        // A `where` clause referenced a field not selected for output, so `filtered` is a superset
+        // of `F`. Decode again at exactly `F` (the Portal shape) and keep only the filtered items,
+        // matched by their structural index keys.
+        let projected = decodeBlock(normalized, this.fields)
+
+        return projectKept(projected, filtered) as Block<F>
     }
 
     private flatRequestFor(blockNumber: number): FlatDataRequest | undefined {
@@ -139,6 +151,39 @@ export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSou
 
         return undefined
     }
+}
+
+const SELECTION_TYPES = ['block', 'transaction', 'log', 'trace', 'stateDiff'] as const
+
+/** True if `augmented` selects any field that `original` does not (augmentation only adds). */
+function selectionGrew(augmented: FieldSelection, original: FieldSelection): boolean {
+    for (let t of SELECTION_TYPES) {
+        let aug = (augmented as any)[t] ?? {}
+        let orig = (original as any)[t] ?? {}
+        for (let k in aug) {
+            if (aug[k] && !orig[k]) return true
+        }
+    }
+
+    return false
+}
+
+const traceKey = (t: any) => `${t.transactionIndex}:${(t.traceAddress ?? []).join(',')}`
+const stateDiffKey = (d: any) => `${d.transactionIndex}:${d.address}:${d.key}`
+
+/** Keep only the items of `projected` whose structural index appears in the `filtered` block. */
+function projectKept(projected: Block<any>, filtered: Block<any>): Block<any> {
+    let logs = new Set(filtered.logs.map((l: any) => l.logIndex))
+    let transactions = new Set(filtered.transactions.map((t: any) => t.transactionIndex))
+    let traces = new Set(filtered.traces.map(traceKey))
+    let stateDiffs = new Set(filtered.stateDiffs.map(stateDiffKey))
+
+    projected.logs = projected.logs.filter((l: any) => logs.has(l.logIndex))
+    projected.transactions = projected.transactions.filter((t: any) => transactions.has(t.transactionIndex))
+    projected.traces = projected.traces.filter((t: any) => traces.has(traceKey(t)))
+    projected.stateDiffs = projected.stateDiffs.filter((d: any) => stateDiffs.has(stateDiffKey(d)))
+
+    return projected
 }
 
 function unionRequiredData(requests: FlatDataRequest[], fields: FieldSelection) {

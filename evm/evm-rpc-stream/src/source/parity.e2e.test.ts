@@ -115,4 +115,34 @@ describe.skipIf(!ENABLED)('RPC vs Portal parity', () => {
         // (tx/address/key) overlap heavily; the divergence is the prev-state classification.
         expect(rpcBlock.stateDiffs.length).toBeGreaterThan(0)
     }, 120_000)
+
+    it(`block ${BLOCK}: filtering on an unselected field projects back to exactly F`, async () => {
+        // Filter logs by the ERC-20 Transfer topic0, but select only `data` — NOT topics. The RPC
+        // source must augment topics to filter, then project back so the output omits topics,
+        // matching the Portal's projected output exactly.
+        const TRANSFER = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+        const FIELDS = {log: {data: true}} satisfies FieldSelection
+
+        let portal = new DataSourceBuilder()
+            .setPortal(PORTAL_URL)
+            .setBlockRange({from: BLOCK, to: BLOCK})
+            .setFields(FIELDS)
+            .addLog({where: {topic0: [TRANSFER]}})
+            .build()
+
+        let rpc = new EvmRpcStreamDataSource({
+            rpc: new Rpc({client: new EvmRpcClient({url: RPC_URL, capacity: 5})}),
+            fields: FIELDS,
+            requests: [{range: {from: BLOCK, to: BLOCK}, request: {logs: [{where: {topic0: [TRANSFER]}}]}}],
+        })
+
+        let [portalBlock, rpcBlock] = await Promise.all([
+            firstBlock(portal.getFinalizedStream({from: BLOCK, to: BLOCK}), BLOCK),
+            firstBlock(rpc.getFinalizedStream({from: BLOCK, to: BLOCK}), BLOCK),
+        ])
+
+        expect(rpcBlock.logs.length).toBeGreaterThan(0)
+        expect(rpcBlock.logs).toEqual(portalBlock.logs) // filtered set; no `topics`/`address` field
+        expect(rpcBlock.logs.every((l: any) => l.topics === undefined)).toBe(true)
+    }, 120_000)
 })
