@@ -75,8 +75,10 @@ export function fallbackMetricsSink(source: FallbackMetricsSource, prefix = 'sqd
                 },
             })
 
+            // Gauge, not Counter (set to an absolute snapshot on scrape), so it carries no
+            // `_total` suffix — that suffix is reserved for Counters by Prometheus convention.
             new Gauge({
-                name: `${prefix}_switches_total`,
+                name: `${prefix}_switches`,
                 help: 'Cumulative number of fallback source switches',
                 registers: [registry],
                 collect() {
