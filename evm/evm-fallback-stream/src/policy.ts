@@ -9,7 +9,7 @@ export interface FallbackPolicy {
     preferPrimary?: 'eager' | 'onFailureOnly'
     /**
      * When every source is unavailable: `null` (default) polls indefinitely until one recovers
-     * (the no-downtime goal); a finite value waits that long then throws `AllSourcesDown`.
+     * (the no-downtime goal); a finite value waits that long then throws `AllSourcesDownError`.
      */
     allDownTimeoutMs?: number | null
     /** Backoff between all-sources-down poll attempts. */

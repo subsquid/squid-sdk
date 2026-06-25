@@ -31,6 +31,6 @@ describe('fallbackMetricsSink', () => {
         expect(text).toContain('sqd_fallback_lag_blocks 7')
         expect(text).toContain('sqd_fallback_staleness_ms 1500')
         expect(text).toContain('sqd_fallback_chain_stalled 1')
-        expect(text).toContain('sqd_fallback_switches_total 2')
+        expect(text).toContain('sqd_fallback_switches 2')
     })
 })
