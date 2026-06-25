@@ -61,6 +61,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
     #lagArmed = false
     #headCache: ({value: number | undefined; at: number} | undefined)[] = []
+    /** Guards against firing a second capability probe for a source while one is still in flight. */
+    #capabilityProbing: boolean[] = []
 
     constructor(options: FallbackDataSourceOptions<B>) {
         if (options.sources.length === 0) {
@@ -129,9 +131,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         }
 
                         // Eager switch-up: reclaim a recovered higher-preference source at the
-                        // batch boundary (never mid-batch).
-                        if (this.policy.preferPrimary === 'eager' && this.selector.pickSwitchUp(active) != null) {
-                            break
+                        // batch boundary (never mid-batch). Probe those candidates first so their
+                        // liveness/capability can recover them to `healthy` even when the freshness
+                        // head-polls are disabled — switch-up must not depend on that machinery.
+                        if (this.policy.preferPrimary === 'eager') {
+                            await this.probeHigherPreference(active)
+                            if (this.selector.pickSwitchUp(active) != null) break
                         }
                     }
                 } finally {
@@ -236,12 +241,57 @@ export class FallbackDataSource<B> implements DataSource<B> {
         try {
             let head = await this.sources[i].source.getHead()
             this.#headCache[i] = {value: head.number, at: now}
+            // The head fetch doubles as the liveness probe (§4): a fresh head is proof the source
+            // is reachable, so it counts toward the `M` passes that promote a standby to `healthy`
+            // — without which it could never be eligible for eager switch-up. A reachable source
+            // is also when we (re)confirm its capability.
+            this.health[i].onLivenessPass()
+            this.#maybeProbeCapability(i)
             return head.number
         } catch {
             this.#headCache[i] = {value: undefined, at: now}
             this.health[i].onLivenessFail()
             return undefined
         }
+    }
+
+    /**
+     * Drive liveness/capability for the not-yet-active *higher-preference* sources, so a recovered
+     * one can reach `healthy` and be reclaimed by eager switch-up. When the active source is the
+     * primary (index 0) there are none, so this is a no-op on the hot path; it only does work after
+     * a failover, which is exactly when a recovered primary needs to be noticed.
+     */
+    private async probeHigherPreference(active: number): Promise<void> {
+        await Promise.all(
+            this.sources.map((_, i) =>
+                i < active && this.health[i].state !== 'unhealthy'
+                    ? this.getCachedHead(i)
+                    : Promise.resolve(undefined),
+            ),
+        )
+    }
+
+    /**
+     * Fire a source's optional capability probe once it is proven reachable, feeding the result
+     * into its health (§4). A source that declares a `probeCapability` cannot become `healthy` on
+     * liveness alone — capability must be confirmed — so without this it could never be switched up
+     * to. Fire-and-forget (a full capability slice must not block the boundary), and never
+     * concurrently for the same source. Periodic re-verification, to catch a source that *loses*
+     * capability after confirmation, is a future refinement.
+     */
+    #maybeProbeCapability(i: number): void {
+        let probe = this.sources[i].probeCapability
+        if (!probe || this.health[i].capabilityConfirmed || this.#capabilityProbing[i]) return
+
+        this.#capabilityProbing[i] = true
+        probe()
+            .then(
+                (ok) => this.health[i].onCapability(ok),
+                () => this.health[i].onCapability(false),
+            )
+            .finally(() => {
+                this.#capabilityProbing[i] = false
+            })
     }
 
     /** Boundary-evaluated lag trigger (armed only once the tip is first reached). */

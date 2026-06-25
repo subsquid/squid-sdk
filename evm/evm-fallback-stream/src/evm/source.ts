@@ -1,11 +1,29 @@
-import {Block, DataRequest, EVMDataSource, FieldSelection} from '@subsquid/evm-stream'
-import {EvmRpcStreamDataSource, RpcMethodOptions} from '@subsquid/evm-rpc-stream'
-import {Rpc} from '@subsquid/evm-rpc'
-import {BlockRef} from '@subsquid/util-internal-data-source'
-import {RangeRequestList} from '@subsquid/util-internal-range'
+import type {Block, DataRequest, EVMDataSource, FieldSelection} from '@subsquid/evm-stream'
+import type {RpcMethodOptions} from '@subsquid/evm-rpc-stream'
+import type {Rpc} from '@subsquid/evm-rpc'
+import type {BlockRef} from '@subsquid/util-internal-data-source'
+import type {RangeRequestList} from '@subsquid/util-internal-range'
 
 import {FallbackDataSource, RankedSource} from '../fallback'
-import {FallbackPolicy} from '../policy'
+import type {FallbackPolicy} from '../policy'
+
+/**
+ * Load `@subsquid/evm-rpc-stream` lazily, only when an `rpc` source is actually configured. The
+ * package (and `@subsquid/evm-rpc`) are *optional* peers: Portal-only users carry neither, and the
+ * EVM glue is re-exported from the package entrypoint, so an eager top-level import would make
+ * `require('@subsquid/evm-fallback-stream')` crash for them. The `require` is reached only on the
+ * `rpc` branch below; if the peers are missing it fails with an actionable message instead.
+ */
+function loadRpcStream(): typeof import('@subsquid/evm-rpc-stream') {
+    try {
+        return require('@subsquid/evm-rpc-stream')
+    } catch {
+        throw new Error(
+            "An 'rpc' fallback source requires the optional peer dependencies '@subsquid/evm-rpc-stream' " +
+                "and '@subsquid/evm-rpc'. Install them, or use only 'portal' sources.",
+        )
+    }
+}
 
 /**
  * One source in an EVM fallback, ranked by its position in the list. Both kinds share the same
@@ -37,7 +55,7 @@ export function createEvmFallbackSource<F extends FieldSelection>(
         let source: EVMDataSource<F> =
             cfg.type === 'portal'
                 ? cfg.source
-                : new EvmRpcStreamDataSource({
+                : new (loadRpcStream().EvmRpcStreamDataSource)({
                       rpc: cfg.rpc,
                       fields: options.fields,
                       requests: options.requests,
