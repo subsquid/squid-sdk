@@ -11,8 +11,9 @@ import {FlatDataRequest} from '../filter/request'
  * keys, so they map across directly. StateDiff `address`/`key`/`kind` are always-present
  * required fields and need no augmentation.
  *
- * NOTE (v1): the result is a superset of the input — there is no project-back step, so a
- * filter on an unselected field leaves that field in the output.
+ * The result is a superset of the input. When it adds fields, `EvmRpcStreamDataSource` projects
+ * them back out after filtering (re-decoding at exactly `fields`), so the augmentation stays
+ * internal to filter evaluation and never leaks into the yielded block.
  */
 export function augmentFields(fields: FieldSelection, requests: FlatDataRequest[]): FieldSelection {
     let log = {...fields.log}

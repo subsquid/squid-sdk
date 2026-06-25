@@ -37,10 +37,12 @@ export interface EvmRpcStreamOptions<F extends FieldSelection> {
  * every raw block through the reused Portal decoder (`decodeBlock`) and the ported client-side
  * filter engine (`filterBlock`) so the result is shaped exactly as the Portal source produces.
  *
- * v1 scope: client-side filtering augments the field selection with the fields its `where`
- * clauses reference, so the yielded block can be a *superset* of `fields` when a filter targets
- * an unselected field. Projecting back to exactly `fields` and `includeAllBlocks:false`
- * (dropping empty blocks) are noted refinements; `includeAllBlocks:true` semantics are used.
+ * Client-side filtering augments the field selection with the fields its `where` clauses
+ * reference, so an intermediate block can be a *superset* of `fields` when a filter targets an
+ * unselected field. When that happens the data source re-decodes at exactly `fields` and projects
+ * the augmented fields back out (`projectKept`), so the yielded block carries exactly `fields` —
+ * matching the Portal. `includeAllBlocks:false` (dropping empty blocks) remains a noted refinement;
+ * `includeAllBlocks:true` semantics are used.
  */
 export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
     private inner: EvmRpcDataSource

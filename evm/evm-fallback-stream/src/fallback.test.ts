@@ -257,6 +257,101 @@ describe('FallbackDataSource — switch-up / recovery', () => {
         expect(rest).toEqual([2, 3]) // still s1
         expect(s0.calls).toHaveLength(1) // never reclaimed
     })
+
+    it('eager: reclaims a recovered primary on its own — driven by the head-poll liveness probe', async () => {
+        // No manual health driving and freshness fully disabled: the only thing that can promote s0
+        // back to `healthy` is the higher-preference probe feeding its head poll into liveness.
+        let now = 0
+        let up = false
+        let s0 = new MockSource(
+            async function* (req, call) {
+                if (call === 0) throw new Error('s0 down')
+                expect(req.from).toBe(2)
+                yield batch([blk(2)])
+                yield batch([blk(3)])
+            },
+            {head: async () => (up ? {number: 100, hash: '0x'} : Promise.reject(new Error('down')))},
+        )
+        let s1 = new MockSource(async function* () {
+            yield batch([blk(1)])
+            yield batch([blk(2, '0x2-s1')])
+            yield batch([blk(3, '0x3-s1')])
+        })
+        let fb = new FallbackDataSource<TestBlock>({
+            sources: [ranked(s0, 's0'), ranked(s1, 's1')],
+            getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
+            policy: {
+                preferPrimary: 'eager',
+                cooldownMs: 1000,
+                livenessRecoverThreshold: 1, // one good head poll is enough to recover
+                headTtlMs: 0,
+                maxLagBlocks: null, // freshness off — switch-up must stand on its own
+                maxStalenessMs: null,
+                clock: () => now,
+            },
+        })
+        let it = fb.getStream({from: 1, to: 3})[Symbol.asyncIterator]()
+        expect(numbers((await it.next()).value.blocks)).toEqual([1]) // s0 failed → s1 active
+
+        up = true // s0's RPC answers again
+        now = 1000 // and its cooldown elapses
+
+        let rest: number[] = []
+        for (let n = await it.next(); !n.done; n = await it.next()) rest.push(...numbers(n.value.blocks))
+        expect(rest).toEqual([2, 3]) // reclaimed s0 served these
+        expect(s0.calls).toHaveLength(2) // initial failure + reclaim
+    })
+
+    it('eager: invokes a recovered source capability probe and gates switch-up until it confirms', async () => {
+        let now = 0
+        let capable = false
+        let probeCalls = 0
+        let s0 = new MockSource(
+            async function* (req, call) {
+                if (call === 0) throw new Error('s0 down')
+                yield batch([blk(2)])
+            },
+            {head: async () => ({number: 100, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {
+            yield batch([blk(1)])
+            yield batch([blk(2, '0x2-s1')])
+            yield batch([blk(3, '0x3-s1')])
+        })
+        let fb = new FallbackDataSource<TestBlock>({
+            sources: [
+                {
+                    name: 's0',
+                    source: s0,
+                    probeCapability: async () => {
+                        probeCalls++
+                        return capable
+                    },
+                },
+                ranked(s1, 's1'),
+            ],
+            getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
+            policy: {
+                preferPrimary: 'eager',
+                cooldownMs: 1000,
+                livenessRecoverThreshold: 1,
+                headTtlMs: 0,
+                maxLagBlocks: null,
+                maxStalenessMs: null,
+                clock: () => now,
+            },
+        })
+        let it = fb.getStream({from: 1, to: 3})[Symbol.asyncIterator]()
+        expect(numbers((await it.next()).value.blocks)).toEqual([1]) // s0 failed → s1 active
+
+        now = 1000 // s0's head answers (liveness recovers), but its capability probe still says no
+        let n = await it.next()
+        await wait(0) // let the fire-and-forget capability probe settle
+
+        expect(probeCalls).toBeGreaterThan(0) // the fallback actually runs the capability probe
+        expect(fb.activeIndex).toBe(1) // unconfirmed capability ⇒ no switch-up
+        expect(numbers(n.value.blocks)).toEqual([2]) // still served by s1
+    })
 })
 
 const hang = () => new Promise(() => {})
