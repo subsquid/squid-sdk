@@ -40,6 +40,11 @@ export class SourceHealth {
         return this.#state === 'unhealthy' ? Math.max(0, this.#cooldownUntil - this.policy.clock()) : 0
     }
 
+    /** True once capability has been confirmed — or always, for a source with no capability probe. */
+    get capabilityConfirmed(): boolean {
+        return this.#capabilityOk
+    }
+
     onStreamError(): void {
         this.#toUnhealthy()
     }
