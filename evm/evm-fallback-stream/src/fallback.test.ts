@@ -196,6 +196,28 @@ describe('FallbackDataSource — all sources down', () => {
 
         await expect(collect(fb.getStream({from: 1, to: 5}))).rejects.toThrowError(/all fallback data sources/)
     })
+
+    it('clears the active source while all sources are down (metrics report none active)', async () => {
+        let s0 = new MockSource(async function* (_req, call) {
+            if (call === 0) {
+                yield batch([blk(1)])
+            }
+            throw new Error('s0 down')
+        })
+        let s1 = new MockSource(async function* () {
+            throw new Error('s1 down')
+        })
+        let fb = fallback([s0, s1], {allDownTimeoutMs: 0, allDownPollMs: 1, cooldownMs: 60_000})
+
+        let it = fb.getStream({from: 1, to: 5})[Symbol.asyncIterator]()
+        expect(numbers((await it.next()).value.blocks)).toEqual([1])
+        expect(fb.activeIndex).toBe(0) // s0 serving
+
+        // s0 then errors; s1 is down and s0 is now unhealthy → all-down → throws after the timeout.
+        await expect(it.next()).rejects.toThrowError(/all fallback data sources/)
+        expect(fb.activeIndex).toBeUndefined() // nothing driven ⇒ no active source reported
+        expect(fb.metrics().sources.every((s) => !s.active)).toBe(true)
+    })
 })
 
 describe('FallbackDataSource — switch-up / recovery', () => {
