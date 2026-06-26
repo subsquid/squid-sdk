@@ -6,6 +6,7 @@ import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
 import {Connection, HttpHeaders, RpcCall, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
 import {RateMeter} from './rate'
+import {MethodMetrics} from './method-metrics'
 import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
 import {WsConnection} from './transport/ws'
@@ -61,16 +62,6 @@ export interface RpcClientOptions {
     headers?: HttpHeaders
     log?: Logger | null
 }
-
-// Add interface for RPC metrics
-export interface RpcMetrics {
-    url: string
-    requestsServed: number
-    connectionErrors: number
-    notificationsReceived: number
-    avg_response_time: number
-}
-
 
 export interface RpcMetrics {
     url: string
@@ -130,6 +121,7 @@ export class RpcClient {
     private connectionErrorsInRow = 0
     private connectionErrors = 0
     private requestsServed = 0
+    private requestsByMethod = new MethodMetrics()
     private notificationsReceived = 0
     private totalResponseTime = 0
     private backoffEpoch = 0
@@ -204,10 +196,12 @@ export class RpcClient {
             requestsServed: this.requestsServed,
             connectionErrors: this.connectionErrors,
             notificationsReceived: this.notificationsReceived,
-            // FIXME: only one of these metrics should remain; decide which to keep
-            avg_response_time: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
             avgResponseTime: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
         }
+    }
+
+    getMethodMetrics() {
+        return this.requestsByMethod.getMethodMetrics()
     }
 
     private onNotification(msg: RpcNotification): void {
@@ -391,17 +385,25 @@ export class RpcClient {
             let call = req.call
             this.log?.debug({rpcBatchId: [call[0].id, last(call).id]}, 'rpc send')
             promise = this.con.batchCall(call, req.timeout).then(res => {
+                this.requestsByMethod.recordBatch(call, res)
                 let result = new Array(res.length)
                 for (let i = 0; i < res.length; i++) {
                     result[i] = this.receiveResult(call[i], res[i], req.validateResult, req.validateError)
                 }
                 return result
+            }, err => {
+                this.requestsByMethod.recordBatchError(call, err)
+                throw err
             })
         } else {
             let call = req.call
             this.log?.debug({rpcId: call.id}, 'rpc send')
             promise = this.con.call(call, req.timeout).then(res => {
+                this.requestsByMethod.record(call.method, res)
                 return this.receiveResult(call, res, req.validateResult, req.validateError)
+            }, err => {
+                this.requestsByMethod.recordError(call, err)
+                throw err
             })
         }
         promise.then(result => {
