@@ -41,8 +41,8 @@ export interface EvmRpcStreamOptions<F extends FieldSelection> {
  * reference, so an intermediate block can be a *superset* of `fields` when a filter targets an
  * unselected field. When that happens the data source re-decodes at exactly `fields` and projects
  * the augmented fields back out (`projectKept`), so the yielded block carries exactly `fields` —
- * matching the Portal. `includeAllBlocks:false` (dropping empty blocks) remains a noted refinement;
- * `includeAllBlocks:true` semantics are used.
+ * matching the Portal. `includeAllBlocks` is honored like the Portal: when it is false for a
+ * block's range, a block left empty by filtering is dropped (see {@link dropEmptyBlocks}).
  */
 export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSource<Block<F>> {
     private inner: EvmRpcDataSource
@@ -117,8 +117,10 @@ export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSou
     }
 
     private mapBatch(batch: BlockBatch<RpcBlock>): BlockBatch<Block<F>> {
+        let blocks = batch.blocks.map((raw) => this.mapBlock(raw))
+
         return {
-            blocks: batch.blocks.map((raw) => this.mapBlock(raw)),
+            blocks: dropEmptyBlocks(blocks, (n) => this.flatRequestFor(n)?.includeAllBlocks ?? false),
             finalizedHead: batch.finalizedHead,
         }
     }
@@ -200,6 +202,30 @@ function unionRequiredData(requests: FlatDataRequest[], fields: FieldSelection) 
     }
 
     return acc
+}
+
+type AnyDecodedBlock = {header: {number: number}; logs: unknown[]; transactions: unknown[]; traces: unknown[]; stateDiffs: unknown[]}
+
+/**
+ * Drop blocks left empty after filtering, matching the Portal — which forwards `includeAllBlocks`
+ * to the server and, when it is false, returns only blocks with matching data. A block is kept iff
+ * it carries data, its range opted into `includeAllBlocks`, or it is a *boundary* block.
+ *
+ * The batch's first and last blocks are always kept even when empty, mirroring the Portal: the last
+ * block lets the consumer's cursor advance to the batch end (without it, progress would stall on a
+ * dataless tail), and the first anchors chain continuity. Keeping them is also what makes a
+ * `[Portal, RPC]` fallback transparent — both sides drop the same interior empties.
+ */
+export function dropEmptyBlocks<B extends AnyDecodedBlock>(
+    blocks: B[],
+    includeAllBlocks: (blockNumber: number) => boolean,
+): B[] {
+    return blocks.filter((b, i) => {
+        if (i === 0 || i === blocks.length - 1) return true // boundary blocks: always present
+        if (includeAllBlocks(b.header.number)) return true
+
+        return b.logs.length > 0 || b.transactions.length > 0 || b.traces.length > 0 || b.stateDiffs.length > 0
+    })
 }
 
 // Re-export so the bounded-stream consumer can apply request range bounds the same way.
