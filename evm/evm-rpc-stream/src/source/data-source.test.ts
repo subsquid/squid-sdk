@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
-import {dropEmptyBlocks} from './data-source'
+import {dropEmptyBlocks, streamBoundedRanges} from './data-source'
 
 function blk(
     number: number,
@@ -42,5 +42,70 @@ describe('dropEmptyBlocks', () => {
 
     it('keeps a lone empty block (first === last)', () => {
         expect(nums(dropEmptyBlocks([blk(7)], () => false))).toEqual([7])
+    })
+})
+
+describe('streamBoundedRanges', () => {
+    // A mock inner source that records each StreamRequest and yields one block per number in
+    // [from, to], each with a deterministic hash so parentHash threading is observable.
+    function mockInner() {
+        let calls: {from: number; to?: number; parentHash?: string}[] = []
+        async function* gen(req: {from: number; to?: number; parentHash?: string}) {
+            calls.push({from: req.from, to: req.to, parentHash: req.parentHash})
+            let to = req.to ?? req.from
+            let blocks = []
+            for (let n = req.from; n <= to; n++) blocks.push({number: n, hash: `0x${n}`})
+            yield {blocks, finalizedHead: undefined}
+        }
+        return {calls, getStream: gen as any, getFinalizedStream: gen as any}
+    }
+
+    async function drainNums(stream: AsyncIterable<{blocks: {number: number}[]}>): Promise<number[]> {
+        let out: number[] = []
+        for await (let batch of stream) out.push(...batch.blocks.map((b) => b.number))
+        return out
+    }
+
+    const r = (from: number, to: number) => ({range: {from, to}, request: {}})
+
+    it('skips gaps between non-contiguous ranges and never streams them', async () => {
+        let inner = mockInner()
+        let nums = await drainNums(
+            streamBoundedRanges(inner as any, [r(100, 200), r(500, 600)], {from: 100, to: 600, parentHash: '0xp'}, false),
+        )
+
+        expect(nums).not.toContain(300) // a gap block must never be emitted
+        expect(Math.min(...nums)).toBe(100)
+        expect(Math.max(...nums)).toBe(600)
+        expect(inner.calls.map((c) => [c.from, c.to])).toEqual([
+            [100, 200],
+            [500, 600],
+        ])
+        expect(inner.calls[0].parentHash).toBe('0xp') // caller's parentHash kept for the first block
+        expect(inner.calls[1].parentHash).toBeUndefined() // gap ⇒ no parent to assert
+    })
+
+    it('threads parentHash across contiguous ranges', async () => {
+        let inner = mockInner()
+        await drainNums(
+            streamBoundedRanges(inner as any, [r(100, 200), r(201, 300)], {from: 100, to: 300, parentHash: '0xp'}, false),
+        )
+
+        expect(inner.calls.map((c) => [c.from, c.to])).toEqual([
+            [100, 200],
+            [201, 300],
+        ])
+        expect(inner.calls[0].parentHash).toBe('0xp')
+        expect(inner.calls[1].parentHash).toBe('0x200') // hash of the prior range's last block
+    })
+
+    it('clips request ranges to the caller window', async () => {
+        let inner = mockInner()
+        let nums = await drainNums(
+            streamBoundedRanges(inner as any, [r(0, 1000)], {from: 150, to: 153, parentHash: '0xp'}, false),
+        )
+
+        expect(inner.calls).toEqual([{from: 150, to: 153, parentHash: '0xp'}])
+        expect(nums).toEqual([150, 151, 152, 153])
     })
 })
