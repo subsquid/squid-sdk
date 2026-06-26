@@ -98,13 +98,13 @@ export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSou
     }
 
     async *getFinalizedStream(req: StreamRequest): BlockStream<Block<F>> {
-        for await (let batch of this.inner.getFinalizedStream(req)) {
+        for await (let batch of streamBoundedRanges(this.inner, this.requests, req, true)) {
             yield this.mapBatch(batch)
         }
     }
 
     async *getStream(req: StreamRequest): BlockStream<Block<F>> {
-        for await (let batch of this.inner.getStream(req)) {
+        for await (let batch of streamBoundedRanges(this.inner, this.requests, req, false)) {
             yield this.mapBatch(batch)
         }
     }
@@ -202,6 +202,52 @@ function unionRequiredData(requests: FlatDataRequest[], fields: FieldSelection) 
     }
 
     return acc
+}
+
+/**
+ * Stream the inner RPC source per *request range*, intersected with the caller's `[from, to]`
+ * window — exactly like the Portal source, which issues one query per range. Blocks in a gap
+ * between non-contiguous ranges are never streamed, so they can't leak through unfiltered: that
+ * would break the Portal-compatible / drop-in guarantee and disagree with `getBlocksCountInRange`,
+ * which counts only the request ranges.
+ *
+ * `parentHash` is threaded through *contiguous* ranges so the inner source's continuity/fork
+ * detection keeps working across a seam, and is dropped across a gap (there is no parent to
+ * assert there). The caller's `parentHash` is preserved for the very first streamed block — that
+ * is what lets a fallback detect a fork when it resumes after switching sources.
+ */
+export async function* streamBoundedRanges(
+    inner: Pick<DataSource<RpcBlock>, 'getStream' | 'getFinalizedStream'>,
+    requests: RangeRequestList<unknown>,
+    req: StreamRequest,
+    finalized: boolean,
+): BlockStream<RpcBlock> {
+    let ranges = applyRangeBound(requests, {from: req.from, to: req.to})
+
+    let parentHash = req.parentHash
+    let expectedFrom = req.from
+
+    for (let {range} of ranges) {
+        // A gap precedes this range (or the stream starts inside one): don't hand the inner source
+        // a parentHash it would treat as a fork.
+        if (range.from !== expectedFrom) parentHash = undefined
+
+        let streamReq: StreamRequest = {from: range.from, to: range.to, parentHash}
+        let stream = finalized ? inner.getFinalizedStream(streamReq) : inner.getStream(streamReq)
+
+        for await (let batch of stream) {
+            yield batch
+
+            let last = batch.blocks[batch.blocks.length - 1]
+            if (last) {
+                parentHash = last.hash
+                expectedFrom = last.number + 1
+            }
+        }
+
+        // The next *contiguous* range begins right after this one; a larger jump is a gap.
+        if (range.to != null) expectedFrom = Math.max(expectedFrom, range.to + 1)
+    }
 }
 
 type AnyDecodedBlock = {header: {number: number}; logs: unknown[]; transactions: unknown[]; traces: unknown[]; stateDiffs: unknown[]}
