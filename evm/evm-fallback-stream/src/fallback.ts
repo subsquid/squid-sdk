@@ -90,6 +90,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
         let lastHash = req.parentHash
         let allDownSince: number | undefined
 
+        // Re-arm the lag trigger per stream: a reused instance starting a later (far-behind-head)
+        // backfill must not inherit "reached the tip" from a previous run and false-fire on lag.
+        this.#lagArmed = false
+
         while (true) {
             let active = this.selector.pickForFailover()
             if (active == null) {
@@ -382,7 +386,16 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // Count a switch against the last source we drove (not `activeIndex`, which is cleared to
         // `undefined` during an all-down gap) so resuming on a *different* source after the gap
         // still registers, and resuming on the *same* one does not.
-        if (this.#lastActive !== undefined && this.#lastActive !== i) this.switchCount++
+        if (this.#lastActive !== undefined && this.#lastActive !== i) {
+            this.switchCount++
+            // The freshness gauges describe the *active* source; on a switch the previous source's
+            // values are stale, so clear them until the new source's next batch/head poll repopulates
+            // (e.g. `nextWithStaleness` returning `STALE` leaves `staleness` non-zero).
+            this.lag = 0
+            this.staleness = 0
+            this.chainStalled = false
+            this.chainHead = undefined
+        }
         this.#lastActive = i
         this.activeIndex = i
     }

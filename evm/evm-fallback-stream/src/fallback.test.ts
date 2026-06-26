@@ -506,6 +506,48 @@ describe('FallbackDataSource — freshness (M1)', () => {
         expect(numbers(await collect(fb.getStream({from: 1, to: 2})))).toEqual([1, 2])
         expect(fb.activeIndex).toBe(0)
     })
+
+    it('(g) resets freshness gauges on a switch (no stale lag from the old source)', async () => {
+        let s1heads = [95, 110] // arm at lag 5, then trip at lag 19
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(90)])
+            yield batch([blk(91)])
+        })
+        // Empty standby: after failover the stream ends immediately, so no boundary recomputes
+        // freshness — exposing whether the switch itself cleared the old source's lag.
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: s1heads.shift() ?? 110, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        expect(numbers(await collect(fb.getStream({from: 90, to: 93})))).toEqual([90, 91])
+        expect(fb.activeIndex).toBe(1)
+        expect(fb.lag).toBe(0) // not the stale 19 the lag trigger recorded against s0
+    })
+
+    it('(h) re-arms lag per stream: a reused instance does not inherit "at tip" for a backfill', async () => {
+        let phase = 1
+        let s0 = new MockSource(async function* () {
+            if (phase === 1) {
+                yield batch([blk(100)])
+            } else {
+                yield batch([blk(1)])
+                yield batch([blk(2)])
+            }
+        })
+        // Phase 1: head sits at s0 (arms the lag trigger). Phase 2: head is far ahead (backfill).
+        let s1 = new MockSource(async function* () {}, {
+            head: async () => ({number: phase === 1 ? 100 : 1_000_000, hash: '0x'}),
+        })
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        // Stream 1 reaches the tip → arms the lag trigger on the instance.
+        expect(numbers(await collect(fb.getStream({from: 100, to: 100})))).toEqual([100])
+
+        // Stream 2 on the SAME instance backfills far behind head. If the armed state leaked, the
+        // first boundary would trip (lag ~1e6 > 10) and fail over; a per-stream reset prevents that.
+        phase = 2
+        expect(numbers(await collect(fb.getStream({from: 1, to: 2})))).toEqual([1, 2])
+        expect(fb.activeIndex).toBe(0) // stayed on s0 — no spurious failover
+    })
 })
 
 describe('FallbackDataSource — getHead delegation', () => {
