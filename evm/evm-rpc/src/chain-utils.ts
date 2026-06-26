@@ -28,6 +28,7 @@ export interface ChainUtilsOptions {
 
 export class ChainUtils {
     public readonly isPolygonMainnet: boolean
+    public readonly isPolygonAmoy: boolean
     public readonly isHyperliquidMainnet: boolean
     public readonly isHyperliquidTestnet: boolean
     public readonly isStable: boolean
@@ -40,6 +41,7 @@ export class ChainUtils {
 
     constructor(chainId: Qty, options?: ChainUtilsOptions) {
         this.isPolygonMainnet = chainId == '0x89'
+        this.isPolygonAmoy = chainId == '0x13882'
         this.isHyperliquidMainnet = chainId == '0x3e7'
         this.isHyperliquidTestnet = chainId == '0x3e6'
         this.isStable = chainId == '0x3dc' || chainId == '0x899' // Chain ID 988 (mainnet) or 2201 (testnet)
@@ -51,7 +53,7 @@ export class ChainUtils {
         this.isTempo = chainId == '0x1079' || chainId == '0xa5bf' || chainId == '0xa5bd'
         this.isCronosMainnet = chainId == '0x19' // Chain ID 25
         this.isShibariumMainnet = chainId == '0x6d'
-        this.isPolygonBased = this.isPolygonMainnet || this.isShibariumMainnet
+        this.isPolygonBased = this.isPolygonMainnet || this.isPolygonAmoy || this.isShibariumMainnet
         this.useGasUsedForReceiptsRoot = options?.useGasUsedForReceiptsRoot ?? false
     }
 
