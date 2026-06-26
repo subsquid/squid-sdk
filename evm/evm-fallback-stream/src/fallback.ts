@@ -304,7 +304,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
         let others = await this.chainHeadOthers(active)
         this.chainHead = others != null ? Math.max(others, lastNumber) : lastNumber
-        if (others == null) return false
+        if (others == null) {
+            this.lag = 0 // no independent reference ⇒ lag is not computable; don't report a stale value
+            return false
+        }
 
         let lag = others - lastNumber
         this.lag = Math.max(0, lag)
@@ -351,10 +354,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
             if (r.type === 'next') {
                 this.staleness = 0
+                this.chainStalled = false // progress resumed — clear any prior global-stall flag
                 return r.v
             }
             if (r.type === 'error') {
                 this.staleness = 0
+                this.chainStalled = false // moving off this source — the stall flag must not persist
                 throw r.e
             }
 
