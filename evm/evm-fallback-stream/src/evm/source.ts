@@ -18,14 +18,19 @@ function loadRpcStream(): typeof import('@subsquid/evm-rpc-stream') {
     try {
         return require('@subsquid/evm-rpc-stream')
     } catch (e) {
-        // Only translate a missing-module error (the optional peer stack isn't installed) into the
-        // actionable hint. A real error thrown from inside the package — a syntax/runtime fault on
-        // load — must surface unchanged rather than be masked as "peers missing".
-        if ((e as NodeJS.ErrnoException)?.code !== 'MODULE_NOT_FOUND') throw e
-        throw new Error(
-            "An 'rpc' fallback source requires the optional peer dependencies '@subsquid/evm-rpc-stream' " +
-                "and '@subsquid/evm-rpc'. Install them, or use only 'portal' sources.",
-        )
+        // Only translate "the package itself isn't installed" into the actionable hint, matching the
+        // missing module by its exact quoted name in the error text. A MODULE_NOT_FOUND for a
+        // *transitive* dependency inside the package (a broken install) names a different module —
+        // and a real fault thrown on load isn't MODULE_NOT_FOUND at all — so both surface unchanged
+        // rather than being masked as "peers missing". (Node: `Cannot find module '<name>'`.)
+        let err = e as NodeJS.ErrnoException
+        if (err?.code === 'MODULE_NOT_FOUND' && err.message.includes("'@subsquid/evm-rpc-stream'")) {
+            throw new Error(
+                "An 'rpc' fallback source requires the optional peer dependencies '@subsquid/evm-rpc-stream' " +
+                    "and '@subsquid/evm-rpc'. Install them, or use only 'portal' sources.",
+            )
+        }
+        throw e
     }
 }
 
