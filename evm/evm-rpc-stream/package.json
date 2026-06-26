@@ -15,7 +15,8 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "test": "vitest --run"
+    "test": "vitest --run",
+    "test:lfs": "VITEST_LFS=1 vitest --run"
   },
   "dependencies": {
     "@subsquid/evm-normalization": "^0.0.2",
