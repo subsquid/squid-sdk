@@ -8,8 +8,12 @@ import {FlatDataRequest} from '../filter/request'
  * e.g. `log.address` to filter on it; otherwise the filter predicate sees `undefined`.
  *
  * Trace `where` keys (`createFrom`/`callTo`/…) are identical to the trace field-selection
- * keys, so they map across directly. StateDiff `address`/`key`/`kind` are always-present
- * required fields and need no augmentation.
+ * keys, so they map across directly.
+ *
+ * Trace `type` and stateDiff `kind` are deliberately *not* augmented: the Portal decoder's
+ * `patchQueryFields` force-enables both regardless of selection (and the trace/stateDiff schemas
+ * are `taggedUnion`s keyed on them), so they are always decoded and the filter can always read
+ * them. StateDiff `address`/`key` are likewise force-selected by `mapFieldSelection`.
  *
  * The result is a superset of the input. When it adds fields, `EvmRpcStreamDataSource` projects
  * them back out after filtering (re-decoding at exactly `fields`), so the augmentation stays
