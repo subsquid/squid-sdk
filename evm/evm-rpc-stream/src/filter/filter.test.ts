@@ -80,6 +80,15 @@ describe('filterBlock — where clauses', () => {
         expect(block.stateDiffs[0].address).toBe('0xaaa')
     })
 
+    // `kind` (like trace `type`) is force-decoded by the Portal decoder's `patchQueryFields`, so the
+    // filter can always read it — even when the request doesn't select it for output.
+    it('matches stateDiffs by kind', () => {
+        let block = makeBlock({stateDiffs: [stateDiff(0, '0xaaa', '0xk', '='), stateDiff(1, '0xbbb', '0xk', '*')]})
+        run(block, {stateDiffs: [{kind: ['*']}]})
+        expect(block.stateDiffs).toHaveLength(1)
+        expect(block.stateDiffs[0].kind).toBe('*')
+    })
+
     it('empty where matches all items of that type', () => {
         let block = makeBlock({logs: [log(0, '0xaaa'), log(1, '0xbbb')]})
         run(block, {logs: [{}]})
