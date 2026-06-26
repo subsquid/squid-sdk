@@ -470,6 +470,7 @@ describe('FallbackDataSource — freshness (M1)', () => {
         // s0 finally errors → ordinary failover to s1
         expect(numbers((await pending).value.blocks)).toEqual([51])
         expect(fb.activeIndex).toBe(1)
+        expect(fb.chainStalled).toBe(false) // cleared once progress resumed on the new source
     }, 5000)
 
     it('(e) slow-handler immunity: a slow downstream consumer does not mark the source stale', async () => {

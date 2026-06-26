@@ -17,7 +17,11 @@ import type {FallbackPolicy} from '../policy'
 function loadRpcStream(): typeof import('@subsquid/evm-rpc-stream') {
     try {
         return require('@subsquid/evm-rpc-stream')
-    } catch {
+    } catch (e) {
+        // Only translate a missing-module error (the optional peer stack isn't installed) into the
+        // actionable hint. A real error thrown from inside the package — a syntax/runtime fault on
+        // load — must surface unchanged rather than be masked as "peers missing".
+        if ((e as NodeJS.ErrnoException)?.code !== 'MODULE_NOT_FOUND') throw e
         throw new Error(
             "An 'rpc' fallback source requires the optional peer dependencies '@subsquid/evm-rpc-stream' " +
                 "and '@subsquid/evm-rpc'. Install them, or use only 'portal' sources.",
