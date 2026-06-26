@@ -63,6 +63,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
     #headCache: ({value: number | undefined; at: number} | undefined)[] = []
     /** Guards against firing a second capability probe for a source while one is still in flight. */
     #capabilityProbing: boolean[] = []
+    /** Last source we drove, retained across an all-down gap so switch-counting stays correct. */
+    #lastActive: number | undefined
 
     constructor(options: FallbackDataSourceOptions<B>) {
         if (options.sources.length === 0) {
@@ -91,6 +93,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         while (true) {
             let active = this.selector.pickForFailover()
             if (active == null) {
+                this.clearActive()
                 if (await this.waitAllDown(allDownSince ?? (allDownSince = this.policy.clock()))) continue
                 throw new AllSourcesDownError()
             }
@@ -166,6 +169,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         while (true) {
             let active = this.selector.pickForFailover()
             if (active == null) {
+                this.clearActive()
                 if (await this.waitAllDown(allDownSince ?? (allDownSince = this.policy.clock()))) continue
                 throw new AllSourcesDownError()
             }
@@ -370,10 +374,17 @@ export class FallbackDataSource<B> implements DataSource<B> {
     }
 
     private setActive(i: number): void {
-        if (this.activeIndex !== i) {
-            if (this.activeIndex !== undefined) this.switchCount++
-            this.activeIndex = i
-        }
+        // Count a switch against the last source we drove (not `activeIndex`, which is cleared to
+        // `undefined` during an all-down gap) so resuming on a *different* source after the gap
+        // still registers, and resuming on the *same* one does not.
+        if (this.#lastActive !== undefined && this.#lastActive !== i) this.switchCount++
+        this.#lastActive = i
+        this.activeIndex = i
+    }
+
+    /** No source is eligible (all unhealthy): nothing is being driven, so report no active source. */
+    private clearActive(): void {
+        this.activeIndex = undefined
     }
 }
 
