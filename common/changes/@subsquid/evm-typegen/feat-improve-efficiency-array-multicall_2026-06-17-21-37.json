@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-typegen",
+      "comment": "improve efficiency of array manipulation in multicall eth_calls promises",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-typegen"
+}
