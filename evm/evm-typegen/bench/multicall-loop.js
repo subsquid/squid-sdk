@@ -1,28 +1,32 @@
 const { performance } = require("node:perf_hooks");
 
-function* splitSlice(maxSize, beg, end = Number.MAX_SAFE_INTEGER) {
+function splitSlice(maxSize, beg, end = Number.MAX_SAFE_INTEGER) {
   maxSize = Math.max(1, maxSize);
+  const slices = [];
   while (beg < end) {
     const left = end - beg;
     const splits = Math.ceil(left / maxSize);
     const step = Math.round(left / splits);
-    yield [beg, beg + step];
+    slices.push([beg, beg + step]);
     beg += step;
   }
+  return slices;
 }
 
-function* splitArray(maxSize, arr) {
+function splitArray(maxSize, arr) {
   if (arr.length <= maxSize) {
-    yield arr;
-  } else {
-    for (const [beg, end] of splitSlice(maxSize, 0, arr.length)) {
-      yield arr.slice(beg, end);
-    }
+    return [arr];
   }
+
+  const pages = [];
+  for (const [beg, end] of splitSlice(maxSize, 0, arr.length)) {
+    pages.push(arr.slice(beg, end));
+  }
+  return pages;
 }
 
 async function oldPattern(calls, pageSize) {
-  const pages = Array.from(splitArray(pageSize, calls));
+  const pages = splitArray(pageSize, calls);
   const results = await Promise.all(
     pages.map(async (page) => page.map((x) => x + 1)),
   );
