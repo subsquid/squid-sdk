@@ -12,6 +12,7 @@ export class PrometheusServer {
     private rpcRequestsServedTotal: Counter
     private rpcAvgResponseTimeSeconds: Gauge
     private rpcConnectionErrorsTotal: Counter
+    private rpcMethodCallsTotal: Counter
     private s3RequestsCounter: Counter
     private latestReceivedBlockNumberGauge: Gauge
     private latestReceivedBlockTimestampGauge: Gauge
@@ -126,11 +127,6 @@ export class PrometheusServer {
             registers: [this.registry],
             collect() {
                 const metrics = rpc.getMetrics()
-
-                this.set({
-                    url: metrics.url,
-                }, metrics.avg_response_time)
-                
                 this.set({
                     url: metrics.url,
                 }, metrics.avgResponseTime)
@@ -147,6 +143,23 @@ export class PrometheusServer {
                 this.inc({
                     url: metrics.url,
                 }, metrics.connectionErrors)
+            }
+        });
+
+        this.rpcMethodCallsTotal = new Counter({
+            name: 'sqd_rpc_method_calls_total',
+            help: 'Total number of RPC requests by method, HTTP code, and RPC code (counted by batch element)',
+            labelNames: ['method', 'http_code', 'rpc_code'],
+            registers: [this.registry],
+            collect() {
+                this.reset()
+                for (let item of rpc.getMethodMetrics()) {
+                    this.inc({
+                        method: item.method,
+                        http_code: item.httpCode,
+                        rpc_code: item.rpcCode
+                    }, item.count)
+                }
             }
         });
 
