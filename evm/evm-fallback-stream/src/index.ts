@@ -1,6 +1,7 @@
 export * from './policy'
 export * from './health'
 export * from './selector'
+export * from './capability'
 export * from './fallback'
 export * from './evm/source'
 export * from './metrics'
