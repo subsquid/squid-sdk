@@ -31,33 +31,53 @@ describe('makeCapabilityProbe', () => {
         let s = new MockSource(async function* () {
             yield batch(100)
         })
-        expect(await makeCapabilityProbe(s)(100)).toBe(true)
+        expect(await makeCapabilityProbe(s)(100)).toEqual({ok: true})
         expect(s.calls).toEqual([{from: 100, to: 100}])
     })
 
     it('reports capable when the slice is empty (served the query, nothing matched)', async () => {
         let s = new MockSource(async function* () {})
-        expect(await makeCapabilityProbe(s)(100)).toBe(true)
+        expect(await makeCapabilityProbe(s)(100)).toEqual({ok: true})
     })
 
-    it('reports not-capable when the source cannot serve the slice', async () => {
+    it('reports not-capable, with the classified cause, when the source cannot serve the slice', async () => {
         let s = new MockSource(async function* () {
             throw new Error('the method trace_block does not exist')
         })
-        expect(await makeCapabilityProbe(s)(100)).toBe(false)
+        let r = await makeCapabilityProbe(s)(100)
+        expect(r.ok).toBe(false)
+        expect(r.cause?.check).toBe('capability')
+        expect(r.cause?.reason).toBe('unknown') // a bare Error → uncategorized
+        expect(r.cause?.detail).toContain('trace_block')
+    })
+
+    it('classifies a JSON-RPC error (HTTP 200 with an error body) as an rpc failure with its code', async () => {
+        let s = new MockSource(async function* () {
+            throw Object.assign(new Error('the method debug_traceBlockByNumber does not exist'), {
+                name: 'RpcError',
+                code: -32601,
+            })
+        })
+        let r = await makeCapabilityProbe(s)(100)
+        expect(r.ok).toBe(false)
+        expect(r.cause?.reason).toBe('rpc')
+        expect(r.cause?.code).toBe(-32601)
     })
 
     it('treats a ForkException as capable (served + reorg, not an inability to serve)', async () => {
         let s = new MockSource(async function* () {
             throw forkError()
         })
-        expect(await makeCapabilityProbe(s)(100)).toBe(true)
+        expect(await makeCapabilityProbe(s)(100)).toEqual({ok: true})
     })
 
     it('reports not-capable when the slice exceeds the probe timeout', async () => {
         let s = new MockSource(async function* () {
             await new Promise<void>(() => {}) // hang — never yields
         })
-        expect(await makeCapabilityProbe(s, {timeoutMs: 20})(100)).toBe(false)
+        let r = await makeCapabilityProbe(s, {timeoutMs: 20})(100)
+        expect(r.ok).toBe(false)
+        expect(r.cause?.reason).toBe('stale')
+        expect(r.cause?.detail).toContain('timed out')
     })
 })

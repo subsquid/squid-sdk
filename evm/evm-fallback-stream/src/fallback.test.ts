@@ -1,8 +1,12 @@
 import {BlockBatch, BlockRef, BlockStream, DataSource, ForkException, StreamRequest} from '@subsquid/util-internal-data-source'
 import {describe, expect, it} from 'vitest'
 
+import {FallbackLogger} from './diagnostics'
 import {FallbackDataSource, RankedSource} from './fallback'
 import {FallbackPolicy} from './policy'
+
+/** Keep the default `console.warn` cause-logging out of the test output. */
+const silent: FallbackLogger = {warn() {}}
 
 interface TestBlock {
     header: {number: number; hash: string}
@@ -55,6 +59,7 @@ function fallback(sources: DataSource<TestBlock>[], policy?: FallbackPolicy) {
         sources: sources.map((s, i) => ranked(s, `s${i}`)),
         getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
         policy,
+        logger: silent,
     })
 }
 
@@ -238,6 +243,7 @@ describe('FallbackDataSource — switch-up / recovery', () => {
         let fb = new FallbackDataSource<TestBlock>({
             sources: [ranked(s0, 's0'), ranked(s1, 's1')],
             getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
+            logger: silent,
             policy: {preferPrimary, cooldownMs: 1000, clock: () => now},
         })
         return {fb, s0, s1, recover: () => (now = 1000)}
@@ -302,6 +308,7 @@ describe('FallbackDataSource — switch-up / recovery', () => {
         let fb = new FallbackDataSource<TestBlock>({
             sources: [ranked(s0, 's0'), ranked(s1, 's1')],
             getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
+            logger: silent,
             policy: {
                 preferPrimary: 'eager',
                 cooldownMs: 1000,
@@ -347,12 +354,13 @@ describe('FallbackDataSource — switch-up / recovery', () => {
                     source: s0,
                     probeCapability: async () => {
                         probeCalls++
-                        return capable
+                        return {ok: capable}
                     },
                 },
                 ranked(s1, 's1'),
             ],
             getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
+            logger: silent,
             policy: {
                 preferPrimary: 'eager',
                 cooldownMs: 1000,
@@ -394,10 +402,11 @@ describe('FallbackDataSource — switch-up / recovery', () => {
         })
         let fb = new FallbackDataSource<TestBlock>({
             sources: [
-                {name: 's0', source: s0, probeCapability: async (at) => (probedAt.push(at), false)},
+                {name: 's0', source: s0, probeCapability: async (at) => (probedAt.push(at), {ok: false})},
                 ranked(s1, 's1'),
             ],
             getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
+            logger: silent,
             policy: {preferPrimary: 'eager', cooldownMs: 1000, headTtlMs: 0, maxLagBlocks: null, maxStalenessMs: null, clock: () => now},
         })
         return {fb, probedAt, recover: () => (now = 1000)}
@@ -631,9 +640,13 @@ describe('FallbackDataSource — metrics', () => {
 
         expect(m.activeIndex).toBe(1)
         expect(m.switchCount).toBe(1)
-        expect(m.sources).toEqual([
+        expect(m.sources).toMatchObject([
             {name: 's0', health: 'unhealthy', active: false},
             {name: 's1', health: 'unknown', active: true},
         ])
+        // The unhealthy source carries its classified cause; the healthy/unknown one does not.
+        expect(m.sources[0].cause).toMatchObject({check: 'stream', reason: 'unknown'})
+        expect(m.sources[0].cause?.detail).toContain('boom')
+        expect(m.sources[1].cause).toBeUndefined()
     })
 })

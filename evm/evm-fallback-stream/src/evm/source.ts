@@ -5,6 +5,7 @@ import type {BlockRef} from '@subsquid/util-internal-data-source'
 import type {RangeRequestList} from '@subsquid/util-internal-range'
 
 import {CapabilityProbeOptions, makeCapabilityProbe} from '../capability'
+import type {FallbackLogger} from '../diagnostics'
 import {FallbackDataSource, RankedSource} from '../fallback'
 import type {FallbackPolicy} from '../policy'
 
@@ -58,6 +59,12 @@ export interface EvmFallbackOptions<F extends FieldSelection> {
      * tune the probe.
      */
     capabilityProbe?: boolean | CapabilityProbeOptions
+    /**
+     * Where to log the reason a source was marked unhealthy (full detail, incl. the request).
+     * Defaults to a `console.warn` logger; pass the processor's logger to integrate, or a no-op to
+     * silence. The bounded `reason`/`code`/`check` also surface through the fallback metrics.
+     */
+    logger?: FallbackLogger
 }
 
 const evmBlockRef = (b: Block<any>): BlockRef => ({number: b.header.number, hash: b.header.hash})
@@ -94,5 +101,6 @@ export function createEvmFallbackSource<F extends FieldSelection>(
         sources: ranked,
         getBlockRef: evmBlockRef,
         policy: options.policy,
+        logger: options.logger,
     })
 }

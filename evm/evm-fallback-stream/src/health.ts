@@ -1,3 +1,4 @@
+import {SourceErrorInfo} from './diagnostics'
 import {Health, ResolvedPolicy} from './policy'
 
 /**
@@ -22,6 +23,7 @@ export class SourceHealth {
     #hasCapabilityProbe: boolean
     #capabilityOk: boolean
     #cooldownUntil = 0
+    #cause: SourceErrorInfo | undefined
 
     constructor(
         private policy: ResolvedPolicy,
@@ -49,8 +51,13 @@ export class SourceHealth {
         return this.#capabilityOk
     }
 
-    onStreamError(): void {
-        this.#toUnhealthy()
+    /** Why the source is currently unhealthy (`undefined` unless `state === 'unhealthy'`). */
+    get cause(): SourceErrorInfo | undefined {
+        return this.state === 'unhealthy' ? this.#cause : undefined
+    }
+
+    onStreamError(cause?: SourceErrorInfo): void {
+        this.#toUnhealthy(cause)
     }
 
     /** A delivered batch is a strong liveness signal. */
@@ -65,36 +72,38 @@ export class SourceHealth {
         this.#maybeHealthy()
     }
 
-    onLivenessFail(): void {
+    onLivenessFail(cause?: SourceErrorInfo): void {
         if (this.state === 'unhealthy') return
         this.#livenessPass = 0
         this.#livenessFail++
         if (this.#livenessFail >= this.policy.livenessFailThreshold) {
-            this.#toUnhealthy()
+            this.#toUnhealthy(cause)
         }
     }
 
-    onCapability(ok: boolean): void {
+    onCapability(ok: boolean, cause?: SourceErrorInfo): void {
         if (this.state === 'unhealthy') return
         if (ok) {
             this.#capabilityOk = true
             this.#maybeHealthy()
         } else {
-            this.#toUnhealthy()
+            this.#toUnhealthy(cause)
         }
     }
 
     #maybeHealthy(): void {
         if (this.#capabilityOk && this.#livenessPass >= this.policy.livenessRecoverThreshold) {
             this.#state = 'healthy'
+            this.#cause = undefined
         }
     }
 
-    #toUnhealthy(): void {
+    #toUnhealthy(cause?: SourceErrorInfo): void {
         this.#state = 'unhealthy'
         this.#cooldownUntil = this.policy.clock() + this.policy.cooldownMs
         this.#livenessPass = 0
         this.#livenessFail = 0
+        this.#cause = cause
         // A probed source must re-prove it can serve the query before it can recover; otherwise a
         // node that stays reachable but keeps failing the real query would flap back to healthy on
         // liveness alone, get re-promoted, fail again — the churn loop.
@@ -105,5 +114,6 @@ export class SourceHealth {
         this.#state = 'unknown'
         this.#livenessPass = 0
         this.#livenessFail = 0
+        this.#cause = undefined
     }
 }
