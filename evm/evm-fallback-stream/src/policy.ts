@@ -47,12 +47,6 @@ export interface FallbackPolicy {
      * settled block rather than the reorg-prone/maybe-unpropagated tip. `16` by default. (§4.)
      */
     capabilityTipMargin?: number
-    /**
-     * When *every* source sits at the same stale head (the chain itself is stuck), there is
-     * nothing fresher to switch to. `false` (default) holds the active source and emits a
-     * `chain-stalled` signal instead of churning.
-     */
-    churnOnGlobalStall?: boolean
     /** Injectable clock (ms), for deterministic tests. Defaults to `Date.now`. */
     clock?: () => number
 }
@@ -70,7 +64,6 @@ export interface ResolvedPolicy {
     headTtlMs: number
     capabilityLookahead: number
     capabilityTipMargin: number
-    churnOnGlobalStall: boolean
     clock: () => number
 }
 
@@ -87,7 +80,6 @@ export const DEFAULT_POLICY: ResolvedPolicy = {
     headTtlMs: 5000,
     capabilityLookahead: 16,
     capabilityTipMargin: 16,
-    churnOnGlobalStall: false,
     clock: () => Date.now(),
 }
 
@@ -109,7 +101,6 @@ export function resolvePolicy(p?: FallbackPolicy): ResolvedPolicy {
         headTtlMs: p?.headTtlMs ?? DEFAULT_POLICY.headTtlMs,
         capabilityLookahead: p?.capabilityLookahead ?? DEFAULT_POLICY.capabilityLookahead,
         capabilityTipMargin: p?.capabilityTipMargin ?? DEFAULT_POLICY.capabilityTipMargin,
-        churnOnGlobalStall: orDefault(p?.churnOnGlobalStall, DEFAULT_POLICY.churnOnGlobalStall),
         clock: p?.clock ?? DEFAULT_POLICY.clock,
     }
 }
