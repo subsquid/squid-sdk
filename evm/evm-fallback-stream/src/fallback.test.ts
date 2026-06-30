@@ -224,6 +224,42 @@ describe('FallbackDataSource — all sources down', () => {
         expect(fb.activeIndex).toBeUndefined() // nothing driven ⇒ no active source reported
         expect(fb.metrics().sources.every((s) => !s.active)).toBe(true)
     })
+
+    it('clears the freshness gauges during an all-down gap', async () => {
+        // One source that global-stalls (no other source ⇒ nothing fresher) then errors. On the
+        // error no eligible source remains, so the all-down path — not a switch — is the only thing
+        // that can clear the freshness gauges it left set.
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(50)])
+            await wait(60)
+            throw new Error('s0 down')
+        })
+        let fb = fallback([s0], {
+            maxStalenessMs: 30,
+            freshnessTickMs: 5,
+            allDownTimeoutMs: 0,
+            allDownPollMs: 1,
+            cooldownMs: 60_000,
+        })
+
+        let it = fb.getStream({from: 50, to: 100})[Symbol.asyncIterator]()
+        expect(numbers((await it.next()).value.blocks)).toEqual([50])
+
+        // Pull the next batch so the staleness clock runs: stalls past maxStalenessMs with no fresher
+        // alternative → global stall flagged on the active.
+        let pending = it.next()
+        await wait(45)
+        expect(fb.chainStalled).toBe(true)
+        expect(fb.activeIndex).toBe(0)
+
+        // s0 then errors; nothing eligible remains → all-down. The gauges must not keep reporting s0.
+        await expect(pending).rejects.toThrowError(/all fallback data sources/)
+        expect(fb.activeIndex).toBeUndefined()
+        expect(fb.chainStalled).toBe(false)
+        expect(fb.staleness).toBe(0)
+        expect(fb.lag).toBe(0)
+        expect(fb.chainHead).toBeUndefined()
+    }, 5000)
 })
 
 describe('FallbackDataSource — switch-up / recovery', () => {
