@@ -619,6 +619,25 @@ describe('FallbackDataSource — getHead delegation', () => {
 
         expect(await fb.getHead()).toEqual({number: 7, hash: '0x7'})
     })
+
+    it('treats a head-fetch failure as liveness (a single blip does not condemn the source)', async () => {
+        let noop: StreamFn = async function* () {}
+        let calls = 0
+        // Fails the first head fetch, then recovers — a transient blip below the liveness threshold.
+        let s0 = new MockSource(noop, {
+            head: async () => {
+                if (++calls === 1) throw new Error('blip')
+                return {number: 5, hash: '0x5'}
+            },
+        })
+        let s1 = new MockSource(noop, {head: async () => ({number: 7, hash: '0x7'})})
+        let fb = fallback([s0, s1])
+
+        // Retried on s0 (still eligible below the threshold) rather than failed over to s1...
+        expect(await fb.getHead()).toEqual({number: 5, hash: '0x5'})
+        // ...and the blip left s0 usable for streaming, not unhealthy + in cooldown.
+        expect(fb.health[0].state).not.toBe('unhealthy')
+    })
 })
 
 describe('FallbackDataSource — metrics', () => {
