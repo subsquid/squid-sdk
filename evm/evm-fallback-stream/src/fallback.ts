@@ -230,7 +230,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
             try {
                 return await get(this.sources[active].source)
             } catch (e) {
-                this.failSource(active, classifyError('stream', e))
+                // A head query *is* the liveness signal (cf. `getCachedHead`), so gate it on the
+                // liveness-fail threshold rather than condemning the source on a single blip — head
+                // and stream share one `SourceHealth`, so an over-eager mark here would needlessly
+                // switch an otherwise-healthy stream. A below-threshold fail leaves the source
+                // eligible, so this retries it (transient-friendly) before failing over.
+                this.failSource(active, classifyError('liveness', e))
             }
         }
     }
