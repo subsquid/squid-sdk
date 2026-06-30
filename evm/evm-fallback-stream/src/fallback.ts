@@ -22,8 +22,13 @@ export interface FallbackMetrics {
 export interface RankedSource<B> {
     name: string
     source: DataSource<B>
-    /** Full, infrequent capability probe — verifies the source can still serve the query's data. */
-    probeCapability?: () => Promise<boolean>
+    /**
+     * Full, infrequent capability probe — verifies the source can still serve the query's data.
+     * `atBlock` is the block height the supervisor wants probed (near the current indexing
+     * position, clamped off the chain tip); the probe should confirm the source can serve the
+     * configured data *at that depth* and resolve `false` if it cannot.
+     */
+    probeCapability?: (atBlock: number) => Promise<boolean>
 }
 
 export interface FallbackDataSourceOptions<B> {
@@ -65,6 +70,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
     #capabilityProbing: boolean[] = []
     /** Last source we drove, retained across an all-down gap so switch-counting stays correct. */
     #lastActive: number | undefined
+    /** Last committed block height — the indexing frontier capability probes anchor to. */
+    #lastCommitted = 0
 
     constructor(options: FallbackDataSourceOptions<B>) {
         if (options.sources.length === 0) {
@@ -93,6 +100,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // Re-arm the lag trigger per stream: a reused instance starting a later (far-behind-head)
         // backfill must not inherit "reached the tip" from a previous run and false-fire on lag.
         this.#lagArmed = false
+        this.#lastCommitted = lastNumber
 
         while (true) {
             let active = this.selector.pickForFailover()
@@ -129,6 +137,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                             let ref = this.getBlockRef(batch.blocks[batch.blocks.length - 1])
                             lastNumber = ref.number
                             lastHash = ref.hash
+                            this.#lastCommitted = lastNumber
                         }
 
                         // Lag-based freshness: the active fell too far behind the independent head.
@@ -286,13 +295,27 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * to. Fire-and-forget (a full capability slice must not block the boundary), and never
      * concurrently for the same source. Periodic re-verification, to catch a source that *loses*
      * capability after confirmation, is a future refinement.
+     *
+     * The probed block follows the indexing *frontier* (`#lastCommitted + capabilityLookahead`),
+     * not the chain tip — so during a backfill it verifies the source can serve the configured data
+     * at the depth it is about to read in bulk (archive-pruning, trace API at old blocks). It is
+     * clamped to `head - capabilityTipMargin` so a caught-up source probes a recent-but-settled
+     * block rather than the reorg-prone tip; `head` is the value just polled into `#headCache[i]`.
      */
     #maybeProbeCapability(i: number): void {
         let probe = this.sources[i].probeCapability
         if (!probe || this.health[i].capabilityConfirmed || this.#capabilityProbing[i]) return
 
+        let head = this.#headCache[i]?.value
+        if (head == null) return // need a head to clamp off the tip; skip until one is known
+
+        let target = Math.max(
+            0,
+            Math.min(this.#lastCommitted + this.policy.capabilityLookahead, head - this.policy.capabilityTipMargin),
+        )
+
         this.#capabilityProbing[i] = true
-        probe()
+        probe(target)
             .then(
                 (ok) => this.health[i].onCapability(ok),
                 () => this.health[i].onCapability(false),

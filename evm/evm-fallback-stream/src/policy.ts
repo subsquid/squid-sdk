@@ -38,6 +38,16 @@ export interface FallbackPolicy {
     /** Max age of a cached per-source head before it is re-fetched for the lag reference. */
     headTtlMs?: number
     /**
+     * Blocks ahead of the indexing frontier (last committed height) a capability probe targets, so
+     * it verifies the source can serve the data it is *about* to read. `16` by default. (§4.)
+     */
+    capabilityLookahead?: number
+    /**
+     * Blocks below the chain tip a capability probe is clamped to, so a caught-up source probes a
+     * settled block rather than the reorg-prone/maybe-unpropagated tip. `16` by default. (§4.)
+     */
+    capabilityTipMargin?: number
+    /**
      * When *every* source sits at the same stale head (the chain itself is stuck), there is
      * nothing fresher to switch to. `false` (default) holds the active source and emits a
      * `chain-stalled` signal instead of churning.
@@ -58,6 +68,8 @@ export interface ResolvedPolicy {
     maxStalenessMs: number | null
     freshnessTickMs: number
     headTtlMs: number
+    capabilityLookahead: number
+    capabilityTipMargin: number
     churnOnGlobalStall: boolean
     clock: () => number
 }
@@ -73,6 +85,8 @@ export const DEFAULT_POLICY: ResolvedPolicy = {
     maxStalenessMs: 180_000,
     freshnessTickMs: 1000,
     headTtlMs: 5000,
+    capabilityLookahead: 16,
+    capabilityTipMargin: 16,
     churnOnGlobalStall: false,
     clock: () => Date.now(),
 }
@@ -93,6 +107,8 @@ export function resolvePolicy(p?: FallbackPolicy): ResolvedPolicy {
         maxStalenessMs: orDefault(p?.maxStalenessMs, DEFAULT_POLICY.maxStalenessMs),
         freshnessTickMs: p?.freshnessTickMs ?? DEFAULT_POLICY.freshnessTickMs,
         headTtlMs: p?.headTtlMs ?? DEFAULT_POLICY.headTtlMs,
+        capabilityLookahead: p?.capabilityLookahead ?? DEFAULT_POLICY.capabilityLookahead,
+        capabilityTipMargin: p?.capabilityTipMargin ?? DEFAULT_POLICY.capabilityTipMargin,
         churnOnGlobalStall: orDefault(p?.churnOnGlobalStall, DEFAULT_POLICY.churnOnGlobalStall),
         clock: p?.clock ?? DEFAULT_POLICY.clock,
     }

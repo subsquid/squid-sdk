@@ -374,6 +374,56 @@ describe('FallbackDataSource — switch-up / recovery', () => {
         expect(fb.activeIndex).toBe(1) // unconfirmed capability ⇒ no switch-up
         expect(numbers(n.value.blocks)).toEqual([2]) // still served by s1
     })
+
+    // s0 fails (→ s1 active at block 200), then recovers and is probed as a switch-up candidate.
+    // The probe records the block the supervisor asked it to check.
+    function probeAnchorScenario(s0head: number) {
+        let now = 0
+        let probedAt: number[] = []
+        let s0 = new MockSource(
+            async function* (_req, call) {
+                if (call === 0) throw new Error('s0 down')
+                yield batch([blk(999)])
+            },
+            {head: async () => ({number: s0head, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {
+            yield batch([blk(200)])
+            yield batch([blk(201)])
+            yield batch([blk(202)])
+        })
+        let fb = new FallbackDataSource<TestBlock>({
+            sources: [
+                {name: 's0', source: s0, probeCapability: async (at) => (probedAt.push(at), false)},
+                ranked(s1, 's1'),
+            ],
+            getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
+            policy: {preferPrimary: 'eager', cooldownMs: 1000, headTtlMs: 0, maxLagBlocks: null, maxStalenessMs: null, clock: () => now},
+        })
+        return {fb, probedAt, recover: () => (now = 1000)}
+    }
+
+    it('anchors the capability probe to the committed frontier during backfill (committed + lookahead)', async () => {
+        let {fb, probedAt, recover} = probeAnchorScenario(1_000_000) // head far ahead ⇒ backfill
+        let it = fb.getStream({from: 200, to: 202})[Symbol.asyncIterator]()
+        await it.next() // [200] from s1; s0 failed → unhealthy, committed frontier = 200
+        recover() // s0 cooldown elapses → eligible to be probed
+        await it.next()
+        await wait(0) // settle the fire-and-forget probe
+
+        expect(probedAt[0]).toBe(216) // 200 (committed) + 16 (capabilityLookahead); nowhere near the tip
+    })
+
+    it('clamps the capability probe off the chain tip when caught up (head - tipMargin)', async () => {
+        let {fb, probedAt, recover} = probeAnchorScenario(210) // head just ahead ⇒ tip clamp wins
+        let it = fb.getStream({from: 200, to: 202})[Symbol.asyncIterator]()
+        await it.next()
+        recover()
+        await it.next()
+        await wait(0)
+
+        expect(probedAt[0]).toBe(194) // min(200 + 16, 210 - 16) = 194
+    })
 })
 
 const hang = () => new Promise(() => {})
