@@ -511,7 +511,6 @@ describe('FallbackDataSource — freshness (M1)', () => {
             freshnessTickMs: 5,
             headTtlMs: 0,
             maxLagBlocks: null,
-            churnOnGlobalStall: false,
             cooldownMs: 60_000,
         })
 
@@ -527,6 +526,48 @@ describe('FallbackDataSource — freshness (M1)', () => {
         expect(numbers((await pending).value.blocks)).toEqual([51])
         expect(fb.activeIndex).toBe(1)
         expect(fb.chainStalled).toBe(false) // cleared once progress resumed on the new source
+    }, 5000)
+
+    it('(d2) global stall: keeps probing the held source, and recovers when one becomes fresher', async () => {
+        // The active hangs forever; recovery must come from continued probing of the other source.
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(50)])
+            await hang()
+        })
+
+        let s1heads = [50, 50, 50] // global stall (same head) for a while...
+        let probedCapability = 0
+        let s1 = new MockSource(
+            async function* (req) {
+                expect(req.from).toBe(51)
+                yield batch([blk(51)])
+            },
+            {head: async () => ({number: s1heads.shift() ?? 51, hash: '0x'})}, // ...then it advances to 51
+        )
+        let fb = new FallbackDataSource<TestBlock>({
+            sources: [
+                ranked(s0, 's0'),
+                {name: 's1', source: s1, probeCapability: async () => (probedCapability++, {ok: true})},
+            ],
+            getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
+            policy: {maxStalenessMs: 30, freshnessTickMs: 5, headTtlMs: 0, maxLagBlocks: null, cooldownMs: 60_000},
+        })
+
+        let it = fb.getStream({from: 50, to: 100})[Symbol.asyncIterator]()
+        expect(numbers((await it.next()).value.blocks)).toEqual([50])
+
+        // While held, the supervisor keeps polling the other source — liveness *and* capability —
+        // so it is positioned to notice recovery.
+        let next = it.next()
+        await wait(60)
+        expect(fb.chainStalled).toBe(true)
+        expect(s1heads.length).toBeLessThan(3) // s1's head was (re)polled during the hold (liveness)
+        expect(probedCapability).toBeGreaterThan(0) // capability probe fired during the hold
+
+        // s1's head advances past us → fail over to it, recovering without the active ever resolving.
+        expect(numbers((await next).value.blocks)).toEqual([51])
+        expect(fb.activeIndex).toBe(1)
+        expect(fb.chainStalled).toBe(false)
     }, 5000)
 
     it('(e) slow-handler immunity: a slow downstream consumer does not mark the source stale', async () => {
