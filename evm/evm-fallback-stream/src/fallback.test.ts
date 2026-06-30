@@ -681,6 +681,23 @@ describe('FallbackDataSource — freshness (M1)', () => {
         expect(numbers(await collect(fb.getStream({from: 1, to: 2})))).toEqual([1, 2])
         expect(fb.activeIndex).toBe(0) // stayed on s0 — no spurious failover
     })
+
+    it('(i) does not arm lag while the reference is behind us (stale standby) — no spurious failover', async () => {
+        // The standby is first *behind* the active (negative lag), then jumps to the real tip while
+        // the active is still backfilling. Arming on the negative lag would let that jump trip a
+        // spurious failover; gating arming on `lag >= 0` keeps us on the active.
+        let s1heads = [40, 1_000] // behind us at 50 (lag -10), then far ahead
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(50)])
+            yield batch([blk(51)])
+            yield batch([blk(52)])
+        })
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: s1heads.shift() ?? 1_000, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        expect(numbers(await collect(fb.getStream({from: 50, to: 52})))).toEqual([50, 51, 52])
+        expect(fb.activeIndex).toBe(0) // never armed (was ahead of the reference) ⇒ no lag failover
+    })
 })
 
 describe('FallbackDataSource — getHead delegation', () => {
