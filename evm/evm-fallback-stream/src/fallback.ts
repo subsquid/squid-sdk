@@ -404,8 +404,15 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * `iterator.next()` with the source-pending staleness clock. While the request is
      * outstanding (and only then — never while parked at `yield`), a ticker checks how long it
      * has been pending; past `maxStalenessMs` it fails the source over **iff** a fresher source
-     * is ahead. If every source sits at the same stale head, it is a global chain stall: hold the
-     * source and flag `chainStalled` instead of churning (unless `churnOnGlobalStall`).
+     * is ahead. If every source sits at the same stale head, it is a global chain stall: there is
+     * nothing fresher to switch to, so hold the active source and flag `chainStalled` rather than
+     * churn pointlessly through sources that are all equally stuck.
+     *
+     * The hold is not passive: each time staleness re-trips, `chainHeadOthers` re-polls the other
+     * sources — which doubles as their liveness/capability probe — so the supervisor keeps watching
+     * for recovery. It leaves the hold the moment any of: the active source delivers the next batch
+     * (chain resumed where we are), the active source errors (ordinary failover), or another source
+     * advances past us (`others > lastNumber` ⇒ `STALE`, fail over to it).
      */
     private async nextWithStaleness(
         iterator: AsyncIterator<BlockBatch<B>>,
@@ -444,14 +451,17 @@ export class FallbackDataSource<B> implements DataSource<B> {
             let elapsed = this.policy.clock() - start
             this.staleness = elapsed
             if (elapsed > this.policy.maxStalenessMs) {
+                // Re-polling the other sources both decides failover and (re)probes their
+                // liveness/capability, so a held source keeps noticing when the chain comes back.
                 let others = await this.chainHeadOthers(active)
                 if (others != null && others > lastNumber) {
                     this.chainStalled = false
                     return STALE
                 }
+                // Global stall: every source is equally stuck, so there is nowhere fresher to go.
+                // Hold the active source (re-arm and keep waiting + probing) rather than churn.
                 this.chainStalled = true
-                if (this.policy.churnOnGlobalStall) return STALE
-                start = this.policy.clock() // hold; re-arm and keep waiting
+                start = this.policy.clock()
             }
         }
     }
