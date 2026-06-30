@@ -4,6 +4,7 @@ import type {Rpc} from '@subsquid/evm-rpc'
 import type {BlockRef} from '@subsquid/util-internal-data-source'
 import type {RangeRequestList} from '@subsquid/util-internal-range'
 
+import {CapabilityProbeOptions, makeCapabilityProbe} from '../capability'
 import {FallbackDataSource, RankedSource} from '../fallback'
 import type {FallbackPolicy} from '../policy'
 
@@ -49,6 +50,14 @@ export interface EvmFallbackOptions<F extends FieldSelection> {
     requests: RangeRequestList<DataRequest>
     sources: EvmFallbackSourceConfig<F>[]
     policy?: FallbackPolicy
+    /**
+     * Attach a generic capability probe to every source (default `true`): a source counts as
+     * `healthy` only once it confirms it can serve the configured data at the indexing frontier —
+     * catching a reachable-but-incapable node (trace/`debug_` disabled, pruned state) before a
+     * switch-up promotes it. Pass `false` to govern health by liveness alone, or `{timeoutMs}` to
+     * tune the probe.
+     */
+    capabilityProbe?: boolean | CapabilityProbeOptions
 }
 
 const evmBlockRef = (b: Block<any>): BlockRef => ({number: b.header.number, hash: b.header.hash})
@@ -73,7 +82,12 @@ export function createEvmFallbackSource<F extends FieldSelection>(
                       strideConcurrency: cfg.strideConcurrency,
                   })
 
-        return {name: cfg.name ?? `${cfg.type}-${i}`, source}
+        let probeCapability =
+            options.capabilityProbe === false
+                ? undefined
+                : makeCapabilityProbe(source, options.capabilityProbe === true ? undefined : options.capabilityProbe)
+
+        return {name: cfg.name ?? `${cfg.type}-${i}`, source, probeCapability}
     })
 
     return new FallbackDataSource<Block<F>>({
