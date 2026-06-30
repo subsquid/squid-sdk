@@ -1,6 +1,8 @@
 import {BlockBatch, BlockRef, BlockStream, DataSource, StreamRequest, isForkException} from '@subsquid/util-internal-data-source'
 import {FiniteRange} from '@subsquid/util-internal-range'
 
+import {ProbeResult} from './capability'
+import {FallbackLogger, SourceErrorInfo, classifyError, consoleLogger, freshnessFailure} from './diagnostics'
 import {SourceHealth} from './health'
 import {AllSourcesDownError, FallbackPolicy, Health, ResolvedPolicy, resolvePolicy} from './policy'
 import {Selector} from './selector'
@@ -16,7 +18,7 @@ export interface FallbackMetrics {
     staleness: number
     chainStalled: boolean
     chainHead: number | undefined
-    sources: {name: string; health: Health; active: boolean}[]
+    sources: {name: string; health: Health; active: boolean; cause?: SourceErrorInfo}[]
 }
 
 export interface RankedSource<B> {
@@ -26,9 +28,9 @@ export interface RankedSource<B> {
      * Full, infrequent capability probe — verifies the source can still serve the query's data.
      * `atBlock` is the block height the supervisor wants probed (near the current indexing
      * position, clamped off the chain tip); the probe should confirm the source can serve the
-     * configured data *at that depth* and resolve `false` if it cannot.
+     * configured data *at that depth* and resolve not-`ok` (with a cause) if it cannot.
      */
-    probeCapability?: (atBlock: number) => Promise<boolean>
+    probeCapability?: (atBlock: number) => Promise<ProbeResult>
 }
 
 export interface FallbackDataSourceOptions<B> {
@@ -36,6 +38,12 @@ export interface FallbackDataSourceOptions<B> {
     /** Extracts a source's chain position from a yielded block (for resume after a switch). */
     getBlockRef: (block: B) => BlockRef
     policy?: FallbackPolicy
+    /**
+     * Where to log the reason a source was marked unhealthy (full detail, incl. the request).
+     * Defaults to {@link consoleLogger}; pass the processor's logger to integrate, or a no-op to
+     * silence. The bounded `reason`/`code`/`check` also surface through {@link metrics}.
+     */
+    logger?: FallbackLogger
 }
 
 /**
@@ -53,6 +61,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
     readonly policy: ResolvedPolicy
     readonly health: SourceHealth[]
     private selector: Selector
+    private logger: FallbackLogger
 
     /** Observable state (for metrics, §4). */
     activeIndex: number | undefined
@@ -82,6 +91,34 @@ export class FallbackDataSource<B> implements DataSource<B> {
         this.policy = resolvePolicy(options.policy)
         this.health = this.sources.map((s) => new SourceHealth(this.policy, !!s.probeCapability))
         this.selector = new Selector(this.health)
+        this.logger = options.logger ?? consoleLogger
+    }
+
+    /**
+     * Feed a failure to a source's health (the `check` selects the signal), then log *why* — but
+     * only when it actually flips the source unhealthy, so a log line always marks a real transition
+     * (liveness fails are noisy until they trip the threshold). The bounded `reason`/`code`/`check`
+     * also reach {@link metrics}; the full `detail` (incl. the request) is logged, never a label.
+     */
+    private failSource(i: number, cause: SourceErrorInfo): void {
+        let before = this.health[i].state
+        switch (cause.check) {
+            case 'stream':
+                this.health[i].onStreamError(cause)
+                break
+            case 'liveness':
+                this.health[i].onLivenessFail(cause)
+                break
+            case 'capability':
+                this.health[i].onCapability(false, cause)
+                break
+        }
+        if (before !== 'unhealthy' && this.health[i].state === 'unhealthy') {
+            this.logger.warn(
+                {source: this.sources[i].name, check: cause.check, reason: cause.reason, code: cause.code},
+                `fallback source "${this.sources[i].name}" marked unhealthy: ${cause.detail}`,
+            )
+        }
     }
 
     getStream(req: StreamRequest): BlockStream<B> {
@@ -124,7 +161,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         let next = await this.nextWithStaleness(iterator, active, lastNumber)
                         if (next === STALE) {
                             // Source stopped delivering while a fresher source is ahead.
-                            this.health[active].onStreamError()
+                            this.failSource(
+                                active,
+                                freshnessFailure('stream', 'stale', 'no batch progress while a fresher source was ahead'),
+                            )
                             break
                         }
                         if (next.done) return // bounded stream finished
@@ -142,7 +182,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
                         // Lag-based freshness: the active fell too far behind the independent head.
                         if (await this.laggingTooFar(active, lastNumber)) {
-                            this.health[active].onStreamError()
+                            this.failSource(
+                                active,
+                                freshnessFailure('stream', 'lag', `fell behind the chain head by more than ${this.policy.maxLagBlocks} blocks`),
+                            )
                             break
                         }
 
@@ -162,7 +205,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                 }
             } catch (e) {
                 if (isForkException(e)) throw e // propagate; do NOT switch (§3.4)
-                this.health[active].onStreamError()
+                this.failSource(active, classifyError('stream', e))
                 // re-select and resume from lastCommitted on the next iteration
             }
         }
@@ -190,8 +233,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
             try {
                 return await get(this.sources[active].source)
-            } catch {
-                this.health[active].onStreamError()
+            } catch (e) {
+                this.failSource(active, classifyError('stream', e))
             }
         }
     }
@@ -217,6 +260,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                 name: s.name,
                 health: this.health[i].state,
                 active: this.activeIndex === i,
+                cause: this.health[i].cause,
             })),
         }
     }
@@ -265,9 +309,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
             this.health[i].onLivenessPass()
             this.#maybeProbeCapability(i)
             return head.number
-        } catch {
+        } catch (e) {
             this.#headCache[i] = {value: undefined, at: now}
-            this.health[i].onLivenessFail()
+            this.failSource(i, classifyError('liveness', e))
             return undefined
         }
     }
@@ -317,8 +361,14 @@ export class FallbackDataSource<B> implements DataSource<B> {
         this.#capabilityProbing[i] = true
         probe(target)
             .then(
-                (ok) => this.health[i].onCapability(ok),
-                () => this.health[i].onCapability(false),
+                (r) => {
+                    if (r.ok) {
+                        this.health[i].onCapability(true)
+                    } else {
+                        this.failSource(i, r.cause ?? freshnessFailure('capability', 'stale', 'probe reported not-capable'))
+                    }
+                },
+                (e) => this.failSource(i, classifyError('capability', e)),
             )
             .finally(() => {
                 this.#capabilityProbing[i] = false
