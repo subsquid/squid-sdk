@@ -1,8 +1,9 @@
+import {Logger, createLogger} from '@subsquid/logger'
 import {BlockBatch, BlockRef, BlockStream, DataSource, StreamRequest, isForkException} from '@subsquid/util-internal-data-source'
 import {FiniteRange} from '@subsquid/util-internal-range'
 
 import {ProbeResult} from './capability'
-import {FallbackLogger, SourceErrorInfo, classifyError, consoleLogger, freshnessFailure} from './diagnostics'
+import {SourceErrorInfo, classifyError, freshnessFailure} from './diagnostics'
 import {SourceHealth} from './health'
 import {AllSourcesDownError, FallbackPolicy, Health, ResolvedPolicy, resolvePolicy} from './policy'
 import {Selector} from './selector'
@@ -38,12 +39,6 @@ export interface FallbackDataSourceOptions<B> {
     /** Extracts a source's chain position from a yielded block (for resume after a switch). */
     getBlockRef: (block: B) => BlockRef
     policy?: FallbackPolicy
-    /**
-     * Where to log the reason a source was marked unhealthy (full detail, incl. the request).
-     * Defaults to {@link consoleLogger}; pass the processor's logger to integrate, or a no-op to
-     * silence. The bounded `reason`/`code`/`check` also surface through {@link metrics}.
-     */
-    logger?: FallbackLogger
 }
 
 /**
@@ -61,7 +56,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
     readonly policy: ResolvedPolicy
     readonly health: SourceHealth[]
     private selector: Selector
-    private logger: FallbackLogger
+    // Static, matching the convention of sibling data packages (`createLogger('sqd:evm-rpc')` etc.);
+    // the cause is also exported through `metrics()` for callers that prefer a metrics surface.
+    private logger: Logger = createLogger('sqd:evm-fallback-stream')
 
     /** Observable state (for metrics, §4). */
     activeIndex: number | undefined
@@ -91,7 +88,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
         this.policy = resolvePolicy(options.policy)
         this.health = this.sources.map((s) => new SourceHealth(this.policy, !!s.probeCapability))
         this.selector = new Selector(this.health)
-        this.logger = options.logger ?? consoleLogger
     }
 
     /**
