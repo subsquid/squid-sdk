@@ -12,7 +12,12 @@ const snapshot: FallbackMetrics = {
     chainStalled: true,
     chainHead: 100,
     sources: [
-        {name: 'portal', health: 'unhealthy', active: false},
+        {
+            name: 'portal',
+            health: 'unhealthy',
+            active: false,
+            cause: {check: 'capability', reason: 'http', code: 400, detail: 'capability check failed: http 400, request: …'},
+        },
         {name: 'rpc', health: 'unknown', active: true},
     ],
 }
@@ -26,8 +31,13 @@ describe('fallbackMetricsSink', () => {
 
         expect(text).toContain('sqd_fallback_active{source="rpc"} 1')
         expect(text).toContain('sqd_fallback_active{source="portal"} 0')
-        expect(text).toContain('sqd_fallback_source_health{source="rpc",state="unknown"} 1')
-        expect(text).toContain('sqd_fallback_source_health{source="rpc",state="healthy"} 0')
+        expect(text).toContain('sqd_fallback_source_health{source="rpc",state="unknown",check="",reason="",code=""} 1')
+        expect(text).toContain('sqd_fallback_source_health{source="rpc",state="healthy",check="",reason="",code=""} 0')
+        // The unhealthy row carries the cause as bounded labels; the request stays out of metrics.
+        expect(text).toContain(
+            'sqd_fallback_source_health{source="portal",state="unhealthy",check="capability",reason="http",code="400"} 1',
+        )
+        expect(text).not.toContain('capability check failed') // the full detail never leaks into metrics
         expect(text).toContain('sqd_fallback_lag_blocks 7')
         expect(text).toContain('sqd_fallback_staleness_ms 1500')
         expect(text).toContain('sqd_fallback_chain_stalled 1')

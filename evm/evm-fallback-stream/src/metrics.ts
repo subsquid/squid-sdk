@@ -38,12 +38,31 @@ export function fallbackMetricsSink(source: FallbackMetricsSource, prefix = 'sqd
 
             new Gauge({
                 name: `${prefix}_source_health`,
-                help: 'Per-source trinary health (1 for the current state, 0 otherwise)',
-                labelNames: ['source', 'state'],
+                help:
+                    'Per-source trinary health (1 for the current state, 0 otherwise). The unhealthy ' +
+                    'row carries the cause as `check`/`reason`/`code` labels (empty otherwise); the ' +
+                    'full detail incl. the request is in logs, never a label.',
+                labelNames: ['source', 'state', 'check', 'reason', 'code'],
                 registers: [registry],
                 collect() {
+                    // Reset so a previous scrape's cause labels (e.g. an old `code`) don't linger as
+                    // stale series once the source recovers or fails for a different reason.
+                    this.reset()
                     for (let s of source.metrics().sources) {
-                        for (let state of HEALTH_STATES) this.set({source: s.name, state}, s.health === state ? 1 : 0)
+                        for (let state of HEALTH_STATES) {
+                            // Only the current, unhealthy state row gets cause labels.
+                            let c = state === 'unhealthy' ? s.cause : undefined
+                            this.set(
+                                {
+                                    source: s.name,
+                                    state,
+                                    check: c?.check ?? '',
+                                    reason: c?.reason ?? '',
+                                    code: c?.code != null ? String(c.code) : '',
+                                },
+                                s.health === state ? 1 : 0,
+                            )
+                        }
                     }
                 },
             })
