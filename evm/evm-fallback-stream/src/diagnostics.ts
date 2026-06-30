@@ -29,18 +29,6 @@ export interface SourceErrorInfo {
     detail: string
 }
 
-/** Minimal structural logger so the package needn't depend on a concrete logging lib. */
-export interface FallbackLogger {
-    warn(obj: Record<string, unknown>, msg: string): void
-}
-
-/** Default logger: surfaces causes on `console.warn` so they appear in logs without extra wiring. */
-export const consoleLogger: FallbackLogger = {
-    warn(obj, msg) {
-        console.warn(msg, obj)
-    },
-}
-
 /**
  * Strip credentials from a URL before it reaches a log line: drop userinfo + query string (where
  * `?apikey=…` lives) and mask key-like path segments (SQD `sqd_…` tokens and long opaque ids).

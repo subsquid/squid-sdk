@@ -1,12 +1,14 @@
 import {BlockBatch, BlockRef, BlockStream, DataSource, ForkException, StreamRequest} from '@subsquid/util-internal-data-source'
 import {describe, expect, it} from 'vitest'
 
-import {FallbackLogger} from './diagnostics'
+import {LogLevel, setLogLevelCallback} from '@subsquid/logger'
+
 import {FallbackDataSource, RankedSource} from './fallback'
 import {FallbackPolicy} from './policy'
 
-/** Keep the default `console.warn` cause-logging out of the test output. */
-const silent: FallbackLogger = {warn() {}}
+// The supervisor logs its (static) cause logger at WARN; raise the floor to ERROR for the
+// `sqd:evm-fallback-stream` namespace so the expected unhealthy transitions don't spam test output.
+setLogLevelCallback((ns) => (ns.startsWith('sqd:evm-fallback') ? LogLevel.ERROR : undefined))
 
 interface TestBlock {
     header: {number: number; hash: string}
@@ -59,7 +61,6 @@ function fallback(sources: DataSource<TestBlock>[], policy?: FallbackPolicy) {
         sources: sources.map((s, i) => ranked(s, `s${i}`)),
         getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
         policy,
-        logger: silent,
     })
 }
 
@@ -243,7 +244,6 @@ describe('FallbackDataSource — switch-up / recovery', () => {
         let fb = new FallbackDataSource<TestBlock>({
             sources: [ranked(s0, 's0'), ranked(s1, 's1')],
             getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
-            logger: silent,
             policy: {preferPrimary, cooldownMs: 1000, clock: () => now},
         })
         return {fb, s0, s1, recover: () => (now = 1000)}
@@ -308,7 +308,6 @@ describe('FallbackDataSource — switch-up / recovery', () => {
         let fb = new FallbackDataSource<TestBlock>({
             sources: [ranked(s0, 's0'), ranked(s1, 's1')],
             getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
-            logger: silent,
             policy: {
                 preferPrimary: 'eager',
                 cooldownMs: 1000,
@@ -360,7 +359,6 @@ describe('FallbackDataSource — switch-up / recovery', () => {
                 ranked(s1, 's1'),
             ],
             getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
-            logger: silent,
             policy: {
                 preferPrimary: 'eager',
                 cooldownMs: 1000,
@@ -406,7 +404,6 @@ describe('FallbackDataSource — switch-up / recovery', () => {
                 ranked(s1, 's1'),
             ],
             getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
-            logger: silent,
             policy: {preferPrimary: 'eager', cooldownMs: 1000, headTtlMs: 0, maxLagBlocks: null, maxStalenessMs: null, clock: () => now},
         })
         return {fb, probedAt, recover: () => (now = 1000)}
