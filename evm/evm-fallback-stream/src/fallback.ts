@@ -487,6 +487,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
     /** No source is eligible (all unhealthy): nothing is being driven, so report no active source. */
     private clearActive(): void {
         this.activeIndex = undefined
+        // The freshness gauges describe the active source; with none, they would otherwise keep
+        // reporting the last source's lag/staleness/stall, so clear them for the all-down gap.
+        this.lag = 0
+        this.staleness = 0
+        this.chainStalled = false
+        this.chainHead = undefined
     }
 }
 
