@@ -11,12 +11,15 @@ import {Health, ResolvedPolicy} from './policy'
  *  - `unknown` → `healthy` when capability is confirmed AND `M` consecutive liveness passes.
  *
  * Sources without a capability probe treat capability as always-confirmed, so liveness alone
- * can promote them.
+ * can promote them. For a source *with* a probe, capability is dropped whenever it goes
+ * unhealthy, so it can never return to `healthy` until a fresh probe succeeds — liveness alone
+ * cannot resurrect a node that keeps failing the real query (the churn loop).
  */
 export class SourceHealth {
     #state: Health = 'unknown'
     #livenessPass = 0
     #livenessFail = 0
+    #hasCapabilityProbe: boolean
     #capabilityOk: boolean
     #cooldownUntil = 0
 
@@ -24,6 +27,7 @@ export class SourceHealth {
         private policy: ResolvedPolicy,
         hasCapabilityProbe: boolean,
     ) {
+        this.#hasCapabilityProbe = hasCapabilityProbe
         this.#capabilityOk = !hasCapabilityProbe
     }
 
@@ -91,6 +95,10 @@ export class SourceHealth {
         this.#cooldownUntil = this.policy.clock() + this.policy.cooldownMs
         this.#livenessPass = 0
         this.#livenessFail = 0
+        // A probed source must re-prove it can serve the query before it can recover; otherwise a
+        // node that stays reachable but keeps failing the real query would flap back to healthy on
+        // liveness alone, get re-promoted, fail again — the churn loop.
+        this.#capabilityOk = !this.#hasCapabilityProbe
     }
 
     #toUnknown(): void {
