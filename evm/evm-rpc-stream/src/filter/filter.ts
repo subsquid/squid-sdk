@@ -50,7 +50,7 @@ function addressCompare(a: number[], b: number[]): number {
     return a.length - b.length
 }
 
-function isDescendent(parent: AnyTrace, child: AnyTrace): boolean {
+function isDescendant(parent: AnyTrace, child: AnyTrace): boolean {
     let pa = traceAddressOf(parent)
     let ca = traceAddressOf(child)
     if (parent.transactionIndex != child.transactionIndex) return false
@@ -84,7 +84,7 @@ export function setUpRelations(block: AnyBlock): Relations {
         let children: AnyTrace[] = []
         for (let j = i + 1; j < traces.length; j++) {
             let next = traces[j]
-            if (isDescendent(rec, next)) {
+            if (isDescendant(rec, next)) {
                 children.push(next)
                 if (traceAddressOf(next).length == traceAddressOf(rec).length + 1) {
                     relations.traceParent.set(next, rec)
