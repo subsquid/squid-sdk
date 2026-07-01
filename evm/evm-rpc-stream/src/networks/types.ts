@@ -1,8 +1,8 @@
 import {RpcMethodOptions} from '../source/data-source'
 
 /**
- * Validation + finality settings (the "C1" deploy-config layer — `CHAIN_SPECIFIC.md` §2) passed to
- * the `@subsquid/evm-rpc` `Rpc`. Keys mirror `RpcOptions`; all default off, presets opt in.
+ * Validation + finality settings (the per-chain "C1" deploy-config layer) passed to the
+ * `@subsquid/evm-rpc` `Rpc`. Keys mirror `RpcOptions`; all default off, presets opt in.
  */
 export interface RpcValidationOptions {
     finalityConfirmation?: number

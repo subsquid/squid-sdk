@@ -39,7 +39,7 @@ export interface NetworkOverrides {
 /**
  * Resolve the effective C1 settings: `preset(network)` overlaid with explicit `overrides`. An
  * unknown network with no overrides resolves to empty (safe) settings — the caller should warn
- * that dataset parity isn't guaranteed (ties to the `CHAIN_SPECIFIC.md` §4.1 tiers).
+ * that dataset parity isn't guaranteed without a preset or explicit per-chain config.
  */
 export function resolveNetworkSettings(
     network?: string | number,
