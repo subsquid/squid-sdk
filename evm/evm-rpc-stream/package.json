@@ -1,0 +1,38 @@
+{
+  "name": "@subsquid/evm-rpc-stream",
+  "version": "0.0.1",
+  "description": "RPC-backed EVM data source with Portal-compatible output",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run",
+    "test:lfs": "VITEST_LFS=1 vitest --run"
+  },
+  "dependencies": {
+    "@subsquid/evm-normalization": "^0.0.2",
+    "@subsquid/evm-rpc": "^0.0.2",
+    "@subsquid/evm-stream": "^0.1.1",
+    "@subsquid/portal-client": "^0.5.2",
+    "@subsquid/util-internal": "^3.3.1",
+    "@subsquid/util-internal-data-source": "^0.0.0",
+    "@subsquid/util-internal-json": "^1.2.4",
+    "@subsquid/util-internal-processor-tools": "^4.4.0",
+    "@subsquid/util-internal-range": "^0.3.0",
+    "@subsquid/util-internal-validation": "^0.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
+  }
+}

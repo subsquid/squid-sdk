@@ -106,6 +106,9 @@ importers:
       '@rush-temp/evm-dump':
         specifier: file:./projects/evm-dump.tgz
         version: file:projects/evm-dump.tgz
+      '@rush-temp/evm-fallback-stream':
+        specifier: file:./projects/evm-fallback-stream.tgz
+        version: file:projects/evm-fallback-stream.tgz(esbuild@0.27.7)(tsx@4.21.0)
       '@rush-temp/evm-ingest':
         specifier: file:./projects/evm-ingest.tgz
         version: file:projects/evm-ingest.tgz
@@ -121,6 +124,9 @@ importers:
       '@rush-temp/evm-rpc':
         specifier: file:./projects/evm-rpc.tgz
         version: file:projects/evm-rpc.tgz(esbuild@0.27.7)(supports-color@8.1.1)
+      '@rush-temp/evm-rpc-stream':
+        specifier: file:./projects/evm-rpc-stream.tgz
+        version: file:projects/evm-rpc-stream.tgz(esbuild@0.27.7)(tsx@4.21.0)
       '@rush-temp/evm-stream':
         specifier: file:./projects/evm-stream.tgz
         version: file:projects/evm-stream.tgz(esbuild@0.27.7)(tsx@4.21.0)
@@ -1426,6 +1432,10 @@ packages:
     resolution: {integrity: sha512-rqcHwziUf0VvRoX14aHDZx5MnhwMgqC8E2L+eyhnKyITapLFrvruNMQvvx2/aWcj0IA126oQHZzTyZLnAahWWw==, tarball: file:projects/evm-dump.tgz}
     version: 0.0.0
 
+  '@rush-temp/evm-fallback-stream@file:projects/evm-fallback-stream.tgz':
+    resolution: {integrity: sha512-UcuV1qt5XhKDE67brYRqYH/L7O2q72M08KC/AP6ZMpHq6KjllwU/dijBdq32T6MZsfHK47jpFB6FTpgMOI9XOA==, tarball: file:projects/evm-fallback-stream.tgz}
+    version: 0.0.0
+
   '@rush-temp/evm-ingest@file:projects/evm-ingest.tgz':
     resolution: {integrity: sha512-oe+C4nTT5174FXmfcg+hc1L9pIMAgm4dW8ndpEYdY1kZGE1tLASwFWcDtBU4/70euBcImc0KonDi4OzxYXjWOw==, tarball: file:projects/evm-ingest.tgz}
     version: 0.0.0
@@ -1440,6 +1450,10 @@ packages:
 
   '@rush-temp/evm-processor@file:projects/evm-processor.tgz':
     resolution: {integrity: sha512-CtsvkTQd5xtR8x1EViqXoyUH0zU6vd2Y/8DEarmQHlQSg3yUWsZOhZPHhbAPn9aFs5cOtXoefEOvEh1Xi/8hog==, tarball: file:projects/evm-processor.tgz}
+    version: 0.0.0
+
+  '@rush-temp/evm-rpc-stream@file:projects/evm-rpc-stream.tgz':
+    resolution: {integrity: sha512-ICNspEEWet1sf2RlbyayeTCvnNp/DS+Kbkib3ddlrNkqHUED/z3NOgoLWfbddhjymP38ctpJ4MmV1ncC9ZP3LA==, tarball: file:projects/evm-rpc-stream.tgz}
     version: 0.0.0
 
   '@rush-temp/evm-rpc@file:projects/evm-rpc.tgz':
@@ -5848,6 +5862,36 @@ snapshots:
       '@types/node': 24.0.15
       typescript: 5.5.4
 
+  '@rush-temp/evm-fallback-stream@file:projects/evm-fallback-stream.tgz(esbuild@0.27.7)(tsx@4.21.0)':
+    dependencies:
+      '@types/node': 24.0.15
+      prom-client: 14.2.0
+      typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(esbuild@0.27.7)(tsx@4.21.0)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
+
   '@rush-temp/evm-ingest@file:projects/evm-ingest.tgz':
     dependencies:
       '@types/node': 24.0.15
@@ -5888,6 +5932,35 @@ snapshots:
       typescript: 5.5.4
 
   '@rush-temp/evm-processor@file:projects/evm-processor.tgz(esbuild@0.27.7)(tsx@4.21.0)':
+    dependencies:
+      '@types/node': 24.0.15
+      typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(esbuild@0.27.7)(tsx@4.21.0)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
+
+  '@rush-temp/evm-rpc-stream@file:projects/evm-rpc-stream.tgz(esbuild@0.27.7)(tsx@4.21.0)':
     dependencies:
       '@types/node': 24.0.15
       typescript: 5.5.4

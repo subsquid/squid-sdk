@@ -466,13 +466,13 @@
       "packageName": "@subsquid/evm-rpc",
       "projectFolder": "evm/evm-rpc",
       "shouldPublish": true,
-      "versionPolicyName": "docker"
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/evm-normalization",
       "projectFolder": "evm/evm-normalization",
       "shouldPublish": true,
-      "versionPolicyName": "docker"
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/evm-processor",
@@ -483,6 +483,18 @@
     {
       "packageName": "@subsquid/evm-stream",
       "projectFolder": "evm/evm-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-rpc-stream",
+      "projectFolder": "evm/evm-rpc-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-fallback-stream",
+      "projectFolder": "evm/evm-fallback-stream",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
