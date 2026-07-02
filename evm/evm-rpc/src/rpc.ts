@@ -111,7 +111,11 @@ export class Rpc {
             qtyOrCommitment = commitment
         }
         let block = await this.call('eth_getBlockByNumber', [qtyOrCommitment, false], {
-            validateResult: getResultValidator(GetBlock)
+            validateResult: getResultValidator(GetBlock),
+            validateError: info => {
+                if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
+                throw new RpcError(info)
+            }
         })
         return {
             number: qty2Int(block.number),
