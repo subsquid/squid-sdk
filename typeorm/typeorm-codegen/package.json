@@ -16,9 +16,11 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run"
   },
   "dependencies": {
+    "@subsquid/logger": "^1.6.0",
     "@subsquid/openreader": "^5.5.0",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-code-printer": "^1.2.2",
@@ -27,6 +29,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }

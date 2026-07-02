@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-codegen",
+      "comment": "Prune entity table names that exceed the PostgreSQL identifier length limit (63 bytes) instead of letting Postgres truncate them silently. A warning is emitted for every pruned name and codegen now fails if two entities collide within the limit. This keeps generated schema and TypeORM migrations consistent (previously over-long names broke `squid-typeorm-migration generate`/`apply`).",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen"
+}
