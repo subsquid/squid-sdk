@@ -1,13 +1,35 @@
 import type {Entity, Enum, JsonObject, Model, Prop, Union} from '@subsquid/openreader/lib/model'
+import {createLogger} from '@subsquid/logger'
 import {unexpectedCase} from '@subsquid/util-internal'
 import {OutDir, Output} from '@subsquid/util-internal-code-printer'
-import {toCamelCase} from '@subsquid/util-naming'
+import {toCamelCase, toSnakeCase} from '@subsquid/util-naming'
 import assert from 'assert'
 import * as path from 'path'
 
 
+const log = createLogger('sqd:typeorm-codegen')
+
+/**
+ * PostgreSQL silently truncates any identifier longer than `NAMEDATALEN - 1`
+ * (63 bytes with the default build) when it is stored in the catalog. That
+ * breaks TypeORM migrations: the name the ORM derives from the entity no longer
+ * matches the truncated name in the database, so `squid-typeorm-migration
+ * generate` keeps re-emitting `CREATE TABLE` for the affected entity and
+ * `apply` then fails with `relation "..." already exists`.
+ *
+ * To keep the generated schema self-consistent we prune over-long table names
+ * ourselves, deterministically and identically to Postgres' own truncation, and
+ * surface the situation to the user instead of letting it fail downstream.
+ *
+ * GraphQL type names are restricted to ASCII letters, digits and underscores,
+ * and `toSnakeCase` keeps them ASCII, so byte length equals string length here.
+ */
+const POSTGRES_MAX_IDENTIFIER_LENGTH = 63
+
+
 export function generateOrmModels(model: Model, dir: OutDir): void {
     const variants = collectVariants(model)
+    const tableNames = resolveTableNames(model)
     const index = dir.file('index.ts')
 
     for (const name in model) {
@@ -44,7 +66,14 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
             imports.useTypeormStore('Index')
             out.line(`@Index_([${index.fields.map(f => `"${f.name}"`).join(', ')}], {unique: ${!!index.unique}})`)
         })
-        out.line('@Entity_()')
+        const tableName = tableNames.get(name)!
+        if (tableName === toSnakeCase(name)) {
+            out.line('@Entity_()')
+        } else {
+            // Name was pruned to fit the PostgreSQL identifier limit; pin it
+            // explicitly so the ORM and the database agree on it.
+            out.line(`@Entity_("${tableName}")`)
+        }
         out.block(`export class ${name}`, () => {
             out.block(`constructor(props?: Partial<${name}>)`, () => {
                 out.line('Object.assign(this, props)')
@@ -476,6 +505,43 @@ function getEnumMaxLength(model: Model, enumName: string): number {
     const e = model[enumName]
     assert(e.kind === 'enum')
     return Object.keys(e.values).reduce((max, v) => Math.max(max, v.length), 0)
+}
+
+
+/**
+ * Resolve the database table name for every entity, pruning any name that would
+ * overflow PostgreSQL's identifier length limit. Emits a warning for each pruned
+ * name and throws if two entities end up mapped to the same table name — a
+ * collision Postgres could not have disambiguated either.
+ */
+export function resolveTableNames(model: Model): Map<string, string> {
+    const tableNames = new Map<string, string>()
+    const owners = new Map<string, string>()
+    for (const name in model) {
+        if (model[name].kind !== 'entity') continue
+        const fullName = toSnakeCase(name)
+        let tableName = fullName
+        if (tableName.length > POSTGRES_MAX_IDENTIFIER_LENGTH) {
+            tableName = tableName.slice(0, POSTGRES_MAX_IDENTIFIER_LENGTH)
+            log.warn(
+                `Table name "${fullName}" (entity "${name}") exceeds the PostgreSQL identifier ` +
+                `length limit of ${POSTGRES_MAX_IDENTIFIER_LENGTH} bytes and will be truncated to ` +
+                `"${tableName}". Consider shortening the entity name.`
+            )
+        }
+        const owner = owners.get(tableName)
+        if (owner != null) {
+            throw new Error(
+                `Entities "${owner}" and "${name}" both map to table name "${tableName}"` +
+                (tableName === fullName ? '' : ` after truncation to ${POSTGRES_MAX_IDENTIFIER_LENGTH} bytes`) +
+                `. Table names must be unique within the PostgreSQL identifier length limit — ` +
+                `rename one of the entities.`
+            )
+        }
+        owners.set(tableName, name)
+        tableNames.set(name, tableName)
+    }
+    return tableNames
 }
 
 
