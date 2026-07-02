@@ -1,6 +1,17 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Wed, 15 Apr 2026 14:45:11 GMT and should not be manually modified.
+This log was last generated on Thu, 02 Jul 2026 17:46:26 GMT and should not be manually modified.
+
+## 2.3.0
+Thu, 02 Jul 2026 17:46:26 GMT
+
+### Minor changes
+
+- Prune entity table names that exceed the PostgreSQL identifier length limit (63 bytes) instead of letting Postgres truncate them silently. A warning is emitted for every pruned name and codegen now fails if two entities collide within the limit. This keeps generated schema and TypeORM migrations consistent (previously over-long names broke `squid-typeorm-migration generate`/`apply`).
+
+### Patches
+
+- Add a Vitest test suite covering `resolveTableNames` (identifier-limit truncation, collisions, warnings) and `generateOrmModels`/`generateFtsMigrations` across every schema-file feature (scalars, arrays, indexes, relations, `@derivedFrom` lookups, `@query` interfaces, typed JSON, unions, fulltext).
 
 ## 2.2.0
 Wed, 15 Apr 2026 14:45:11 GMT
