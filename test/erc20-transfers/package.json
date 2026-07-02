@@ -22,7 +22,7 @@
     "@subsquid/evm-typegen": "^5.0.0",
     "@subsquid/evm-codec": "^1.0.0",
     "@subsquid/evm-abi": "^1.0.0",
-    "@subsquid/typeorm-codegen": "^2.2.0",
+    "@subsquid/typeorm-codegen": "^2.3.0",
     "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }
