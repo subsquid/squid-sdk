@@ -38,6 +38,14 @@ export interface FallbackPolicy {
     /** Max age of a cached per-source head before it is re-fetched for the lag reference. */
     headTtlMs?: number
     /**
+     * Time-box each independent head poll. Because a head poll is `await`ed on the batch-critical
+     * path (lag check, staleness hold, switch-up), an unbounded one lets a *sick standby* — TCP up
+     * but not responding — stall an otherwise-healthy active source. A poll exceeding this counts as
+     * a liveness failure for that source and returns no head. `500` ms by default; `null` disables
+     * the guard and relies on the underlying client's own request timeout.
+     */
+    headPollTimeoutMs?: number | null
+    /**
      * Blocks ahead of the indexing frontier (last committed height) a capability probe targets, so
      * it verifies the source can serve the data it is *about* to read. `16` by default. (§4.)
      */
@@ -62,6 +70,7 @@ export interface ResolvedPolicy {
     maxStalenessMs: number | null
     freshnessTickMs: number
     headTtlMs: number
+    headPollTimeoutMs: number | null
     capabilityLookahead: number
     capabilityTipMargin: number
     clock: () => number
@@ -78,6 +87,7 @@ export const DEFAULT_POLICY: ResolvedPolicy = {
     maxStalenessMs: 180_000,
     freshnessTickMs: 1000,
     headTtlMs: 5000,
+    headPollTimeoutMs: 500,
     capabilityLookahead: 16,
     capabilityTipMargin: 16,
     clock: () => Date.now(),
@@ -99,6 +109,7 @@ export function resolvePolicy(p?: FallbackPolicy): ResolvedPolicy {
         maxStalenessMs: orDefault(p?.maxStalenessMs, DEFAULT_POLICY.maxStalenessMs),
         freshnessTickMs: p?.freshnessTickMs ?? DEFAULT_POLICY.freshnessTickMs,
         headTtlMs: p?.headTtlMs ?? DEFAULT_POLICY.headTtlMs,
+        headPollTimeoutMs: orDefault(p?.headPollTimeoutMs, DEFAULT_POLICY.headPollTimeoutMs),
         capabilityLookahead: p?.capabilityLookahead ?? DEFAULT_POLICY.capabilityLookahead,
         capabilityTipMargin: p?.capabilityTipMargin ?? DEFAULT_POLICY.capabilityTipMargin,
         clock: p?.clock ?? DEFAULT_POLICY.clock,
