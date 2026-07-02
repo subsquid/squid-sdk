@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Thu, 02 Jul 2026 17:46:26 GMT and should not be manually modified.
+This log was last generated on Thu, 02 Jul 2026 19:07:35 GMT and should not be manually modified.
+
+## 2.4.0
+Thu, 02 Jul 2026 19:07:35 GMT
+
+### Minor changes
+
+- Generate stable, readable index names of the form `idx_<entity>_<fields>_<hash>` instead of relying on TypeORM's opaque `IDX_<hash>` names. The default names are derived from the table name, so they change whenever a table name changes (e.g. when it is pruned to fit the identifier limit), forcing migrations to drop and recreate indexes. The generated names are derived from the entity/field identity and capped at the PostgreSQL identifier limit with a deterministic hash suffix that guarantees uniqueness. NOTE: upgrading an existing squid renames all of its indexes once (a one-time drop/recreate on the next migration), after which migrations stay stable.
 
 ## 2.3.0
 Thu, 02 Jul 2026 17:46:26 GMT
