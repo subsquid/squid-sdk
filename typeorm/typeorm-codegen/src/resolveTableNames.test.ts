@@ -93,6 +93,18 @@ describe('resolveTableNames', () => {
         expect(fn).toThrow(new RegExp(`"${b}"`))
     })
 
+    it('reports truncation context even when only the prior owner was truncated', () => {
+        // Owner truncates to `a`*63; the colliding entity is a *natural* 63-char
+        // name (not truncated), processed second. The message must still mention
+        // truncation, since the clash is caused by the owner being pruned.
+        const truncated = 'A' + 'a'.repeat(63) // snake `a`*64 -> `a`*63
+        const natural = 'A' + 'a'.repeat(62) // snake `a`*63, not truncated
+        assert.strictEqual(toSnakeCase(natural), toSnakeCase(truncated).slice(0, 63))
+        const fn = () => resolveTableNames(model(truncated, natural))
+        expect(fn).toThrow(/both map to table name/)
+        expect(fn).toThrow(/after truncation to 63 bytes/)
+    })
+
     it('throws on collision without truncation', () => {
         // FooBar and Foo_bar both snake to `foo_bar`.
         assert.strictEqual(toSnakeCase('FooBar'), toSnakeCase('Foo_bar'))

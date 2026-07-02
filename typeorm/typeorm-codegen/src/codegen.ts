@@ -516,13 +516,14 @@ function getEnumMaxLength(model: Model, enumName: string): number {
  */
 export function resolveTableNames(model: Model): Map<string, string> {
     const tableNames = new Map<string, string>()
-    const owners = new Map<string, string>()
+    const owners = new Map<string, {name: string; truncated: boolean}>()
     for (const name in model) {
         if (model[name].kind !== 'entity') continue
         const fullName = toSnakeCase(name)
         let tableName = fullName
-        if (tableName.length > POSTGRES_MAX_IDENTIFIER_LENGTH) {
-            tableName = tableName.slice(0, POSTGRES_MAX_IDENTIFIER_LENGTH)
+        const truncated = fullName.length > POSTGRES_MAX_IDENTIFIER_LENGTH
+        if (truncated) {
+            tableName = fullName.slice(0, POSTGRES_MAX_IDENTIFIER_LENGTH)
             log.warn(
                 `Table name "${fullName}" (entity "${name}") exceeds the PostgreSQL identifier ` +
                 `length limit of ${POSTGRES_MAX_IDENTIFIER_LENGTH} bytes and will be truncated to ` +
@@ -531,14 +532,17 @@ export function resolveTableNames(model: Model): Map<string, string> {
         }
         const owner = owners.get(tableName)
         if (owner != null) {
+            // The clash is truncation-related if *either* entity was truncated —
+            // e.g. a long name pruned onto an existing natural 63-char name.
+            const viaTruncation = truncated || owner.truncated
             throw new Error(
-                `Entities "${owner}" and "${name}" both map to table name "${tableName}"` +
-                (tableName === fullName ? '' : ` after truncation to ${POSTGRES_MAX_IDENTIFIER_LENGTH} bytes`) +
+                `Entities "${owner.name}" and "${name}" both map to table name "${tableName}"` +
+                (viaTruncation ? ` after truncation to ${POSTGRES_MAX_IDENTIFIER_LENGTH} bytes` : '') +
                 `. Table names must be unique within the PostgreSQL identifier length limit — ` +
                 `rename one of the entities.`
             )
         }
-        owners.set(tableName, name)
+        owners.set(tableName, {name, truncated})
         tableNames.set(name, tableName)
     }
     return tableNames
