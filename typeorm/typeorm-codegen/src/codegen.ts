@@ -4,6 +4,7 @@ import {unexpectedCase} from '@subsquid/util-internal'
 import {OutDir, Output} from '@subsquid/util-internal-code-printer'
 import {toCamelCase, toSnakeCase} from '@subsquid/util-naming'
 import assert from 'assert'
+import {createHash} from 'crypto'
 import * as path from 'path'
 
 
@@ -26,11 +27,59 @@ const log = createLogger('sqd:typeorm-codegen')
  */
 const POSTGRES_MAX_IDENTIFIER_LENGTH = 63
 
+/**
+ * Length of the deterministic hash suffix appended to every generated index
+ * name. It keeps names unique even after the readable part is truncated to fit
+ * the identifier limit.
+ */
+const INDEX_NAME_HASH_LENGTH = 8
+
+
+/**
+ * Build a stable, readable index name of the form `idx_<entity>_<fields>_<hash>`,
+ * capped at the PostgreSQL identifier limit.
+ *
+ * By default TypeORM names an unnamed index `IDX_<sha1(table + columns)>`, which
+ * is opaque and — because it is derived from the *table* name — silently changes
+ * whenever the table name does (e.g. when it is pruned to fit the identifier
+ * limit), forcing migrations to drop and recreate the index. Here the name is
+ * derived from the entity and field identity instead, so it stays put across
+ * codegen runs and table-name changes, while the hash suffix guarantees
+ * uniqueness even when the readable prefix is truncated.
+ */
+export function makeIndexName(entity: string, fields: string[], unique: boolean): string {
+    const identity = `${entity}|${fields.join(',')}|${unique ? 'unique' : ''}`
+    const hash = createHash('sha1').update(identity).digest('hex').slice(0, INDEX_NAME_HASH_LENGTH)
+    const readable = ['idx', toSnakeCase(entity), ...fields.map(toSnakeCase)].join('_')
+    const budget = POSTGRES_MAX_IDENTIFIER_LENGTH - INDEX_NAME_HASH_LENGTH - 1 // room for `_<hash>`
+    const prefix = readable.length > budget ? readable.slice(0, budget) : readable
+    return `${prefix}_${hash}`
+}
+
 
 export function generateOrmModels(model: Model, dir: OutDir): void {
     const variants = collectVariants(model)
     const tableNames = resolveTableNames(model)
     const index = dir.file('index.ts')
+
+    // Index names must be unique across the whole database schema, not just per
+    // table. Compute them once through here so a (vanishingly unlikely) hash
+    // collision fails loudly at codegen time instead of at migration time.
+    const indexNamesByName = new Map<string, string>()
+    function indexNameFor(entity: string, fields: string[], unique: boolean): string {
+        const name = makeIndexName(entity, fields, unique)
+        const identity = `${entity}(${fields.join(', ')})${unique ? ' unique' : ''}`
+        const previous = indexNamesByName.get(name)
+        if (previous != null && previous !== identity) {
+            throw new Error(
+                `Index name "${name}" is generated for two different indexes — ${previous} and ` +
+                `${identity}. This is an extremely unlikely hash collision; rename a field or ` +
+                `entity to work around it.`
+            )
+        }
+        indexNamesByName.set(name, identity)
+        return name
+    }
 
     for (const name in model) {
         const item = model[name]
@@ -61,10 +110,13 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         out.lazy(() => imports.render(model, out))
         out.line()
         printComment(entity, out)
+        const nameIndex = (fields: string[], unique: boolean) => indexNameFor(name, fields, unique)
         entity.indexes?.forEach(index => {
             if (index.fields.length < 2) return
             imports.useTypeormStore('Index')
-            out.line(`@Index_([${index.fields.map(f => `"${f.name}"`).join(', ')}], {unique: ${!!index.unique}})`)
+            const fields = index.fields.map(f => f.name)
+            const indexName = nameIndex(fields, !!index.unique)
+            out.line(`@Index_("${indexName}", [${fields.map(f => `"${f}"`).join(', ')}], {unique: ${!!index.unique}})`)
         })
         const tableName = tableNames.get(name)!
         if (tableName === toSnakeCase(name)) {
@@ -91,12 +143,12 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             const decorator = getDecorator(prop.type.name)
                             imports.useTypeormStore(decorator)
 
-                            addIndexAnnotation(entity, key, imports, out)
+                            addIndexAnnotation(entity, key, imports, out, nameIndex)
                             out.line(`@${decorator}_({nullable: ${prop.nullable}})`)
                         }
                         break
                     case 'enum':
-                        addIndexAnnotation(entity, key, imports, out)
+                        addIndexAnnotation(entity, key, imports, out, nameIndex)
                         out.line(
                             `@Column_("varchar", {length: ${getEnumMaxLength(
                                 model,
@@ -110,7 +162,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             : ''
                         if (getFieldIndex(entity, key)?.unique) {
                             imports.useTypeormStore('OneToOne', 'Index', 'JoinColumn')
-                            out.line(`@Index_({unique: true})`)
+                            out.line(`@Index_("${nameIndex([key], true)}", {unique: true})`)
                             out.line(
                                 `@OneToOne_(() => ${prop.type.entity}, {nullable: true${fkOptions}})`
                             )
@@ -118,7 +170,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                         } else {
                             imports.useTypeormStore('ManyToOne', 'Index')
                             if (!entity.indexes?.some(index => index.fields[0]?.name == key && index.fields.length > 1)) {
-                                out.line(`@Index_()`)
+                                out.line(`@Index_("${nameIndex([key], false)}")`)
                             }
                             // Make foreign entity references always nullable
                             out.line(
@@ -561,14 +613,21 @@ function collectVariants(model: Model): Set<string> {
 }
 
 
-function addIndexAnnotation(entity: Entity, field: string, imports: ImportRegistry, out: Output): void {
+function addIndexAnnotation(
+    entity: Entity,
+    field: string,
+    imports: ImportRegistry,
+    out: Output,
+    nameIndex: (fields: string[], unique: boolean) => string
+): void {
     let index = getFieldIndex(entity, field)
     if (index == null) return
     imports.useTypeormStore('Index')
+    const indexName = nameIndex([field], !!index.unique)
     if (index.unique) {
-        out.line(`@Index_({unique: true})`)
+        out.line(`@Index_("${indexName}", {unique: true})`)
     } else {
-        out.line(`@Index_()`)
+        out.line(`@Index_("${indexName}")`)
     }
 }
 

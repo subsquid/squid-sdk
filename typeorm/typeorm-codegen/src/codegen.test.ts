@@ -169,7 +169,7 @@ describe('arrays', () => {
 
 // indexes-and-constraints.mdx
 describe('indexes and constraints', () => {
-    it('emits @Index_() for @index and @Index_({unique: true}) for @unique', () => {
+    it('emits a named index for @index and a named unique index for @unique', () => {
         const m = generate(`
             type Transfer @entity {
                 id: ID!
@@ -177,8 +177,8 @@ describe('indexes and constraints', () => {
                 fee: BigInt! @index @unique
             }
         `).read('transfer.model.ts')
-        expect(m).toContain('@Index_()')
-        expect(m).toContain('@Index_({unique: true})')
+        expect(m).toMatch(/@Index_\("idx_transfer_amount_[0-9a-f]{8}"\)/)
+        expect(m).toMatch(/@Index_\("idx_transfer_fee_[0-9a-f]{8}", \{unique: true\}\)/)
     })
 
     it('emits type-level composite indexes and skips the redundant single-column index', () => {
@@ -190,10 +190,10 @@ describe('indexes and constraints', () => {
                 foo: String!
             }
         `).read('foo.model.ts')
-        expect(m).toContain('@Index_(["foo", "bar"], {unique: false})')
-        expect(m).toContain('@Index_(["bar", "baz"], {unique: false})')
-        // a column that leads a composite index does not also get a bare @Index_()
-        expect(m).not.toContain('@Index_()')
+        expect(m).toMatch(/@Index_\("idx_foo_foo_bar_[0-9a-f]{8}", \["foo", "bar"\], \{unique: false\}\)/)
+        expect(m).toMatch(/@Index_\("idx_foo_bar_baz_[0-9a-f]{8}", \["bar", "baz"\], \{unique: false\}\)/)
+        // columns that only lead composites get no extra single-column index
+        expect(m.match(/@Index_\(/g)).toHaveLength(2)
     })
 
     it('supports unique composite indexes', () => {
@@ -204,7 +204,7 @@ describe('indexes and constraints', () => {
                 block: String!
             }
         `).read('extrinsic.model.ts')
-        expect(m).toContain('@Index_(["hash", "block"], {unique: true})')
+        expect(m).toMatch(/@Index_\("idx_extrinsic_hash_block_[0-9a-f]{8}", \["hash", "block"\], \{unique: true\}\)/)
     })
 })
 
@@ -231,15 +231,15 @@ describe('entity relations and inverse lookups', () => {
         }
     `
 
-    it('maps a many-to-one FK to @Index_() + @ManyToOne_', () => {
+    it('maps a many-to-one FK to a named @Index_ + @ManyToOne_', () => {
         const m = generate(schema).read('transfer.model.ts')
-        expect(m).toContain('@Index_()')
+        expect(m).toMatch(/@Index_\("idx_transfer_to_[0-9a-f]{8}"\)/)
         expect(m).toContain('@ManyToOne_(() => Account, {nullable: true})')
     })
 
     it('maps an owning @unique relation to @OneToOne_ + @JoinColumn_', () => {
         const m = generate(schema).read('user.model.ts')
-        expect(m).toContain('@Index_({unique: true})')
+        expect(m).toMatch(/@Index_\("idx_user_account_[0-9a-f]{8}", \{unique: true\}\)/)
         expect(m).toContain('@OneToOne_(() => Account, {nullable: true})')
         expect(m).toContain('@JoinColumn_()')
     })
@@ -335,5 +335,75 @@ describe('unions and typed JSON', () => {
         const m = generate(schema).read('nft.model.ts')
         expect(m).toContain('@Column_("jsonb", {transformer:')
         expect(m).toContain('fromJsonOwner(obj)')
+    })
+})
+
+
+// Stable, readable, collision-free index names across every index-producing
+// schema-file feature (field @index/@unique, composite @index, FK, unique FK).
+describe('stable index names', () => {
+    // one schema exercising every kind of generated index
+    const schema = `
+        type Order @entity @index(fields: ["seller", "createdAt"]) @index(fields: ["region", "createdAt"], unique: true) {
+            id: ID!
+            status: Status! @index
+            price: BigInt! @index @unique
+            region: String!
+            createdAt: DateTime!
+            seller: Account!
+            shipper: Account!
+            invoice: Invoice! @unique
+        }
+        type Account @entity { id: ID! }
+        type Invoice @entity { id: ID! }
+        enum Status { OPEN FILLED }
+    `
+
+    const NAME = /"(idx_[a-z0-9_]+_[0-9a-f]{8})"/g
+
+    function indexNames(model: string): string[] {
+        return [...model.matchAll(NAME)].map(m => m[1])
+    }
+
+    it('names every generated index as idx_<readable>_<8-hex-hash>', () => {
+        const m = generate(schema).read('order.model.ts')
+        const names = indexNames(m)
+        // two composites + enum field @index + scalar field @unique + m2o FK + unique FK
+        expect(names).toHaveLength(6)
+        expect(names).toEqual(expect.arrayContaining([
+            expect.stringMatching(/^idx_order_seller_created_at_[0-9a-f]{8}$/), // composite
+            expect.stringMatching(/^idx_order_region_created_at_[0-9a-f]{8}$/), // unique composite
+            expect.stringMatching(/^idx_order_status_[0-9a-f]{8}$/),            // enum field @index
+            expect.stringMatching(/^idx_order_price_[0-9a-f]{8}$/),             // scalar field @index @unique
+            expect.stringMatching(/^idx_order_shipper_[0-9a-f]{8}$/),           // m2o FK
+            expect.stringMatching(/^idx_order_invoice_[0-9a-f]{8}$/),           // unique FK (o2o)
+        ]))
+    })
+
+    it('keeps every index name within the PostgreSQL identifier limit', () => {
+        const m = generate(schema).read('order.model.ts')
+        for (const name of indexNames(m)) expect(name.length).toBeLessThanOrEqual(63)
+    })
+
+    it('produces unique names for every index in the schema', () => {
+        const m = generate(schema).read('order.model.ts')
+        const names = indexNames(m)
+        expect(new Set(names).size).toBe(names.length)
+    })
+
+    it('is stable — regenerating the same schema yields identical names', () => {
+        const first = indexNames(generate(schema).read('order.model.ts'))
+        const second = indexNames(generate(schema).read('order.model.ts'))
+        expect(second).toEqual(first)
+    })
+
+    it('stays within 63 bytes for an entity whose name already overflows', () => {
+        const m = generate(`
+            type ${LONG_ENTITY} @entity { id: ID! amount: BigInt! @index }
+        `).read(`${toCamelCase(LONG_ENTITY)}.model.ts`)
+        const names = indexNames(m)
+        expect(names).toHaveLength(1)
+        expect(names[0].length).toBeLessThanOrEqual(63)
+        expect(names[0]).toMatch(/^idx_.+_[0-9a-f]{8}$/)
     })
 })
