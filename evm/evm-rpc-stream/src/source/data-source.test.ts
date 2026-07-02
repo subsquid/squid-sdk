@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
-import {dropEmptyBlocks, streamBoundedRanges} from './data-source'
+import {dropEmptyBlocks, keptByPosition, streamBoundedRanges} from './data-source'
 
 function blk(
     number: number,
@@ -107,5 +107,25 @@ describe('streamBoundedRanges', () => {
 
         expect(inner.calls).toEqual([{from: 150, to: 153, parentHash: '0xp'}])
         expect(nums).toEqual([150, 151, 152, 153])
+    })
+})
+
+describe('keptByPosition', () => {
+    it('projects by position/identity, so structurally identical items never collide', () => {
+        // Two pre-filter items that would share a synthesized structural key — e.g. block-reward
+        // traces, which carry no transactionIndex. A keyed projection couldn't tell them apart.
+        let preA = {tag: 'reward'}
+        let preB = {tag: 'reward'}
+        let pre = [preA, preB]
+        // The decode at exactly `F`: distinct objects, aligned 1:1 with `pre` by position.
+        let projected = [{n: 0}, {n: 1}]
+
+        // Only the *second* survived filtering — the projection must keep the second, not the first.
+        expect(keptByPosition(projected, pre, [preB])).toEqual([{n: 1}])
+        // Only the *first*.
+        expect(keptByPosition(projected, pre, [preA])).toEqual([{n: 0}])
+        // Both, then none.
+        expect(keptByPosition(projected, pre, [preA, preB])).toEqual([{n: 0}, {n: 1}])
+        expect(keptByPosition(projected, pre, [])).toEqual([])
     })
 })

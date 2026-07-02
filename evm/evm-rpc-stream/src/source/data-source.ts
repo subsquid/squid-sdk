@@ -69,7 +69,8 @@ export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSou
         let req: RpcDataRequest = {
             // Always fetch full transaction objects: mapRpcBlock maps the block's transactions
             // unconditionally (and traces/stateDiffs are correlated to them), so a hashes-only
-            // block fetch can't be normalized.
+            // block fetch can't be normalized. This is why `RequiredData` carries no `transactions`
+            // toggle — it could never be false, so deriving it would be dead.
             transactions: true,
             logs: coarse.logs,
             receipts: coarse.receipts,
@@ -129,6 +130,15 @@ export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSou
         let normalized = mapRpcBlock(raw, {withTraces: this.withTraces, withStateDiffs: this.withStateDiffs})
         let filtered = decodeBlock(normalized, this.augmentedFields)
 
+        // The augmented decode's item arrays align 1:1 by index with a decode of the *same*
+        // normalized block at exactly `F`: field selection changes each item's fields, never how
+        // many items there are or their order. Snapshot them before filtering so the surviving
+        // positions can be recovered by object identity (used by the projection below).
+        let preLogs = filtered.logs
+        let preTransactions = filtered.transactions
+        let preTraces = filtered.traces
+        let preStateDiffs = filtered.stateDiffs
+
         let flat = this.flatRequestFor(filtered.header.number)
         if (flat) {
             filterBlock(filtered, flat, setUpRelations(filtered))
@@ -139,11 +149,17 @@ export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSou
         }
 
         // A `where` clause referenced a field not selected for output, so `filtered` is a superset
-        // of `F`. Decode again at exactly `F` (the Portal shape) and keep only the filtered items,
-        // matched by their structural index keys.
+        // of `F`. Decode again at exactly `F` (the Portal shape) and keep the items whose pre-filter
+        // position survived. Keying on position/identity — not a synthesized structural key — so
+        // items that would share such a key (block-reward traces carry no `transactionIndex`) can't
+        // collide and project the wrong one.
         let projected = decodeBlock(normalized, this.fields)
+        projected.logs = keptByPosition(projected.logs, preLogs, filtered.logs)
+        projected.transactions = keptByPosition(projected.transactions, preTransactions, filtered.transactions)
+        projected.traces = keptByPosition(projected.traces, preTraces, filtered.traces)
+        projected.stateDiffs = keptByPosition(projected.stateDiffs, preStateDiffs, filtered.stateDiffs)
 
-        return projectKept(projected, filtered) as Block<F>
+        return projected
     }
 
     private flatRequestFor(blockNumber: number): FlatDataRequest | undefined {
@@ -172,29 +188,23 @@ function selectionGrew(augmented: FieldSelection, original: FieldSelection): boo
     return false
 }
 
-const traceKey = (t: any) => `${t.transactionIndex}:${(t.traceAddress ?? []).join(',')}`
-const stateDiffKey = (d: any) => `${d.transactionIndex}:${d.address}:${d.key}`
+/**
+ * Keep the items of `projected` whose positionally-aligned item in `pre` (the pre-filter decode of
+ * the same block) survived filtering into `kept`. `projected[i]` and `pre[i]` are the same on-chain
+ * item decoded at two field selections, so a surviving `pre[i]` means `projected[i]` is kept. Using
+ * position + identity avoids the collisions a synthesized structural key would hit for items that
+ * share one (e.g. block-reward traces, which carry no `transactionIndex`).
+ */
+export function keptByPosition<P, Q>(projected: P[], pre: Q[], kept: Q[]): P[] {
+    let survived = new Set(kept)
 
-/** Keep only the items of `projected` whose structural index appears in the `filtered` block. */
-function projectKept(projected: Block<any>, filtered: Block<any>): Block<any> {
-    let logs = new Set(filtered.logs.map((l: any) => l.logIndex))
-    let transactions = new Set(filtered.transactions.map((t: any) => t.transactionIndex))
-    let traces = new Set(filtered.traces.map(traceKey))
-    let stateDiffs = new Set(filtered.stateDiffs.map(stateDiffKey))
-
-    projected.logs = projected.logs.filter((l: any) => logs.has(l.logIndex))
-    projected.transactions = projected.transactions.filter((t: any) => transactions.has(t.transactionIndex))
-    projected.traces = projected.traces.filter((t: any) => traces.has(traceKey(t)))
-    projected.stateDiffs = projected.stateDiffs.filter((d: any) => stateDiffs.has(stateDiffKey(d)))
-
-    return projected
+    return projected.filter((_, i) => survived.has(pre[i]))
 }
 
 function unionRequiredData(requests: FlatDataRequest[], fields: FieldSelection) {
-    let acc = {transactions: false, logs: false, receipts: false, traces: false, stateDiffs: false}
+    let acc = {logs: false, receipts: false, traces: false, stateDiffs: false}
     for (let req of requests) {
         let r = toRequiredData(req, fields)
-        acc.transactions ||= r.transactions
         acc.logs ||= r.logs
         acc.receipts ||= r.receipts
         acc.traces ||= r.traces

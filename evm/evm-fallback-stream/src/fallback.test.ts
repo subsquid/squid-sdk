@@ -760,3 +760,55 @@ describe('FallbackDataSource — metrics', () => {
         expect(m.sources[1].cause).toBeUndefined()
     })
 })
+
+describe('FallbackDataSource — head-poll timeout (robustness)', () => {
+    // A hanging head never resolves — models a sick standby: TCP up, no response.
+    const hangHead = () => new Promise<BlockRef>(() => {})
+
+    it('a sick standby whose getHead hangs does not stall the healthy active source', async () => {
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(1)])
+            yield batch([blk(2)])
+            yield batch([blk(3)])
+        })
+        // Its head poll hangs; without the timeout, the per-batch lag check would block s0 forever.
+        let s1 = new MockSource(async function* () {}, {head: hangHead})
+        let fb = fallback([s0, s1], {
+            maxLagBlocks: 10,
+            maxStalenessMs: null,
+            headTtlMs: 0,
+            headPollTimeoutMs: 20,
+            livenessFailThreshold: 1, // one timed-out poll condemns the sick standby
+            cooldownMs: 60_000,
+        })
+
+        expect(numbers(await collect(fb.getStream({from: 1, to: 3})))).toEqual([1, 2, 3])
+        expect(fb.activeIndex).toBe(0) // the healthy primary streamed to completion, never blocked
+        let s1health = fb.metrics().sources[1]
+        expect(s1health.health).toBe('unhealthy')
+        expect(s1health.cause).toMatchObject({check: 'liveness', reason: 'timeout'})
+    }, 5000)
+})
+
+describe('FallbackDataSource — active capability confirmation', () => {
+    it('reaches healthy by serving batches, without the standby capability probe ever running', async () => {
+        let probed = 0
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(1)])
+            yield batch([blk(2)])
+            yield batch([blk(3)])
+            yield batch([blk(4)])
+        })
+        let fb = new FallbackDataSource<TestBlock>({
+            sources: [{name: 's0', source: s0, probeCapability: async () => (probed++, {ok: true})}],
+            getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
+            policy: {livenessRecoverThreshold: 3, maxLagBlocks: null, maxStalenessMs: null},
+        })
+
+        expect(numbers(await collect(fb.getStream({from: 1, to: 4})))).toEqual([1, 2, 3, 4])
+        // The active source proved capability by actually serving the query — the standby probe (a
+        // separate slice) never ran for it, yet it still left `unknown` for `healthy`.
+        expect(probed).toBe(0)
+        expect(fb.metrics().sources[0].health).toBe('healthy')
+    })
+})
