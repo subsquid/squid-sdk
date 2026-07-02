@@ -15,6 +15,10 @@ import {Prop} from "../model"
  * (already-pruned) table. Truncating here makes the generated SQL target the
  * right table regardless of the server's `NAMEDATALEN`.
  *
+ * GraphQL type names are restricted to ASCII letters, digits and underscores,
+ * and `toSnakeCase` keeps them ASCII, so `name.length` below equals the byte
+ * length — the unit PostgreSQL's limit is actually measured in.
+ *
  * Keep this value in sync with `typeorm-codegen`'s `POSTGRES_MAX_IDENTIFIER_LENGTH`.
  */
 export const POSTGRES_MAX_IDENTIFIER_LENGTH = 63
