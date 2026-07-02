@@ -166,7 +166,13 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         if (next.done) return // bounded stream finished
                         let batch = next.value
 
+                        // A delivered batch proves both liveness *and* capability: the active source
+                        // just served exactly the configured query (an incapable source throws rather
+                        // than yields). Confirm capability here — the standby capability probe never
+                        // runs for the active source, so without this a cold-start primary would serve
+                        // forever yet never leave `unknown` for `healthy`.
                         this.health[active].onBatch()
+                        this.health[active].onCapability(true)
                         yield batch
 
                         if (batch.blocks.length) {
@@ -301,7 +307,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         if (cached && now - cached.at < this.policy.headTtlMs) return cached.value
 
         try {
-            let head = await this.sources[i].source.getHead()
+            let head = await this.headWithTimeout(i)
             this.#headCache[i] = {value: head.number, at: now}
             // The head fetch doubles as the liveness probe (§4): a fresh head is proof the source
             // is reachable, so it counts toward the `M` passes that promote a standby to `healthy`
@@ -315,6 +321,26 @@ export class FallbackDataSource<B> implements DataSource<B> {
             this.failSource(i, classifyError('liveness', e))
             return undefined
         }
+    }
+
+    /**
+     * A head poll, time-boxed by `headPollTimeoutMs`. The poll is `await`ed on the batch-critical
+     * path, so a sick standby whose `getHead` hangs (or is merely slow) must not stall the healthy
+     * active source: on timeout this rejects, and `getCachedHead` records a liveness failure. `null`
+     * disables the guard and defers to the underlying client's own request timeout.
+     */
+    private headWithTimeout(i: number): Promise<BlockRef> {
+        let p = this.sources[i].source.getHead()
+        let timeoutMs = this.policy.headPollTimeoutMs
+        if (timeoutMs == null) return p
+
+        p.catch(() => {}) // an abandoned (timed-out) poll must not surface as an unhandled rejection
+        let timer: ReturnType<typeof setTimeout>
+        let timeout = new Promise<never>((_resolve, reject) => {
+            timer = setTimeout(() => reject(new Error(`head poll timed out after ${timeoutMs}ms`)), timeoutMs)
+        })
+
+        return Promise.race([p, timeout]).finally(() => clearTimeout(timer))
     }
 
     /**

@@ -88,7 +88,6 @@ export function flattenRequest(req: StreamDataRequest): FlatDataRequest {
  * missing trace/stateDiff support for a request that needs them is "unhealthy").
  */
 export interface RequiredData {
-    transactions: boolean
     logs: boolean
     receipts: boolean
     traces: boolean
@@ -106,8 +105,11 @@ export function toRequiredData(req: FlatDataRequest, fields: FieldSelection): Re
     let logs = logsRequested(req)
     let receipts = txs && isRequested(TX_RECEIPT_FIELDS, fields.transaction)
 
+    // No `transactions` toggle here: the RPC source *always* fetches full transactions (mapRpcBlock
+    // needs them to normalize a block — see `EvmRpcStreamDataSource`), so a derived "are transactions
+    // required" flag would be dead — the fetch can't be turned off. `txs` is still needed to decide
+    // whether requested *receipt* fields upgrade the fetch to receipts.
     return {
-        transactions: !!req.transactions?.length || (txs && isRequested(TX_FIELDS, fields.transaction)),
         logs: logs && !receipts,
         receipts,
         traces: tracesRequested(req),
@@ -174,24 +176,6 @@ function stateDiffsRequested(req: FlatDataRequest): boolean {
     }
 
     return false
-}
-
-const TX_FIELDS: Record<string, true> = {
-    from: true,
-    to: true,
-    gas: true,
-    gasPrice: true,
-    maxFeePerGas: true,
-    maxPriorityFeePerGas: true,
-    input: true,
-    nonce: true,
-    value: true,
-    v: true,
-    r: true,
-    s: true,
-    yParity: true,
-    chainId: true,
-    authorizationList: true,
 }
 
 const TX_RECEIPT_FIELDS: Record<string, true> = {

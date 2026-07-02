@@ -22,8 +22,9 @@ describe('flattenRequest', () => {
 
 describe('toRequiredData', () => {
     it('requests nothing for an empty request', () => {
+        // No `transactions` toggle: the RPC source always fetches full transactions (mapRpcBlock
+        // needs them), so it isn't derived here.
         expect(toRequiredData({}, {})).toEqual({
-            transactions: false,
             logs: false,
             receipts: false,
             traces: false,
@@ -35,11 +36,6 @@ describe('toRequiredData', () => {
         let req = toRequiredData({logs: [{address: ['0xa']}]}, {})
         expect(req.logs).toBe(true)
         expect(req.receipts).toBe(false)
-    })
-
-    it('a log filter that includes the transaction forces transaction fetching', () => {
-        let req = toRequiredData({logs: [{address: ['0xa'], transaction: true}]}, {transaction: {from: true}})
-        expect(req.transactions).toBe(true)
     })
 
     it('requested receipt fields upgrade logs to receipts', () => {
