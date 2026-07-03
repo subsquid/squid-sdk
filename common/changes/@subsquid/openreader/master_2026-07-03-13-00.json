@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "Truncate generated table names to the PostgreSQL identifier limit (63 bytes) so queries target the same table `@subsquid/typeorm-codegen` creates for over-long entity names. Previously OpenReader emitted the full untruncated name and relied on the server truncating it to match — which only holds when the server's NAMEDATALEN equals the default. On a build with a larger NAMEDATALEN the reference would miss the (already-pruned) table; it now works regardless of NAMEDATALEN. No effect on entity names within the limit.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}
