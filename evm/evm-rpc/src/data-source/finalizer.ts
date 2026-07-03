@@ -88,12 +88,10 @@ class Finalizer {
                 finalizedHead: batch.finalized
             }
         } else {
+            // Keep the queue contiguous: capping it by overwriting the last slot
+            // dropped middle refs, freezing finalization when the lag exceeded the cap.
             for (let block of batch.blocks) {
-                if (this.queue.length > 50) {
-                    this.queue[this.queue.length - 1] = getBlockRef(block)
-                } else {
-                    this.queue.push(getBlockRef(block))
-                }
+                this.queue.push(getBlockRef(block))
             }
             this.checks.forcePut(null)
             return {
