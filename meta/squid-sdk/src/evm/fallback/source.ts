@@ -7,16 +7,7 @@ import type {RangeRequestList} from '@subsquid/util-internal-range'
 import {CapabilityProbeOptions, makeCapabilityProbe} from '../../fallback/capability'
 import {FallbackDataSource, RankedSource} from '../../fallback/fallback'
 import type {FallbackPolicy} from '../../fallback/policy'
-
-/**
- * Load the sibling `evm-rpc-stream` subpath lazily, only when an `rpc` source is actually
- * configured. It ships in the same package, so this always resolves; it is deferred (not a
- * top-level import) purely so a Portal-only fallback never pulls the RPC stack (`@subsquid/evm-rpc`
- * + `evm-normalization`) into the module graph until an `rpc` source is built.
- */
-function loadRpcStream(): typeof import('../rpc') {
-    return require('../rpc')
-}
+import {loadRpcStream} from './load-rpc-stream'
 
 /**
  * One source in an EVM fallback, ranked by its position in the list. Both kinds share the same
