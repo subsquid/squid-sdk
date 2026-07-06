@@ -122,3 +122,13 @@ export function classifyError(check: FailedCheck, err: unknown): SourceErrorInfo
 export function freshnessFailure(check: FailedCheck, reason: 'stale' | 'lag', detail: string): SourceErrorInfo {
     return {check, reason, detail: `${check} check failed: ${detail}`}
 }
+
+/**
+ * Build a {@link SourceErrorInfo} for a capability probe that reported not-capable without a thrown,
+ * classifiable error. The reason is never `stale`: a probe fails for non-freshness reasons — pruned
+ * state, disabled `trace_`/`debug_` APIs (`unknown`), or a slice that outran the probe timeout
+ * (`timeout`) — so a `stale` label would misreport it in logs and metrics.
+ */
+export function capabilityFailure(detail: string, reason: FailureReason = 'unknown'): SourceErrorInfo {
+    return {check: 'capability', reason, detail: `capability check failed: ${detail}`}
+}

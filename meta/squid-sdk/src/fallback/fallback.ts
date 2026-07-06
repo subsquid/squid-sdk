@@ -3,7 +3,7 @@ import {BlockBatch, BlockRef, BlockStream, DataSource, StreamRequest, isForkExce
 import {FiniteRange} from '@subsquid/util-internal-range'
 
 import {ProbeResult} from './capability'
-import {SourceErrorInfo, classifyError, freshnessFailure} from './diagnostics'
+import {SourceErrorInfo, capabilityFailure, classifyError, freshnessFailure} from './diagnostics'
 import {SourceHealth} from './health'
 import {AllSourcesDownError, FallbackPolicy, Health, ResolvedPolicy, resolvePolicy} from './policy'
 import {Selector} from './selector'
@@ -392,7 +392,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                     if (r.ok) {
                         this.health[i].onCapability(true)
                     } else {
-                        this.failSource(i, r.cause ?? freshnessFailure('capability', 'stale', 'probe reported not-capable'))
+                        this.failSource(i, r.cause ?? capabilityFailure('probe reported not-capable'))
                     }
                 },
                 (e) => this.failSource(i, classifyError('capability', e)),

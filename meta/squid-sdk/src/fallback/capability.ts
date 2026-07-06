@@ -1,6 +1,6 @@
 import {DataSource, isForkException} from '@subsquid/util-internal-data-source'
 
-import {SourceErrorInfo, classifyError, freshnessFailure} from './diagnostics'
+import {SourceErrorInfo, capabilityFailure, classifyError} from './diagnostics'
 
 export interface CapabilityProbeOptions {
     /** Report not-capable if a single-block slice stays outstanding longer than this. Default 30s. */
@@ -45,7 +45,7 @@ export function makeCapabilityProbe<B>(
             next.catch(() => {}) // a late rejection after a timeout must not surface as unhandled
             let timeout = new Promise<never>((_resolve, reject) => {
                 timer = setTimeout(
-                    () => reject(freshnessFailure('capability', 'stale', `probe timed out after ${timeoutMs}ms`)),
+                    () => reject(capabilityFailure(`probe timed out after ${timeoutMs}ms`, 'timeout')),
                     timeoutMs,
                 )
             })

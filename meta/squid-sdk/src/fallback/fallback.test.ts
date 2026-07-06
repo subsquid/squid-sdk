@@ -466,6 +466,20 @@ describe('FallbackDataSource — switch-up / recovery', () => {
 
         expect(probedAt[0]).toBe(194) // min(200 + 16, 210 - 16) = 194
     })
+
+    it('labels a probe {ok:false}-without-cause failure as capability/unknown, not stale', async () => {
+        let {fb, recover} = probeAnchorScenario(1_000_000)
+        let it = fb.getStream({from: 200, to: 202})[Symbol.asyncIterator]()
+        await it.next() // s0 down → s1 serves [200]
+        recover() // s0 cooldown elapses → probed as a switch-up candidate; probe returns {ok:false}
+        await it.next()
+        await wait(0) // settle the fire-and-forget probe → s0 failed with the fabricated cause
+
+        let cause = fb.metrics().sources[0].cause
+        // A not-capable probe is not a freshness failure: reason must not be mislabeled `stale`.
+        expect(cause).toMatchObject({check: 'capability', reason: 'unknown'})
+        expect(cause?.reason).not.toBe('stale')
+    })
 })
 
 const hang = () => new Promise(() => {})

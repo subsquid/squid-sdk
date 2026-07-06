@@ -77,7 +77,7 @@ describe('makeCapabilityProbe', () => {
         })
         let r = await makeCapabilityProbe(s, {timeoutMs: 20})(100)
         expect(r.ok).toBe(false)
-        expect(r.cause?.reason).toBe('stale')
+        expect(r.cause?.reason).toBe('timeout')
         expect(r.cause?.detail).toContain('timed out')
     })
 })
