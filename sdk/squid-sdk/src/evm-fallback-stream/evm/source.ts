@@ -1,5 +1,5 @@
 import type {Block, DataRequest, EVMDataSource, FieldSelection} from '@subsquid/evm-stream'
-import type {RpcMethodOptions} from '@subsquid/evm-rpc-stream'
+import type {RpcMethodOptions} from '../../evm-rpc-stream'
 import type {Rpc} from '@subsquid/evm-rpc'
 import type {BlockRef} from '@subsquid/util-internal-data-source'
 import type {RangeRequestList} from '@subsquid/util-internal-range'
@@ -9,30 +9,13 @@ import {FallbackDataSource, RankedSource} from '../fallback'
 import type {FallbackPolicy} from '../policy'
 
 /**
- * Load `@subsquid/evm-rpc-stream` lazily, only when an `rpc` source is actually configured. The
- * package (and `@subsquid/evm-rpc`) are *optional* peers: Portal-only users carry neither, and the
- * EVM glue is re-exported from the package entrypoint, so an eager top-level import would make
- * `require('@subsquid/evm-fallback-stream')` crash for them. The `require` is reached only on the
- * `rpc` branch below; if the peers are missing it fails with an actionable message instead.
+ * Load the sibling `evm-rpc-stream` subpath lazily, only when an `rpc` source is actually
+ * configured. It ships in the same package, so this always resolves; it is deferred (not a
+ * top-level import) purely so a Portal-only fallback never pulls the RPC stack (`@subsquid/evm-rpc`
+ * + `evm-normalization`) into the module graph until an `rpc` source is built.
  */
-function loadRpcStream(): typeof import('@subsquid/evm-rpc-stream') {
-    try {
-        return require('@subsquid/evm-rpc-stream')
-    } catch (e) {
-        // Only translate "the package itself isn't installed" into the actionable hint, matching the
-        // missing module by its exact quoted name in the error text. A MODULE_NOT_FOUND for a
-        // *transitive* dependency inside the package (a broken install) names a different module —
-        // and a real fault thrown on load isn't MODULE_NOT_FOUND at all — so both surface unchanged
-        // rather than being masked as "peers missing". (Node: `Cannot find module '<name>'`.)
-        let err = e as NodeJS.ErrnoException
-        if (err?.code === 'MODULE_NOT_FOUND' && err.message.includes("'@subsquid/evm-rpc-stream'")) {
-            throw new Error(
-                "An 'rpc' fallback source requires the optional peer dependencies '@subsquid/evm-rpc-stream' " +
-                    "and '@subsquid/evm-rpc'. Install them, or use only 'portal' sources.",
-            )
-        }
-        throw e
-    }
+function loadRpcStream(): typeof import('../../evm-rpc-stream') {
+    return require('../../evm-rpc-stream')
 }
 
 /**
