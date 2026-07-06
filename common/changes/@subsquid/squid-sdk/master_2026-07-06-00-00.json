@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "comment": "New umbrella package exposing SDK data sources and utilities as subpaths; folds in @subsquid/evm-rpc-stream and @subsquid/evm-fallback-stream (standalone versions removed) and re-exports the core *-stream and util packages.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/squid-sdk"
+}

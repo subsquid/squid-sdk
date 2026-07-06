@@ -487,14 +487,8 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/evm-rpc-stream",
-      "projectFolder": "evm/evm-rpc-stream",
-      "shouldPublish": true,
-      "versionPolicyName": "npm"
-    },
-    {
-      "packageName": "@subsquid/evm-fallback-stream",
-      "projectFolder": "evm/evm-fallback-stream",
+      "packageName": "@subsquid/squid-sdk",
+      "projectFolder": "sdk/squid-sdk",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
