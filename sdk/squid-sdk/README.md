@@ -4,31 +4,52 @@ Umbrella package for the Squid SDK. It bundles the SDK's data sources and utilit
 them through **subpaths**, so a squid can depend on a single package:
 
 ```ts
-import {createEvmFallbackSource} from '@subsquid/squid-sdk/evm-fallback-stream'
-import {EvmRpcStreamDataSource} from '@subsquid/squid-sdk/evm-rpc-stream'
-import {PortalClient}          from '@subsquid/squid-sdk/portal-client'
-import {def}                   from '@subsquid/squid-sdk/util-internal'
+import {createEvmFallbackSource} from '@subsquid/squid-sdk/evm/fallback'
+import {EvmRpcStreamDataSource}  from '@subsquid/squid-sdk/evm/rpc'
+import {FallbackDataSource}      from '@subsquid/squid-sdk/fallback'
+import {PortalClient}            from '@subsquid/squid-sdk/client/portal'
+import {def}                     from '@subsquid/squid-sdk/util'
 ```
 
 The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpaths.
 
 ## Subpaths
 
-Two subpaths are **owned** by this package (their standalone packages have been folded in and
-removed):
+| Subpath | Contents | Source |
+| --- | --- | --- |
+| `evm` | EVM stream types & data-request model | re-export of `@subsquid/evm-stream` |
+| `evm/rpc` | RPC-backed EVM data source (Portal-compatible output) | **owned** (folded in) |
+| `evm/fallback` | `createEvmFallbackSource` — the EVM binding of the fallback supervisor | **owned** (folded in) |
+| `fallback` | VM-agnostic fallback supervisor: drives the lowest-index healthy source of N | **owned** (folded in) |
+| `solana` | Solana stream | re-export of `@subsquid/solana-stream` |
+| `fuel` | Fuel stream | re-export of `@subsquid/fuel-stream` |
+| `starknet` | Starknet stream | re-export of `@subsquid/starknet-stream` |
+| `util` | general SDK utilities | re-export of `@subsquid/util-internal` |
+| `util/data-source` | data-source interfaces | re-export of `@subsquid/util-internal-data-source` |
+| `util/range` | block-range helpers | re-export of `@subsquid/util-internal-range` |
+| `util/hex` | hex helpers | re-export of `@subsquid/util-internal-hex` |
+| `util/json` | JSON helpers | re-export of `@subsquid/util-internal-json` |
+| `util/validation` | schema validation | re-export of `@subsquid/util-internal-validation` |
+| `util/processor-tools` | processor building blocks | re-export of `@subsquid/util-internal-processor-tools` |
+| `util/timeout` | timeout helpers | re-export of `@subsquid/util-timeout` |
+| `client/portal` | Portal client | re-export of `@subsquid/portal-client` |
+| `client/rpc` | JSON-RPC client | re-export of `@subsquid/rpc-client` |
+| `client/http` | HTTP client | re-export of `@subsquid/http-client` |
+| `logger` | logging | re-export of `@subsquid/logger` |
 
-| Subpath | Contents |
-| --- | --- |
-| `@subsquid/squid-sdk/evm-rpc-stream` | RPC-backed EVM data source with Portal-compatible output |
-| `@subsquid/squid-sdk/evm-fallback-stream` | Fallback EVM data source: drives the lowest-index healthy source of N |
+The `evm/rpc`, `evm/fallback`, and `fallback` subpaths are owned by this package (their standalone
+packages were folded in and removed). Everything else is a re-export of a package that is still
+published standalone — import it either way.
 
-The rest are **re-exports** of packages that are still published standalone — import them either
-way:
+## Optional EVM peers
 
-`evm-stream`, `solana-stream`, `fuel-stream`, `starknet-stream`, `util-internal`,
-`util-internal-data-source`, `util-internal-range`, `util-internal-hex`, `util-internal-json`,
-`util-internal-validation`, `util-internal-processor-tools`, `logger`, `portal-client`,
-`http-client`, `rpc-client`, `util-timeout`.
+The `fallback` supervisor is VM-agnostic and pulls no EVM code. The EVM RPC source (`evm/rpc`) and
+the EVM fallback binding (`evm/fallback`) need `@subsquid/evm-rpc` and `@subsquid/evm-normalization`,
+which are declared as **optional peer dependencies**:
+
+- A Portal-only or non-EVM squid does not install them and never loads the RPC stack — the EVM
+  fallback binding `require`s `evm/rpc` lazily, only when an `rpc` source is actually configured.
+- A squid using `evm/rpc` (directly or via an `rpc` fallback source) installs the two peers.
 
 ## TypeScript resolution
 
@@ -43,10 +64,3 @@ deliberate:
 
 Shipping both means `@subsquid/squid-sdk/<subpath>` type-checks regardless of a squid's
 `moduleResolution`. At runtime Node always honors `exports`.
-
-## Note on install weight
-
-Folding `evm-rpc-stream` in makes `@subsquid/evm-rpc` and `@subsquid/evm-normalization` hard
-dependencies, so installing `@subsquid/squid-sdk` always pulls the EVM RPC stack. The RPC code is
-still *loaded* lazily — only when an `rpc` fallback source is actually configured — so a
-Portal-only pipeline does not evaluate it.
