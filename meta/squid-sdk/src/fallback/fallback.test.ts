@@ -7,8 +7,8 @@ import {FallbackDataSource, RankedSource} from './fallback'
 import {FallbackPolicy} from './policy'
 
 // The supervisor logs its (static) cause logger at WARN; raise the floor to ERROR for the
-// `sqd:evm-fallback-stream` namespace so the expected unhealthy transitions don't spam test output.
-setLogLevelCallback((ns) => (ns.startsWith('sqd:evm-fallback') ? LogLevel.ERROR : undefined))
+// `sqd:fallback` namespace so the expected unhealthy transitions don't spam test output.
+setLogLevelCallback((ns) => (ns.startsWith('sqd:fallback') ? LogLevel.ERROR : undefined))
 
 interface TestBlock {
     header: {number: number; hash: string}

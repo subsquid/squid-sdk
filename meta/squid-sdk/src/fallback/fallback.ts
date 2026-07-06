@@ -56,9 +56,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
     readonly policy: ResolvedPolicy
     readonly health: SourceHealth[]
     private selector: Selector
-    // Static, matching the convention of sibling data packages (`createLogger('sqd:evm-rpc')` etc.);
-    // the cause is also exported through `metrics()` for callers that prefer a metrics surface.
-    private logger: Logger = createLogger('sqd:evm-fallback-stream')
+    // Static, VM-agnostic namespace (`sqd:<component>`, like `sqd:evm-rpc`) — the supervisor is not
+    // EVM-specific; the cause is also exported through `metrics()` for a metrics surface.
+    private logger: Logger = createLogger('sqd:fallback')
 
     /** Observable state (for metrics, §4). */
     activeIndex: number | undefined
