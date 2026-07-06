@@ -106,6 +106,9 @@ importers:
       '@rush-temp/evm-dump':
         specifier: file:./projects/evm-dump.tgz
         version: file:projects/evm-dump.tgz
+      '@rush-temp/evm-fallback-stream':
+        specifier: file:./projects/evm-fallback-stream.tgz
+        version: file:projects/evm-fallback-stream.tgz(esbuild@0.27.7)(tsx@4.21.0)
       '@rush-temp/evm-ingest':
         specifier: file:./projects/evm-ingest.tgz
         version: file:projects/evm-ingest.tgz
@@ -121,6 +124,9 @@ importers:
       '@rush-temp/evm-rpc':
         specifier: file:./projects/evm-rpc.tgz
         version: file:projects/evm-rpc.tgz(esbuild@0.27.7)(supports-color@8.1.1)
+      '@rush-temp/evm-rpc-stream':
+        specifier: file:./projects/evm-rpc-stream.tgz
+        version: file:projects/evm-rpc-stream.tgz(esbuild@0.27.7)(tsx@4.21.0)
       '@rush-temp/evm-stream':
         specifier: file:./projects/evm-stream.tgz
         version: file:projects/evm-stream.tgz(esbuild@0.27.7)(tsx@4.21.0)
@@ -1351,11 +1357,11 @@ packages:
     resolution: {integrity: sha512-45+YtqxLYKDWQouLKCrpIZhke+nXxhsw+qAHVzHDVwttyBlHNBVs2K25rDXrZzhpTp9w1FlAlvweV1H++fdZoA==}
 
   '@rush-temp/astar-erc20@file:projects/astar-erc20.tgz':
-    resolution: {integrity: sha512-SGkGjZMIHJLcLl31qW0PeGzfOvkMSqaolLQYGZaYpLfs+tebTejEmshgVJQoUGQYI/WvtPpVr72Y+hSUEiVJyA==, tarball: file:projects/astar-erc20.tgz}
+    resolution: {integrity: sha512-4oVI6RjCCzW3luYLmJkYgICnt0h785p+K74sNYzuuwzI+3qzhhCzgBfXWXaa+MbZWAdXRRMXmzZdEktqpAgr5w==, tarball: file:projects/astar-erc20.tgz}
     version: 0.0.0
 
   '@rush-temp/balances@file:projects/balances.tgz':
-    resolution: {integrity: sha512-LNNdLjWHYY/+7YJHQS340tnXBU3y8uAudKWetRJVTdvyORrksF/2ju52vWMwANOx9YwQITQimV7ezCSNeBMojA==, tarball: file:projects/balances.tgz}
+    resolution: {integrity: sha512-6xkQbPIGlxceQ+rDak4eNLI1Yu3Bq2tmMYdxkb0uromjhRe2YG24ZwTcwd8DVwZpL8m66EPrgTzjBIisG5pYcQ==, tarball: file:projects/balances.tgz}
     version: 0.0.0
 
   '@rush-temp/batch-processor@file:projects/batch-processor.tgz':
@@ -1403,7 +1409,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/erc20-transfers@file:projects/erc20-transfers.tgz':
-    resolution: {integrity: sha512-Neo63VOxFTmYQiS9zsGEsHuPv0xFnL3+/0WY/Qqdk5+PBUaR9L+bBBhBYLsMZuHPahghpGHYD88Z9yP/LZL1CQ==, tarball: file:projects/erc20-transfers.tgz}
+    resolution: {integrity: sha512-qxFeP5FiAvxod9XL/CM5qtmHhs633hmAT/GDt4jdIseD1q+4XMF162o1LFYFcSxtcj0Xbej9Wa8lfxO/eA1YVg==, tarball: file:projects/erc20-transfers.tgz}
     version: 0.0.0
 
   '@rush-temp/evm-abi@file:projects/evm-abi.tgz':
@@ -1426,6 +1432,10 @@ packages:
     resolution: {integrity: sha512-rqcHwziUf0VvRoX14aHDZx5MnhwMgqC8E2L+eyhnKyITapLFrvruNMQvvx2/aWcj0IA126oQHZzTyZLnAahWWw==, tarball: file:projects/evm-dump.tgz}
     version: 0.0.0
 
+  '@rush-temp/evm-fallback-stream@file:projects/evm-fallback-stream.tgz':
+    resolution: {integrity: sha512-s8+gMPYRLRGTGmfWpzSpje1yzKbDOWudBri5p2vbSZUFEvOfzxHGwt5ZQxTFxTXjuEjZWr4N6+RoYa+QbVBMNw==, tarball: file:projects/evm-fallback-stream.tgz}
+    version: 0.0.0
+
   '@rush-temp/evm-ingest@file:projects/evm-ingest.tgz':
     resolution: {integrity: sha512-oe+C4nTT5174FXmfcg+hc1L9pIMAgm4dW8ndpEYdY1kZGE1tLASwFWcDtBU4/70euBcImc0KonDi4OzxYXjWOw==, tarball: file:projects/evm-ingest.tgz}
     version: 0.0.0
@@ -1440,6 +1450,10 @@ packages:
 
   '@rush-temp/evm-processor@file:projects/evm-processor.tgz':
     resolution: {integrity: sha512-CtsvkTQd5xtR8x1EViqXoyUH0zU6vd2Y/8DEarmQHlQSg3yUWsZOhZPHhbAPn9aFs5cOtXoefEOvEh1Xi/8hog==, tarball: file:projects/evm-processor.tgz}
+    version: 0.0.0
+
+  '@rush-temp/evm-rpc-stream@file:projects/evm-rpc-stream.tgz':
+    resolution: {integrity: sha512-7lz7HrKzKHyzJ9S62vXguk6mQIH/pWED/25NeOoX7VmNMvVW643TDA7NxpcbLwPHVmhlxICPUJinKEiXiwjx9Q==, tarball: file:projects/evm-rpc-stream.tgz}
     version: 0.0.0
 
   '@rush-temp/evm-rpc@file:projects/evm-rpc.tgz':
@@ -1487,7 +1501,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/graphql-server@file:projects/graphql-server.tgz':
-    resolution: {integrity: sha512-8ZNtd77GPIIhjcoDdqEq4+PdbCny8GNCl2O1c0I3krJo2Mn55Hpm/ETECNwhVRGXm3LcFSW1cXWCWrI7KnlcIA==, tarball: file:projects/graphql-server.tgz}
+    resolution: {integrity: sha512-DfQHf0EybKZXFS34kSsOu7RYu+EFVzAOD8k9jM10EV4/y1vY9urXFxwFkzXBNw20/mhstStKUx/ppyPUR8abKw==, tarball: file:projects/graphql-server.tgz}
     version: 0.0.0
 
   '@rush-temp/http-client@file:projects/http-client.tgz':
@@ -1547,7 +1561,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/polkavm-erc20@file:projects/polkavm-erc20.tgz':
-    resolution: {integrity: sha512-bCTo1NxdXgH/52HWYB+joE+IZFW0Vf5SuEvlrJltP6Pzj4Cu3qasYiNq7gkptSMxH5zPGgND3aEilEleEkMGwA==, tarball: file:projects/polkavm-erc20.tgz}
+    resolution: {integrity: sha512-JxxbU1WKTGQvjSaIAJaJFwILdpC0swRC2NoH9LwTRBdYXNVjHOZW5nLJoiRAYts7OuSkkIBfBXGYM+4yJjb6Nw==, tarball: file:projects/polkavm-erc20.tgz}
     version: 0.0.0
 
   '@rush-temp/portal-client@file:projects/portal-client.tgz':
@@ -1567,11 +1581,11 @@ packages:
     version: 0.0.0
 
   '@rush-temp/shibuya-erc20@file:projects/shibuya-erc20.tgz':
-    resolution: {integrity: sha512-MKUAzYRr+bD2NzYPN0/f+CDBuCyPjejBvwuAYNygvasOCquNO8DRq+38qQPS2ERVkJA05H50hG76F6X7Nb5BGw==, tarball: file:projects/shibuya-erc20.tgz}
+    resolution: {integrity: sha512-KgAoHqXKK+HPPM4VchaPUpSJMIALqgN45YAv+h68GtLKBHIdhUuSxyteOusxMO20ikyjHzlZi78ftK7OFoyMVA==, tarball: file:projects/shibuya-erc20.tgz}
     version: 0.0.0
 
   '@rush-temp/shibuya-psp22@file:projects/shibuya-psp22.tgz':
-    resolution: {integrity: sha512-r19MO3p/wiOVlfON8QYgbCsETz6feIQ/e6ZBpX6wKZrZwGm2AKJ/MqbWOixQu2b8YZ/JQ+QZZrYx+YtzS5osHw==, tarball: file:projects/shibuya-psp22.tgz}
+    resolution: {integrity: sha512-ZRryi5lLN3qzUU9BqfinQYInBBynn2oC4zy2+ZLrfzMGKfm6UkPVpxUFUZTGv+V1nQGVtGBtSIBcUkhSg6+EsA==, tarball: file:projects/shibuya-psp22.tgz}
     version: 0.0.0
 
   '@rush-temp/solana-data-service@file:projects/solana-data-service.tgz':
@@ -1707,11 +1721,11 @@ packages:
     version: 0.0.0
 
   '@rush-temp/tron-usdt@file:projects/tron-usdt.tgz':
-    resolution: {integrity: sha512-JUrHazzpRzZQMnljnahq2Fx0aJlK6kLLB56oODMe03Xsimz2ID3Hzb1V9T6AkVA28UOrKllQqgtmFwgq218bCw==, tarball: file:projects/tron-usdt.tgz}
+    resolution: {integrity: sha512-X7GwKQxDmMFypIImnSSilnIy0aIcD2ZfeZ/aEjzO6vY8AORAFwHYIDPNo8utKNhCGD96icQ+tnHrbgioO3mAGA==, tarball: file:projects/tron-usdt.tgz}
     version: 0.0.0
 
   '@rush-temp/typeorm-codegen@file:projects/typeorm-codegen.tgz':
-    resolution: {integrity: sha512-v2LGX2UrcvJPrYF7DuDuyzidkRu1XeHarXOPfQ7M/C7qS3ZnKI+urwAon7b4I7sLRycJnUXhinbZBH+/DXLvqg==, tarball: file:projects/typeorm-codegen.tgz}
+    resolution: {integrity: sha512-m7JySlewtz84M10J50GKWNKnyjDv70RVx/NgzO6FeaZl1enLREea3NHI2pwHK1+HytAB3YgkZZLpCXDoPnURow==, tarball: file:projects/typeorm-codegen.tgz}
     version: 0.0.0
 
   '@rush-temp/typeorm-config@file:projects/typeorm-config.tgz':
@@ -5848,6 +5862,36 @@ snapshots:
       '@types/node': 24.0.15
       typescript: 5.5.4
 
+  '@rush-temp/evm-fallback-stream@file:projects/evm-fallback-stream.tgz(esbuild@0.27.7)(tsx@4.21.0)':
+    dependencies:
+      '@types/node': 24.0.15
+      prom-client: 14.2.0
+      typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(esbuild@0.27.7)(tsx@4.21.0)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
+
   '@rush-temp/evm-ingest@file:projects/evm-ingest.tgz':
     dependencies:
       '@types/node': 24.0.15
@@ -5888,6 +5932,35 @@ snapshots:
       typescript: 5.5.4
 
   '@rush-temp/evm-processor@file:projects/evm-processor.tgz(esbuild@0.27.7)(tsx@4.21.0)':
+    dependencies:
+      '@types/node': 24.0.15
+      typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(esbuild@0.27.7)(tsx@4.21.0)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
+
+  '@rush-temp/evm-rpc-stream@file:projects/evm-rpc-stream.tgz(esbuild@0.27.7)(tsx@4.21.0)':
     dependencies:
       '@types/node': 24.0.15
       typescript: 5.5.4
