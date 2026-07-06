@@ -1,12 +1,12 @@
 import type {Block, DataRequest, EVMDataSource, FieldSelection} from '@subsquid/evm-stream'
-import type {RpcMethodOptions} from '../../evm-rpc-stream'
+import type {RpcMethodOptions} from '../rpc'
 import type {Rpc} from '@subsquid/evm-rpc'
 import type {BlockRef} from '@subsquid/util-internal-data-source'
 import type {RangeRequestList} from '@subsquid/util-internal-range'
 
-import {CapabilityProbeOptions, makeCapabilityProbe} from '../capability'
-import {FallbackDataSource, RankedSource} from '../fallback'
-import type {FallbackPolicy} from '../policy'
+import {CapabilityProbeOptions, makeCapabilityProbe} from '../../fallback/capability'
+import {FallbackDataSource, RankedSource} from '../../fallback/fallback'
+import type {FallbackPolicy} from '../../fallback/policy'
 
 /**
  * Load the sibling `evm-rpc-stream` subpath lazily, only when an `rpc` source is actually
@@ -14,8 +14,8 @@ import type {FallbackPolicy} from '../policy'
  * top-level import) purely so a Portal-only fallback never pulls the RPC stack (`@subsquid/evm-rpc`
  * + `evm-normalization`) into the module graph until an `rpc` source is built.
  */
-function loadRpcStream(): typeof import('../../evm-rpc-stream') {
-    return require('../../evm-rpc-stream')
+function loadRpcStream(): typeof import('../rpc') {
+    return require('../rpc')
 }
 
 /**

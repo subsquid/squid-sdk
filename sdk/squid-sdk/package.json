@@ -20,117 +20,123 @@
       "import": "./lib/index.js",
       "require": "./lib/index.js"
     },
-    "./evm-rpc-stream": {
-      "types": "./lib/evm-rpc-stream/index.d.ts",
-      "import": "./lib/evm-rpc-stream/index.js",
-      "require": "./lib/evm-rpc-stream/index.js"
+    "./evm": {
+      "types": "./lib/evm/index.d.ts",
+      "import": "./lib/evm/index.js",
+      "require": "./lib/evm/index.js"
     },
-    "./evm-fallback-stream": {
-      "types": "./lib/evm-fallback-stream/index.d.ts",
-      "import": "./lib/evm-fallback-stream/index.js",
-      "require": "./lib/evm-fallback-stream/index.js"
+    "./evm/rpc": {
+      "types": "./lib/evm/rpc/index.d.ts",
+      "import": "./lib/evm/rpc/index.js",
+      "require": "./lib/evm/rpc/index.js"
     },
-    "./evm-stream": {
-      "types": "./lib/evm-stream/index.d.ts",
-      "import": "./lib/evm-stream/index.js",
-      "require": "./lib/evm-stream/index.js"
+    "./evm/fallback": {
+      "types": "./lib/evm/fallback/index.d.ts",
+      "import": "./lib/evm/fallback/index.js",
+      "require": "./lib/evm/fallback/index.js"
     },
-    "./solana-stream": {
-      "types": "./lib/solana-stream/index.d.ts",
-      "import": "./lib/solana-stream/index.js",
-      "require": "./lib/solana-stream/index.js"
+    "./solana": {
+      "types": "./lib/solana/index.d.ts",
+      "import": "./lib/solana/index.js",
+      "require": "./lib/solana/index.js"
     },
-    "./fuel-stream": {
-      "types": "./lib/fuel-stream/index.d.ts",
-      "import": "./lib/fuel-stream/index.js",
-      "require": "./lib/fuel-stream/index.js"
+    "./fuel": {
+      "types": "./lib/fuel/index.d.ts",
+      "import": "./lib/fuel/index.js",
+      "require": "./lib/fuel/index.js"
     },
-    "./starknet-stream": {
-      "types": "./lib/starknet-stream/index.d.ts",
-      "import": "./lib/starknet-stream/index.js",
-      "require": "./lib/starknet-stream/index.js"
+    "./starknet": {
+      "types": "./lib/starknet/index.d.ts",
+      "import": "./lib/starknet/index.js",
+      "require": "./lib/starknet/index.js"
     },
-    "./util-internal": {
-      "types": "./lib/util-internal/index.d.ts",
-      "import": "./lib/util-internal/index.js",
-      "require": "./lib/util-internal/index.js"
+    "./fallback": {
+      "types": "./lib/fallback/index.d.ts",
+      "import": "./lib/fallback/index.js",
+      "require": "./lib/fallback/index.js"
     },
-    "./util-internal-data-source": {
-      "types": "./lib/util-internal-data-source/index.d.ts",
-      "import": "./lib/util-internal-data-source/index.js",
-      "require": "./lib/util-internal-data-source/index.js"
+    "./util": {
+      "types": "./lib/util/index.d.ts",
+      "import": "./lib/util/index.js",
+      "require": "./lib/util/index.js"
     },
-    "./util-internal-range": {
-      "types": "./lib/util-internal-range/index.d.ts",
-      "import": "./lib/util-internal-range/index.js",
-      "require": "./lib/util-internal-range/index.js"
+    "./util/data-source": {
+      "types": "./lib/util/data-source/index.d.ts",
+      "import": "./lib/util/data-source/index.js",
+      "require": "./lib/util/data-source/index.js"
     },
-    "./util-internal-hex": {
-      "types": "./lib/util-internal-hex/index.d.ts",
-      "import": "./lib/util-internal-hex/index.js",
-      "require": "./lib/util-internal-hex/index.js"
+    "./util/range": {
+      "types": "./lib/util/range/index.d.ts",
+      "import": "./lib/util/range/index.js",
+      "require": "./lib/util/range/index.js"
     },
-    "./util-internal-json": {
-      "types": "./lib/util-internal-json/index.d.ts",
-      "import": "./lib/util-internal-json/index.js",
-      "require": "./lib/util-internal-json/index.js"
+    "./util/hex": {
+      "types": "./lib/util/hex/index.d.ts",
+      "import": "./lib/util/hex/index.js",
+      "require": "./lib/util/hex/index.js"
     },
-    "./util-internal-validation": {
-      "types": "./lib/util-internal-validation/index.d.ts",
-      "import": "./lib/util-internal-validation/index.js",
-      "require": "./lib/util-internal-validation/index.js"
+    "./util/json": {
+      "types": "./lib/util/json/index.d.ts",
+      "import": "./lib/util/json/index.js",
+      "require": "./lib/util/json/index.js"
     },
-    "./util-internal-processor-tools": {
-      "types": "./lib/util-internal-processor-tools/index.d.ts",
-      "import": "./lib/util-internal-processor-tools/index.js",
-      "require": "./lib/util-internal-processor-tools/index.js"
+    "./util/validation": {
+      "types": "./lib/util/validation/index.d.ts",
+      "import": "./lib/util/validation/index.js",
+      "require": "./lib/util/validation/index.js"
+    },
+    "./util/processor-tools": {
+      "types": "./lib/util/processor-tools/index.d.ts",
+      "import": "./lib/util/processor-tools/index.js",
+      "require": "./lib/util/processor-tools/index.js"
+    },
+    "./util/timeout": {
+      "types": "./lib/util/timeout/index.d.ts",
+      "import": "./lib/util/timeout/index.js",
+      "require": "./lib/util/timeout/index.js"
+    },
+    "./client/portal": {
+      "types": "./lib/client/portal/index.d.ts",
+      "import": "./lib/client/portal/index.js",
+      "require": "./lib/client/portal/index.js"
+    },
+    "./client/rpc": {
+      "types": "./lib/client/rpc/index.d.ts",
+      "import": "./lib/client/rpc/index.js",
+      "require": "./lib/client/rpc/index.js"
+    },
+    "./client/http": {
+      "types": "./lib/client/http/index.d.ts",
+      "import": "./lib/client/http/index.js",
+      "require": "./lib/client/http/index.js"
     },
     "./logger": {
       "types": "./lib/logger/index.d.ts",
       "import": "./lib/logger/index.js",
       "require": "./lib/logger/index.js"
-    },
-    "./portal-client": {
-      "types": "./lib/portal-client/index.d.ts",
-      "import": "./lib/portal-client/index.js",
-      "require": "./lib/portal-client/index.js"
-    },
-    "./http-client": {
-      "types": "./lib/http-client/index.d.ts",
-      "import": "./lib/http-client/index.js",
-      "require": "./lib/http-client/index.js"
-    },
-    "./rpc-client": {
-      "types": "./lib/rpc-client/index.d.ts",
-      "import": "./lib/rpc-client/index.js",
-      "require": "./lib/rpc-client/index.js"
-    },
-    "./util-timeout": {
-      "types": "./lib/util-timeout/index.d.ts",
-      "import": "./lib/util-timeout/index.js",
-      "require": "./lib/util-timeout/index.js"
     }
   },
   "typesVersions": {
     "*": {
-      "evm-rpc-stream": ["./lib/evm-rpc-stream/index.d.ts"],
-      "evm-fallback-stream": ["./lib/evm-fallback-stream/index.d.ts"],
-      "evm-stream": ["./lib/evm-stream/index.d.ts"],
-      "solana-stream": ["./lib/solana-stream/index.d.ts"],
-      "fuel-stream": ["./lib/fuel-stream/index.d.ts"],
-      "starknet-stream": ["./lib/starknet-stream/index.d.ts"],
-      "util-internal": ["./lib/util-internal/index.d.ts"],
-      "util-internal-data-source": ["./lib/util-internal-data-source/index.d.ts"],
-      "util-internal-range": ["./lib/util-internal-range/index.d.ts"],
-      "util-internal-hex": ["./lib/util-internal-hex/index.d.ts"],
-      "util-internal-json": ["./lib/util-internal-json/index.d.ts"],
-      "util-internal-validation": ["./lib/util-internal-validation/index.d.ts"],
-      "util-internal-processor-tools": ["./lib/util-internal-processor-tools/index.d.ts"],
-      "logger": ["./lib/logger/index.d.ts"],
-      "portal-client": ["./lib/portal-client/index.d.ts"],
-      "http-client": ["./lib/http-client/index.d.ts"],
-      "rpc-client": ["./lib/rpc-client/index.d.ts"],
-      "util-timeout": ["./lib/util-timeout/index.d.ts"]
+      "evm": ["./lib/evm/index.d.ts"],
+      "evm/rpc": ["./lib/evm/rpc/index.d.ts"],
+      "evm/fallback": ["./lib/evm/fallback/index.d.ts"],
+      "solana": ["./lib/solana/index.d.ts"],
+      "fuel": ["./lib/fuel/index.d.ts"],
+      "starknet": ["./lib/starknet/index.d.ts"],
+      "fallback": ["./lib/fallback/index.d.ts"],
+      "util": ["./lib/util/index.d.ts"],
+      "util/data-source": ["./lib/util/data-source/index.d.ts"],
+      "util/range": ["./lib/util/range/index.d.ts"],
+      "util/hex": ["./lib/util/hex/index.d.ts"],
+      "util/json": ["./lib/util/json/index.d.ts"],
+      "util/validation": ["./lib/util/validation/index.d.ts"],
+      "util/processor-tools": ["./lib/util/processor-tools/index.d.ts"],
+      "util/timeout": ["./lib/util/timeout/index.d.ts"],
+      "client/portal": ["./lib/client/portal/index.d.ts"],
+      "client/rpc": ["./lib/client/rpc/index.d.ts"],
+      "client/http": ["./lib/client/http/index.d.ts"],
+      "logger": ["./lib/logger/index.d.ts"]
     }
   },
   "scripts": {
@@ -139,8 +145,6 @@
     "test:lfs": "VITEST_LFS=1 vitest --run"
   },
   "dependencies": {
-    "@subsquid/evm-normalization": "^0.0.2",
-    "@subsquid/evm-rpc": "^0.0.2",
     "@subsquid/evm-stream": "^0.1.1",
     "@subsquid/fuel-stream": "^1.2.0",
     "@subsquid/http-client": "^1.8.1",
@@ -159,7 +163,21 @@
     "@subsquid/util-timeout": "^2.3.2",
     "prom-client": "^14.2.0"
   },
+  "peerDependencies": {
+    "@subsquid/evm-normalization": "^0.0.2",
+    "@subsquid/evm-rpc": "^0.0.2"
+  },
+  "peerDependenciesMeta": {
+    "@subsquid/evm-normalization": {
+      "optional": true
+    },
+    "@subsquid/evm-rpc": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@subsquid/evm-normalization": "^0.0.2",
+    "@subsquid/evm-rpc": "^0.0.2",
     "@types/node": "^24.0.0",
     "typescript": "5.5.4",
     "vitest": "4.1.5"
