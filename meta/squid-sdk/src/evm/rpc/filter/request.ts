@@ -101,20 +101,41 @@ export interface RequiredData {
  * transaction fetching, and requested receipt fields upgrade logs → receipts).
  */
 export function toRequiredData(req: FlatDataRequest, fields: FieldSelection): RequiredData {
+    // `logs` is the *raw* need (a log filter or log relation). The "receipts already carry logs, so
+    // skip the separate eth_getLogs" de-duplication is deliberately NOT applied here — it must run on
+    // the aggregate of all requests (see `unionRequiredData`); applying it per-request lets a config
+    // where request A needs logs and request B needs receipts still fire a redundant eth_getLogs.
+    //
+    // No `transactions` toggle: the RPC source *always* fetches full transactions (mapRpcBlock needs
+    // them to normalize a block), so a derived flag would be dead — the fetch can't be turned off.
+    // `txs` is still needed to decide whether requested *receipt* fields upgrade the fetch to receipts.
     let txs = transactionsRequested(req)
-    let logs = logsRequested(req)
-    let receipts = txs && isRequested(TX_RECEIPT_FIELDS, fields.transaction)
-
-    // No `transactions` toggle here: the RPC source *always* fetches full transactions (mapRpcBlock
-    // needs them to normalize a block — see `EvmRpcStreamDataSource`), so a derived "are transactions
-    // required" flag would be dead — the fetch can't be turned off. `txs` is still needed to decide
-    // whether requested *receipt* fields upgrade the fetch to receipts.
     return {
-        logs: logs && !receipts,
-        receipts,
+        logs: logsRequested(req),
+        receipts: txs && isRequested(TX_RECEIPT_FIELDS, fields.transaction),
         traces: tracesRequested(req),
         stateDiffs: stateDiffsRequested(req),
     }
+}
+
+/**
+ * The coarse fetch plan for the whole request list: the per-request needs OR-ed together, then the
+ * logs↔receipts de-duplication applied *once* on the aggregate. A receipt fetch already returns the
+ * block's logs, so a separate `eth_getLogs` is only needed when some request wants logs and *nothing*
+ * in the list pulls receipts.
+ */
+export function unionRequiredData(requests: FlatDataRequest[], fields: FieldSelection): RequiredData {
+    let acc: RequiredData = {logs: false, receipts: false, traces: false, stateDiffs: false}
+    for (let req of requests) {
+        let r = toRequiredData(req, fields)
+        acc.logs ||= r.logs
+        acc.receipts ||= r.receipts
+        acc.traces ||= r.traces
+        acc.stateDiffs ||= r.stateDiffs
+    }
+    acc.logs &&= !acc.receipts
+
+    return acc
 }
 
 function transactionsRequested(req: FlatDataRequest): boolean {

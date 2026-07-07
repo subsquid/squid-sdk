@@ -1,5 +1,6 @@
 import {DataSource, isForkException} from '@subsquid/util-internal-data-source'
 
+import {safeReturn, withTimeout} from './async'
 import {SourceErrorInfo, capabilityFailure, classifyError} from './diagnostics'
 
 export interface CapabilityProbeOptions {
@@ -39,19 +40,12 @@ export function makeCapabilityProbe<B>(
 
     return async (atBlock: number): Promise<ProbeResult> => {
         let iterator = source.getStream({from: atBlock, to: atBlock})[Symbol.asyncIterator]()
-        let timer: ReturnType<typeof setTimeout> | undefined
         try {
-            let next = iterator.next()
-            next.catch(() => {}) // a late rejection after a timeout must not surface as unhandled
-            let timeout = new Promise<never>((_resolve, reject) => {
-                timer = setTimeout(
-                    () => reject(capabilityFailure(`probe timed out after ${timeoutMs}ms`, 'timeout')),
-                    timeoutMs,
-                )
-            })
-
             // One batch (or a clean stream end) is enough: it proves the source served the slice.
-            await Promise.race([next, timeout])
+            // The timeout rejects with a ready-made cause (a `SourceErrorInfo`, not a bare Error).
+            await withTimeout(iterator.next(), timeoutMs, () =>
+                capabilityFailure(`probe timed out after ${timeoutMs}ms`, 'timeout'),
+            )
 
             return {ok: true}
         } catch (e) {
@@ -60,17 +54,7 @@ export function makeCapabilityProbe<B>(
             let cause = isErrorInfo(e) ? e : classifyError('capability', e)
             return {ok: false, cause}
         } finally {
-            if (timer) clearTimeout(timer)
-            // Don't await: closing the probe stream must not block, and a stalled source's
-            // `return()` can hang on the same unresolved fetch.
-            try {
-                iterator.return?.()?.then(
-                    () => {},
-                    () => {},
-                )
-            } catch {
-                /* ignore */
-            }
+            safeReturn(iterator)
         }
     }
 }

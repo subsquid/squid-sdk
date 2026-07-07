@@ -6,7 +6,7 @@ import {FiniteRange, RangeRequest, RangeRequestList, applyRangeBound, getSize} f
 
 import {decodeBlock} from '../decode/decode'
 import {filterBlock, setUpRelations} from '../filter/filter'
-import {FlatDataRequest, flattenRequest, toRequiredData} from '../filter/request'
+import {FlatDataRequest, flattenRequest, unionRequiredData} from '../filter/request'
 import {augmentFields} from './augment'
 
 /**
@@ -59,8 +59,9 @@ export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSou
         this.fields = options.fields
         this.requests = options.requests
         this.flatRequests = options.requests.map((r) => ({range: r.range, request: flattenRequest(r.request)}))
-        this.augmentedFields = augmentFields(options.fields, this.flatRequests.map((r) => r.request))
-        this.needsProjection = selectionGrew(this.augmentedFields, options.fields)
+        let augmented = augmentFields(options.fields, this.flatRequests.map((r) => r.request))
+        this.augmentedFields = augmented.fields
+        this.needsProjection = augmented.grew
 
         let coarse = unionRequiredData(this.flatRequests.map((r) => r.request), options.fields)
         this.withTraces = coarse.traces
@@ -173,21 +174,6 @@ export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSou
     }
 }
 
-const SELECTION_TYPES = ['block', 'transaction', 'log', 'trace', 'stateDiff'] as const
-
-/** True if `augmented` selects any field that `original` does not (augmentation only adds). */
-function selectionGrew(augmented: FieldSelection, original: FieldSelection): boolean {
-    for (let t of SELECTION_TYPES) {
-        let aug = (augmented as any)[t] ?? {}
-        let orig = (original as any)[t] ?? {}
-        for (let k in aug) {
-            if (aug[k] && !orig[k]) return true
-        }
-    }
-
-    return false
-}
-
 /**
  * Keep the items of `projected` whose positionally-aligned item in `pre` (the pre-filter decode of
  * the same block) survived filtering into `kept`. `projected[i]` and `pre[i]` are the same on-chain
@@ -201,18 +187,6 @@ export function keptByPosition<P, Q>(projected: P[], pre: Q[], kept: Q[]): P[] {
     return projected.filter((_, i) => survived.has(pre[i]))
 }
 
-function unionRequiredData(requests: FlatDataRequest[], fields: FieldSelection) {
-    let acc = {logs: false, receipts: false, traces: false, stateDiffs: false}
-    for (let req of requests) {
-        let r = toRequiredData(req, fields)
-        acc.logs ||= r.logs
-        acc.receipts ||= r.receipts
-        acc.traces ||= r.traces
-        acc.stateDiffs ||= r.stateDiffs
-    }
-
-    return acc
-}
 
 /**
  * Stream the inner RPC source per *request range*, intersected with the caller's `[from, to]`

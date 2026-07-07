@@ -667,7 +667,12 @@ describe('FallbackDataSource — freshness (M1)', () => {
 
         expect(numbers(await collect(fb.getStream({from: 90, to: 93})))).toEqual([90, 91])
         expect(fb.activeIndex).toBe(1)
+        // The switch (setActive) must clear ALL freshness gauges the old source populated, not just
+        // lag: the lag trigger also recorded chainHead (~110). None may survive onto the new source.
         expect(fb.lag).toBe(0) // not the stale 19 the lag trigger recorded against s0
+        expect(fb.staleness).toBe(0)
+        expect(fb.chainStalled).toBe(false)
+        expect(fb.chainHead).toBeUndefined()
     })
 
     it('(h) re-arms lag per stream: a reused instance does not inherit "at tip" for a backfill', async () => {
@@ -745,6 +750,25 @@ describe('FallbackDataSource — getHead delegation', () => {
         expect(await fb.getHead()).toEqual({number: 5, hash: '0x5'})
         // ...and the blip left s0 usable for streaming, not unhealthy + in cooldown.
         expect(fb.health[0].state).not.toBe('unhealthy')
+    })
+
+    it('throws AllSourcesDown after the timeout when every source fails its head fetch', async () => {
+        let noop: StreamFn = async function* () {}
+        let down = () => {
+            throw new Error('down')
+        }
+        let s0 = new MockSource(noop, {head: down})
+        let s1 = new MockSource(noop, {head: down})
+        // livenessFailThreshold 1 → the first head failure condemns each source, so after both fail
+        // nothing is eligible and delegateHead hits the shared all-down path (via selectActive).
+        let fb = fallback([s0, s1], {
+            allDownTimeoutMs: 0,
+            allDownPollMs: 1,
+            livenessFailThreshold: 1,
+            cooldownMs: 60_000,
+        })
+
+        await expect(fb.getHead()).rejects.toThrowError(/all fallback data sources/)
     })
 })
 

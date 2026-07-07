@@ -2,6 +2,7 @@ import {Logger, createLogger} from '@subsquid/logger'
 import {BlockBatch, BlockRef, BlockStream, DataSource, StreamRequest, isForkException} from '@subsquid/util-internal-data-source'
 import {FiniteRange} from '@subsquid/util-internal-range'
 
+import {safeReturn, withTimeout} from './async'
 import {ProbeResult} from './capability'
 import {SourceErrorInfo, capabilityFailure, classifyError, freshnessFailure} from './diagnostics'
 import {SourceHealth} from './health'
@@ -125,16 +126,15 @@ export class FallbackDataSource<B> implements DataSource<B> {
         return this.runStream(req, true)
     }
 
-    private async *runStream(req: StreamRequest, finalized: boolean): BlockStream<B> {
-        let lastNumber = req.from - 1
-        let lastHash = req.parentHash
+    /**
+     * Yield the source index to drive, re-selecting on each iteration (after a caller's failover).
+     * Owns the all-down accounting shared by streaming and head delegation: when nothing is eligible
+     * it clears the active state and waits out the all-down poll, retrying until a source recovers —
+     * or throwing `AllSourcesDownError` once the all-down timeout elapses. It never completes
+     * normally, so callers loop over it until they return a result or it throws.
+     */
+    private async *selectActive(): AsyncGenerator<number> {
         let allDownSince: number | undefined
-
-        // Re-arm the lag trigger per stream: a reused instance starting a later (far-behind-head)
-        // backfill must not inherit "reached the tip" from a previous run and false-fire on lag.
-        this.#lagArmed = false
-        this.#lastCommitted = lastNumber
-
         while (true) {
             let active = this.selector.pickForFailover()
             if (active == null) {
@@ -143,6 +143,20 @@ export class FallbackDataSource<B> implements DataSource<B> {
                 throw new AllSourcesDownError()
             }
             allDownSince = undefined
+            yield active
+        }
+    }
+
+    private async *runStream(req: StreamRequest, finalized: boolean): BlockStream<B> {
+        let lastNumber = req.from - 1
+        let lastHash = req.parentHash
+
+        // Re-arm the lag trigger per stream: a reused instance starting a later (far-behind-head)
+        // backfill must not inherit "reached the tip" from a previous run and false-fire on lag.
+        this.#lagArmed = false
+        this.#lastCommitted = lastNumber
+
+        for await (let active of this.selectActive()) {
             this.setActive(active)
 
             let streamReq: StreamRequest = {from: lastNumber + 1, to: req.to, parentHash: lastHash}
@@ -222,17 +236,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
     }
 
     private async delegateHead(get: (s: DataSource<B>) => Promise<BlockRef>): Promise<BlockRef> {
-        let allDownSince: number | undefined
-
-        while (true) {
-            let active = this.selector.pickForFailover()
-            if (active == null) {
-                this.clearActive()
-                if (await this.waitAllDown(allDownSince ?? (allDownSince = this.policy.clock()))) continue
-                throw new AllSourcesDownError()
-            }
-            allDownSince = undefined
-
+        for await (let active of this.selectActive()) {
             try {
                 return await get(this.sources[active].source)
             } catch (e) {
@@ -244,6 +248,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                 this.failSource(active, classifyError('liveness', e))
             }
         }
+        throw new AllSourcesDownError() // unreachable: selectActive throws on the all-down timeout
     }
 
     getBlocksCountInRange(range: FiniteRange): number {
@@ -330,17 +335,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * disables the guard and defers to the underlying client's own request timeout.
      */
     private headWithTimeout(i: number): Promise<BlockRef> {
-        let p = this.sources[i].source.getHead()
         let timeoutMs = this.policy.headPollTimeoutMs
-        if (timeoutMs == null) return p
-
-        p.catch(() => {}) // an abandoned (timed-out) poll must not surface as an unhandled rejection
-        let timer: ReturnType<typeof setTimeout>
-        let timeout = new Promise<never>((_resolve, reject) => {
-            timer = setTimeout(() => reject(new Error(`head poll timed out after ${timeoutMs}ms`)), timeoutMs)
-        })
-
-        return Promise.race([p, timeout]).finally(() => clearTimeout(timer))
+        return withTimeout(
+            this.sources[i].source.getHead(),
+            timeoutMs,
+            () => new Error(`head poll timed out after ${timeoutMs}ms`),
+        )
     }
 
     /**
@@ -502,13 +502,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // still registers, and resuming on the *same* one does not.
         if (this.#lastActive !== undefined && this.#lastActive !== i) {
             this.switchCount++
-            // The freshness gauges describe the *active* source; on a switch the previous source's
-            // values are stale, so clear them until the new source's next batch/head poll repopulates
-            // (e.g. `nextWithStaleness` returning `STALE` leaves `staleness` non-zero).
-            this.lag = 0
-            this.staleness = 0
-            this.chainStalled = false
-            this.chainHead = undefined
+            // On a switch the previous source's gauge values are stale — clear them until the new
+            // source's next batch/head poll repopulates them.
+            this.resetFreshnessGauges()
         }
         this.#lastActive = i
         this.activeIndex = i
@@ -517,8 +513,15 @@ export class FallbackDataSource<B> implements DataSource<B> {
     /** No source is eligible (all unhealthy): nothing is being driven, so report no active source. */
     private clearActive(): void {
         this.activeIndex = undefined
-        // The freshness gauges describe the active source; with none, they would otherwise keep
-        // reporting the last source's lag/staleness/stall, so clear them for the all-down gap.
+        this.resetFreshnessGauges() // no active source ⇒ no gauge readings to report for the gap
+    }
+
+    /**
+     * Clear the freshness gauges. They describe the *active* source, so both a switch and an all-down
+     * gap make the previous source's lag/staleness/stall readings stale (e.g. `nextWithStaleness`
+     * returning `STALE` can leave `staleness` non-zero); they repopulate on the next batch/head poll.
+     */
+    private resetFreshnessGauges(): void {
         this.lag = 0
         this.staleness = 0
         this.chainStalled = false
@@ -536,18 +539,5 @@ function delay(ms: number): {promise: Promise<void>; cancel: () => void} {
 }
 
 function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-function safeReturn(it: AsyncIterator<unknown>): void {
-    try {
-        // Don't await: closing the old connection must neither block failover nor surface a
-        // late rejection.
-        it.return?.()?.then(
-            () => {},
-            () => {},
-        )
-    } catch {
-        /* ignore */
-    }
+    return delay(ms).promise
 }

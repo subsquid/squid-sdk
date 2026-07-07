@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/squid-sdk",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Umbrella package for the Squid SDK: data sources and utilities exposed as subpaths",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -20,6 +20,7 @@
       "import": "./lib/index.js",
       "require": "./lib/index.js"
     },
+    "./package.json": "./package.json",
     "./evm": {
       "types": "./lib/evm/index.d.ts",
       "import": "./lib/evm/index.js",
