@@ -480,6 +480,49 @@ describe('FallbackDataSource — switch-up / recovery', () => {
         expect(cause).toMatchObject({check: 'capability', reason: 'unknown'})
         expect(cause?.reason).not.toBe('stale')
     })
+
+    it('survives a capability probe that throws synchronously (fails as capability, flag not stranded)', async () => {
+        let now = 0
+        let s0 = new MockSource(
+            async function* (_req, call) {
+                if (call === 0) throw new Error('s0 down')
+                yield batch([blk(999)])
+            },
+            {head: async () => ({number: 1_000_000, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {
+            yield batch([blk(200)])
+            yield batch([blk(201)])
+            yield batch([blk(202)])
+        })
+        let fb = new FallbackDataSource<TestBlock>({
+            sources: [
+                // A misbehaving custom probe that throws *synchronously*, before returning a Promise.
+                {
+                    name: 's0',
+                    source: s0,
+                    probeCapability: () => {
+                        throw new Error('sync boom')
+                    },
+                },
+                ranked(s1, 's1'),
+            ],
+            getBlockRef: (b) => ({number: b.header.number, hash: b.header.hash}),
+            policy: {preferPrimary: 'eager', cooldownMs: 1000, headTtlMs: 0, maxLagBlocks: null, maxStalenessMs: null, clock: () => now},
+        })
+
+        let it = fb.getStream({from: 200, to: 202})[Symbol.asyncIterator]()
+        await it.next() // s0 down → s1 serves [200]
+        now = 1000 // s0 cooldown elapses → probed as a switch-up candidate; the probe throws synchronously
+        await it.next()
+        await wait(0) // settle the fire-and-forget probe
+
+        // The sync throw must be normalized into a rejection routed to failSource as a *capability*
+        // failure — not escape #maybeProbeCapability (surfacing as a liveness error and stranding the
+        // #capabilityProbing flag at true, which would block every future probe for s0). Reaching the
+        // capability-labeled cause proves the `.finally` that clears the flag also ran.
+        expect(fb.metrics().sources[0].cause).toMatchObject({check: 'capability'})
+    })
 })
 
 const hang = () => new Promise(() => {})

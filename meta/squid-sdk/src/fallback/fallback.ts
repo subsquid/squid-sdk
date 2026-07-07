@@ -386,7 +386,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
         )
 
         this.#capabilityProbing[i] = true
-        probe(target)
+        // `Promise.resolve().then(() => probe(target))` normalizes a *synchronously*-throwing custom
+        // probe into a rejection, so the throw can't escape this method (stranding `#capabilityProbing[i]`
+        // at `true` and blocking all future probes for the source) — it flows to the rejection handler
+        // and the `.finally` still clears the flag.
+        Promise.resolve()
+            .then(() => probe(target))
             .then(
                 (r) => {
                     if (r.ok) {
