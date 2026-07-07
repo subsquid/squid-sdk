@@ -1,3 +1,4 @@
+import type {MetricsSink} from '@subsquid/util-internal-processor-tools'
 import {Gauge, Registry} from 'prom-client'
 
 import {FallbackMetrics} from './fallback'
@@ -6,14 +7,11 @@ export interface FallbackMetricsSource {
     metrics(): FallbackMetrics
 }
 
-/**
- * Matches `@subsquid/util-internal-processor-tools`' `MetricsSink`, so a fallback's metrics can be
- * added to the processor's `PrometheusServer` via `addMetricsSink(...)` (the processor's existing
- * metrics surface, §4).
- */
-export interface MetricsSink {
-    register(registry: Registry): void | Promise<void>
-}
+// Re-export the processor's canonical `MetricsSink` (rather than a local duplicate that could drift):
+// a `fallbackMetricsSink` plugs straight into the processor's `PrometheusServer` via `addMetricsSink`.
+// Imported as a *type*, so the VM-agnostic fallback module gains no runtime dependency on
+// processor-tools — the import is erased at build.
+export type {MetricsSink}
 
 const HEALTH_STATES = ['healthy', 'unhealthy', 'unknown'] as const
 
