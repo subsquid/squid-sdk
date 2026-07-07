@@ -238,13 +238,17 @@ export class FallbackDataSource<B> implements DataSource<B> {
     private async delegateHead(get: (s: DataSource<B>) => Promise<BlockRef>): Promise<BlockRef> {
         for await (let active of this.selectActive()) {
             try {
-                return await get(this.sources[active].source)
+                let head = await get(this.sources[active].source)
+                // A head query *is* the liveness signal (cf. `getCachedHead`): a success records a
+                // liveness pass, which resets the consecutive-fail counter so earlier transient blips
+                // don't accumulate toward `livenessFailThreshold` across intervening successes.
+                this.health[active].onLivenessPass()
+                return head
             } catch (e) {
-                // A head query *is* the liveness signal (cf. `getCachedHead`), so gate it on the
-                // liveness-fail threshold rather than condemning the source on a single blip — head
-                // and stream share one `SourceHealth`, so an over-eager mark here would needlessly
-                // switch an otherwise-healthy stream. A below-threshold fail leaves the source
-                // eligible, so this retries it (transient-friendly) before failing over.
+                // Gate the failure on the liveness-fail threshold rather than condemning the source on
+                // a single blip — head and stream share one `SourceHealth`, so an over-eager mark here
+                // would needlessly switch an otherwise-healthy stream. A below-threshold fail leaves
+                // the source eligible, so this retries it (transient-friendly) before failing over.
                 this.failSource(active, classifyError('liveness', e))
             }
         }

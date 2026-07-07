@@ -197,8 +197,10 @@ export function keptByPosition<P, Q>(projected: P[], pre: Q[], kept: Q[]): P[] {
  *
  * `parentHash` is threaded through *contiguous* ranges so the inner source's continuity/fork
  * detection keeps working across a seam, and is dropped across a gap (there is no parent to
- * assert there). The caller's `parentHash` is preserved for the very first streamed block — that
- * is what lets a fallback detect a fork when it resumes after switching sources.
+ * assert there). The caller's `parentHash` is preserved for the very first streamed block *when the
+ * stream starts within the first request range* (no leading gap) — that is what lets a fallback
+ * detect a fork when it resumes after switching sources. If the stream instead starts inside a gap
+ * (`range.from !== expectedFrom` on the first range), there is no asserted parent, so it is dropped.
  */
 export async function* streamBoundedRanges(
     inner: Pick<DataSource<RpcBlock>, 'getStream' | 'getFinalizedStream'>,

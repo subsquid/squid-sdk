@@ -795,6 +795,31 @@ describe('FallbackDataSource — getHead delegation', () => {
         expect(fb.health[0].state).not.toBe('unhealthy')
     })
 
+    it('records a liveness pass on a successful head query, so non-consecutive blips do not condemn it', async () => {
+        let noop: StreamFn = async function* () {}
+        let seq = [
+            () => {
+                throw new Error('blip')
+            },
+            () => ({number: 5, hash: '0x5'}),
+            () => {
+                throw new Error('blip')
+            },
+            () => ({number: 6, hash: '0x6'}),
+        ]
+        let k = 0
+        let s0 = new MockSource(noop, {head: async () => seq[Math.min(k++, seq.length - 1)]()})
+        let s1 = new MockSource(noop, {head: async () => ({number: 99, hash: '0x99'})})
+        let fb = fallback([s0, s1], {livenessFailThreshold: 2, cooldownMs: 60_000})
+
+        expect(await fb.getHead()).toEqual({number: 5, hash: '0x5'}) // blip, then success on s0
+        // The success must reset s0's consecutive-liveness-fail counter, so the later blip counts as
+        // #1 again (not #2) — s0 stays eligible and serves the next head instead of being condemned
+        // and forcing a failover to s1. Pre-fix (no pass recorded) the second blip trips the threshold.
+        expect(await fb.getHead()).toEqual({number: 6, hash: '0x6'})
+        expect(fb.health[0].state).not.toBe('unhealthy')
+    })
+
     it('throws AllSourcesDown after the timeout when every source fails its head fetch', async () => {
         let noop: StreamFn = async function* () {}
         let down = () => {
