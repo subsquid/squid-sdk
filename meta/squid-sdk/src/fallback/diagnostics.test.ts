@@ -1,8 +1,16 @@
 import {describe, expect, it} from 'vitest'
 
-import {classifyError, redactUrl} from './diagnostics'
+import {classifyError, redactText, redactUrl} from './diagnostics'
 
 describe('redactUrl', () => {
+    it('strips the fragment, which can also carry a token', () => {
+        expect(redactUrl('https://rpc.example.com/v1#token=secret')).toBe('https://rpc.example.com/v1')
+    })
+
+    it('redacts credentials in a ws:// endpoint too', () => {
+        expect(redactUrl('wss://user:pass@rpc.example.com/ws?apikey=secret123456')).toBe('wss://rpc.example.com/ws')
+    })
+
     it('strips userinfo and query string', () => {
         expect(redactUrl('https://user:pass@rpc.example.com/v1?apikey=secret123456')).toBe(
             'https://rpc.example.com/v1',
@@ -19,6 +27,20 @@ describe('redactUrl', () => {
     it('returns undefined for an unparseable value rather than leak it', () => {
         expect(redactUrl('not a url')).toBeUndefined()
         expect(redactUrl(undefined)).toBeUndefined()
+    })
+})
+
+describe('redactText', () => {
+    it('redacts an embedded https URL, fragment and all', () => {
+        expect(redactText('request to https://user:pass@rpc.example.com/v1?apikey=secret#t=x failed')).toBe(
+            'request to https://rpc.example.com/v1 failed',
+        )
+    })
+
+    it('redacts an embedded ws:// / wss:// endpoint (JSON-RPC providers quote these)', () => {
+        expect(redactText('socket wss://k3y@node.example.com/rpc dropped')).toBe(
+            'socket wss://node.example.com/rpc dropped',
+        )
     })
 })
 

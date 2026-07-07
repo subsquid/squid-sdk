@@ -30,9 +30,10 @@ export interface SourceErrorInfo {
 }
 
 /**
- * Strip credentials from a URL before it reaches a log line: drop userinfo + query string (where
- * `?apikey=…` lives) and mask key-like path segments (SQD `sqd_…` tokens and long opaque ids).
- * Returns `undefined` for an unparseable value rather than risk leaking it verbatim.
+ * Strip credentials from a URL before it reaches a log line: drop userinfo, query string (where
+ * `?apikey=…` lives) and the fragment (`#…`, which can carry a token too), and mask key-like path
+ * segments (SQD `sqd_…` tokens and long opaque ids). Returns `undefined` for an unparseable value
+ * rather than risk leaking it verbatim.
  */
 export function redactUrl(u?: string): string | undefined {
     if (!u) return undefined
@@ -41,6 +42,7 @@ export function redactUrl(u?: string): string | undefined {
         url.username = ''
         url.password = ''
         url.search = ''
+        url.hash = ''
         url.pathname = url.pathname
             .replace(/sqd_[A-Za-z0-9]+/g, 'sqd_***')
             .replace(/[A-Za-z0-9_-]{24,}/g, '***')
@@ -50,9 +52,12 @@ export function redactUrl(u?: string): string | undefined {
     }
 }
 
-/** Redact every URL embedded in free text — error messages routinely quote the failing URL. */
+/**
+ * Redact every URL embedded in free text — error messages routinely quote the failing URL. Matches
+ * both HTTP(S) and WebSocket (`ws://` / `wss://`) endpoints, since JSON-RPC providers quote either.
+ */
 export function redactText(s: string): string {
-    return s.replace(/https?:\/\/[^\s)'"]+/g, (m) => redactUrl(m) ?? '***')
+    return s.replace(/(?:https?|wss?):\/\/[^\s)'"]+/g, (m) => redactUrl(m) ?? '***')
 }
 
 function pickEndpoint(e: any): string | undefined {
