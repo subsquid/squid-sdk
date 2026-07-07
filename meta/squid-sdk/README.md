@@ -23,7 +23,6 @@ The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpa
 | `fallback` | VM-agnostic fallback supervisor: drives the lowest-index healthy source of N | **owned** (folded in) |
 | `solana` | Solana stream | re-export of `@subsquid/solana-stream` |
 | `fuel` | Fuel stream | re-export of `@subsquid/fuel-stream` |
-| `starknet` | Starknet stream | re-export of `@subsquid/starknet-stream` |
 | `util` | general SDK utilities | re-export of `@subsquid/util-internal` |
 | `util/data-source` | data-source interfaces | re-export of `@subsquid/util-internal-data-source` |
 | `util/range` | block-range helpers | re-export of `@subsquid/util-internal-range` |

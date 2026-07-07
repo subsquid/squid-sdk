@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/squid-sdk",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Umbrella package for the Squid SDK: data sources and utilities exposed as subpaths",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -44,11 +44,6 @@
       "types": "./lib/fuel/index.d.ts",
       "import": "./lib/fuel/index.js",
       "require": "./lib/fuel/index.js"
-    },
-    "./starknet": {
-      "types": "./lib/starknet/index.d.ts",
-      "import": "./lib/starknet/index.js",
-      "require": "./lib/starknet/index.js"
     },
     "./fallback": {
       "types": "./lib/fallback/index.d.ts",
@@ -123,7 +118,6 @@
       "evm/fallback": ["./lib/evm/fallback/index.d.ts"],
       "solana": ["./lib/solana/index.d.ts"],
       "fuel": ["./lib/fuel/index.d.ts"],
-      "starknet": ["./lib/starknet/index.d.ts"],
       "fallback": ["./lib/fallback/index.d.ts"],
       "util": ["./lib/util/index.d.ts"],
       "util/data-source": ["./lib/util/data-source/index.d.ts"],
@@ -152,7 +146,6 @@
     "@subsquid/portal-client": "^0.5.2",
     "@subsquid/rpc-client": "^4.15.1",
     "@subsquid/solana-stream": "^1.1.1",
-    "@subsquid/starknet-stream": "^1.2.0",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-data-source": "^0.0.0",
     "@subsquid/util-internal-hex": "^1.2.3",
