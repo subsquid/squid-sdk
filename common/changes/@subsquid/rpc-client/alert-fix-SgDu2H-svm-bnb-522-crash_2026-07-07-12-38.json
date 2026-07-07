@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "Treat Cloudflare-origin 5xx (521-524) as retryable connection errors so a transient upstream error is backed off and retried instead of being thrown as fatal and crashing the process",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}
