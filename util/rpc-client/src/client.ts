@@ -536,6 +536,10 @@ export class RpcClient {
                 case 502:
                 case 503:
                 case 504:
+                case 521:
+                case 522:
+                case 523:
+                case 524:
                     return true
                 default:
                     return false
