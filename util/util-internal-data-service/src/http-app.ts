@@ -154,6 +154,11 @@ async function writeBlocks(ctx: HttpContext, res: DataResponse, start: number, m
     if (res.head) {
         for await (let batch of res.head) {
             for (let block of batch) {
+                // .destroyed is the only property that reflects a client disconnect:
+                // .writable stays true and writes are silently discarded,
+                // so without this check an abandoned backfill would keep running
+                // at full speed until the maxDuration limit
+                if (ctx.response.destroyed) return
                 if (ctx.response.writableNeedDrain || !ctx.response.writable) {
                     if (Date.now() - start > maxDuration) {
                         break
@@ -162,6 +167,7 @@ async function writeBlocks(ctx: HttpContext, res: DataResponse, start: number, m
                 }
                 ctx.response.write(await getPayload(block))
             }
+            if (ctx.response.destroyed) return
             // check after each batch to ensure,
             // that time limits are checked in case of slow arriving tiny batches
             if (Date.now() - start > maxDuration) {
@@ -172,6 +178,7 @@ async function writeBlocks(ctx: HttpContext, res: DataResponse, start: number, m
 
     if (res.tail) {
         for (let block of res.tail) {
+            if (ctx.response.destroyed) return
             if (ctx.response.writableNeedDrain || !ctx.response.writable) {
                 if (Date.now() - start > maxDuration) {
                     break
