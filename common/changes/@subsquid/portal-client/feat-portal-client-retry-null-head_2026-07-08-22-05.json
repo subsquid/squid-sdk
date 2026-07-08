@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "`getHead` / `getFinalizedHead` now retry a transient JSON-`null` head with a short, finite backoff (configurable via `headRetrySchedule`), preventing spurious \"portal has no finalized head\" failures while a dataset's head is being (re)established after a portal store cold-start.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}
