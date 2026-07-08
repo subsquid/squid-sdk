@@ -123,14 +123,18 @@ export class DataService {
         async function* head(): AsyncIterable<Block[]> {
             let prev: Block | undefined
 
-            for (let block of firstBatch.blocks) {
-                assertChainContinuity(parentHash, prev, block)
-                prev = block
-            }
-
-            yield firstBatch.blocks
-
+            // The entire body, including the very first yield, must stay inside
+            // this try block. A consumer terminating the generator while it is
+            // suspended at a yield placed before the try would skip the finally,
+            // leaving `it` (and the worker threads behind it) alive forever.
             try {
+                for (let block of firstBatch.blocks) {
+                    assertChainContinuity(parentHash, prev, block)
+                    prev = block
+                }
+
+                yield firstBatch.blocks
+
                 while (true) {
                     let item = await it.next()
                     if (item.done) break
@@ -153,7 +157,12 @@ export class DataService {
         return {
             finalizedHead,
             head: head(),
-            tail
+            tail,
+            close: async () => {
+                // safety net for the case when `head` is never iterated:
+                // an unstarted generator's .return() does not execute its finally
+                await it.return?.().catch(err => log.error(err))
+            }
         }
     }
 
