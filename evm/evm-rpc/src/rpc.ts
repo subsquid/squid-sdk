@@ -367,6 +367,14 @@ export class Rpc {
                 )
             }
 
+            if (utils.isHederaMainnet) {
+                // eth_getBlockReceipts may return duplicated receipts for hedera
+                // so we filter out those that do not match any transaction by its index
+                let transactions = block.block.transactions as Transaction[]
+                let txIndices = transactions.map(tx => tx.transactionIndex)
+                receipts = receipts.filter(r => txIndices.includes(r.transactionIndex))
+            }
+
             for (let receipt of receipts) {
                 if (receipt.blockHash !== block.block.hash) {
                     block._isInvalid = true
@@ -454,7 +462,6 @@ export class Rpc {
             }
 
             if (block.block.transactions.length !== receipts.length) {
-                if (utils.isHederaMainnet) continue
                 block._isInvalid = true
                 block._errorMessage = `got invalid number of receipts from eth_getBlockReceipts`
             }
