@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/util-internal-data-service",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Hot block data service tools",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

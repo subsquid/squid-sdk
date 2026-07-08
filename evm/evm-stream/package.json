@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/evm-stream",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "EVM block data streamer",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -20,7 +20,7 @@
   "dependencies": {
     "@subsquid/http-client": "^1.8.1",
     "@subsquid/logger": "^1.6.0",
-    "@subsquid/portal-client": "^0.5.2",
+    "@subsquid/portal-client": "^0.6.0",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-data-source": "^0.0.0",
     "@subsquid/util-internal-hex": "^1.2.3",
