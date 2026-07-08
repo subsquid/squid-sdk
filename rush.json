@@ -466,13 +466,13 @@
       "packageName": "@subsquid/evm-rpc",
       "projectFolder": "evm/evm-rpc",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/evm-normalization",
       "projectFolder": "evm/evm-normalization",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/evm-processor",
@@ -490,7 +490,7 @@
       "packageName": "@subsquid/squid-sdk",
       "projectFolder": "meta/squid-sdk",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/evm-objects",
