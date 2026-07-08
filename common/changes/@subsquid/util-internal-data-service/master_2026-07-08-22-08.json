@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-data-service",
+      "comment": "Prevent worker-thread leaks in `belowQuery` by closing the upstream iterator when the generator is terminated at its first yield or when `.head` is never iterated.",
+      "type": "patch"
+    },
+    {
+      "packageName": "@subsquid/util-internal-data-service",
+      "comment": "Terminate `/stream` response processing as soon as the client disconnects, releasing an abandoned `belowQuery` backfill (and its worker threads) instead of running it until the 60s duration limit.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-data-service"
+}
