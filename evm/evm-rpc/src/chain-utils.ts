@@ -36,6 +36,7 @@ export class ChainUtils {
     public readonly isTempo: boolean
     public readonly isCronosMainnet: boolean
     public readonly isShibariumMainnet: boolean
+    public readonly isHederaMainnet: boolean
     public readonly isPolygonBased: boolean
     public readonly useGasUsedForReceiptsRoot: boolean
 
@@ -53,6 +54,7 @@ export class ChainUtils {
         this.isTempo = chainId == '0x1079' || chainId == '0xa5bf' || chainId == '0xa5bd'
         this.isCronosMainnet = chainId == '0x19' // Chain ID 25
         this.isShibariumMainnet = chainId == '0x6d'
+        this.isHederaMainnet = chainId == '0x127'
         this.isPolygonBased = this.isPolygonMainnet || this.isPolygonAmoy || this.isShibariumMainnet
         this.useGasUsedForReceiptsRoot = options?.useGasUsedForReceiptsRoot ?? false
     }

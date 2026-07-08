@@ -454,6 +454,7 @@ export class Rpc {
             }
 
             if (block.block.transactions.length !== receipts.length) {
+                if (utils.isHederaMainnet) continue
                 block._isInvalid = true
                 block._errorMessage = `got invalid number of receipts from eth_getBlockReceipts`
             }
