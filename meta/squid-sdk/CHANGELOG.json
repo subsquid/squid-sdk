@@ -1,0 +1,36 @@
+{
+  "name": "@subsquid/squid-sdk",
+  "entries": [
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/squid-sdk_v0.1.0",
+      "date": "Wed, 08 Jul 2026 22:11:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "New umbrella package exposing SDK data sources and utilities as subpaths; folds in @subsquid/evm-rpc-stream and @subsquid/evm-fallback-stream (standalone versions removed) and re-exports the core *-stream and util packages."
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Drop the `starknet` subpath: @subsquid/starknet-stream is uninstallable from npm because its @subsquid/starknet-rpc@^0.0.2 dependency is docker-policy and unpublished (only 0.0.1 on npm), which broke `npm install @subsquid/squid-sdk`."
+          },
+          {
+            "comment": "Add the `./package.json` subpath export (an `exports` map is a hard allowlist, so `require('@subsquid/squid-sdk/package.json')` previously threw ERR_PACKAGE_PATH_NOT_EXPORTED) and an in-package guard test keeping the `exports`/`typesVersions`/barrel maps in sync. Internal fallback-supervisor and evm/rpc refactors (shared timeout/iterator-close helpers, a `selectActive` failover generator, aggregate logs/receipts de-duplication) with no public API change."
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-stream\" from `^0.1.1` to `0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/portal-client\" from `^0.5.2` to `0.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/solana-stream\" from `^1.1.1` to `1.1.2`"
+          }
+        ]
+      }
+    }
+  ]
+}

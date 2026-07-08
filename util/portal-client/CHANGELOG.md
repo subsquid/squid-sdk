@@ -1,6 +1,13 @@
 # Change Log - @subsquid/portal-client
 
-This log was last generated on Mon, 01 Jun 2026 19:32:22 GMT and should not be manually modified.
+This log was last generated on Wed, 08 Jul 2026 22:11:26 GMT and should not be manually modified.
+
+## 0.6.0
+Wed, 08 Jul 2026 22:11:26 GMT
+
+### Minor changes
+
+- `getHead` / `getFinalizedHead` now retry a transient JSON-`null` head with a short, finite backoff (configurable via `headRetrySchedule`), preventing spurious "portal has no finalized head" failures while a dataset's head is being (re)established after a portal store cold-start.
 
 ## 0.5.2
 Mon, 01 Jun 2026 19:32:22 GMT

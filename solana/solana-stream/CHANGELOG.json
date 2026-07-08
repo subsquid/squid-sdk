@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-stream",
   "entries": [
     {
+      "version": "1.1.2",
+      "tag": "@subsquid/solana-stream_v1.1.2",
+      "date": "Wed, 08 Jul 2026 22:11:26 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/portal-client\" from `^0.5.2` to `0.6.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.1",
       "tag": "@subsquid/solana-stream_v1.1.1",
       "date": "Mon, 18 May 2026 10:40:02 GMT",
