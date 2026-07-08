@@ -53,6 +53,13 @@ describe('PortalClient head null-retries', () => {
         assert.strictEqual(urls.length, 1)
     })
 
+    it('does not retry an empty (undefined) body — only JSON null is transient', async () => {
+        let {portal, urls} = mock([undefined, HEAD])
+        let head = await portal.getHead()
+        assert.strictEqual(head, undefined)
+        assert.strictEqual(urls.length, 1)
+    })
+
     it('rejects and stops requesting when aborted during backoff', async () => {
         let ac = new AbortController()
         let {portal, urls} = mock([null, HEAD], [1000])

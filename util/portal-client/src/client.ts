@@ -53,8 +53,8 @@ export interface PortalClientOptions {
      * Backoff schedule (in milliseconds) for retrying `getHead` / `getFinalizedHead`
      * when the portal answers with a transient `null` head.
      *
-     * A `null` head is a successful `200` with an empty body, which the portal returns
-     * for a short window while a dataset's (finalized) head is not yet established —
+     * A `null` head is a successful `200` whose body is JSON `null`, which the portal
+     * returns for a short window while a dataset's (finalized) head is not yet established —
      * e.g. right after a store restart/cold-start. The schedule length bounds the number
      * of retries; once exhausted the call resolves to `undefined`. An empty array disables
      * retrying.
@@ -160,17 +160,17 @@ export class PortalClient {
         let url = this.getDatasetUrl(!finalized ? 'head' : 'finalized-head')
         let schedule = options?.headRetrySchedule ?? this.headRetrySchedule
 
-        // A `null` head is a successful `200` with an empty body: the portal returns it
-        // transiently while the (finalized) head is not yet established (e.g. store
-        // cold-start). Retry with a short, finite backoff to ride out that window;
+        // The portal signals "no head yet" with a JSON `null` body — a transient
+        // response while the (finalized) head is not yet established (e.g. store
+        // cold-start). Retry only that case with a short, finite backoff to ride out
+        // the window; a real head (or any other body) returns immediately, and
         // transport errors are already retried by the underlying HttpClient. Once the
         // schedule is exhausted we resolve to `undefined`, so persistently head-less
         // datasets don't hang.
         for (let attempt = 0; ; attempt++) {
             options?.abort?.throwIfAborted()
             let res = await this.request('GET', url, options)
-            let head: BlockRef | undefined = res.body ?? undefined
-            if (head != null || attempt >= schedule.length) return head
+            if (res.body !== null || attempt >= schedule.length) return res.body ?? undefined
             await wait(schedule[attempt], options?.abort)
         }
     }
