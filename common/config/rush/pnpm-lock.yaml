@@ -250,6 +250,9 @@ importers:
       '@rush-temp/solana-typegen':
         specifier: file:./projects/solana-typegen.tgz
         version: file:projects/solana-typegen.tgz(bufferutil@4.0.7)(utf-8-validate@5.0.10)
+      '@rush-temp/squid-sdk':
+        specifier: file:./projects/squid-sdk.tgz
+        version: file:projects/squid-sdk.tgz(esbuild@0.27.7)(tsx@4.21.0)
       '@rush-temp/ss58':
         specifier: file:./projects/ss58.tgz
         version: file:projects/ss58.tgz(esbuild@0.27.7)(tsx@4.21.0)
@@ -1616,6 +1619,10 @@ packages:
 
   '@rush-temp/solana-typegen@file:projects/solana-typegen.tgz':
     resolution: {integrity: sha512-Iij70aOrFtGm8ap3fwrGS7h2YOoNV3zIfg4erBP+KHnIOzn5uTIHyluKwrxqCYhFuZgggtBwvfiqVLaVhZFDnQ==, tarball: file:projects/solana-typegen.tgz}
+    version: 0.0.0
+
+  '@rush-temp/squid-sdk@file:projects/squid-sdk.tgz':
+    resolution: {integrity: sha512-yR7Q4CVYSF45/Atw8R4jiiNqKv5UgsJiNGjDcw0hyla7vBHG45vXbcrIKCZgD5uzbbeE/MPj9MjB7kTq2clq6A==, tarball: file:projects/squid-sdk.tgz}
     version: 0.0.0
 
   '@rush-temp/ss58-codec@file:projects/ss58-codec.tgz':
@@ -6628,6 +6635,36 @@ snapshots:
       - encoding
       - fastestsmallesttextencoderdecoder
       - utf-8-validate
+
+  '@rush-temp/squid-sdk@file:projects/squid-sdk.tgz(esbuild@0.27.7)(tsx@4.21.0)':
+    dependencies:
+      '@types/node': 24.0.15
+      prom-client: 14.2.0
+      typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(esbuild@0.27.7)(tsx@4.21.0)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
 
   '@rush-temp/ss58-codec@file:projects/ss58-codec.tgz(esbuild@0.27.7)(tsx@4.21.0)':
     dependencies:
