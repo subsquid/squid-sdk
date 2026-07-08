@@ -34,7 +34,11 @@ jobs:
           node-version: '24'
 
       - name: Update npm
-        run: npm install -g npm@latest
+        # Pinned to the latest 11.x. npm 12.0.0 prints `npm notice run ...` diagnostics
+        # to stderr when running scripts/`npx`, which Rush's built-in `build` treats as a
+        # warning and fails on (graphql-server builds via `make` -> `npx tsc`). Unpin once
+        # that's resolved (e.g. `@npx tsc` -> `@tsc`, or NPM_CONFIG_LOGLEVEL=warn).
+        run: npm install -g npm@11.18.0
 
       - name: Configure git user
         run: |
