@@ -48,6 +48,20 @@ export interface PortalClientOptions {
      * @default 0
      */
     headPollInterval?: number
+
+    /**
+     * Backoff schedule (in milliseconds) for retrying `getHead` / `getFinalizedHead`
+     * when the portal answers with a transient `null` head.
+     *
+     * A `null` head is a successful `200` with an empty body, which the portal returns
+     * for a short window while a dataset's (finalized) head is not yet established —
+     * e.g. right after a store restart/cold-start. The schedule length bounds the number
+     * of retries; once exhausted the call resolves to `undefined`. An empty array disables
+     * retrying.
+     *
+     * @default [100, 500, 1000, 2000]
+     */
+    headRetrySchedule?: number[]
 }
 
 export interface PortalRequestOptions {
@@ -57,6 +71,11 @@ export interface PortalRequestOptions {
     httpTimeout?: number
     bodyTimeout?: number
     abort?: AbortSignal
+
+    /**
+     * Per-request override for {@link PortalClientOptions.headRetrySchedule}.
+     */
+    headRetrySchedule?: number[]
 }
 
 export interface PortalStreamOptions {
@@ -115,6 +134,7 @@ export class PortalClient {
     private maxBytes: number
     private maxIdleTime: number
     private maxWaitTime: number
+    private headRetrySchedule: number[]
 
     constructor(options: PortalClientOptions) {
         this.url = new URL(options.url)
@@ -123,6 +143,7 @@ export class PortalClient {
         this.maxBytes = options.maxBytes ?? 50 * 1024 * 1024
         this.maxIdleTime = options.maxIdleTime ?? 500
         this.maxWaitTime = options.maxWaitTime ?? 5_000
+        this.headRetrySchedule = options.headRetrySchedule ?? [100, 500, 1000, 2000]
     }
 
     private getDatasetUrl(path: string): string {
@@ -136,8 +157,22 @@ export class PortalClient {
     }
 
     async getHead(options?: PortalRequestOptions, finalized?: boolean): Promise<BlockRef | undefined> {
-        const res = await this.request('GET', this.getDatasetUrl(!finalized ? 'head' : 'finalized-head'), options)
-        return res.body ?? undefined
+        let url = this.getDatasetUrl(!finalized ? 'head' : 'finalized-head')
+        let schedule = options?.headRetrySchedule ?? this.headRetrySchedule
+
+        // A `null` head is a successful `200` with an empty body: the portal returns it
+        // transiently while the (finalized) head is not yet established (e.g. store
+        // cold-start). Retry with a short, finite backoff to ride out that window;
+        // transport errors are already retried by the underlying HttpClient. Once the
+        // schedule is exhausted we resolve to `undefined`, so persistently head-less
+        // datasets don't hang.
+        for (let attempt = 0; ; attempt++) {
+            options?.abort?.throwIfAborted()
+            let res = await this.request('GET', url, options)
+            let head: BlockRef | undefined = res.body ?? undefined
+            if (head != null || attempt >= schedule.length) return head
+            await wait(schedule[attempt], options?.abort)
+        }
     }
 
     getFinalizedHead(options?: PortalRequestOptions): Promise<BlockRef | undefined> {
