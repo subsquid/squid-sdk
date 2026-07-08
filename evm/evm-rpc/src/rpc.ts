@@ -417,7 +417,10 @@ export class Rpc {
                     }
                 }
 
-                if (this.checkCumulativeGasUsed) {
+                // Hedera exposes a duplicated receipt for some txs (filtered above by
+                // index); the block's cumulativeGasUsed still counts the dropped copy,
+                // so the running-sum invariant can't hold once it's removed.
+                if (this.checkCumulativeGasUsed && !utils.isHederaMainnet) {
                     let prevCumulativeGasUsed = 0n
                     for (let receipt of receipts) {
                         let cumulativeGasUsed = BigInt(receipt.cumulativeGasUsed)
@@ -885,7 +888,9 @@ export class Rpc {
                     }
                 }
 
-                if (this.checkCumulativeGasUsed) {
+                // See addReceiptsByBlock: Hedera's cumulativeGasUsed accounts for
+                // duplicated receipts, so the running-sum invariant can't hold.
+                if (this.checkCumulativeGasUsed && !utils.isHederaMainnet) {
                     let prevCumulativeGasUsed = 0n
                     for (let receipt of receipts) {
                         let cumulativeGasUsed = BigInt(receipt.cumulativeGasUsed)

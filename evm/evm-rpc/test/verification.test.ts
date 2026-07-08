@@ -15,11 +15,13 @@ describe('Verification Functions', () => {
             })
 
             it.skipIf(
-                // Cosmos/Tendermint EVM chains use SHA-256 Merkle trees, not Keccak-256
+                // Cosmos/Tendermint EVM chains use SHA-256 Merkle trees, not Keccak-256;
+                // Hedera (Hashgraph) block hashes aren't Keccak-RLP of the header either
                 fixture.chain === 'stable' ||
                 fixture.chain === 'stable-testnet' ||
                 fixture.chain === 'bittensor-testnet' ||
-                fixture.chain === 'cronos'
+                fixture.chain === 'cronos' ||
+                fixture.chain === 'hedera'
             )('blockHash verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 const chainId = getChainId(fixture.chain)
@@ -29,8 +31,10 @@ describe('Verification Functions', () => {
             })
 
             it.skipIf(
-                // Cosmos/Tendermint EVM chains use a different algorithm for the transactions root
-                fixture.chain === 'cronos'
+                // Cosmos/Tendermint EVM chains use a different algorithm for the transactions root;
+                // Hedera reports the block hash in place of a real transactions root
+                fixture.chain === 'cronos' ||
+                fixture.chain === 'hedera'
             )('transactionsRoot verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 if (!block.transactions || block.transactions.length === 0) return
@@ -43,8 +47,10 @@ describe('Verification Functions', () => {
 
             if (hasReceipts(fixture.chain, fixture.blockNumber)) {
                 it.skipIf(
-                    // Cosmos/Tendermint EVM chains usually use a different algorithm for the receipts root
-                    fixture.chain === 'cronos'
+                    // Cosmos/Tendermint EVM chains usually use a different algorithm for the receipts root;
+                    // Hedera's receipts root covers phantom/duplicated receipts we filter out
+                    fixture.chain === 'cronos' ||
+                    fixture.chain === 'hedera'
                 )('receiptsRoot verification', async () => {
                     const block = loadBlock(fixture.chain, fixture.blockNumber)
                     const receipts = loadReceipts(fixture.chain, fixture.blockNumber)
@@ -74,7 +80,11 @@ describe('Verification Functions', () => {
                 })
             }
 
-            it('withdrawalsRoot verification', async () => {
+            it.skipIf(
+                // Hedera reports an all-zero withdrawalsRoot instead of the
+                // standard empty-trie root for its (empty) withdrawals set
+                fixture.chain === 'hedera'
+            )('withdrawalsRoot verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 if (block.withdrawalsRoot == null) return
 
