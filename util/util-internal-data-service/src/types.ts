@@ -25,4 +25,11 @@ export interface DataResponse {
     finalizedHead?: BlockRef
     head?: AsyncIterable<Block[]>
     tail?: Block[]
+    /**
+     * Releases resources backing `head` (e.g. backfill worker threads).
+     *
+     * Must be called when the response processing ends, no matter how,
+     * as `head` might never be iterated (hence never get a chance to clean up after itself).
+     */
+    close?: () => Promise<void>
 }

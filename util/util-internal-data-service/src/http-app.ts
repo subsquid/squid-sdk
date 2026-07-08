@@ -1,10 +1,10 @@
 import {waitDrain} from '@subsquid/util-internal'
-import {HttpApp} from '@subsquid/util-internal-http-server'
+import {HttpApp, HttpContext} from '@subsquid/util-internal-http-server'
 import {NAT, object, option, STRING, ValidationFailure} from '@subsquid/util-internal-validation'
 import {promisify} from 'node:util'
 import * as zlib from 'node:zlib'
 import {DataService} from './data-service'
-import {Block, InvalidBaseBlock} from './types'
+import {Block, DataResponse, InvalidBaseBlock} from './types'
 import {getBlockIngestionTimestamp} from './metrics'
 
 
@@ -52,59 +52,11 @@ export function createHttpApp(service: DataService): HttpApp {
                 return ctx.send(409, {previousBlocks: res.prev})
             }
 
-            if (res.finalizedHead) {
-                ctx.response.setHeader('x-sqd-finalized-head-number', res.finalizedHead.number+'')
-                ctx.response.setHeader('x-sqd-finalized-head-hash', res.finalizedHead.hash)
+            try {
+                await writeBlocks(ctx, res, start, maxDuration)
+            } finally {
+                await res.close?.()
             }
-
-            if (res.head == null && res.tail == null) {
-                return ctx.send(204)
-            }
-
-            let useZstd = acceptsZstd(ctx.request.headers['accept-encoding'] as string)
-            let getPayload = useZstd
-                ? (block: Block) => Promise.resolve(block.jsonLineZstd)
-                : (block: Block) => toGzip(block)
-
-            ctx.response.setHeader('content-type', 'text/plain; charset=UTF-8')
-
-            if (res.head || res.tail?.length) {
-                ctx.response.setHeader('content-encoding', useZstd ? 'zstd' : 'gzip')
-                ctx.response.setHeader('vary', 'Accept-Encoding')
-            }
-
-            if (res.head) {
-                for await (let batch of res.head) {
-                    for (let block of batch) {
-                        if (ctx.response.writableNeedDrain || !ctx.response.writable) {
-                            if (Date.now() - start > maxDuration) {
-                                break
-                            }
-                            await waitDrain(ctx.response)
-                        }
-                        ctx.response.write(await getPayload(block))
-                    }
-                    // check after each batch to ensure,
-                    // that time limits are checked in case of slow arriving tiny batches
-                    if (Date.now() - start > maxDuration) {
-                        break
-                    }
-                }
-            }
-
-            if (res.tail) {
-                for (let block of res.tail) {
-                    if (ctx.response.writableNeedDrain || !ctx.response.writable) {
-                        if (Date.now() - start > maxDuration) {
-                            break
-                        }
-                        await waitDrain(ctx.response)
-                    }
-                    ctx.response.write(await getPayload(block))
-                }
-            }
-
-            ctx.response.end()
         }
     })
 
@@ -174,4 +126,61 @@ export function createHttpApp(service: DataService): HttpApp {
     app.setMaxRequestBody(1024)
 
     return app
+}
+
+
+async function writeBlocks(ctx: HttpContext, res: DataResponse, start: number, maxDuration: number): Promise<void> {
+    if (res.finalizedHead) {
+        ctx.response.setHeader('x-sqd-finalized-head-number', res.finalizedHead.number+'')
+        ctx.response.setHeader('x-sqd-finalized-head-hash', res.finalizedHead.hash)
+    }
+
+    if (res.head == null && res.tail == null) {
+        return ctx.send(204)
+    }
+
+    let useZstd = acceptsZstd(ctx.request.headers['accept-encoding'] as string)
+    let getPayload = useZstd
+        ? (block: Block) => Promise.resolve(block.jsonLineZstd)
+        : (block: Block) => toGzip(block)
+
+    ctx.response.setHeader('content-type', 'text/plain; charset=UTF-8')
+
+    if (res.head || res.tail?.length) {
+        ctx.response.setHeader('content-encoding', useZstd ? 'zstd' : 'gzip')
+        ctx.response.setHeader('vary', 'Accept-Encoding')
+    }
+
+    if (res.head) {
+        for await (let batch of res.head) {
+            for (let block of batch) {
+                if (ctx.response.writableNeedDrain || !ctx.response.writable) {
+                    if (Date.now() - start > maxDuration) {
+                        break
+                    }
+                    await waitDrain(ctx.response)
+                }
+                ctx.response.write(await getPayload(block))
+            }
+            // check after each batch to ensure,
+            // that time limits are checked in case of slow arriving tiny batches
+            if (Date.now() - start > maxDuration) {
+                break
+            }
+        }
+    }
+
+    if (res.tail) {
+        for (let block of res.tail) {
+            if (ctx.response.writableNeedDrain || !ctx.response.writable) {
+                if (Date.now() - start > maxDuration) {
+                    break
+                }
+                await waitDrain(ctx.response)
+            }
+            ctx.response.write(await getPayload(block))
+        }
+    }
+
+    ctx.response.end()
 }
