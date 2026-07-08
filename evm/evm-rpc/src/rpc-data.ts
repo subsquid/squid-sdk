@@ -336,7 +336,7 @@ export const Log = object({
     address: BYTES,
     topics: array(BYTES),
     data: BYTES,
-    removed: BOOLEAN
+    removed: option(BOOLEAN)
 })
 
 
