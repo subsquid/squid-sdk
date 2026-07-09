@@ -21,12 +21,14 @@ Per-package change tracking lives in `common/changes/@subsquid/<pkg>/<branch>_<t
 
 ## How `release/arrowsquid` is maintained (and what silently doesn't reach it)
 
-Releases publish from `release/arrowsquid` (`release.yml` `mode=release` always checks it out, ignoring the caller branch — line 29), but **no workflow has an explicit step that pushes to `release/arrowsquid`.** Grep the workflows and you won't find one. The branch is advanced purely as a *side effect* of `rush version --bump` in step 1: rush internally branches `version/bump-*` **from master**, commits the version + CHANGELOG bumps, then `git merge`s that branch into `release/arrowsquid` and pushes it. (The `merge back` step afterwards brings the same bumps into master.) This is a leaky abstraction — the branch maintenance is hidden inside a `rush` subcommand, not visible in the workflow YAML.
+Releases publish from `release/arrowsquid` (`release.yml` `mode=release` always checks it out, ignoring the caller branch — line 29), but **no workflow has an explicit step that pushes to `release/arrowsquid`.** Grep the workflows and you won't find one. The branch is advanced purely as a *side effect* of `rush version --bump` in step 1: rush internally branches `version/bump-*` **from master**, commits the version + CHANGELOG bumps, then `git merge`s that branch into `release/arrowsquid` and pushes it. (The `merge back` step afterwards brings the same bumps into master.)
 
 **The trap:** that sync fires *only when there is a real version bump to apply*. A change that produces no bump never reaches `release/arrowsquid`, so the next release publishes a **stale tree**. This includes:
 - `rush.json` / version-policy edits (e.g. moving a package to the `docker` policy so it stops publishing to npm),
 - workflow / CI / other config changes,
 - any batch where every pending change file is `type: none`.
+
+Hence, the scripts provide a leaky abstraction: running `bump` then `release` on `master` will publish the changes in `master`, but if anything breaks in between these two and you fix the release machinery, the `release` workflow won't pick it up.
 
 Consequences and remedies:
 - **Editing the release machinery on `master` does not take effect on the next release** until `release/arrowsquid` catches up. This is the easy way to "fix" a release bug on master, run a release, and watch nothing change.
