@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-config",
+      "comment": "Export getDataSchema() — the validated DB_SCHEMA name — so tooling (e.g. migrations) can ensure the data schema exists",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-config"
+}
