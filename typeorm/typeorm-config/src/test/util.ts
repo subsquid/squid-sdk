@@ -38,3 +38,24 @@ export function clearDbEnv(): void {
         delete process.env[k]
     }
 }
+
+
+export function snapshotDbEnv(): Record<string, string | undefined> {
+    let snap: Record<string, string | undefined> = {}
+    for (let k of DB_ENV_VARS) {
+        snap[k] = process.env[k]
+    }
+    return snap
+}
+
+
+export function restoreDbEnv(snap: Record<string, string | undefined>): void {
+    for (let k of DB_ENV_VARS) {
+        let v = snap[k]
+        if (v === undefined) {
+            delete process.env[k]
+        } else {
+            process.env[k] = v
+        }
+    }
+}

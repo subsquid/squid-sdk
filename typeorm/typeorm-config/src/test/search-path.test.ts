@@ -1,4 +1,4 @@
-import {Client} from 'pg'
+import {Client, ClientConfig} from 'pg'
 import {createConnectionOptions} from '../connectionOptions'
 import {toPgClientConfig} from '../pg'
 import {withClient} from './util'
@@ -15,7 +15,7 @@ describe('search_path (current behavior, live DB)', () => {
     })
 
     test('default search_path includes public and unqualified DDL lands there', async () => {
-        const client = new Client(toPgClientConfig(createConnectionOptions()) as any)
+        const client = new Client(toPgClientConfig(createConnectionOptions()) as unknown as ClientConfig)
         await client.connect()
         try {
             const sp = await client.query('SHOW search_path')

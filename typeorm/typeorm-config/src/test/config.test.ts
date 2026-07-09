@@ -1,21 +1,21 @@
 import {createConnectionOptions} from '../connectionOptions'
 import {toPgClientConfig} from '../pg'
-import {clearDbEnv} from './util'
+import {clearDbEnv, restoreDbEnv, snapshotDbEnv} from './util'
 
 
 // Characterization tests: pin the CURRENT behavior of the connection-config
 // builders. The upcoming `schema` / search_path feature changes exactly this
 // surface, so the "baseline" cases below are the control that the feature flips.
 describe('createConnectionOptions (current behavior)', () => {
-    let saved: NodeJS.ProcessEnv
+    let saved: Record<string, string | undefined>
 
     beforeEach(() => {
-        saved = {...process.env}
+        saved = snapshotDbEnv()
         clearDbEnv()
     })
 
     afterEach(() => {
-        process.env = saved
+        restoreDbEnv(saved)
     })
 
     test('parameter connection assembled from DB_* env vars', () => {
