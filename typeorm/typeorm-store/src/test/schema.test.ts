@@ -121,3 +121,78 @@ describe('TypeormDatabase data schema (DB_SCHEMA) vs state schema', function () 
         expect(DATA_SCHEMA).not.toBe(STATE_SCHEMA)
     })
 })
+
+
+// DB_SCHEMA === stateSchema: entity data and processor state share ONE schema
+// (as the pancakeindexer fork does). A mixed-case name proves the two mechanisms
+// agree on case — data via the quoted search_path, state via the quoted
+// escapedSchema — so they never split into two schemas.
+describe('TypeormDatabase with DB_SCHEMA === stateSchema (shared schema)', function () {
+    const SHARED = 'SharedSchemaV1'
+    const FOLDED = 'sharedschemav1'
+    let db!: TypeormDatabase
+    let savedSchema: string | undefined
+    let savedIncludePublic: string | undefined
+
+    beforeEach(async () => {
+        savedSchema = process.env.DB_SCHEMA
+        savedIncludePublic = process.env.DB_SCHEMA_INCLUDE_PUBLIC
+        process.env.DB_SCHEMA = SHARED
+        delete process.env.DB_SCHEMA_INCLUDE_PUBLIC
+
+        await withClient(async client => {
+            await client.query(`DROP SCHEMA IF EXISTS "${SHARED}" CASCADE`)
+            await client.query(`DROP SCHEMA IF EXISTS ${FOLDED} CASCADE`)
+            await client.query(`CREATE SCHEMA "${SHARED}"`)
+            await client.query(`SET search_path TO "${SHARED}"`)
+            for (let sql of CREATE_TABLES) {
+                await client.query(sql)
+            }
+        })
+
+        db = new TypeormDatabase({projectDir: __dirname, stateSchema: SHARED, supportHotBlocks: true})
+    })
+
+    afterEach(async () => {
+        await db?.disconnect()
+        if (savedSchema === undefined) {
+            delete process.env.DB_SCHEMA
+        } else {
+            process.env.DB_SCHEMA = savedSchema
+        }
+        if (savedIncludePublic === undefined) {
+            delete process.env.DB_SCHEMA_INCLUDE_PUBLIC
+        } else {
+            process.env.DB_SCHEMA_INCLUDE_PUBLIC = savedIncludePublic
+        }
+        await withClient(async client => {
+            await client.query(`DROP SCHEMA IF EXISTS "${SHARED}" CASCADE`)
+            await client.query(`DROP SCHEMA IF EXISTS ${FOLDED} CASCADE`)
+        })
+    })
+
+    it('keeps entity data and processor state together in the one shared schema', async () => {
+        await db.connect()
+        await db.transact({
+            prevHead: {height: -1, hash: '0x'},
+            nextHead: {height: 10, hash: '0x10'}
+        }, async store => {
+            await store.insert(new Data({id: '1', text: 'hello', integer: 10}))
+        })
+        await db.disconnect()
+
+        // data and both state tables all live in the single shared schema...
+        expect(await tableSchemas('data')).toContain(SHARED)
+        expect(await tableSchemas('status')).toContain(SHARED)
+        expect(await tableSchemas('hot_block')).toContain(SHARED)
+
+        // ...with case preserved — never split into a folded variant
+        expect(await tableSchemas('data')).not.toContain(FOLDED)
+        expect(await tableSchemas('status')).not.toContain(FOLDED)
+
+        let rows = await withClient(client =>
+            client.query(`SELECT id FROM "${SHARED}"."data"`).then(r => r.rows)
+        )
+        expect(rows).toEqual([{id: '1'}])
+    })
+})

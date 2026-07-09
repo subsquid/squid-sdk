@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "Add a test for the DB_SCHEMA === stateSchema case (entity data and processor state sharing one schema)",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}

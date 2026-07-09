@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-config",
+      "comment": "Double-quote DB_SCHEMA in the search_path so its case is preserved, matching how typeorm-store qualifies stateSchema (lets DB_SCHEMA and stateSchema be the same value)",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-config"
+}
