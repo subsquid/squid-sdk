@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "Add a test verifying entity data lands in DB_SCHEMA while processor state stays in stateSchema (two independent dials)",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}
