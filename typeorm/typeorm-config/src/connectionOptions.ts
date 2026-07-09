@@ -253,6 +253,12 @@ export function getDataSchema(): string | undefined {
  * in which case the connection keeps the server's default `search_path` (which
  * usually includes `public`).
  *
+ * The schema name is double-quoted so Postgres preserves its case exactly —
+ * matching how `@subsquid/typeorm-store` qualifies its `stateSchema` (via the
+ * driver's identifier escaping). This keeps the data schema and the state
+ * schema resolving identically, so `DB_SCHEMA` and `stateSchema` may be set to
+ * the same value.
+ *
  * The schema defaults to being the sole entry in `search_path`. Set
  * `DB_SCHEMA_INCLUDE_PUBLIC=true` to append `,public` — needed only when the
  * squid references objects (e.g. extensions) that live in `public`.
@@ -261,7 +267,7 @@ export function getDataSchemaSearchPath(): string | undefined {
     let schema = getDataSchema()
     if (!schema) return undefined
 
-    let searchPath = schema
+    let searchPath = `"${schema}"`
     if (getIncludePublicInSearchPath()) {
         searchPath += ',public'
     }

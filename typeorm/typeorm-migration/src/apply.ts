@@ -31,13 +31,13 @@ runProgram(async () => {
         // there. The schema must exist first: with a schema-only search_path
         // Postgres has nowhere to create tables otherwise.
         //
-        // Left unquoted so Postgres folds the name exactly as it does in the
-        // (unquoted) search_path — quoting here would preserve case and could
-        // create a different schema than the one migrations target. Safe from
-        // injection: getDataSchema() validates DB_SCHEMA as a plain identifier.
+        // Double-quoted to preserve case, matching the (also quoted) search_path
+        // built by @subsquid/typeorm-config — both resolve to the same schema.
+        // Safe from injection: getDataSchema() validates DB_SCHEMA as a plain
+        // identifier.
         let schema = getDataSchema()
         if (schema) {
-            await connection.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`)
+            await connection.query(`CREATE SCHEMA IF NOT EXISTS "${schema}"`)
         }
         await connection.runMigrations({transaction: 'all'})
     } finally {

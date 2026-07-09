@@ -78,12 +78,11 @@ describe('squid-typeorm-migration with DB_SCHEMA (feature, live DB)', () => {
 })
 
 
-// Regression: `apply` creates the schema unquoted, so Postgres folds the name
-// exactly as it does in the (unquoted) search_path. A mixed-case DB_SCHEMA must
-// therefore resolve to the same (folded) schema — quoting the CREATE would
-// create "MixedCaseSchema" while search_path targets "mixedcaseschema", and
-// apply would fail to find/create tables there.
-describe('squid-typeorm-migration DB_SCHEMA case folding (live DB)', () => {
+// `apply` creates the schema double-quoted, matching the (also quoted)
+// search_path from @subsquid/typeorm-config, so Postgres preserves case exactly.
+// A mixed-case DB_SCHEMA therefore resolves to the exact-cased schema in both
+// the CREATE and the search_path — never splitting into a folded variant.
+describe('squid-typeorm-migration DB_SCHEMA case preservation (live DB)', () => {
     const MIXED = 'MixedCaseSchema'
     const FOLDED = 'mixedcaseschema'
     const DIR = path.join(__dirname, '.tmp-migration-fold-project')
@@ -96,6 +95,7 @@ describe('squid-typeorm-migration DB_SCHEMA case folding (live DB)', () => {
         process.env.DB_SCHEMA = MIXED
         delete process.env.DB_SCHEMA_INCLUDE_PUBLIC
         await withClient(async client => {
+            await client.query(`DROP SCHEMA IF EXISTS "${MIXED}" CASCADE`)
             await client.query(`DROP SCHEMA IF EXISTS ${FOLDED} CASCADE`)
         })
     })
@@ -112,18 +112,19 @@ describe('squid-typeorm-migration DB_SCHEMA case folding (live DB)', () => {
             process.env.DB_SCHEMA_INCLUDE_PUBLIC = savedIncludePublic
         }
         await withClient(async client => {
+            await client.query(`DROP SCHEMA IF EXISTS "${MIXED}" CASCADE`)
             await client.query(`DROP SCHEMA IF EXISTS ${FOLDED} CASCADE`)
         })
     })
 
-    test('a mixed-case DB_SCHEMA folds consistently, so migrations land in the folded schema', async () => {
+    test('a mixed-case DB_SCHEMA is preserved, so migrations land in the exact schema', async () => {
         const project = FixtureProject.create(DIR, ACCOUNT_MODEL)
         try {
             project.generate()
             project.apply()
             const account = await tableSchemas('account')
-            expect(account).toContain(FOLDED)
-            expect(account).not.toContain(MIXED)
+            expect(account).toContain(MIXED)
+            expect(account).not.toContain(FOLDED)
             expect(account).not.toContain('public')
         } finally {
             project.destroy()

@@ -28,23 +28,23 @@ describe('DB_SCHEMA -> connection search_path', () => {
     test('DB_SCHEMA sets search_path=<schema> (schema only) on TypeORM `extra` and pg `options`', () => {
         process.env.DB_SCHEMA = 'eth_v3'
         const con = createConnectionOptions() as unknown as Record<string, any>
-        expect(con.extra).toEqual({options: '-c search_path=eth_v3'})
-        expect((toPgClientConfig(con as any) as unknown as Record<string, any>).options).toBe('-c search_path=eth_v3')
+        expect(con.extra).toEqual({options: '-c search_path="eth_v3"'})
+        expect((toPgClientConfig(con as any) as unknown as Record<string, any>).options).toBe('-c search_path="eth_v3"')
     })
 
     test('DB_SCHEMA_INCLUDE_PUBLIC=true appends ,public', () => {
         process.env.DB_SCHEMA = 'eth_v3'
         process.env.DB_SCHEMA_INCLUDE_PUBLIC = 'true'
         const con = createConnectionOptions() as unknown as Record<string, any>
-        expect(con.extra).toEqual({options: '-c search_path=eth_v3,public'})
+        expect(con.extra).toEqual({options: '-c search_path="eth_v3",public'})
     })
 
     test('applies to DB_URL connections as well', () => {
         process.env.DB_URL = 'postgres://u:p@h:5432/db'
         process.env.DB_SCHEMA = 'eth_v3'
         const con = createConnectionOptions() as unknown as Record<string, any>
-        expect(con.extra).toEqual({options: '-c search_path=eth_v3'})
-        expect((toPgClientConfig(con as any) as unknown as Record<string, any>).options).toBe('-c search_path=eth_v3')
+        expect(con.extra).toEqual({options: '-c search_path="eth_v3"'})
+        expect((toPgClientConfig(con as any) as unknown as Record<string, any>).options).toBe('-c search_path="eth_v3"')
     })
 
     test('rejects an invalid DB_SCHEMA (injection guard)', () => {
@@ -56,6 +56,6 @@ describe('DB_SCHEMA -> connection search_path', () => {
         process.env.DB_SCHEMA = 'eth_v3'
         const pg = toPgClientConfig(createConnectionOptions()) as unknown as Record<string, any>
         expect(pg.extra).toBeUndefined()
-        expect(pg.options).toBe('-c search_path=eth_v3')
+        expect(pg.options).toBe('-c search_path="eth_v3"')
     })
 })
