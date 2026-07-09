@@ -1,7 +1,13 @@
 import {Client, ClientConfig} from 'pg'
 import {createConnectionOptions} from '../connectionOptions'
 import {toPgClientConfig} from '../pg'
-import {withClient} from './util'
+import {isolateSchemaEnv, withClient} from './util'
+
+
+// Keep the schema env vars out of the way: the default-behavior cases below
+// require DB_SCHEMA unset, and the feature case sets it explicitly per test.
+// This clears/restores only the schema vars, leaving the connection vars intact.
+isolateSchemaEnv()
 
 
 // Live-DB characterization: a connection built from the package's config
@@ -37,10 +43,10 @@ describe('search_path (current behavior, live DB)', () => {
 // schema, so unqualified DDL lands there instead of `public`.
 describe('search_path with DB_SCHEMA (feature, live DB)', () => {
     const schema = 'data_feature_test'
-    let savedSchema: string | undefined
 
+    // DB_SCHEMA is cleared/restored by the file-level isolateSchemaEnv() hook;
+    // each test sets it explicitly. Here we just manage the schema in the DB.
     beforeEach(async () => {
-        savedSchema = process.env.DB_SCHEMA
         await withClient(async client => {
             await client.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`)
             await client.query(`CREATE SCHEMA ${schema}`)
@@ -48,11 +54,6 @@ describe('search_path with DB_SCHEMA (feature, live DB)', () => {
     })
 
     afterEach(async () => {
-        if (savedSchema === undefined) {
-            delete process.env.DB_SCHEMA
-        } else {
-            process.env.DB_SCHEMA = savedSchema
-        }
         await withClient(async client => {
             await client.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`)
         })

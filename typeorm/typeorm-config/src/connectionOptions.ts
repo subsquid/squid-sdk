@@ -231,7 +231,8 @@ const SCHEMA_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/
  * Computes the pg connection `options` string that pins the data schema via
  * `search_path`, derived from `DB_SCHEMA` (and the optional
  * `DB_SCHEMA_INCLUDE_PUBLIC`). Returns `undefined` when `DB_SCHEMA` is not set,
- * in which case the connection uses Postgres' default `search_path` (`public`).
+ * in which case the connection keeps the server's default `search_path` (which
+ * usually includes `public`).
  *
  * The schema defaults to being the sole entry in `search_path`. Set
  * `DB_SCHEMA_INCLUDE_PUBLIC=true` to append `,public` — needed only when the
