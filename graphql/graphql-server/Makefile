@@ -18,5 +18,7 @@ build:
 	@npx tsc
 	@cp src/test/resolvers-extension/schema.graphql lib/test/resolvers-extension
 	@cp src/test/check-extension/schema.graphql lib/test/check-extension
+	@mkdir -p lib/test/schema-plain
+	@cp src/test/schema-plain/schema.graphql lib/test/schema-plain
 
 .PHONY: up down logs test test-cockroach build

@@ -269,9 +269,13 @@ export class Server {
     private async createTypeormConnection(options?: ConnectionOptions): Promise<DataSource> {
         let {createOrmConfig} = await import('@subsquid/typeorm-config')
         let {DataSource} = await import('typeorm')
+        let ormConfig = createOrmConfig({projectDir: this.dir})
         let cfg = {
-            ...createOrmConfig({projectDir: this.dir}),
+            ...ormConfig,
+            // Preserve any `extra` from the config (notably `options` carrying the
+            // DB_SCHEMA search_path) instead of overwriting it wholesale.
             extra: {
+                ...ormConfig.extra,
                 statement_timeout: options?.sqlStatementTimeout || undefined,
                 max: this.connectionPoolSize(),
                 min: this.connectionPoolSize()

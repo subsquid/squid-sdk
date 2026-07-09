@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "Honor DB_SCHEMA on the TypeORM context path: stop overwriting the connection `extra`, so the search_path from @subsquid/typeorm-config is preserved",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}
