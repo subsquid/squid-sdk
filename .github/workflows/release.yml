@@ -26,6 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # `release` mode always publishes from `release/arrowsquid`, NOT the caller branch.
+          # That branch is advanced only by `bump.yml`'s `rush version --bump`, so a config-only
+          # change on master (version policies, workflow edits) is NOT here until a real bump
+          # carries it across. See .agents/skills/squid-sdk-release/SKILL.md.
           ref: ${{ inputs.mode == 'release' && 'release/arrowsquid' || github.ref_name }}
           fetch-depth: 0
 

@@ -19,6 +19,28 @@ End-to-end release procedure for the squid-sdk Rush monorepo. Unlike a single-ve
 
 Per-package change tracking lives in `common/changes/@subsquid/<pkg>/<branch>_<timestamp>.json`. Each PR that touches a published package should add a change file via `rush change` — no change file means CI's verify step fails.
 
+## How `release/arrowsquid` is maintained (and what silently doesn't reach it)
+
+Releases publish from `release/arrowsquid` (`release.yml` `mode=release` always checks it out, ignoring the caller branch — line 29), but **no workflow has an explicit step that pushes to `release/arrowsquid`.** Grep the workflows and you won't find one. The branch is advanced purely as a *side effect* of `rush version --bump` in step 1: rush internally branches `version/bump-*` **from master**, commits the version + CHANGELOG bumps, then `git merge`s that branch into `release/arrowsquid` and pushes it. (The `merge back` step afterwards brings the same bumps into master.) This is a leaky abstraction — the branch maintenance is hidden inside a `rush` subcommand, not visible in the workflow YAML.
+
+**The trap:** that sync fires *only when there is a real version bump to apply*. A change that produces no bump never reaches `release/arrowsquid`, so the next release publishes a **stale tree**. This includes:
+- `rush.json` / version-policy edits (e.g. moving a package to the `docker` policy so it stops publishing to npm),
+- workflow / CI / other config changes,
+- any batch where every pending change file is `type: none`.
+
+Consequences and remedies:
+- **Editing the release machinery on `master` does not take effect on the next release** until `release/arrowsquid` catches up. This is the easy way to "fix" a release bug on master, run a release, and watch nothing change.
+- A config-only fix lands on `release/arrowsquid` only when it **rides along with the next real (non-`none`) bump** (which re-branches from master and sweeps the whole tree in), **or** when you sync the branch directly:
+  ```sh
+  # release/arrowsquid is normally a strict ancestor of master, so this fast-forwards it:
+  git push origin master:release/arrowsquid
+  ```
+- **Before cutting a release after any machinery/config change, verify the branch actually contains it:**
+  ```sh
+  git fetch origin master release/arrowsquid
+  git log --oneline origin/release/arrowsquid..origin/master   # commits on master not yet on the release branch
+  ```
+
 ## Preconditions
 
 Confirm before starting:

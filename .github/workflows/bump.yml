@@ -22,6 +22,14 @@ jobs:
       - name: check change files
         run: node common/scripts/install-run-rush.js change --verify --target-branch origin/release/arrowsquid
 
+      # ⚠️ This step is the ONLY thing that maintains `release/arrowsquid`. `rush version --bump`
+      # internally branches `version/bump-*` from master, commits the version/CHANGELOG bumps,
+      # then merges that branch into `release/arrowsquid` and pushes it (the "merge back" step
+      # below only carries the bumps into master). It fires ONLY when there is a real version bump
+      # to apply — so a change that produces no bump (rush.json/version-policy edits, workflow or
+      # other config changes, an all-`type: none` change-file batch) never reaches
+      # `release/arrowsquid`, and the next release publishes a STALE tree.
+      # See .agents/skills/squid-sdk-release/SKILL.md ("How release/arrowsquid is maintained").
       - name: bump versions
         run: node common/scripts/install-run-rush.js version --bump --target-branch release/arrowsquid
 
