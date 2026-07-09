@@ -327,7 +327,7 @@ importers:
         version: file:projects/typeorm-codegen.tgz(esbuild@0.27.7)(tsx@4.21.0)
       '@rush-temp/typeorm-config':
         specifier: file:./projects/typeorm-config.tgz
-        version: file:projects/typeorm-config.tgz(ioredis@5.3.2(supports-color@8.1.1))(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2(@types/node@24.0.15)(typescript@5.5.4))
+        version: file:projects/typeorm-config.tgz(esbuild@0.27.7)(ioredis@5.3.2(supports-color@8.1.1))(supports-color@8.1.1)(ts-node@10.9.2(@types/node@24.0.15)(typescript@5.5.4))(tsx@4.21.0)
       '@rush-temp/typeorm-migration':
         specifier: file:./projects/typeorm-migration.tgz
         version: file:projects/typeorm-migration.tgz(ioredis@5.3.2(supports-color@8.1.1))(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2(@types/node@24.0.15)(typescript@5.5.4))
@@ -1370,7 +1370,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/bitcoin-data-service@file:projects/bitcoin-data-service.tgz':
-    resolution: {integrity: sha512-oF/jFdhhVXO7TzeS7sOoVOO3q920hHos1Oym3ZMPPdPP0KRtoAufSeHounY7XwlHFEm9vB/2Uo6jF2nd94tSmg==, tarball: file:projects/bitcoin-data-service.tgz}
+    resolution: {integrity: sha512-n3W+mNYGHfOQN5PX8f3t+XlAJrLTysDwdAOaOyXrOq7wcK2WsXiBxiphZPgnt+jGNw5/LsUkLNUltN6x6KXVOQ==, tarball: file:projects/bitcoin-data-service.tgz}
     version: 0.0.0
 
   '@rush-temp/bitcoin-dump@file:projects/bitcoin-dump.tgz':
@@ -1406,7 +1406,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/erc20-transfers@file:projects/erc20-transfers.tgz':
-    resolution: {integrity: sha512-qxFeP5FiAvxod9XL/CM5qtmHhs633hmAT/GDt4jdIseD1q+4XMF162o1LFYFcSxtcj0Xbej9Wa8lfxO/eA1YVg==, tarball: file:projects/erc20-transfers.tgz}
+    resolution: {integrity: sha512-fc2dRuiKNFYPsgLa2KXa4QKJrg0Y5LP4iJtsWoB7v9X25HUz8LtXpuq5PFer53Pa4vDl+P6UF+n5JzthPti62A==, tarball: file:projects/erc20-transfers.tgz}
     version: 0.0.0
 
   '@rush-temp/evm-abi@file:projects/evm-abi.tgz':
@@ -1422,7 +1422,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/evm-data-service@file:projects/evm-data-service.tgz':
-    resolution: {integrity: sha512-UNkz5ssMeEsCzxnKktoBr5MAsEneywS7F4i3rH6k+7lsamovFtLsY/uZJT1Q+QnNKg8Ekm9RoA/zZTAr6uQmTw==, tarball: file:projects/evm-data-service.tgz}
+    resolution: {integrity: sha512-anidcY66tSiTw8K69GlVFvCnGpdGuKtbJPFhMG5Lq/mSVC9HCXwDYtpYclOek6urSaNwGRlOijXy/XhH3F0JKw==, tarball: file:projects/evm-data-service.tgz}
     version: 0.0.0
 
   '@rush-temp/evm-dump@file:projects/evm-dump.tgz':
@@ -1438,7 +1438,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/evm-objects@file:projects/evm-objects.tgz':
-    resolution: {integrity: sha512-Khs5wtpEjYwSCndJtcmPiQYTFhfjxQkKdk2gZqJ/BABWiE+aEPliSu5+S/BL/1oK+JNI6vQQoAPSG9dv3Ms2CQ==, tarball: file:projects/evm-objects.tgz}
+    resolution: {integrity: sha512-xkp3+MQzvHXDemr2qjTab5+C4pFNfWlG2GwbYYbYnzGahm/zMjx/1wxuF0wFt2k00v7ZJ2xfbDQToOwZQSX2Xw==, tarball: file:projects/evm-objects.tgz}
     version: 0.0.0
 
   '@rush-temp/evm-processor@file:projects/evm-processor.tgz':
@@ -1450,7 +1450,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/evm-stream@file:projects/evm-stream.tgz':
-    resolution: {integrity: sha512-Wc48vw2lFqJrC4f+itosBlTlO7xwxMno/5U0OciKr113GMbCuHD5TpdqX9Qu6ErNkBNEDWyr2eLCbiwpMtYlFQ==, tarball: file:projects/evm-stream.tgz}
+    resolution: {integrity: sha512-UAKXbBD6Ufw6L65czTuk5I0kOKMh8ZQQ/2U1NhywoRqIakXebC6OUz+qqK35IruPkKPlvU3hpuH+lubfvb42vg==, tarball: file:projects/evm-stream.tgz}
     version: 0.0.0
 
   '@rush-temp/evm-typegen@file:projects/evm-typegen.tgz':
@@ -1498,7 +1498,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/hyperliquid-fills-data-service@file:projects/hyperliquid-fills-data-service.tgz':
-    resolution: {integrity: sha512-uJr6ny/ZoYDiEekGj0h2CkY4h1EZ8TgcdOJi9gv+czTzeMgatCL2XrM7WUvurqlKrG9rJuRdtnEUzF5qdKIVHQ==, tarball: file:projects/hyperliquid-fills-data-service.tgz}
+    resolution: {integrity: sha512-v1otXUle5ACa8/4xgb52o34iNSJ5QkyyblrgzpUYTRXI1d/++hAdz2uFBVjgi1ZQneRkjHFHYnPjGnCd5MZdlA==, tarball: file:projects/hyperliquid-fills-data-service.tgz}
     version: 0.0.0
 
   '@rush-temp/hyperliquid-fills-data@file:projects/hyperliquid-fills-data.tgz':
@@ -1514,7 +1514,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/hyperliquid-replica-cmds-data-service@file:projects/hyperliquid-replica-cmds-data-service.tgz':
-    resolution: {integrity: sha512-PlwUw8bHw5EZ3kUkfyd9f6EuQwcbduALjCb03OUZl9O+bmJqDpw2/fzeyM0UliXzfk303cL9Z1pef6Dz6JkVYQ==, tarball: file:projects/hyperliquid-replica-cmds-data-service.tgz}
+    resolution: {integrity: sha512-xp4dR1Vlf9e4AgbPCMfpRQhRKcp4EckgWEe0cjdZTsxpBIx25Db6hVdjJnl7EII41Woz0rl1i0BnAnEcbDHgyQ==, tarball: file:projects/hyperliquid-replica-cmds-data-service.tgz}
     version: 0.0.0
 
   '@rush-temp/hyperliquid-replica-cmds-data@file:projects/hyperliquid-replica-cmds-data.tgz':
@@ -1578,7 +1578,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/solana-data-service@file:projects/solana-data-service.tgz':
-    resolution: {integrity: sha512-iip3zU+QCNBAelCb5VDGNZvHJvxb4PtiJ7b8KES5Z44om8ky71kbZz+CxYxaBTZCKwHQw8fCpHFIQY+B6fkIkw==, tarball: file:projects/solana-data-service.tgz}
+    resolution: {integrity: sha512-yBUPItUL81mnXipaq5Cv2e0oiiFQBaDdH0PZtA8n2szkeR7Fnp1srjEiuR4fo+2XZ9f+XHPXbpwcCFnm8TN+bg==, tarball: file:projects/solana-data-service.tgz}
     version: 0.0.0
 
   '@rush-temp/solana-dump@file:projects/solana-dump.tgz':
@@ -1586,7 +1586,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/solana-example@file:projects/solana-example.tgz':
-    resolution: {integrity: sha512-W1+5LZGDS/W8R8nXu8chO7tWkeZdYwT30NmYsvAV2EpU4RiiU4hp0Ed0tDsYrbRtnh/xAfWqvrp9L6E1UFmDog==, tarball: file:projects/solana-example.tgz}
+    resolution: {integrity: sha512-vgrJ4oOkNK5+NCy0t3ynP9cxBtEASDQmnaYGUqRc9LUq0wpRSa6byIjrKBaP13t/Bkj9/bUoVxiCTCVWsfPgqA==, tarball: file:projects/solana-example.tgz}
     version: 0.0.0
 
   '@rush-temp/solana-ingest@file:projects/solana-ingest.tgz':
@@ -1598,7 +1598,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/solana-objects@file:projects/solana-objects.tgz':
-    resolution: {integrity: sha512-bPDtE8ikMm9V8dnj7yrGe124gtKklhiMa2kvlcRipLO0ut9GSLj0OThxNLLKSMgJOy4R6z7y6iZmvglaye0fDA==, tarball: file:projects/solana-objects.tgz}
+    resolution: {integrity: sha512-VHTECjelTCiaYIgl3ztaP2fgcjwkM5LawA1Sg0i5cNwQ+vdZr2ZlKVNatFHmpRnvIMN+st8ypjppaHQHY7UEsA==, tarball: file:projects/solana-objects.tgz}
     version: 0.0.0
 
   '@rush-temp/solana-rpc-data@file:projects/solana-rpc-data.tgz':
@@ -1614,7 +1614,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/solana-stream@file:projects/solana-stream.tgz':
-    resolution: {integrity: sha512-1QSNfmx3PmzGqXL3NI+eQnT+REyyPTh6mBheNdADXiZJYsrwDbUHkhLft5M7MXJtBJ1v8GWa+eGXk5TxsP2dVg==, tarball: file:projects/solana-stream.tgz}
+    resolution: {integrity: sha512-N4GMpo07KOUG5hYSV/JkRzbTS2wfX9gxiv9o0ony3xVjjndQiQWjIW7YJaGNfsSdc5xXBrKdT6Nut3ShNSELWA==, tarball: file:projects/solana-stream.tgz}
     version: 0.0.0
 
   '@rush-temp/solana-typegen@file:projects/solana-typegen.tgz':
@@ -1622,7 +1622,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/squid-sdk@file:projects/squid-sdk.tgz':
-    resolution: {integrity: sha512-yR7Q4CVYSF45/Atw8R4jiiNqKv5UgsJiNGjDcw0hyla7vBHG45vXbcrIKCZgD5uzbbeE/MPj9MjB7kTq2clq6A==, tarball: file:projects/squid-sdk.tgz}
+    resolution: {integrity: sha512-fulSadqrkIQQZuMhwWkFdMuyuUl5Ep18sXHmaHfpBT2fnlIMI6Hvm1a3rmRI4ahGDVkpxV3AbH/MKktKaDx0aQ==, tarball: file:projects/squid-sdk.tgz}
     version: 0.0.0
 
   '@rush-temp/ss58-codec@file:projects/ss58-codec.tgz':
@@ -1690,7 +1690,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/tron-data-service@file:projects/tron-data-service.tgz':
-    resolution: {integrity: sha512-7OcsrQA5AMXasZVHmMsHO3x6lYMUmXDeCccow3XY+Ep3QpKjtB/qhFeFT6Xp4f61TSOE7mBc2/BbAMBWgS/AQg==, tarball: file:projects/tron-data-service.tgz}
+    resolution: {integrity: sha512-TKoED9mw9xM2thhbJ+sJgxgyv37kLUOs20ZszdyzZXKpAFVB3yNOP37tLBbaw+EpSm6zsbIWVrdT8SYpGZqcgA==, tarball: file:projects/tron-data-service.tgz}
     version: 0.0.0
 
   '@rush-temp/tron-data@file:projects/tron-data.tgz':
@@ -1722,7 +1722,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/typeorm-config@file:projects/typeorm-config.tgz':
-    resolution: {integrity: sha512-YDopUloLbm6o2AlNXOna2MGzOz6dKyx92kAYSPjLIL7TJgbeYKLGltdZJY40M/oPUN69HEtX1fjO9MVj2RAr3w==, tarball: file:projects/typeorm-config.tgz}
+    resolution: {integrity: sha512-8sbcBAT8oR697C3vjMcTg3ZhF6W1w7SOp9LRNWUvz4EK8+K2rbwwR0Pcmn7IjGwTYGeqMGMVuMMxd0OQL6pt0w==, tarball: file:projects/typeorm-config.tgz}
     version: 0.0.0
 
   '@rush-temp/typeorm-migration@file:projects/typeorm-migration.tgz':
@@ -6938,30 +6938,55 @@ snapshots:
       - tsx
       - yaml
 
-  '@rush-temp/typeorm-config@file:projects/typeorm-config.tgz(ioredis@5.3.2(supports-color@8.1.1))(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2(@types/node@24.0.15)(typescript@5.5.4))':
+  '@rush-temp/typeorm-config@file:projects/typeorm-config.tgz(esbuild@0.27.7)(ioredis@5.3.2(supports-color@8.1.1))(supports-color@8.1.1)(ts-node@10.9.2(@types/node@24.0.15)(typescript@5.5.4))(tsx@4.21.0)':
     dependencies:
       '@types/node': 24.0.15
+      '@types/pg': 8.10.9
+      dotenv: 16.3.1
+      pg: 8.11.3
       typeorm: 0.3.17(ioredis@5.3.2(supports-color@8.1.1))(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2(@types/node@24.0.15)(typescript@5.5.4))
       typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(esbuild@0.27.7)(tsx@4.21.0)
     transitivePeerDependencies:
+      - '@edge-runtime/vm'
       - '@google-cloud/spanner'
+      - '@opentelemetry/api'
       - '@sap/hana-client'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
       - better-sqlite3
+      - esbuild
+      - happy-dom
       - hdb-pool
       - ioredis
+      - jiti
+      - jsdom
+      - less
       - mongodb
       - mssql
+      - msw
       - mysql2
       - oracledb
-      - pg
       - pg-native
       - pg-query-stream
       - redis
+      - sass
+      - sass-embedded
       - sql.js
       - sqlite3
+      - stylus
+      - sugarss
       - supports-color
+      - terser
       - ts-node
+      - tsx
       - typeorm-aurora-data-api-driver
+      - yaml
 
   '@rush-temp/typeorm-migration@file:projects/typeorm-migration.tgz(ioredis@5.3.2(supports-color@8.1.1))(pg@8.11.3)(supports-color@8.1.1)(ts-node@10.9.2(@types/node@24.0.15)(typescript@5.5.4))':
     dependencies:

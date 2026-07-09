@@ -13,7 +13,8 @@
   ],
   "main": "lib/config.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "make up && sleep 1 && make test && make down || (make down && exit 1)"
   },
   "dependencies": {
     "@subsquid/logger": "^1.6.0",
@@ -30,6 +31,10 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "typescript": "5.5.4"
+    "@types/pg": "^8.10.9",
+    "dotenv": "^16.3.1",
+    "pg": "^8.11.3",
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }
