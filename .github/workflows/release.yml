@@ -45,6 +45,19 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
 
+      # In `release` mode we build and publish from `release/arrowsquid`, but changes land
+      # on `master`. Fast-forward the release branch to `master` (and push it) so a release
+      # picks up the latest `master` — e.g. version-policy changes — instead of republishing
+      # a stale tree. `--ff-only` fails loudly if `release/arrowsquid` has commits not on
+      # `master` (which should be merged back via the bump workflow first) rather than
+      # force-moving the branch.
+      - name: Sync release branch with master
+        if: ${{ inputs.mode == 'release' }}
+        run: |
+          git fetch origin master
+          git merge --ff-only origin/master
+          git push origin HEAD:release/arrowsquid
+
       - name: Install dependencies
         run: node common/scripts/install-run-rush.js install
 
