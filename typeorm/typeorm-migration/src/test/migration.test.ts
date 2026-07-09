@@ -1,5 +1,10 @@
 import * as path from 'path'
-import {FixtureProject, tableSchemas, withClient} from './util'
+import {FixtureProject, isolateSchemaEnv, tableSchemas, withClient} from './util'
+
+
+// The CLIs inherit process.env; keep an ambient DB_SCHEMA from redirecting them
+// away from the default (public) schema these tests characterize.
+isolateSchemaEnv()
 
 
 // A compiled squid model, mirroring what squid-typeorm-codegen emits:

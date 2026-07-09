@@ -25,6 +25,38 @@ export async function withClient(block: (client: ClientBase) => Promise<void>): 
 }
 
 
+export const SCHEMA_ENV_VARS = ['DB_SCHEMA', 'DB_SCHEMA_INCLUDE_PUBLIC']
+
+
+/**
+ * Registers hooks that clear the schema env vars before each test and restore
+ * them after, leaving the connection vars (`DB_HOST`/`DB_PORT`/...) intact. The
+ * CLIs inherit `process.env`, so this keeps an ambient `DB_SCHEMA` in the shell
+ * or CI from redirecting them to a non-default schema and flaking the
+ * default-behavior assertions.
+ */
+export function isolateSchemaEnv(): void {
+    let saved: Record<string, string | undefined>
+    beforeEach(() => {
+        saved = {}
+        for (let k of SCHEMA_ENV_VARS) {
+            saved[k] = process.env[k]
+            delete process.env[k]
+        }
+    })
+    afterEach(() => {
+        for (let k of SCHEMA_ENV_VARS) {
+            let v = saved[k]
+            if (v === undefined) {
+                delete process.env[k]
+            } else {
+                process.env[k] = v
+            }
+        }
+    })
+}
+
+
 /** Schemas in which a given (unqualified) table currently exists. */
 export async function tableSchemas(table: string): Promise<string[]> {
     let schemas: string[] = []
