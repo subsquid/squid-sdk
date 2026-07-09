@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-migration",
+      "comment": "Add a live-DB vitest test harness with an end-to-end generate/apply/revert characterization test",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-migration"
+}
