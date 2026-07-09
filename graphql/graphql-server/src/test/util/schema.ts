@@ -19,9 +19,15 @@ if (!process.env.DB_PORT) {
 
 
 function basePort(): number {
-    if (process.env.DB_PORT) return parseInt(process.env.DB_PORT)
+    if (process.env.DB_PORT) return Number.parseInt(process.env.DB_PORT, 10)
     let p = isCockroach() ? process.env.DB_PORT_COCKROACH : process.env.DB_PORT_PG
-    return parseInt(p || '5432')
+    return Number.parseInt(p || '5432', 10)
+}
+
+
+// Quote a schema name as a Postgres identifier, escaping embedded double quotes.
+function quoteIdent(id: string): string {
+    return `"${id.replace(/"/g, '""')}"`
 }
 
 
@@ -64,11 +70,12 @@ export function useSchema(schema: string, sql: string[]): void {
         process.env.DB_SCHEMA = schema
         delete process.env.DB_SCHEMA_INCLUDE_PUBLIC
 
+        let ident = quoteIdent(schema)
         await withBaseClient(async client => {
-            await client.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`)
-            await client.query(`CREATE SCHEMA "${schema}"`)
+            await client.query(`DROP SCHEMA IF EXISTS ${ident} CASCADE`)
+            await client.query(`CREATE SCHEMA ${ident}`)
             // Create the fixtures inside the schema without qualifying each name.
-            await client.query(`SET search_path TO "${schema}"`)
+            await client.query(`SET search_path TO ${ident}`)
             for (let stmt of sql) {
                 await client.query(stmt)
             }
@@ -87,7 +94,7 @@ export function useSchema(schema: string, sql: string[]): void {
             process.env.DB_SCHEMA_INCLUDE_PUBLIC = savedIncludePublic
         }
         await withBaseClient(async client => {
-            await client.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`)
+            await client.query(`DROP SCHEMA IF EXISTS ${quoteIdent(schema)} CASCADE`)
         })
     })
 }
