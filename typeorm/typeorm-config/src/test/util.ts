@@ -30,6 +30,7 @@ export const DB_ENV_VARS = [
     'DB_URL', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS',
     'DB_SSL', 'DB_SSL_CA', 'DB_SSL_CA_FILE', 'DB_SSL_CERT', 'DB_SSL_CERT_FILE',
     'DB_SSL_KEY', 'DB_SSL_KEY_FILE', 'DB_SSL_REJECT_UNAUTHORIZED',
+    'DB_SCHEMA', 'DB_SCHEMA_INCLUDE_PUBLIC',
 ]
 
 
@@ -58,4 +59,35 @@ export function restoreDbEnv(snap: Record<string, string | undefined>): void {
             process.env[k] = v
         }
     }
+}
+
+
+export const SCHEMA_ENV_VARS = ['DB_SCHEMA', 'DB_SCHEMA_INCLUDE_PUBLIC']
+
+
+/**
+ * Registers hooks that clear the schema env vars before each test and restore
+ * them after, WITHOUT touching the connection vars (`DB_HOST`/`DB_PORT`/...).
+ * Use it in live-DB suites so an ambient `DB_SCHEMA` in the shell/CI can't make
+ * the default-behavior cases flaky.
+ */
+export function isolateSchemaEnv(): void {
+    let saved: Record<string, string | undefined>
+    beforeEach(() => {
+        saved = {}
+        for (let k of SCHEMA_ENV_VARS) {
+            saved[k] = process.env[k]
+            delete process.env[k]
+        }
+    })
+    afterEach(() => {
+        for (let k of SCHEMA_ENV_VARS) {
+            let v = saved[k]
+            if (v === undefined) {
+                delete process.env[k]
+            } else {
+                process.env[k] = v
+            }
+        }
+    })
 }

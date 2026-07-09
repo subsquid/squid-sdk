@@ -84,10 +84,15 @@ export interface PgClientConfig {
     port?: number
     host?: string
     ssl?: SslOptions | boolean
+    options?: string
 }
 
 
 export function toPgClientConfig(con: ConnectionOptions): PgClientConfig {
+    // `extra` is a TypeORM-only shape; translate its `options` (the
+    // `-c search_path=...` string) to pg's top-level `options` and never leak
+    // `extra` itself into the pg client config.
+    let options = con.extra?.options
     if (con.url) {
         let pg: PgClientConfig = {
             connectionString: con.url
@@ -95,13 +100,20 @@ export function toPgClientConfig(con: ConnectionOptions): PgClientConfig {
         if (con.ssl) {
             pg.ssl = con.ssl
         }
+        if (options) {
+            pg.options = options
+        }
         return pg
     } else {
         assert(con.url == null)
-        let {username, ...rest} = con
-        return {
+        let {username, extra, ...rest} = con
+        let pg: PgClientConfig = {
             user: username,
             ...rest
         }
+        if (options) {
+            pg.options = options
+        }
+        return pg
     }
 }
