@@ -25,6 +25,26 @@ export async function withClient(block: (client: ClientBase) => Promise<void>): 
 }
 
 
+// A compiled squid model, mirroring what squid-typeorm-codegen emits:
+// schema-neutral `@Entity` (here an EntitySchema) with enum fields represented
+// as `varchar` — never a native Postgres enum type.
+export const ACCOUNT_MODEL = `
+const {EntitySchema} = require('typeorm')
+
+const Account = new EntitySchema({
+    name: 'Account',
+    columns: {
+        id: {type: 'varchar', primary: true},
+        status: {type: 'varchar', length: 16},
+        balance: {type: 'int'},
+        data: {type: 'jsonb', nullable: true},
+    },
+})
+
+module.exports = {Account}
+`
+
+
 export const SCHEMA_ENV_VARS = ['DB_SCHEMA', 'DB_SCHEMA_INCLUDE_PUBLIC']
 
 
