@@ -43,7 +43,7 @@ async function withClient<T>(fn: (client: Client) => Promise<T>): Promise<T> {
 async function tableSchemas(table: string): Promise<string[]> {
     return withClient(async client => {
         let res = await client.query(
-            `SELECT schemaname FROM pg_tables WHERE tablename = $1 ORDER BY schemaname`,
+            `SELECT schemaname FROM pg_catalog.pg_tables WHERE tablename = $1 ORDER BY schemaname`,
             [table]
         )
         return res.rows.map((r: any) => r.schemaname)
@@ -116,6 +116,7 @@ describe('TypeormDatabase data schema (DB_SCHEMA) vs state schema', function () 
         expect(await tableSchemas('status')).toContain(STATE_SCHEMA)
         expect(await tableSchemas('status')).not.toContain(DATA_SCHEMA)
         expect(await tableSchemas('hot_block')).toContain(STATE_SCHEMA)
+        expect(await tableSchemas('hot_block')).not.toContain(DATA_SCHEMA)
 
         expect(DATA_SCHEMA).not.toBe(STATE_SCHEMA)
     })
