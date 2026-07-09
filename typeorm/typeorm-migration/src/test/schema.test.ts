@@ -95,7 +95,9 @@ describe('squid-typeorm-migration DB_SCHEMA case folding (live DB)', () => {
         savedIncludePublic = process.env.DB_SCHEMA_INCLUDE_PUBLIC
         process.env.DB_SCHEMA = MIXED
         delete process.env.DB_SCHEMA_INCLUDE_PUBLIC
-        await withClient(client => client.query(`DROP SCHEMA IF EXISTS ${FOLDED} CASCADE`))
+        await withClient(async client => {
+            await client.query(`DROP SCHEMA IF EXISTS ${FOLDED} CASCADE`)
+        })
     })
 
     afterEach(async () => {
@@ -109,7 +111,9 @@ describe('squid-typeorm-migration DB_SCHEMA case folding (live DB)', () => {
         } else {
             process.env.DB_SCHEMA_INCLUDE_PUBLIC = savedIncludePublic
         }
-        await withClient(client => client.query(`DROP SCHEMA IF EXISTS ${FOLDED} CASCADE`))
+        await withClient(async client => {
+            await client.query(`DROP SCHEMA IF EXISTS ${FOLDED} CASCADE`)
+        })
     })
 
     test('a mixed-case DB_SCHEMA folds consistently, so migrations land in the folded schema', async () => {
