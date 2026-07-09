@@ -1,30 +1,10 @@
 import * as path from 'path'
-import {FixtureProject, isolateSchemaEnv, tableSchemas, withClient} from './util'
+import {ACCOUNT_MODEL, FixtureProject, isolateSchemaEnv, tableSchemas, withClient} from './util'
 
 
 // The CLIs inherit process.env; keep an ambient DB_SCHEMA from redirecting them
 // away from the default (public) schema these tests characterize.
 isolateSchemaEnv()
-
-
-// A compiled squid model, mirroring what squid-typeorm-codegen emits:
-// schema-neutral `@Entity` (here an EntitySchema) with enum fields represented
-// as `varchar` — never a native Postgres enum type.
-const MODEL = `
-const {EntitySchema} = require('typeorm')
-
-const Account = new EntitySchema({
-    name: 'Account',
-    columns: {
-        id: {type: 'varchar', primary: true},
-        status: {type: 'varchar', length: 16},
-        balance: {type: 'int'},
-        data: {type: 'jsonb', nullable: true},
-    },
-})
-
-module.exports = {Account}
-`
 
 
 const PROJECT_DIR = path.join(__dirname, '.tmp-migration-project')
@@ -44,7 +24,7 @@ describe('squid-typeorm-migration (current behavior, live DB)', () => {
 
     beforeEach(async () => {
         await resetDb()
-        project = FixtureProject.create(PROJECT_DIR, MODEL)
+        project = FixtureProject.create(PROJECT_DIR, ACCOUNT_MODEL)
     })
 
     afterEach(async () => {

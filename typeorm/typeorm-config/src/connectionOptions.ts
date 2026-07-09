@@ -228,6 +228,25 @@ const SCHEMA_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/
 
 
 /**
+ * The validated name of the data schema, from the `DB_SCHEMA` env var, or
+ * `undefined` when it is not set. Callers that need to ensure the schema exists
+ * (e.g. the migration tool) use this to run `CREATE SCHEMA IF NOT EXISTS`.
+ */
+export function getDataSchema(): string | undefined {
+    let schema = process.env.DB_SCHEMA
+    if (!schema) return undefined
+
+    if (!SCHEMA_IDENTIFIER.test(schema)) {
+        throw new Error(
+            `Invalid DB_SCHEMA "${schema}": a schema name must match ${SCHEMA_IDENTIFIER}`
+        )
+    }
+
+    return schema
+}
+
+
+/**
  * Computes the pg connection `options` string that pins the data schema via
  * `search_path`, derived from `DB_SCHEMA` (and the optional
  * `DB_SCHEMA_INCLUDE_PUBLIC`). Returns `undefined` when `DB_SCHEMA` is not set,
@@ -239,14 +258,8 @@ const SCHEMA_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/
  * squid references objects (e.g. extensions) that live in `public`.
  */
 export function getDataSchemaSearchPath(): string | undefined {
-    let schema = process.env.DB_SCHEMA
+    let schema = getDataSchema()
     if (!schema) return undefined
-
-    if (!SCHEMA_IDENTIFIER.test(schema)) {
-        throw new Error(
-            `Invalid DB_SCHEMA "${schema}": a schema name must match ${SCHEMA_IDENTIFIER}`
-        )
-    }
 
     let searchPath = schema
     if (getIncludePublicInSearchPath()) {
