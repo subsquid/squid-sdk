@@ -2,6 +2,33 @@
   "name": "@subsquid/typeorm-migration",
   "entries": [
     {
+      "version": "1.4.0",
+      "tag": "@subsquid/typeorm-migration_v1.4.0",
+      "date": "Fri, 10 Jul 2026 07:08:47 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "apply now creates the data schema (CREATE SCHEMA IF NOT EXISTS) when DB_SCHEMA is set, so migrations and the migrations ledger land in it"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Double-quote the schema in apply's CREATE SCHEMA so its case matches the quoted search_path (data and state resolve to the same schema)"
+          }
+        ],
+        "none": [
+          {
+            "comment": "Add a live-DB vitest test harness with an end-to-end generate/apply/revert characterization test"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^4.1.1` to `4.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.3.1",
       "tag": "@subsquid/typeorm-migration_v1.3.1",
       "date": "Wed, 15 Apr 2026 14:45:11 GMT",

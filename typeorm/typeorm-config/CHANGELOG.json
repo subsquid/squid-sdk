@@ -2,6 +2,31 @@
   "name": "@subsquid/typeorm-config",
   "entries": [
     {
+      "version": "4.2.0",
+      "tag": "@subsquid/typeorm-config_v4.2.0",
+      "date": "Fri, 10 Jul 2026 07:08:47 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Export getDataSchema() — the validated DB_SCHEMA name — so tooling (e.g. migrations) can ensure the data schema exists"
+          },
+          {
+            "comment": "Add a configurable data schema via the DB_SCHEMA env var, threaded as a connection-level search_path (with an opt-in DB_SCHEMA_INCLUDE_PUBLIC tail)"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Double-quote DB_SCHEMA in the search_path so its case is preserved, matching how typeorm-store qualifies stateSchema (lets DB_SCHEMA and stateSchema be the same value)"
+          }
+        ],
+        "none": [
+          {
+            "comment": "Add a live-DB vitest test harness and characterization tests for the connection-config builders"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.1.1",
       "tag": "@subsquid/typeorm-config_v4.1.1",
       "date": "Tue, 07 May 2024 07:40:43 GMT",

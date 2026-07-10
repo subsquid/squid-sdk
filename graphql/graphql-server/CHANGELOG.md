@@ -1,6 +1,13 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Wed, 08 Apr 2026 08:23:22 GMT and should not be manually modified.
+This log was last generated on Fri, 10 Jul 2026 07:08:47 GMT and should not be manually modified.
+
+## 4.12.1
+Fri, 10 Jul 2026 07:08:47 GMT
+
+### Patches
+
+- Honor DB_SCHEMA on the TypeORM context path: stop overwriting the connection `extra`, so the search_path from @subsquid/typeorm-config is preserved
 
 ## 4.12.0
 Wed, 08 Apr 2026 08:23:22 GMT
