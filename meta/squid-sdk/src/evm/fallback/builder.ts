@@ -75,7 +75,7 @@ export class EvmPortalDataSourceBuilder implements EvmDownstreamSourceBuilder {
         // standalone one would be. Re-feeding the already-merged requests is idempotent: they are
         // disjoint by range, so mergeRangeRequests leaves them untouched.
         let builder = new DataSourceBuilder().setPortal(this.portal).setFields(fields)
-        for (let req of requests) builder.addQuery(req as Query)
+        for (let req of requests) builder.addQuery(req)
         return builder.build()
     }
 }
@@ -143,7 +143,7 @@ export class EvmRpcDataSourceBuilder implements EvmDownstreamSourceBuilder {
  *         new EvmRpcDataSourceBuilder().setRpc({url: RPC_URL, network: 'ethereum-mainnet'}),
  *     ])
  *     .setFields({log: {topics: true, data: true}})
- *     .addLog({address: [CONTRACT], topic0: [TRANSFER], range: {from: 10_000_000}})
+ *     .addLog({where: {address: [CONTRACT], topic0: [TRANSFER]}, range: {from: 10_000_000}})
  *     .build()
  */
 export class EvmFallbackDataSourceBuilder<F extends FieldSelection = {}> {
