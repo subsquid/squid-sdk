@@ -4,11 +4,11 @@ Umbrella package for the Squid SDK. It bundles the SDK's data sources and utilit
 them through **subpaths**, so a squid can depend on a single package:
 
 ```ts
-import {createEvmFallbackSource} from '@subsquid/squid-sdk/evm/fallback'
-import {EvmRpcStreamDataSource}  from '@subsquid/squid-sdk/evm/rpc'
-import {FallbackDataSource}      from '@subsquid/squid-sdk/fallback'
-import {PortalClient}            from '@subsquid/squid-sdk/client/portal'
-import {def}                     from '@subsquid/squid-sdk/util'
+import {EvmFallbackDataSourceBuilder} from '@subsquid/squid-sdk/evm/fallback'
+import {EvmRpcStreamDataSource}       from '@subsquid/squid-sdk/evm/rpc'
+import {FallbackDataSource}           from '@subsquid/squid-sdk/fallback'
+import {PortalClient}                 from '@subsquid/squid-sdk/client/portal'
+import {def}                          from '@subsquid/squid-sdk/util'
 ```
 
 The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpaths.
@@ -19,7 +19,7 @@ The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpa
 | --- | --- | --- |
 | `evm` | EVM stream types & data-request model | re-export of `@subsquid/evm-stream` |
 | `evm/rpc` | RPC-backed EVM data source (Portal-compatible output) | **owned** (folded in) |
-| `evm/fallback` | `createEvmFallbackSource` — the EVM binding of the fallback supervisor | **owned** (folded in) |
+| `evm/fallback` | `EvmFallbackDataSourceBuilder` (+ `EvmPortalDataSourceBuilder` / `EvmRpcDataSourceBuilder`) — the EVM binding of the fallback supervisor | **owned** (folded in) |
 | `fallback` | VM-agnostic fallback supervisor: drives the lowest-index healthy source of N | **owned** (folded in) |
 | `solana` | Solana stream | re-export of `@subsquid/solana-stream` |
 | `fuel` | Fuel stream | re-export of `@subsquid/fuel-stream` |
@@ -39,6 +39,33 @@ The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpa
 The `evm/rpc`, `evm/fallback`, and `fallback` subpaths are owned by this package (their standalone
 packages were folded in and removed). Everything else is a re-export of a package that is still
 published standalone — import it either way.
+
+## EVM fallback source
+
+`EvmFallbackDataSourceBuilder` mirrors `@subsquid/evm-stream`'s `DataSourceBuilder`: define the field
+selection and query **once**, list the ordered downstream sources (Portal and/or RPC), and `build()`
+a `FallbackDataSource<Block<F>>` — a drop-in for a single Portal source (the processor needs no
+changes). `setFields` infers the block type `F`, so downstream field access is fully typed.
+
+```ts
+import {
+    EvmFallbackDataSourceBuilder,
+    EvmPortalDataSourceBuilder,
+    EvmRpcDataSourceBuilder,
+} from '@subsquid/squid-sdk/evm/fallback'
+
+const source = new EvmFallbackDataSourceBuilder()
+    .setDownstreamSources([
+        new EvmPortalDataSourceBuilder().setPortal('https://portal.sqd.dev/datasets/ethereum-mainnet'),
+        new EvmRpcDataSourceBuilder().setRpc({url: RPC_URL, network: 'ethereum-mainnet'}),
+    ])
+    .setFields({log: {topics: true, data: true}})
+    .addLog({where: {address: [CONTRACT], topic0: [TRANSFER]}, range: {from: 10_000_000}})
+    .build()
+```
+
+The lower-level `createEvmFallbackSource({fields, requests, sources})` remains available for advanced
+cases (e.g. passing a pre-built `Rpc` or an already-built `EVMDataSource`).
 
 ## Optional EVM peers
 
