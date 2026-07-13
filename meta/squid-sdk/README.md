@@ -64,8 +64,8 @@ const source = new EvmFallbackDataSourceBuilder()
     .build()
 ```
 
-The lower-level `createEvmFallbackSource({fields, requests, sources})` remains available for advanced
-cases (e.g. passing a pre-built `Rpc` or an already-built `EVMDataSource`).
+To drive an arbitrary pre-built `EVMDataSource` (e.g. a custom source), implement the
+`EvmDownstreamSourceBuilder` interface — its `buildSource(fields, requests)` returns your source.
 
 ## Optional EVM peers
 
