@@ -696,6 +696,20 @@ export interface ReceiptEncodingOptions {
 }
 
 
+/**
+ * Pre-EIP-658 (Byzantium) receipts encode a 32-byte post-transaction state root
+ * in place of the status flag.
+ *
+ * https://eips.ethereum.org/EIPS/eip-658
+ */
+function encodeReceiptStatusOrRoot(receipt: Receipt): number | Uint8Array {
+    if (receipt.root != null) {
+        return decodeHex(receipt.root)
+    }
+    return qty2Int(assertNotNull(receipt.status, 'receipt.status is missing'))
+}
+
+
 function encodeReceipt(receipt: Receipt, options?: ReceiptEncodingOptions): Buffer {
     let type = receipt.type == '0x0' ? Buffer.alloc(0) : RLP.encode(qty2Int(receipt.type))
     let payload: Uint8Array
@@ -703,7 +717,7 @@ function encodeReceipt(receipt: Receipt, options?: ReceiptEncodingOptions): Buff
     if (receipt.type == '0x7e') {
         // https://github.com/ethereum-optimism/specs/blob/main/specs/protocol/deposits.md#deposit-receipt
         payload = RLP.encode([
-            qty2Int(receipt.status),
+            qty2Int(assertNotNull(receipt.status, 'receipt.status is missing')),
             BigInt(gasField),
             decodeHex(receipt.logsBloom),
             decodeLogs(receipt.logs),
@@ -712,7 +726,7 @@ function encodeReceipt(receipt: Receipt, options?: ReceiptEncodingOptions): Buff
         ])
     } else {
         payload = RLP.encode([
-            qty2Int(receipt.status),
+            encodeReceiptStatusOrRoot(receipt),
             BigInt(gasField),
             decodeHex(receipt.logsBloom),
             decodeLogs(receipt.logs),
