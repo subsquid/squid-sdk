@@ -4,7 +4,7 @@ import {FlatDataRequest} from '../filter/request'
 
 /**
  * Augment a field selection with the fields the request's `where` clauses need to be
- * *evaluated*, even when they aren't selected for output (plan §11). The decoder must fetch
+ * *evaluated*, even when they aren't selected for output. The decoder must fetch
  * e.g. `log.address` to filter on it; otherwise the filter predicate sees `undefined`.
  *
  * Trace `where` keys (`createFrom`/`callTo`/…) are identical to the trace field-selection

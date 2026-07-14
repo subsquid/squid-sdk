@@ -11,7 +11,7 @@ import {augmentFields} from './augment'
 
 /**
  * RPC method-selection + data toggles that aren't derivable from the query — they depend on
- * the chain / provider (the "C1" deploy-config layer, plan §S5). Supplied by per-network
+ * the chain / provider (the deploy-config layer). Supplied by per-network
  * presets; merged into the coarse evm-rpc `DataRequest`.
  */
 export interface RpcMethodOptions {

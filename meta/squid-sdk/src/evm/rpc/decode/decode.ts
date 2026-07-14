@@ -12,7 +12,7 @@ import {shimWireBlock} from './shim'
  * Portal `Block<F>` model by reusing the **exact** Portal decoder: the shared
  * `getBlockSchema`/`patchQueryFields` + `cast`, then `mapBlock`. A small pre-cast shim
  * reshapes the two trace-level fields the schema rejects. Reusing the producer's decoder
- * is what makes the RPC source's output byte-identical to the Portal source's (plan §10).
+ * is what makes the RPC source's output byte-identical to the Portal source's.
  */
 export function decodeWireBlock<F extends FieldSelection>(wire: unknown, fields: F): Block<F> {
     let shaped = shimWireBlock(wire)

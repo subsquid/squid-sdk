@@ -12,7 +12,7 @@ import {Selector} from './selector'
 /** Returned by the staleness-aware fetch when the active source must be failed over. */
 const STALE = Symbol('stale')
 
-/** A structured snapshot of the fallback's observable state, for a metrics surface (§4). */
+/** A structured snapshot of the fallback's observable state, for a metrics surface. */
 export interface FallbackMetrics {
     activeIndex: number | undefined
     switchCount: number
@@ -48,7 +48,7 @@ export interface FallbackDataSourceOptions<B> {
  * marks that source unhealthy and resumes the *next* source from the last committed position.
  * Because position is a `{number, hash}` pair and the sources are stateless, a fork straddling a
  * switch is just an ordinary reorg: `ForkException` is propagated untouched and the consumer's
- * existing rollback machinery handles it (plan §3). `finalizedHead` is passed through unchanged —
+ * existing rollback machinery handles it. `finalizedHead` is passed through unchanged —
  * the finalized high-watermark is the stateful target's job, not this stateless source's.
  */
 export class FallbackDataSource<B> implements DataSource<B> {
@@ -61,10 +61,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
     // EVM-specific; the cause is also exported through `metrics()` for a metrics surface.
     private logger: Logger = createLogger('sqd:fallback')
 
-    /** Observable state (for metrics, §4). */
+    /** Observable state (for metrics). */
     activeIndex: number | undefined
     switchCount = 0
-    /** Freshness metrics (§4 / M1): blocks behind the independent head, and source-pending ms. */
+    /** Freshness metrics: blocks behind the independent head, and source-pending ms. */
     lag = 0
     staleness = 0
     chainHead: number | undefined
@@ -220,7 +220,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                     safeReturn(iterator)
                 }
             } catch (e) {
-                if (isForkException(e)) throw e // propagate; do NOT switch (§3.4)
+                if (isForkException(e)) throw e // propagate; do NOT switch
                 this.failSource(active, classifyError('stream', e))
                 // re-select and resume from lastCommitted on the next iteration
             }
@@ -263,7 +263,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         return 0
     }
 
-    /** Snapshot of the observable state for export to a metrics surface (§4). */
+    /** Snapshot of the observable state for export to a metrics surface. */
     metrics(): FallbackMetrics {
         return {
             activeIndex: this.activeIndex,
@@ -318,7 +318,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         try {
             let head = await this.headWithTimeout(i)
             this.#headCache[i] = {value: head.number, at: now}
-            // The head fetch doubles as the liveness probe (§4): a fresh head is proof the source
+            // The head fetch doubles as the liveness probe: a fresh head is proof the source
             // is reachable, so it counts toward the `M` passes that promote a standby to `healthy`
             // — without which it could never be eligible for eager switch-up. A reachable source
             // is also when we (re)confirm its capability.
@@ -365,7 +365,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
     /**
      * Fire a source's optional capability probe once it is proven reachable, feeding the result
-     * into its health (§4). A source that declares a `probeCapability` cannot become `healthy` on
+     * into its health. A source that declares a `probeCapability` cannot become `healthy` on
      * liveness alone — capability must be confirmed — so without this it could never be switched up
      * to. Fire-and-forget (a full capability slice must not block the boundary), and never
      * concurrently for the same source. Periodic re-verification, to catch a source that *loses*

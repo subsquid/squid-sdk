@@ -1,4 +1,4 @@
-/** Trinary health (plan §4): `unknown` lets the first batch ship before any probe completes. */
+/** Trinary health: `unknown` lets the first batch ship before any probe completes. */
 export type Health = 'healthy' | 'unhealthy' | 'unknown'
 
 export interface FallbackPolicy {
@@ -24,13 +24,13 @@ export interface FallbackPolicy {
      * Fail the active source over when it falls more than this many blocks behind an
      * *independent* chain-head reference (the max head of the other eligible sources). Armed
      * only once the tip is first reached, so a long historical backfill never false-fires.
-     * `10` by default; `null` disables the lag trigger. (M1 / D9.)
+     * `10` by default; `null` disables the lag trigger.
      */
     maxLagBlocks?: number | null
     /**
      * Fail the active source over when its next-batch request stays outstanding this long (the
      * source-pending clock — excludes time parked at `yield` awaiting the consumer). `180_000`
-     * ms by default; `null` disables the staleness trigger. (M1 / D9.)
+     * ms by default; `null` disables the staleness trigger.
      */
     maxStalenessMs?: number | null
     /** How often the staleness clock is checked while a request is outstanding. */
@@ -47,12 +47,12 @@ export interface FallbackPolicy {
     headPollTimeoutMs?: number | null
     /**
      * Blocks ahead of the indexing frontier (last committed height) a capability probe targets, so
-     * it verifies the source can serve the data it is *about* to read. `16` by default. (§4.)
+     * it verifies the source can serve the data it is *about* to read. `16` by default.
      */
     capabilityLookahead?: number
     /**
      * Blocks below the chain tip a capability probe is clamped to, so a caught-up source probes a
-     * settled block rather than the reorg-prone/maybe-unpropagated tip. `16` by default. (§4.)
+     * settled block rather than the reorg-prone/maybe-unpropagated tip. `16` by default.
      */
     capabilityTipMargin?: number
     /** Injectable clock (ms), for deterministic tests. Defaults to `Date.now`. */

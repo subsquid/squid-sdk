@@ -1,7 +1,7 @@
 import {RpcMethodOptions} from '../source/data-source'
 
 /**
- * Validation + finality settings (the per-chain "C1" deploy-config layer) passed to the
+ * Validation + finality settings (the per-chain deploy-config layer) passed to the
  * `@subsquid/evm-rpc` `Rpc`. Keys mirror `RpcOptions`; all default off, presets opt in.
  */
 export interface RpcValidationOptions {
@@ -19,7 +19,7 @@ export interface RpcValidationOptions {
 
 /**
  * A per-network settings preset mirroring that network's infra deploy config, so the RPC source
- * produces output matching the Portal dataset (plan §5 S5). Keyed by `chainId` (+ slug). These
+ * produces output matching the Portal dataset. Keyed by `chainId` (+ slug). These
  * duplicate infra lore in the SDK by design and are temporary; the long-term home is inside
  * `evm-rpc`'s chain modules.
  */

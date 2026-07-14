@@ -30,16 +30,25 @@ interface BlockRange {
 const evmBlockRef = (b: Block<any>): BlockRef => ({number: b.header.number, hash: b.header.hash})
 
 /**
- * A downstream source in an EVM fallback — **connection config only**. The shared field selection
- * and query live on the {@link EvmFallbackDataSourceBuilder}; each downstream is finalized with them
- * so every source produces identical output. Implemented by {@link EvmPortalDataSourceBuilder} and
+ * A downstream source in an EVM fallback — **connection config only**. The field selection and query
+ * are defined once on the {@link EvmFallbackDataSourceBuilder} and passed to every downstream's
+ * {@link buildSource}, so all sources fetch the same data and produce identical output no matter
+ * which one is active. Implemented by {@link EvmPortalDataSourceBuilder} and
  * {@link EvmRpcDataSourceBuilder}.
+ *
+ * Implementing this interface directly is an escape hatch for wrapping an arbitrary pre-built
+ * `EVMDataSource`. If you do, **`buildSource` must build from the `fields` and `requests` it is
+ * given** — a source configured with a different field selection or query makes the fallback's
+ * output silently depend on which source is currently active, defeating the purpose of a fallback.
  */
 export interface EvmDownstreamSourceBuilder {
     /** Fallback for the source's metrics/log name when {@link name} is unset. */
     readonly defaultName: string
     readonly name?: string
-    /** Finalize into a full data source using the fallback's shared field selection + requests. */
+    /**
+     * Finalize into a full data source. Must build from the given `fields` and `requests` — the
+     * fallback's shared selection and query — so every source in the fallback returns identical data.
+     */
     buildSource<F extends FieldSelection>(fields: F, requests: RangeRequestList<DataRequest>): EVMDataSource<F>
 }
 
