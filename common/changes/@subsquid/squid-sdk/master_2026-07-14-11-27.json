@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "comment": "Release to npm via GitHub Actions trusted publishing (OIDC)",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/squid-sdk"
+}
