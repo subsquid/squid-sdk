@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "Add pre-Byzantium post-state root to receipts verification (allows verifying receipts for Ethereum mainnet blocks 0 - 4,369,999)",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
