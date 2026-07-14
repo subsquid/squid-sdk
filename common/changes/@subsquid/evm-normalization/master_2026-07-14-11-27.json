@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-normalization",
+      "comment": "Release to npm via GitHub Actions trusted publishing (OIDC)",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-normalization"
+}
