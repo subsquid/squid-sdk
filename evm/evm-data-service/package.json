@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/evm-data-service",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Hot block data service for EVM-based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -17,8 +17,8 @@
   },
   "dependencies": {
     "commander": "^11.1.0",
-    "@subsquid/evm-rpc": "^0.0.2",
-    "@subsquid/evm-normalization": "^0.0.2",
+    "@subsquid/evm-rpc": "^0.0.3",
+    "@subsquid/evm-normalization": "^0.0.3",
     "@subsquid/logger": "^1.6.0",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-commander": "^1.4.0",
