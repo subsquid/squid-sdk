@@ -355,7 +355,11 @@ export const Receipt = object({
     effectiveGasPrice: option(QTY),
     logs: array(Log),
     logsBloom: BYTES,
-    status: SMALL_QTY,
+    // Pre-Byzantium receipts (Ethereum blocks < 4_370_000) carry a 32-byte
+    // post-transaction state root instead of a status flag
+    // https://eips.ethereum.org/EIPS/eip-658
+    status: option(SMALL_QTY),
+    root: option(BYTES),
     to: option(BYTES),
     type: SMALL_QTY,
     blobGasUsed: option(QTY),

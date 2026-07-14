@@ -499,7 +499,7 @@ export class Rpc {
         let candidates: Transaction[] = []
         for (let tx of transactions) {
             let receipt = receiptByHash.get(tx.hash)
-            if (receipt == null || qty2Int(receipt.status) === 0) {
+            if (receipt == null || receiptStatus(receipt) === 0) {
                 candidates.push(tx)
             }
         }
@@ -545,7 +545,7 @@ export class Rpc {
             let successfulCompeter = sameNonceTxs.some(tx => {
                 if (tx.hash === candidate.hash) return false
                 let receipt = receiptByHash.get(tx.hash)
-                return receipt != null && qty2Int(receipt.status) === 1
+                return receipt != null && receiptStatus(receipt) === 1
             })
 
             if (successfulCompeter) {
@@ -557,7 +557,7 @@ export class Rpc {
             let sharedWithOtherCandidate = sameNonceTxs.some(tx => {
                 if (tx.hash === candidate.hash) return false
                 let receipt = receiptByHash.get(tx.hash)
-                return receipt == null || qty2Int(receipt.status) === 0
+                return receipt == null || receiptStatus(receipt) === 0
             })
 
             if (sharedWithOtherCandidate) {
@@ -770,7 +770,7 @@ export class Rpc {
         // bloom: phantom txs (stripped) and reverted txs (status = 0x0).
         let leakedTxHashes = new Set<Bytes32>(phantomTxHashes)
         for (let receipt of receipts) {
-            if (qty2Int(receipt.status) === 0) {
+            if (receiptStatus(receipt) === 0) {
                 leakedTxHashes.add(receipt.transactionHash)
             }
         }
@@ -1257,6 +1257,13 @@ function isEmpty(obj: object): boolean {
         return false
     }
     return true
+}
+
+
+// Used only on post-Byzantium chains (Cronos fix paths), where receipts
+// always carry a status flag rather than a pre-EIP-658 post-state root.
+function receiptStatus(receipt: Receipt): number {
+    return qty2Int(assertNotNull(receipt.status, 'receipt.status is missing'))
 }
 
 
