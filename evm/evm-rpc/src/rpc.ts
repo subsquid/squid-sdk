@@ -953,9 +953,13 @@ export class Rpc {
     }
 
     private async addTraceBlockTraces(blocks: Block[]) {
+        // Pass the block number rather than the hash: the hash form is not
+        // universally supported (e.g. Alchemy silently responds with just the
+        // reward frame). Reorg consistency is ensured by the frame.blockHash
+        // check below.
         let call = blocks.map(block => ({
             method: 'trace_block',
-            params: [block.block.hash]
+            params: [block.block.number]
         }))
 
         let results = await this.reduceBatchOnRetry(call, {
@@ -966,32 +970,35 @@ export class Rpc {
             let block = blocks[i]
             let frames = results[i]
 
-            if (frames.length == 0) {
-                if (block.block.transactions.length > 0) {
-                    block._isInvalid = true
-                    block._errorMessage = 'missing traces for some transactions'
-                }
-                continue
-            }
-
             for (let frame of frames) {
                 if (frame.blockHash !== block.block.hash) {
                     block._isInvalid = true
                     block._errorMessage = 'trace_block returned a trace of a different block'
                     break
                 }
+            }
+            if (block._isInvalid) continue
 
-                if (!block._isInvalid) {
-                    block.traceReplays = []
-                    let byTx = groupBy(frames, f => f.transactionHash)
-                    for (let [transactionHash, txFrames] of byTx.entries()) {
-                        if (transactionHash) {
-                            block.traceReplays.push({
-                                transactionHash,
-                                trace: txFrames
-                            })
-                        }
-                    }
+            let byTx = groupBy(frames, f => f.transactionHash)
+
+            // Providers may return traces for only a subset of transactions
+            // (or reward frames alone)
+            for (let tx of block.block.transactions) {
+                if (!byTx.has(getTxHash(tx))) {
+                    block._isInvalid = true
+                    block._errorMessage = 'missing traces for some transactions'
+                    break
+                }
+            }
+            if (block._isInvalid) continue
+
+            block.traceReplays = []
+            for (let [transactionHash, txFrames] of byTx.entries()) {
+                if (transactionHash) {
+                    block.traceReplays.push({
+                        transactionHash,
+                        trace: txFrames
+                    })
                 }
             }
         }
