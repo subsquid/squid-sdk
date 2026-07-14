@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-normalization
 
-This log was last generated on Mon, 01 Jun 2026 19:32:22 GMT and should not be manually modified.
+This log was last generated on Tue, 14 Jul 2026 13:09:33 GMT and should not be manually modified.
+
+## 0.0.3
+Tue, 14 Jul 2026 13:09:33 GMT
+
+### Patches
+
+- Release to npm via GitHub Actions trusted publishing (OIDC)
 
 ## 0.0.2
 Mon, 01 Jun 2026 19:32:22 GMT

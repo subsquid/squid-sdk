@@ -2,6 +2,21 @@
   "name": "@subsquid/evm-rpc",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/evm-rpc_v0.0.3",
+      "date": "Tue, 14 Jul 2026 13:09:33 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Release to npm via GitHub Actions trusted publishing (OIDC)"
+          },
+          {
+            "comment": "Add pre-Byzantium post-state root to receipts verification (allows verifying receipts for Ethereum mainnet blocks 0 - 4,369,999)"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/evm-rpc_v0.0.2",
       "date": "Mon, 01 Jun 2026 19:32:22 GMT",

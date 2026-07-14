@@ -2,6 +2,23 @@
   "name": "@subsquid/evm-normalization",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/evm-normalization_v0.0.3",
+      "date": "Tue, 14 Jul 2026 13:09:33 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Release to npm via GitHub Actions trusted publishing (OIDC)"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.2` to `0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/evm-normalization_v0.0.2",
       "date": "Mon, 01 Jun 2026 19:32:22 GMT",

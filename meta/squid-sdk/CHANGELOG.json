@@ -2,6 +2,32 @@
   "name": "@subsquid/squid-sdk",
   "entries": [
     {
+      "version": "0.1.1",
+      "tag": "@subsquid/squid-sdk_v0.1.1",
+      "date": "Tue, 14 Jul 2026 13:09:33 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Release to npm via GitHub Actions trusted publishing (OIDC)"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.2` to `0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.2` to `0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.2` to `0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.2` to `0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/squid-sdk_v0.1.0",
       "date": "Wed, 08 Jul 2026 22:11:26 GMT",

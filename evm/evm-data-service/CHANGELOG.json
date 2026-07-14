@@ -2,6 +2,21 @@
   "name": "@subsquid/evm-data-service",
   "entries": [
     {
+      "version": "0.0.7",
+      "tag": "@subsquid/evm-data-service_v0.0.7",
+      "date": "Tue, 14 Jul 2026 13:09:33 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.2` to `0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.2` to `0.0.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.6",
       "tag": "@subsquid/evm-data-service_v0.0.6",
       "date": "Mon, 01 Jun 2026 19:32:22 GMT",

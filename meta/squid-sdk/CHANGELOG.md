@@ -1,6 +1,13 @@
 # Change Log - @subsquid/squid-sdk
 
-This log was last generated on Wed, 08 Jul 2026 22:11:26 GMT and should not be manually modified.
+This log was last generated on Tue, 14 Jul 2026 13:09:33 GMT and should not be manually modified.
+
+## 0.1.1
+Tue, 14 Jul 2026 13:09:33 GMT
+
+### Patches
+
+- Release to npm via GitHub Actions trusted publishing (OIDC)
 
 ## 0.1.0
 Wed, 08 Jul 2026 22:11:26 GMT
