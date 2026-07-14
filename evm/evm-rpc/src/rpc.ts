@@ -16,6 +16,7 @@ import {
     GetBlock,
     Receipt,
     TraceFrame,
+    DebugStateDiff,
     DebugStateDiffResult,
     DebugFrameResult,
     TraceReplayTraces,
@@ -1026,6 +1027,7 @@ export class Rpc {
             validateError: info => {
                 if (info.message.includes('not found')) return null
                 if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                if (isResponseTooBigError(info)) return RESPONSE_TOO_BIG as any
                 throw new RpcError(info)
             }
         })
@@ -1034,6 +1036,13 @@ export class Rpc {
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let diffs = results[i]
+            if ((diffs as any) === RESPONSE_TOO_BIG) {
+                // The whole-block prestateTracer response exceeded the provider's
+                // response-size cap. Retrying/splitting the block batch can't help
+                // (a single block can't be split), so re-fetch the state diff one
+                // transaction at a time, where each response is small.
+                diffs = await this.traceStateDiffsPerTransaction(block, traceConfig)
+            }
             if (diffs == null) {
                 block._isInvalid = true
                 block._errorMessage = "failed to get debug state diffs for a block"
@@ -1043,6 +1052,39 @@ export class Rpc {
                 block.debugStateDiffs = this.matchDebugTrace('debug state diff', block, diffs, utils)
             }
         }
+    }
+
+    private async traceStateDiffsPerTransaction(
+        block: Block,
+        traceConfig: object
+    ): Promise<DebugStateDiffResult[] | null> {
+        let txs = block.block.transactions
+        this.log.warn(
+            `debug state diff for block ${block.number} exceeded the provider response size limit; ` +
+            `falling back to per-transaction tracing of ${txs.length} transactions`
+        )
+
+        // debug_traceTransaction returns a bare state diff per call (no { result, txHash }
+        // envelope), so we validate the diff itself and reattach the tx hash below.
+        let diffs = await this.reduceBatchOnRetry(txs.map(tx => ({
+            method: 'debug_traceTransaction',
+            params: [getTxHash(tx), traceConfig]
+        })), {
+            validateResult: getResultValidator(DebugStateDiff),
+            validateError: info => {
+                if (info.message.includes('not found')) return null
+                if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                throw new RpcError(info)
+            }
+        })
+
+        let out: DebugStateDiffResult[] = new Array(txs.length)
+        for (let i = 0; i < txs.length; i++) {
+            let diff = diffs[i]
+            if (diff == null) return null // a transaction couldn't be traced; flag block for retry
+            out[i] = { result: diff, txHash: getTxHash(txs[i]) }
+        }
+        return out
     }
 
     private async addDebugFrames(blocks: Block[], req: DataRequest): Promise<void> {
@@ -1265,6 +1307,27 @@ function isEmpty(obj: object): boolean {
         return false
     }
     return true
+}
+
+
+// Marks a debug-trace batch item whose whole-block response exceeded the
+// provider's response-size cap and must be re-fetched per transaction.
+const RESPONSE_TOO_BIG = Symbol('evm-rpc:response-too-big')
+
+
+// geth/erigon and managed providers (alchemy, dwellir, uniblock, …) cap a single
+// JSON-RPC response (commonly 160 MiB) and reject an oversized debug trace with
+// this error. Unlike the *transient* "-32020 response too large" handled in
+// EvmRpcClient.isResponseTooLargeError, a whole-block prestateTracer diff for a
+// very large block exceeds the cap *persistently* — every retry returns the same
+// error and the block batch can't be split below a single block — so the only way
+// forward is to trace the block one transaction at a time.
+function isResponseTooBigError(info: { code?: number, message: string }): boolean {
+    return (
+        info.code === -32008 ||
+        /response is too big/i.test(info.message) ||
+        /exceeded max limit/i.test(info.message)
+    )
 }
 
 
