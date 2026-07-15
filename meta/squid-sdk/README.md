@@ -19,7 +19,7 @@ The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpa
 | --- | --- | --- |
 | `evm` | EVM stream types & data-request model | re-export of `@subsquid/evm-stream` |
 | `evm/rpc` | RPC-backed EVM data source (Portal-compatible output) | **owned** (folded in) |
-| `evm/fallback` | `EvmFallbackDataSourceBuilder` (+ `EvmPortalDataSourceBuilder` / `EvmRpcDataSourceBuilder`) — the EVM binding of the fallback supervisor | **owned** (folded in) |
+| `evm/fallback` | `EvmFallbackDataSourceBuilder` — the EVM binding of the fallback supervisor | **owned** (folded in) |
 | `fallback` | VM-agnostic fallback supervisor: drives the lowest-index healthy source of N | **owned** (folded in) |
 | `solana` | Solana stream | re-export of `@subsquid/solana-stream` |
 | `fuel` | Fuel stream | re-export of `@subsquid/fuel-stream` |
@@ -43,29 +43,32 @@ published standalone — import it either way.
 ## EVM fallback source
 
 `EvmFallbackDataSourceBuilder` mirrors `@subsquid/evm-stream`'s `DataSourceBuilder`: define the field
-selection and query **once**, list the ordered downstream sources (Portal and/or RPC), and `build()`
-a `FallbackDataSource<Block<F>>` — a drop-in for a single Portal source (the processor needs no
-changes). `setFields` infers the block type `F`, so downstream field access is fully typed.
+selection and query **once**, list the ordered downstream sources as plain config objects, and
+`build()` a `FallbackDataSource<Block<F>>` — a drop-in for a single Portal source (the processor needs
+no changes). `setFields` infers the block type `F`, so downstream field access is fully typed.
 
 ```ts
-import {
-    EvmFallbackDataSourceBuilder,
-    EvmPortalDataSourceBuilder,
-    EvmRpcDataSourceBuilder,
-} from '@subsquid/squid-sdk/evm/fallback'
+import {EvmFallbackDataSourceBuilder} from '@subsquid/squid-sdk/evm/fallback'
 
 const source = new EvmFallbackDataSourceBuilder()
     .setDownstreamSources([
-        new EvmPortalDataSourceBuilder().setPortal('https://portal.sqd.dev/datasets/ethereum-mainnet'),
-        new EvmRpcDataSourceBuilder().setRpc({url: RPC_URL, network: 'ethereum-mainnet'}),
+        {type: 'portal', url: 'https://portal.sqd.dev/datasets/ethereum-mainnet'},
+        {type: 'rpc', url: RPC_URL, network: 'ethereum-mainnet'},
     ])
     .setFields({log: {topics: true, data: true}})
     .addLog({where: {address: [CONTRACT], topic0: [TRANSFER]}, range: {from: 10_000_000}})
     .build()
 ```
 
-To drive an arbitrary pre-built `EVMDataSource` (e.g. a custom source), implement the
-`EvmDownstreamSourceBuilder` interface — its `buildSource(fields, requests)` returns your source.
+Each source is a tagged config object. `portal` takes the same options as `DataSourceBuilder#setPortal`
+(`{url, …}`); `rpc` takes a JSON-RPC endpoint plus an optional per-network preset and overrides
+(`{url, network, …}`). `name` is optional — sources default to `${type}-${index}` in metrics/logs. The
+shared query is applied to every `portal`/`rpc` source, so they all fetch identical data.
+
+For a single, non-fallback source use the standalone builders directly: `DataSourceBuilder` from
+`@subsquid/squid-sdk/evm` (Portal) or `evmRpcStream` from `@subsquid/squid-sdk/evm/rpc` (RPC). To drop
+an arbitrary pre-built `EVMDataSource` into a fallback, use a `{type: 'source', source}` config — note
+the shared query is **not** applied to it, so build it with the same fields/query as the others.
 
 ## Optional EVM peers
 

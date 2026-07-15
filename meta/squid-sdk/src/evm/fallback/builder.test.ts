@@ -1,37 +1,31 @@
-import type {DataRequest, EVMDataSource, FieldSelection} from '@subsquid/evm-stream'
-import type {RangeRequestList} from '@subsquid/util-internal-range'
-import {describe, expect, it} from 'vitest'
+import type {EVMDataSource} from '@subsquid/evm-stream'
+import {describe, expect, it, vi} from 'vitest'
 
 import {FallbackDataSource} from '../../fallback/fallback'
-import {
-    type EvmDownstreamSourceBuilder,
-    EvmFallbackDataSourceBuilder,
-    EvmPortalDataSourceBuilder,
-    EvmRpcDataSourceBuilder,
-} from './builder'
+import {EvmFallbackDataSourceBuilder} from './builder'
 
-/** A downstream that records the shared fields + requests it is finalized with, returning a stub. */
-function capturing(
-    defaultName: string,
-    sink: {fields: FieldSelection; requests: RangeRequestList<DataRequest>}[],
-    name?: string,
-): EvmDownstreamSourceBuilder {
-    return {
-        defaultName,
-        name,
-        buildSource(fields, requests) {
-            sink.push({fields, requests})
-            return {} as EVMDataSource<any> // never streamed in these tests
+// Stub the lazy RPC loader: `require('../rpc')` resolves a directory to lib/index.js when compiled,
+// but vitest can't resolve it to the .ts source. So `rpc` sources here verify the builder's wiring
+// (which fields/requests it hands to evmRpcStream); the network-gated e2e covers the real stack.
+const {rpcCalls} = vi.hoisted(() => ({rpcCalls: [] as any[]}))
+vi.mock('./load-rpc-stream', () => ({
+    loadRpcStream: () => ({
+        evmRpcStream: (config: any) => {
+            rpcCalls.push(config)
+            return {getFinalizedStream() {}, getFinalizedHead() {}, getStream() {}, getHead() {}}
         },
-    }
-}
+    }),
+}))
 
 describe('EvmFallbackDataSourceBuilder', () => {
-    it('defines the query once and propagates identical fields + merged requests to every downstream', () => {
-        const seen: {fields: FieldSelection; requests: RangeRequestList<DataRequest>}[] = []
+    it('defines the query once and applies identical fields + merged requests to every source', () => {
+        rpcCalls.length = 0
 
         const fb = new EvmFallbackDataSourceBuilder()
-            .setDownstreamSources([capturing('portal', seen), capturing('rpc', seen)])
+            .setDownstreamSources([
+                {type: 'rpc', url: 'https://a.example'},
+                {type: 'rpc', url: 'https://b.example'},
+            ])
             .setFields({log: {topics: true}, transaction: {hash: true}})
             .addLog({where: {address: ['0xabc'], topic0: ['0xdead']}, range: {from: 100}})
             .addTransaction({where: {to: ['0xdef']}, range: {from: 100}})
@@ -39,59 +33,86 @@ describe('EvmFallbackDataSourceBuilder', () => {
             .build()
 
         expect(fb).toBeInstanceOf(FallbackDataSource)
-        expect(seen).toHaveLength(2)
+        expect(rpcCalls).toHaveLength(2)
 
         // Same shared field selection handed to both sources.
-        expect(seen[0].fields).toEqual({log: {topics: true}, transaction: {hash: true}})
-        expect(seen[1].fields).toEqual(seen[0].fields)
+        expect(rpcCalls[0].fields).toEqual({log: {topics: true}, transaction: {hash: true}})
+        expect(rpcCalls[1].fields).toEqual(rpcCalls[0].fields)
 
         // Same merged requests handed to both sources: the two same-range adds coalesce into one
         // range-request carrying both the log and the transaction filter.
-        expect(seen[1].requests).toEqual(seen[0].requests)
-        expect(seen[0].requests).toHaveLength(1)
-        expect(seen[0].requests[0].range).toEqual({from: 100})
-        expect(seen[0].requests[0].request.logs).toEqual([{where: {address: ['0xabc'], topic0: ['0xdead']}}])
-        expect(seen[0].requests[0].request.transactions).toEqual([{where: {to: ['0xdef']}}])
+        expect(rpcCalls[1].requests).toEqual(rpcCalls[0].requests)
+        expect(rpcCalls[0].requests).toHaveLength(1)
+        expect(rpcCalls[0].requests[0].range).toEqual({from: 100})
+        expect(rpcCalls[0].requests[0].request.logs).toEqual([{where: {address: ['0xabc'], topic0: ['0xdead']}}])
+        expect(rpcCalls[0].requests[0].request.transactions).toEqual([{where: {to: ['0xdef']}}])
+    })
+
+    it('passes per-source connection options through, stripping the type/name tags', () => {
+        rpcCalls.length = 0
+
+        new EvmFallbackDataSourceBuilder()
+            .setDownstreamSources([{type: 'rpc', name: 'my-node', url: 'https://a.example', network: 'ethereum-mainnet', capacity: 5}])
+            .setCapabilityProbe(false)
+            .build()
+
+        expect(rpcCalls[0]).toMatchObject({url: 'https://a.example', network: 'ethereum-mainnet', capacity: 5})
+        expect(rpcCalls[0]).not.toHaveProperty('type')
+        expect(rpcCalls[0]).not.toHaveProperty('name')
     })
 
     it('applies setBlockRange across the whole shared query', () => {
-        const seen: {fields: FieldSelection; requests: RangeRequestList<DataRequest>}[] = []
+        rpcCalls.length = 0
 
         new EvmFallbackDataSourceBuilder()
-            .setDownstreamSources([capturing('portal', seen)])
+            .setDownstreamSources([{type: 'rpc', url: 'https://a.example'}])
             .addLog({where: {address: ['0xabc']}}) // defaults to {from: 0}
             .setBlockRange({from: 500, to: 1000})
             .setCapabilityProbe(false)
             .build()
 
-        expect(seen[0].requests[0].range).toEqual({from: 500, to: 1000})
+        expect(rpcCalls[0].requests[0].range).toEqual({from: 500, to: 1000})
     })
 
-    it('names sources by index, or by explicit setName / defaultName', () => {
-        const seen: any[] = []
-
+    it('names sources by `${type}-${index}`, or by explicit `name`', () => {
         const fb = new EvmFallbackDataSourceBuilder()
-            .setDownstreamSources([capturing('portal', seen), capturing('rpc', seen, 'my-archive-node')])
+            .setDownstreamSources([
+                {type: 'portal', url: 'https://portal.sqd.dev/datasets/ethereum-mainnet'},
+                {type: 'rpc', url: 'https://a.example', name: 'my-archive-node'},
+            ])
             .setCapabilityProbe(false)
             .build()
 
         expect(fb.metrics().sources.map((s) => s.name)).toEqual(['portal-0', 'my-archive-node'])
     })
 
-    it('throws a clear error when misconfigured', () => {
+    it('throws a clear error when there are no downstream sources', () => {
         expect(() => new EvmFallbackDataSourceBuilder().build()).toThrow(/downstream/i)
-        expect(() => new EvmPortalDataSourceBuilder().buildSource({}, [])).toThrow(/portal/i)
-        expect(() => new EvmRpcDataSourceBuilder().buildSource({}, [])).toThrow(/rpc/i)
     })
 
-    it('builds a real Portal downstream via the canonical DataSourceBuilder (no connection)', () => {
-        const src = new EvmPortalDataSourceBuilder()
-            .setPortal('https://portal.sqd.dev/datasets/ethereum-mainnet')
-            .buildSource({log: {topics: true}}, [{range: {from: 0}, request: {logs: [{where: {address: ['0xabc']}}]}}])
+    it('builds a real Portal source from a config (no connection) via the canonical DataSourceBuilder', () => {
+        const fb = new EvmFallbackDataSourceBuilder()
+            .setDownstreamSources([{type: 'portal', url: 'https://portal.sqd.dev/datasets/ethereum-mainnet'}])
+            .setFields({log: {topics: true}})
+            .addLog({where: {address: ['0xabc']}})
+            .setCapabilityProbe(false)
+            .build()
 
-        // A real EVMDataSource — construction succeeds and it exposes the DataSource surface. Nothing
-        // connects until it is streamed.
-        expect(typeof src.getFinalizedStream).toBe('function')
-        expect(typeof src.getFinalizedHead).toBe('function')
+        expect(fb).toBeInstanceOf(FallbackDataSource)
+        expect(fb.metrics().sources.map((s) => s.name)).toEqual(['portal-0'])
+    })
+
+    it('passes a pre-built `source` config through untouched', () => {
+        const custom = {getFinalizedStream() {}, getFinalizedHead() {}, getStream() {}, getHead() {}} as unknown as EVMDataSource<any>
+
+        const fb = new EvmFallbackDataSourceBuilder()
+            .setDownstreamSources([{type: 'source', source: custom}])
+            .setFields({log: {topics: true}})
+            .addLog({where: {address: ['0xabc']}}) // ignored for a pre-built source
+            .setCapabilityProbe(false)
+            .build()
+
+        expect(fb).toBeInstanceOf(FallbackDataSource)
+        expect(fb.metrics().sources.map((s) => s.name)).toEqual(['source-0'])
     })
 })
