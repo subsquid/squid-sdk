@@ -1,11 +1,14 @@
 import {EvmRpcClient, Rpc} from '@subsquid/evm-rpc'
 import {DataRequest, FieldSelection} from '@subsquid/evm-stream'
+import {createLogger} from '@subsquid/logger'
 import {RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
 
 import {EvmQueryBuilder} from '../query-builder'
-import {NetworkOverrides, resolveNetworkSettings} from './networks'
+import {getNetworkPreset, NetworkOverrides, resolveNetworkSettings} from './networks'
 import {EvmRpcStreamDataSource, RpcMethodOptions} from './source/data-source'
+
+const log = createLogger('sqd:evm-rpc')
 
 /** JSON-RPC connection + per-network config, shared by {@link evmRpcStream}, {@link EvmRpcDataSourceBuilder}, and the `rpc` fallback source. */
 export interface EvmRpcOptions {
@@ -35,6 +38,7 @@ export interface EvmRpcStreamConfig<F extends FieldSelection> extends EvmRpcOpti
  */
 export function evmRpcStream<F extends FieldSelection>(config: EvmRpcStreamConfig<F>): EvmRpcStreamDataSource<F> {
     const settings = resolveNetworkSettings(config.network, {rpc: config.rpc, method: config.method})
+    warnIfParityUnverified(config)
 
     const client = new EvmRpcClient({
         url: config.url,
@@ -51,6 +55,26 @@ export function evmRpcStream<F extends FieldSelection>(config: EvmRpcStreamConfi
         strideSize: config.strideSize,
         strideConcurrency: config.strideConcurrency,
     })
+}
+
+/**
+ * Without a matching network preset and with no explicit `rpc`/`method` overrides, the RPC source
+ * runs with every validation off and no method tuning — the settings are safe defaults, but dataset
+ * parity with the Portal is not guaranteed. That is easy to configure by accident (a typo'd slug, an
+ * unset `network`), so warn instead of failing silently. Explicit overrides count as the caller
+ * taking ownership of per-chain config, so they suppress the warning.
+ */
+function warnIfParityUnverified(config: EvmRpcOptions): void {
+    let hasPreset = config.network != null && getNetworkPreset(config.network) != null
+    let hasOverrides = config.rpc != null || config.method != null
+    if (hasPreset || hasOverrides) return
+
+    let network = config.network == null ? 'network unset' : `unknown network '${config.network}'`
+    log.warn(
+        `RPC source for ${config.url}: ${network} and no rpc/method overrides — block validation is ` +
+            `disabled and dataset parity with the Portal is not guaranteed. Set 'network' to a supported ` +
+            `slug/chainId, or supply explicit 'rpc'/'method' overrides.`,
+    )
 }
 
 /**

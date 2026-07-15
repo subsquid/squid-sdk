@@ -65,6 +65,14 @@ Each source is a tagged config object. `portal` takes the same options as `DataS
 (`{url, network, …}`). `name` is optional — sources default to `${type}-${index}` in metrics/logs. The
 shared query is applied to **every** source, so they all fetch identical data.
 
+An `rpc` source uses its `network` preset (or explicit `rpc`/`method` overrides) to enable block
+validation and pick the right trace/state-diff method. Without either — an unknown/omitted `network`
+and no overrides — validation is off and dataset parity with the Portal is **not guaranteed**; the
+source logs a warning in that case rather than failing silently.
+
+To catch an all-sources-down failure or type a policy, `AllSourcesDownError` and `FallbackPolicy` are
+re-exported from this subpath (also available from `@subsquid/squid-sdk/fallback`).
+
 For a custom source, use `{type: 'custom', buildSource(fields, requests)}`: it is handed the same
 shared field selection + query as the other sources and returns an `EVMDataSource`. Ignore the
 arguments to wrap an already-built source — but then keeping it consistent with the others is on you.

@@ -44,7 +44,10 @@ export class PortalEvmDataSource<F extends FieldSelection> implements EVMDataSou
     }
 
     private async *_getStream(opts?: StreamRequest, finalized?: boolean): AsyncIterable<BlockBatch<Block<F>>> {
-        let requests = applyRangeBound(this.requests, opts?.from != null ? {from: opts.from} : undefined)
+        // Intersect the configured request ranges with the caller's [from, to] window. `to` bounds the
+        // stream end (a missing `to` means follow the head), matching the RPC source — without it the
+        // two DataSource implementations disagree on where a bounded stream terminates.
+        let requests = applyRangeBound(this.requests, opts && {from: opts.from, to: opts.to})
         if (requests.length === 0) return
 
         let streamOptions = {request: {headers: this.getHeaders()}}
