@@ -42,8 +42,13 @@ const evmBlockRef = (b: Block<any>): BlockRef => ({number: b.header.number, hash
  * output silently depend on which source is currently active, defeating the purpose of a fallback.
  */
 export interface EvmDownstreamSourceBuilder {
-    /** Fallback for the source's metrics/log name when {@link name} is unset. */
+    /**
+     * Name **prefix** for this source in metrics/logs when {@link name} is unset: the source is
+     * named `` `${defaultName}-${index}` `` (e.g. `portal-0`), where `index` is its position in the
+     * fallback's source list.
+     */
     readonly defaultName: string
+    /** Explicit source name for metrics/logs. Used verbatim (no index suffix) when set. */
     readonly name?: string
     /**
      * Finalize into a full data source. Must build from the given `fields` and `requests` — the
