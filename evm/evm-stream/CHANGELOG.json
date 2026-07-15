@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-stream",
   "entries": [
     {
+      "version": "0.1.3",
+      "tag": "@subsquid/evm-stream_v0.1.3",
+      "date": "Wed, 15 Jul 2026 22:15:56 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix(portal): PortalEvmDataSource now honours StreamRequest.to — a bounded getStream/getFinalizedStream call terminates at `to` instead of ignoring it and following the chain head. This matches the RPC data source, so the two DataSource implementations agree on where a bounded stream ends. The production run() path is unaffected (it bounds via request ranges and never passes `to`); direct DataSource API consumers passing `to` were."
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.2",
       "tag": "@subsquid/evm-stream_v0.1.2",
       "date": "Wed, 08 Jul 2026 22:11:26 GMT",

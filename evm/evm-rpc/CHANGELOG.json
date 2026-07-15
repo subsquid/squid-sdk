@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-rpc",
   "entries": [
     {
+      "version": "0.0.5",
+      "tag": "@subsquid/evm-rpc_v0.0.5",
+      "date": "Wed, 15 Jul 2026 22:15:56 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix(data-source): decouple finalization from head ingestion — the finalizer no longer emits the finalized head as its own empty batch (which shared the output queue with head blocks and could stall ingestion). The latest finalized head is now attached to the next head batch instead; deferring it is safe because finality lags the head and the consumer max-guards it. Part of NET-408."
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.4",
       "tag": "@subsquid/evm-rpc_v0.0.4",
       "date": "Wed, 15 Jul 2026 01:21:06 GMT",

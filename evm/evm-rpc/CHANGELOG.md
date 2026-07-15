@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-rpc
 
-This log was last generated on Wed, 15 Jul 2026 01:21:06 GMT and should not be manually modified.
+This log was last generated on Wed, 15 Jul 2026 22:15:56 GMT and should not be manually modified.
+
+## 0.0.5
+Wed, 15 Jul 2026 22:15:56 GMT
+
+### Patches
+
+- fix(data-source): decouple finalization from head ingestion — the finalizer no longer emits the finalized head as its own empty batch (which shared the output queue with head blocks and could stall ingestion). The latest finalized head is now attached to the next head batch instead; deferring it is safe because finality lags the head and the consumer max-guards it. Part of NET-408.
 
 ## 0.0.4
 Wed, 15 Jul 2026 01:21:06 GMT

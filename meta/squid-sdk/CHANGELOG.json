@@ -2,6 +2,35 @@
   "name": "@subsquid/squid-sdk",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/squid-sdk_v0.3.0",
+      "date": "Wed, 15 Jul 2026 22:15:56 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "evm/fallback: downstream sources are now plain tagged config objects ({type: 'portal'|'rpc'|'custom', name?, ...}) instead of builder classes; the fallback applies the shared field selection + query to every source at build(). The 'custom' escape hatch takes a buildSource(fields, requests) that receives the shared query (nothing is exempt). evm/rpc: add a fluent EvmRpcDataSourceBuilder — the RPC counterpart of evm-stream's DataSourceBuilder (identical query surface, setRpc instead of setPortal) — for standalone single-source use. The low-level evmRpcStream function is no longer part of the public evm/rpc surface (use EvmRpcDataSourceBuilder). BREAKING: removes EvmPortalDataSourceBuilder/EvmRpcDataSourceBuilder/EvmDownstreamSourceBuilder from evm/fallback and evmRpcStream/EvmRpcStreamConfig from evm/rpc; adds EvmFallbackSourceConfig and (in evm/rpc) EvmRpcDataSourceBuilder + EvmRpcOptions. Ergonomics: an RPC source with no matching network preset and no explicit rpc/method overrides now logs a warning that validation is off and Portal parity is unverified (instead of silently disabling validation); and evm/fallback re-exports AllSourcesDownError + FallbackPolicy so consumers can catch/type them without also importing @subsquid/squid-sdk/fallback."
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-stream\" from `^0.1.2` to `0.1.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.4` to `0.0.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.4` to `0.0.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.4` to `0.0.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.4` to `0.0.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/squid-sdk_v0.2.0",
       "date": "Wed, 15 Jul 2026 01:21:06 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-stream
 
-This log was last generated on Wed, 08 Jul 2026 22:11:26 GMT and should not be manually modified.
+This log was last generated on Wed, 15 Jul 2026 22:15:56 GMT and should not be manually modified.
+
+## 0.1.3
+Wed, 15 Jul 2026 22:15:56 GMT
+
+### Patches
+
+- fix(portal): PortalEvmDataSource now honours StreamRequest.to — a bounded getStream/getFinalizedStream call terminates at `to` instead of ignoring it and following the chain head. This matches the RPC data source, so the two DataSource implementations agree on where a bounded stream ends. The production run() path is unaffected (it bounds via request ranges and never passes `to`); direct DataSource API consumers passing `to` were.
 
 ## 0.1.2
 Wed, 08 Jul 2026 22:11:26 GMT

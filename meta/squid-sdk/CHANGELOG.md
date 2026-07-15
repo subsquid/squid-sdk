@@ -1,6 +1,13 @@
 # Change Log - @subsquid/squid-sdk
 
-This log was last generated on Wed, 15 Jul 2026 01:21:06 GMT and should not be manually modified.
+This log was last generated on Wed, 15 Jul 2026 22:15:56 GMT and should not be manually modified.
+
+## 0.3.0
+Wed, 15 Jul 2026 22:15:56 GMT
+
+### Minor changes
+
+- evm/fallback: downstream sources are now plain tagged config objects ({type: 'portal'|'rpc'|'custom', name?, ...}) instead of builder classes; the fallback applies the shared field selection + query to every source at build(). The 'custom' escape hatch takes a buildSource(fields, requests) that receives the shared query (nothing is exempt). evm/rpc: add a fluent EvmRpcDataSourceBuilder — the RPC counterpart of evm-stream's DataSourceBuilder (identical query surface, setRpc instead of setPortal) — for standalone single-source use. The low-level evmRpcStream function is no longer part of the public evm/rpc surface (use EvmRpcDataSourceBuilder). BREAKING: removes EvmPortalDataSourceBuilder/EvmRpcDataSourceBuilder/EvmDownstreamSourceBuilder from evm/fallback and evmRpcStream/EvmRpcStreamConfig from evm/rpc; adds EvmFallbackSourceConfig and (in evm/rpc) EvmRpcDataSourceBuilder + EvmRpcOptions. Ergonomics: an RPC source with no matching network preset and no explicit rpc/method overrides now logs a warning that validation is off and Portal parity is unverified (instead of silently disabling validation); and evm/fallback re-exports AllSourcesDownError + FallbackPolicy so consumers can catch/type them without also importing @subsquid/squid-sdk/fallback.
 
 ## 0.2.0
 Wed, 15 Jul 2026 01:21:06 GMT
