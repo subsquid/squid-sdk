@@ -97,8 +97,9 @@ export class EvmFallbackDataSourceBuilder<F extends FieldSelection = {}> extends
             case 'portal': {
                 let {type, name, ...portal} = cfg
                 assert(portal.url, "portal fallback source requires a 'url' (the portal dataset endpoint)")
-                // Drive a fresh canonical Portal builder — never wrap it. Re-feeding the already-merged
-                // requests is idempotent: they are disjoint by range, so mergeRangeRequests is a no-op.
+                // Drive a fresh canonical Portal builder — never wrap it. The requests are already merged
+                // (by getRequests()); re-adding them via addQuery is safe because DataSourceBuilder merges
+                // again internally and the ranges are disjoint, so that re-merge is a no-op.
                 let builder = new DataSourceBuilder().setPortal(portal).setFields(fields)
                 for (let req of requests) builder.addQuery(req)
                 return builder.build()
