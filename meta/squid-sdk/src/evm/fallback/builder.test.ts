@@ -127,4 +127,13 @@ describe('EvmFallbackDataSourceBuilder', () => {
         expect(seen?.fields).toEqual({log: {topics: true}})
         expect(seen?.requests[0].request.logs).toEqual([{where: {address: ['0xabc']}}])
     })
+
+    it('throws an actionable error when a portal/rpc source is missing its url at runtime', () => {
+        // TS enforces `url`, but a JS consumer (or an `as any` cast) can omit it — fail early and clearly.
+        let missingPortalUrl = new EvmFallbackDataSourceBuilder().setDownstreamSources([{type: 'portal'} as any])
+        expect(() => missingPortalUrl.build()).toThrow(/portal.*url/i)
+
+        let missingRpcUrl = new EvmFallbackDataSourceBuilder().setDownstreamSources([{type: 'rpc'} as any])
+        expect(() => missingRpcUrl.build()).toThrow(/rpc.*url/i)
+    })
 })

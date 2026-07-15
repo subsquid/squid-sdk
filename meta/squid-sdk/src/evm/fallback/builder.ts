@@ -96,6 +96,7 @@ export class EvmFallbackDataSourceBuilder<F extends FieldSelection = {}> extends
         switch (cfg.type) {
             case 'portal': {
                 let {type, name, ...portal} = cfg
+                assert(portal.url, "portal fallback source requires a 'url' (the portal dataset endpoint)")
                 // Drive a fresh canonical Portal builder — never wrap it. Re-feeding the already-merged
                 // requests is idempotent: they are disjoint by range, so mergeRangeRequests is a no-op.
                 let builder = new DataSourceBuilder().setPortal(portal).setFields(fields)
@@ -104,6 +105,7 @@ export class EvmFallbackDataSourceBuilder<F extends FieldSelection = {}> extends
             }
             case 'rpc': {
                 let {type, name, ...options} = cfg
+                assert(options.url, "rpc fallback source requires a 'url' (the JSON-RPC endpoint)")
                 // Lazy: this is the only point that touches the optional @subsquid/evm-rpc peer.
                 return loadRpcStream().evmRpcStream({...options, fields, requests})
             }

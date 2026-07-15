@@ -58,17 +58,21 @@ export function evmRpcStream<F extends FieldSelection>(config: EvmRpcStreamConfi
 }
 
 /**
- * Without a matching network preset and with no explicit `rpc`/`method` overrides, the RPC source
- * runs with every validation off and no method tuning — the settings are safe defaults, but dataset
- * parity with the Portal is not guaranteed. That is easy to configure by accident (a typo'd slug, an
- * unset `network`), so warn instead of failing silently. Explicit overrides count as the caller
- * taking ownership of per-chain config, so they suppress the warning.
+ * True when an RPC source would run without any block validation or method tuning: no matching
+ * network preset **and** no explicit `rpc`/`method` overrides. The resulting settings are safe
+ * defaults, but dataset parity with the Portal is not guaranteed. Explicit overrides count as the
+ * caller taking ownership of per-chain config, so they clear this. Exported for testing; not part of
+ * the public `evm/rpc` surface.
  */
-function warnIfParityUnverified(config: EvmRpcOptions): void {
+export function isParityUnverified(config: EvmRpcOptions): boolean {
     let hasPreset = config.network != null && getNetworkPreset(config.network) != null
     let hasOverrides = config.rpc != null || config.method != null
-    if (hasPreset || hasOverrides) return
+    return !hasPreset && !hasOverrides
+}
 
+/** Warn (rather than fail silently) when a source's parity is unverified — easy to hit by accident. */
+function warnIfParityUnverified(config: EvmRpcOptions): void {
+    if (!isParityUnverified(config)) return
     let network = config.network == null ? 'network unset' : `unknown network '${config.network}'`
     log.warn(
         `RPC source for ${config.url}: ${network} and no rpc/method overrides — block validation is ` +
