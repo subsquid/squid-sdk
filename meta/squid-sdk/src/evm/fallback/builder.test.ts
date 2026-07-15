@@ -1,6 +1,6 @@
 import type {DataRequest, EVMDataSource, FieldSelection} from '@subsquid/evm-stream'
 import type {RangeRequestList} from '@subsquid/util-internal-range'
-import {describe, expect, it} from 'vitest'
+import {describe, expect, it, vi} from 'vitest'
 
 import {FallbackDataSource} from '../../fallback/fallback'
 import {
@@ -9,6 +9,20 @@ import {
     EvmPortalDataSourceBuilder,
     EvmRpcDataSourceBuilder,
 } from './builder'
+
+// Stub the lazy RPC loader: `require('../rpc')` resolves a directory to lib/index.js when compiled,
+// but vitest can't resolve it to the .ts source. So RPC-build tests here verify the builder's wiring
+// (which fields/requests it hands to evmRpcStream) rather than the real RPC stack — the network-gated
+// e2e test covers the real one. `rpcCalls` records every evmRpcStream config.
+const {rpcCalls} = vi.hoisted(() => ({rpcCalls: [] as any[]}))
+vi.mock('./load-rpc-stream', () => ({
+    loadRpcStream: () => ({
+        evmRpcStream: (config: any) => {
+            rpcCalls.push(config)
+            return {getFinalizedStream() {}, getFinalizedHead() {}, getStream() {}, getHead() {}}
+        },
+    }),
+}))
 
 /** A downstream that records the shared fields + requests it is finalized with, returning a stub. */
 function capturing(
@@ -93,5 +107,81 @@ describe('EvmFallbackDataSourceBuilder', () => {
         // connects until it is streamed.
         expect(typeof src.getFinalizedStream).toBe('function')
         expect(typeof src.getFinalizedHead).toBe('function')
+    })
+
+    it('builds a real Portal downstream as part of a fallback and names the sources', () => {
+        const fb = new EvmFallbackDataSourceBuilder()
+            .setDownstreamSources([
+                new EvmPortalDataSourceBuilder().setPortal('https://portal.sqd.dev/datasets/ethereum-mainnet'),
+                new EvmRpcDataSourceBuilder().setRpc({url: 'https://rpc.example'}),
+            ])
+            .setFields({log: {topics: true}})
+            .addLog({where: {address: ['0xabc']}})
+            .setCapabilityProbe(false)
+            .build()
+
+        expect(fb).toBeInstanceOf(FallbackDataSource)
+        expect(fb.metrics().sources.map((s) => s.name)).toEqual(['portal-0', 'rpc-1'])
+    })
+})
+
+describe('standalone source builders', () => {
+    it('builds a standalone Portal source with its own field selection + query (no connection)', () => {
+        const src = new EvmPortalDataSourceBuilder()
+            .setPortal('https://portal.sqd.dev/datasets/ethereum-mainnet')
+            .setFields({log: {topics: true}})
+            .addLog({where: {address: ['0xabc']}, range: {from: 10}})
+            .build()
+
+        expect(typeof src.getFinalizedStream).toBe('function')
+        expect(typeof src.getFinalizedHead).toBe('function')
+    })
+
+    it('builds a standalone RPC source, passing its own field selection + query to evmRpcStream', () => {
+        rpcCalls.length = 0
+        const src = new EvmRpcDataSourceBuilder()
+            .setRpc({url: 'https://rpc.example', network: 'ethereum-mainnet'})
+            .setFields({log: {topics: true}})
+            .addLog({where: {address: ['0xabc']}, range: {from: 10}})
+            .build()
+
+        expect(typeof src.getFinalizedStream).toBe('function')
+        expect(rpcCalls).toHaveLength(1)
+        expect(rpcCalls[0]).toMatchObject({url: 'https://rpc.example', network: 'ethereum-mainnet', fields: {log: {topics: true}}})
+        expect(rpcCalls[0].requests[0].request.logs).toEqual([{where: {address: ['0xabc']}}])
+    })
+
+    it('injects the fallback shared query into an RPC downstream (not the downstream\'s own)', () => {
+        rpcCalls.length = 0
+        new EvmFallbackDataSourceBuilder()
+            .setDownstreamSources([new EvmRpcDataSourceBuilder().setRpc({url: 'https://rpc.example'})])
+            .setFields({transaction: {hash: true}})
+            .addTransaction({where: {to: ['0xdef']}, range: {from: 5}})
+            .setCapabilityProbe(false)
+            .build()
+
+        expect(rpcCalls).toHaveLength(1)
+        expect(rpcCalls[0].fields).toEqual({transaction: {hash: true}})
+        expect(rpcCalls[0].requests[0].request.transactions).toEqual([{where: {to: ['0xdef']}}])
+    })
+
+    it('rejects a downstream that also sets its own query inside a fallback', () => {
+        // Portal downstream carrying its own query.
+        expect(() =>
+            new EvmFallbackDataSourceBuilder()
+                .setDownstreamSources([
+                    new EvmPortalDataSourceBuilder().setPortal('https://portal.sqd.dev/datasets/ethereum-mainnet').addLog({where: {address: ['0xabc']}}),
+                ])
+                .setFields({log: {topics: true}})
+                .build(),
+        ).toThrow(/inside a fallback/i)
+
+        // RPC downstream carrying its own field selection.
+        expect(() =>
+            new EvmFallbackDataSourceBuilder()
+                .setDownstreamSources([new EvmRpcDataSourceBuilder().setRpc({url: 'https://rpc.invalid'}).setFields({log: {topics: true}})])
+                .addLog({where: {address: ['0xabc']}})
+                .build(),
+        ).toThrow(/inside a fallback/i)
     })
 })

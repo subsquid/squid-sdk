@@ -64,6 +64,25 @@ const source = new EvmFallbackDataSourceBuilder()
     .build()
 ```
 
+### Standalone sources
+
+`EvmPortalDataSourceBuilder` and `EvmRpcDataSourceBuilder` are full data-source builders in their own
+right — the same fluent `setFields`/`addLog`/… surface as `DataSourceBuilder`. Call `.build()` on one
+directly for a single Portal or RPC source, no fallback involved:
+
+```ts
+const rpcSource = new EvmRpcDataSourceBuilder()
+    .setRpc({url: RPC_URL, network: 'ethereum-mainnet'})
+    .setFields({log: {topics: true, data: true}})
+    .addLog({where: {address: [CONTRACT], topic0: [TRANSFER]}, range: {from: 10_000_000}})
+    .build() // an EVMDataSource<F>, exactly like DataSourceBuilder.build()
+```
+
+When you drop the **same** builder into a fallback, give it connection config only (`setPortal`/`setRpc`
+/`setName`) and define the shared query once on the fallback — it is injected into every source so they
+all fetch identical data. A source that carries **both** its own query and is placed in a fallback throws
+at `build()` time (the query must live in exactly one place).
+
 To drive an arbitrary pre-built `EVMDataSource` (e.g. a custom source), implement the
 `EvmDownstreamSourceBuilder` interface — its `buildSource(fields, requests)` returns your source.
 

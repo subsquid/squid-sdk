@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "comment": "evm/fallback: EvmPortalDataSourceBuilder and EvmRpcDataSourceBuilder are now full standalone data-source builders (fluent setFields/addLog/… + build()), sharing the query surface with EvmFallbackDataSourceBuilder. Used in a fallback they take connection config only; the fallback injects its shared query, and a source that also sets its own query throws at build() time.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/squid-sdk"
+}
