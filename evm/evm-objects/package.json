@@ -19,10 +19,10 @@
     "@subsquid/util-internal": "^3.3.1"
   },
   "peerDependencies": {
-    "@subsquid/evm-stream": "^0.1.2"
+    "@subsquid/evm-stream": "^0.1.3"
   },
   "devDependencies": {
-    "@subsquid/evm-stream": "^0.1.2",
+    "@subsquid/evm-stream": "^0.1.3",
     "@types/node": "^24.0.0",
     "typescript": "5.5.4"
   }
