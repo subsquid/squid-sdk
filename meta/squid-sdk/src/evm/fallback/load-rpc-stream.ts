@@ -9,9 +9,11 @@ const RPC_PEERS = ['@subsquid/evm-rpc', '@subsquid/evm-normalization']
  * graph until an `rpc` source is configured, and lets us translate a missing peer into an
  * actionable message instead of a raw `MODULE_NOT_FOUND` thrown from deep inside the stack.
  */
-export function loadRpcStream(): typeof import('../rpc') {
+export function loadRpcStream(): typeof import('../rpc/builder') {
     try {
-        return require('../rpc')
+        // Require the builder module directly (not the barrel) so we can reach the internal
+        // `evmRpcStream` construction primitive, which the barrel intentionally does not re-export.
+        return require('../rpc/builder')
     } catch (e) {
         throw translateMissingRpcPeer(e)
     }
