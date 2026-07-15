@@ -19,8 +19,7 @@ import assert from 'assert'
 import {type CapabilityProbeOptions, makeCapabilityProbe} from '../../fallback/capability'
 import {FallbackDataSource, type RankedSource} from '../../fallback/fallback'
 import type {FallbackPolicy} from '../../fallback/policy'
-import type {NetworkOverrides} from '../rpc/networks'
-import type {RpcMethodOptions} from '../rpc/source/data-source'
+import type {NetworkOverrides, RpcMethodOptions} from '../rpc'
 import {loadRpcStream} from './load-rpc-stream'
 
 interface BlockRange {
