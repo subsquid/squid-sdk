@@ -10,6 +10,10 @@
  *  - `detail` (and the embedded, possibly large request) is for logs only — never a metric label.
  */
 
+// `redactUrl` is a generic secret-redaction util shared with the RPC source; it lives in a neutral
+// module so `evm/rpc` need not depend on `fallback`. Re-exported below to keep the public surface stable.
+import {redactUrl} from '../redact'
+
 /** Which health check tripped — the leading "<…> failed" in the message. */
 export type FailedCheck = 'stream' | 'liveness' | 'capability'
 
@@ -29,28 +33,8 @@ export interface SourceErrorInfo {
     detail: string
 }
 
-/**
- * Strip credentials from a URL before it reaches a log line: drop userinfo, query string (where
- * `?apikey=…` lives) and the fragment (`#…`, which can carry a token too), and mask key-like path
- * segments (SQD `sqd_…` tokens and long opaque ids). Returns `undefined` for an unparseable value
- * rather than risk leaking it verbatim.
- */
-export function redactUrl(u?: string): string | undefined {
-    if (!u) return undefined
-    try {
-        let url = new URL(u)
-        url.username = ''
-        url.password = ''
-        url.search = ''
-        url.hash = ''
-        url.pathname = url.pathname
-            .replace(/sqd_[A-Za-z0-9]+/g, 'sqd_***')
-            .replace(/[A-Za-z0-9_-]{24,}/g, '***')
-        return url.toString()
-    } catch {
-        return undefined
-    }
-}
+// Re-export the shared redaction util so consumers importing it from this module keep working.
+export {redactUrl}
 
 /**
  * Redact every URL embedded in free text — error messages routinely quote the failing URL. Matches

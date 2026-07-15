@@ -4,6 +4,7 @@ import {createLogger} from '@subsquid/logger'
 import {RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
 
+import {redactUrl} from '../../redact'
 import {EvmQueryBuilder} from '../query-builder'
 import {getNetworkPreset, NetworkOverrides, resolveNetworkSettings} from './networks'
 import {EvmRpcStreamDataSource, RpcMethodOptions} from './source/data-source'
@@ -74,8 +75,10 @@ export function isParityUnverified(config: EvmRpcOptions): boolean {
 function warnIfParityUnverified(config: EvmRpcOptions): void {
     if (!isParityUnverified(config)) return
     let network = config.network == null ? 'network unset' : `unknown network '${config.network}'`
+    // Redact the endpoint — provider RPC URLs routinely embed API keys in the path/query.
+    let endpoint = redactUrl(config.url) ?? '<rpc endpoint>'
     log.warn(
-        `RPC source for ${config.url}: ${network} and no rpc/method overrides — block validation is ` +
+        `RPC source for ${endpoint}: ${network} and no rpc/method overrides — block validation is ` +
             `disabled and dataset parity with the Portal is not guaranteed. Set 'network' to a supported ` +
             `slug/chainId, or supply explicit 'rpc'/'method' overrides.`,
     )

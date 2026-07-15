@@ -4,9 +4,9 @@ import {describe, expect, it, vi} from 'vitest'
 import {FallbackDataSource} from '../../fallback/fallback'
 import {EvmFallbackDataSourceBuilder} from './builder'
 
-// Stub the lazy RPC loader: `require('../rpc')` resolves a directory to lib/index.js when compiled,
-// but vitest can't resolve it to the .ts source. So `rpc` sources here verify the builder's wiring
-// (which fields/requests it hands to evmRpcStream); the network-gated e2e covers the real stack.
+// Stub the lazy RPC loader: `require('../rpc/builder')` resolves a directory to lib/index.js when
+// compiled, but vitest can't resolve it to the .ts source. So `rpc` sources here verify the builder's
+// wiring (which fields/requests it hands to evmRpcStream); the network-gated e2e covers the real stack.
 const {rpcCalls} = vi.hoisted(() => ({rpcCalls: [] as any[]}))
 vi.mock('./load-rpc-stream', () => ({
     loadRpcStream: () => ({
