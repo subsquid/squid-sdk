@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-rpc
 
-This log was last generated on Tue, 14 Jul 2026 13:09:33 GMT and should not be manually modified.
+This log was last generated on Wed, 15 Jul 2026 01:21:06 GMT and should not be manually modified.
+
+## 0.0.4
+Wed, 15 Jul 2026 01:21:06 GMT
+
+### Patches
+
+- trace_block: pass block.number instead of block.hash, and fail early if traces are missing for any transaction
 
 ## 0.0.3
 Tue, 14 Jul 2026 13:09:33 GMT

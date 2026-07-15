@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-rpc",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/evm-rpc_v0.0.4",
+      "date": "Wed, 15 Jul 2026 01:21:06 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "trace_block: pass block.number instead of block.hash, and fail early if traces are missing for any transaction"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/evm-rpc_v0.0.3",
       "date": "Tue, 14 Jul 2026 13:09:33 GMT",

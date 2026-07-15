@@ -2,6 +2,32 @@
   "name": "@subsquid/squid-sdk",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/squid-sdk_v0.2.0",
+      "date": "Wed, 15 Jul 2026 01:21:06 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "evm/fallback: new fluent EvmFallbackDataSourceBuilder (with EvmPortalDataSourceBuilder / EvmRpcDataSourceBuilder) mirroring @subsquid/evm-stream's DataSourceBuilder. BREAKING: removes the old createEvmFallbackSource / EvmFallbackOptions / EvmFallbackSourceConfig API."
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.3` to `0.0.4`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.3` to `0.0.4`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.3` to `0.0.4`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.3` to `0.0.4`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/squid-sdk_v0.1.1",
       "date": "Tue, 14 Jul 2026 13:09:33 GMT",

@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-normalization",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/evm-normalization_v0.0.4",
+      "date": "Wed, 15 Jul 2026 01:21:06 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.3` to `0.0.4`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/evm-normalization_v0.0.3",
       "date": "Tue, 14 Jul 2026 13:09:33 GMT",
