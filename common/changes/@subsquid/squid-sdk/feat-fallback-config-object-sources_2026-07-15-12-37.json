@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/squid-sdk",
-      "comment": "evm/fallback: downstream sources are now plain tagged config objects ({type: 'portal'|'rpc'|'source', name?, ...}) instead of builder classes. The fallback constructs each source at build() from the shared field selection + query. BREAKING: removes EvmPortalDataSourceBuilder, EvmRpcDataSourceBuilder, and the EvmDownstreamSourceBuilder interface; adds the EvmFallbackSourceConfig type. For a single non-fallback source use DataSourceBuilder (evm) or evmRpcStream (evm/rpc) directly.",
+      "comment": "evm/fallback: downstream sources are now plain tagged config objects ({type: 'portal'|'rpc'|'custom', name?, ...}) instead of builder classes; the fallback applies the shared field selection + query to every source at build(). The 'custom' escape hatch takes a buildSource(fields, requests) that receives the shared query (nothing is exempt). evm/rpc: add a fluent EvmRpcDataSourceBuilder — the RPC counterpart of evm-stream's DataSourceBuilder (identical query surface, setRpc instead of setPortal) — for standalone single-source use. BREAKING: removes EvmPortalDataSourceBuilder/EvmRpcDataSourceBuilder/EvmDownstreamSourceBuilder from evm/fallback; adds EvmFallbackSourceConfig and (in evm/rpc) EvmRpcDataSourceBuilder + EvmRpcOptions.",
       "type": "minor"
     }
   ],

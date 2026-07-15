@@ -1,17 +1,18 @@
 import {EvmRpcClient, Rpc} from '@subsquid/evm-rpc'
 import {DataRequest, FieldSelection} from '@subsquid/evm-stream'
 import {RangeRequestList} from '@subsquid/util-internal-range'
+import assert from 'assert'
 
+import {EvmQueryBuilder} from '../query-builder'
 import {NetworkOverrides, resolveNetworkSettings} from './networks'
 import {EvmRpcStreamDataSource, RpcMethodOptions} from './source/data-source'
 
-export interface EvmRpcStreamConfig<F extends FieldSelection> {
+/** JSON-RPC connection + per-network config, shared by {@link evmRpcStream}, {@link EvmRpcDataSourceBuilder}, and the `rpc` fallback source. */
+export interface EvmRpcOptions {
     /** JSON-RPC endpoint URL. */
     url: string
-    /** Known network slug or chainId — selects the per-network preset. */
+    /** Known network slug or chainId — selects the per-network preset (trace/debug method, validation). */
     network?: string | number
-    fields: F
-    requests: RangeRequestList<DataRequest>
     /** Explicit validation/finality overrides (merged over the preset). */
     rpc?: NetworkOverrides['rpc']
     /** Explicit trace/stateDiff method overrides (merged over the preset). */
@@ -20,6 +21,11 @@ export interface EvmRpcStreamConfig<F extends FieldSelection> {
     rateLimit?: number
     strideSize?: number
     strideConcurrency?: number
+}
+
+export interface EvmRpcStreamConfig<F extends FieldSelection> extends EvmRpcOptions {
+    fields: F
+    requests: RangeRequestList<DataRequest>
 }
 
 /**
@@ -45,4 +51,41 @@ export function evmRpcStream<F extends FieldSelection>(config: EvmRpcStreamConfi
         strideSize: config.strideSize,
         strideConcurrency: config.strideConcurrency,
     })
+}
+
+/**
+ * Fluent builder for a standalone JSON-RPC EVM data source — the RPC counterpart of
+ * `@subsquid/evm-stream`'s `DataSourceBuilder`, with an identical query surface
+ * (`setFields`/`addLog`/…). The only difference is `setRpc(...)` in place of `setPortal(...)`.
+ *
+ * @example
+ * const source = new EvmRpcDataSourceBuilder()
+ *     .setRpc({url: RPC_URL, network: 'ethereum-mainnet'})
+ *     .setFields({log: {topics: true, data: true}})
+ *     .addLog({where: {address: [CONTRACT], topic0: [TRANSFER]}, range: {from: 10_000_000}})
+ *     .build()
+ */
+export class EvmRpcDataSourceBuilder<F extends FieldSelection = {}> extends EvmQueryBuilder {
+    private options?: EvmRpcOptions
+
+    /**
+     * Configure the JSON-RPC endpoint — a bare URL, or {@link EvmRpcOptions} for a per-network preset,
+     * method/validation overrides, and connection tuning.
+     */
+    setRpc(options: string | EvmRpcOptions): this {
+        this.options = typeof options === 'string' ? {url: options} : options
+        return this
+    }
+
+    /** Configure the set of fetched fields — infers the block type `F` for `build()`. */
+    setFields<T extends FieldSelection>(fields: T): EvmRpcDataSourceBuilder<T> {
+        this.fields = fields
+        return this as unknown as EvmRpcDataSourceBuilder<T>
+    }
+
+    /** Build the RPC data source from this builder's field selection + query. */
+    build(): EvmRpcStreamDataSource<F> {
+        assert(this.options, 'RPC endpoint not set — call setRpc(...)')
+        return evmRpcStream({...this.options, fields: this.fields as F, requests: this.getRequests()})
+    }
 }

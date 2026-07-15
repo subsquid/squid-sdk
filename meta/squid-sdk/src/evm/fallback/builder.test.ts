@@ -102,17 +102,29 @@ describe('EvmFallbackDataSourceBuilder', () => {
         expect(fb.metrics().sources.map((s) => s.name)).toEqual(['portal-0'])
     })
 
-    it('passes a pre-built `source` config through untouched', () => {
-        const custom = {getFinalizedStream() {}, getFinalizedHead() {}, getStream() {}, getHead() {}} as unknown as EVMDataSource<any>
+    it('hands the shared query to a `custom` source and uses what it returns', () => {
+        const built = {getFinalizedStream() {}, getFinalizedHead() {}, getStream() {}, getHead() {}} as unknown as EVMDataSource<any>
+        let seen: {fields: any; requests: any} | undefined
 
         const fb = new EvmFallbackDataSourceBuilder()
-            .setDownstreamSources([{type: 'source', source: custom}])
+            .setDownstreamSources([
+                {
+                    type: 'custom',
+                    buildSource(fields, requests) {
+                        seen = {fields, requests}
+                        return built
+                    },
+                },
+            ])
             .setFields({log: {topics: true}})
-            .addLog({where: {address: ['0xabc']}}) // ignored for a pre-built source
+            .addLog({where: {address: ['0xabc']}})
             .setCapabilityProbe(false)
             .build()
 
         expect(fb).toBeInstanceOf(FallbackDataSource)
-        expect(fb.metrics().sources.map((s) => s.name)).toEqual(['source-0'])
+        expect(fb.metrics().sources.map((s) => s.name)).toEqual(['custom-0'])
+        // Not exempt: the custom source receives the same shared field selection + query as the rest.
+        expect(seen?.fields).toEqual({log: {topics: true}})
+        expect(seen?.requests[0].request.logs).toEqual([{where: {address: ['0xabc']}}])
     })
 })

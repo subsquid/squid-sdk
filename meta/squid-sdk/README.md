@@ -18,7 +18,7 @@ The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpa
 | Subpath | Contents | Source |
 | --- | --- | --- |
 | `evm` | EVM stream types & data-request model | re-export of `@subsquid/evm-stream` |
-| `evm/rpc` | RPC-backed EVM data source (Portal-compatible output) | **owned** (folded in) |
+| `evm/rpc` | RPC-backed EVM data source (`EvmRpcDataSourceBuilder` / `evmRpcStream`, Portal-compatible output) | **owned** (folded in) |
 | `evm/fallback` | `EvmFallbackDataSourceBuilder` — the EVM binding of the fallback supervisor | **owned** (folded in) |
 | `fallback` | VM-agnostic fallback supervisor: drives the lowest-index healthy source of N | **owned** (folded in) |
 | `solana` | Solana stream | re-export of `@subsquid/solana-stream` |
@@ -63,12 +63,25 @@ const source = new EvmFallbackDataSourceBuilder()
 Each source is a tagged config object. `portal` takes the same options as `DataSourceBuilder#setPortal`
 (`{url, …}`); `rpc` takes a JSON-RPC endpoint plus an optional per-network preset and overrides
 (`{url, network, …}`). `name` is optional — sources default to `${type}-${index}` in metrics/logs. The
-shared query is applied to every `portal`/`rpc` source, so they all fetch identical data.
+shared query is applied to **every** source, so they all fetch identical data.
 
-For a single, non-fallback source use the standalone builders directly: `DataSourceBuilder` from
-`@subsquid/squid-sdk/evm` (Portal) or `evmRpcStream` from `@subsquid/squid-sdk/evm/rpc` (RPC). To drop
-an arbitrary pre-built `EVMDataSource` into a fallback, use a `{type: 'source', source}` config — note
-the shared query is **not** applied to it, so build it with the same fields/query as the others.
+For a custom source, use `{type: 'custom', buildSource(fields, requests)}`: it is handed the same
+shared field selection + query as the other sources and returns an `EVMDataSource`. Ignore the
+arguments to wrap an already-built source — but then keeping it consistent with the others is on you.
+
+For a single, non-fallback source use the standalone builders directly — they share the same fluent
+query surface, differing only in the endpoint call:
+
+```ts
+import {DataSourceBuilder}       from '@subsquid/squid-sdk/evm'      // Portal — .setPortal(...)
+import {EvmRpcDataSourceBuilder} from '@subsquid/squid-sdk/evm/rpc'  // RPC    — .setRpc(...)
+
+const rpcSource = new EvmRpcDataSourceBuilder()
+    .setRpc({url: RPC_URL, network: 'ethereum-mainnet'})
+    .setFields({log: {topics: true, data: true}})
+    .addLog({where: {address: [CONTRACT], topic0: [TRANSFER]}, range: {from: 10_000_000}})
+    .build()
+```
 
 ## Optional EVM peers
 

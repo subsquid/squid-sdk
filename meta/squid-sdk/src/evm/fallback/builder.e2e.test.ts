@@ -41,7 +41,7 @@ async function streamNumbers(source: {getFinalizedStream(req: StreamRequest): Bl
 }
 
 // An EVM source that always fails — used to force a failover to the next source. Injected via a
-// `source` config (the escape hatch for an arbitrary pre-built source).
+// `custom` config (the escape hatch); its buildSource ignores the shared query and returns this.
 class BrokenSource implements EVMDataSource<typeof FIELDS> {
     async getHead(): Promise<BlockRef> {
         throw new Error('primary down')
@@ -58,7 +58,7 @@ class BrokenSource implements EVMDataSource<typeof FIELDS> {
     }
 }
 
-const brokenPrimary: EvmFallbackSourceConfig = {type: 'source', name: 'broken', source: new BrokenSource()}
+const brokenPrimary: EvmFallbackSourceConfig = {type: 'custom', name: 'broken', buildSource: () => new BrokenSource()}
 
 describe.skipIf(!ENABLED)('EVM fallback — live', () => {
     it('streams a range through the primary (Portal)', async () => {

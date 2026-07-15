@@ -1,72 +1,41 @@
 import type {PortalClientOptions} from '@subsquid/portal-client'
-import {
-    type Block,
-    DataSourceBuilder,
-    type DataRequest,
-    type EVMDataSource,
-    type FieldSelection,
-    type LogRequest,
-    type Query,
-    QueryBuilder,
-    type StateDiffRequest,
-    type TraceRequest,
-    type TransactionRequest,
-} from '@subsquid/evm-stream'
+import {type Block, DataSourceBuilder, type DataRequest, type EVMDataSource, type FieldSelection} from '@subsquid/evm-stream'
 import type {BlockRef} from '@subsquid/util-internal-data-source'
-import {type Range, type RangeRequest, type RangeRequestList, applyRangeBound, mergeRangeRequests} from '@subsquid/util-internal-range'
+import type {RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
 
+import {EvmQueryBuilder} from '../query-builder'
+import type {EvmRpcOptions} from '../rpc'
 import {type CapabilityProbeOptions, makeCapabilityProbe} from '../../fallback/capability'
 import {FallbackDataSource, type RankedSource} from '../../fallback/fallback'
 import type {FallbackPolicy} from '../../fallback/policy'
-import type {NetworkOverrides, RpcMethodOptions} from '../rpc'
 import {loadRpcStream} from './load-rpc-stream'
 
-interface BlockRange {
-    range?: Range
-}
-
 const evmBlockRef = (b: Block<any>): BlockRef => ({number: b.header.number, hash: b.header.hash})
-
-/** JSON-RPC connection + per-network config for an `rpc` fallback source. */
-export interface EvmRpcSourceOptions {
-    /** JSON-RPC endpoint URL. */
-    url: string
-    /** Known network slug or chainId — selects the per-network preset (trace/debug method, validation). */
-    network?: string | number
-    /** Explicit validation/finality overrides, merged over the preset. */
-    rpc?: NetworkOverrides['rpc']
-    /** Explicit trace/stateDiff method overrides, merged over the preset. */
-    method?: RpcMethodOptions
-    capacity?: number
-    rateLimit?: number
-    strideSize?: number
-    strideConcurrency?: number
-}
 
 /** A SQD Network Portal source — the same options as `DataSourceBuilder#setPortal` (`url`, …). */
 export type EvmPortalSourceConfig = {type: 'portal'; name?: string} & PortalClientOptions
 
 /** A JSON-RPC source (with an optional per-network preset and overrides). */
-export type EvmRpcSourceConfig = {type: 'rpc'; name?: string} & EvmRpcSourceOptions
+export type EvmRpcSourceConfig = {type: 'rpc'; name?: string} & EvmRpcOptions
 
 /**
- * An arbitrary pre-built `EVMDataSource` — the escape hatch. Unlike `portal`/`rpc` sources, the
- * fallback's shared query is **not** applied to it: you are responsible for building it with the same
- * field selection + query as the other sources, or the fallback's output depends on which one is
- * active.
+ * A custom source — the escape hatch. Its {@link buildSource} is handed the fallback's shared field
+ * selection + requests, exactly like `portal`/`rpc` sources, so it can build a matching source. A
+ * source that doesn't use them (e.g. wrapping an already-built one) may ignore its arguments — but
+ * then it is on you to keep it consistent with the others, or output depends on which is active.
  */
 export interface EvmCustomSourceConfig {
-    type: 'source'
+    type: 'custom'
     name?: string
-    source: EVMDataSource<any>
+    buildSource(fields: FieldSelection, requests: RangeRequestList<DataRequest>): EVMDataSource<any>
 }
 
 /**
  * A downstream source in an EVM fallback, given as a plain tagged config object. The field selection
  * and query are defined **once** on the {@link EvmFallbackDataSourceBuilder} and applied to every
- * `portal`/`rpc` source, so they all fetch the same data (and produce identical output no matter which
- * one is active). `name` is optional — sources default to `` `${type}-${index}` `` in metrics/logs.
+ * source, so they all fetch the same data (and produce identical output no matter which one is
+ * active). `name` is optional — sources default to `` `${type}-${index}` `` in metrics/logs.
  */
 export type EvmFallbackSourceConfig = EvmPortalSourceConfig | EvmRpcSourceConfig | EvmCustomSourceConfig
 
@@ -87,11 +56,8 @@ export type EvmFallbackSourceConfig = EvmPortalSourceConfig | EvmRpcSourceConfig
  *     .addLog({where: {address: [CONTRACT], topic0: [TRANSFER]}, range: {from: 10_000_000}})
  *     .build()
  */
-export class EvmFallbackDataSourceBuilder<F extends FieldSelection = {}> {
+export class EvmFallbackDataSourceBuilder<F extends FieldSelection = {}> extends EvmQueryBuilder {
     private downstream: EvmFallbackSourceConfig[] = []
-    private requests: RangeRequest<DataRequest>[] = []
-    private fields: FieldSelection = {}
-    private blockRange?: Range
     private policy?: FallbackPolicy
     private capabilityProbe: boolean | CapabilityProbeOptions = true
 
@@ -119,71 +85,10 @@ export class EvmFallbackDataSourceBuilder<F extends FieldSelection = {}> {
         return this
     }
 
-    // ---- Shared query: mirrors @subsquid/evm-stream DataSourceBuilder, so the API feels identical ----
-
-    /** Limit the range of blocks to fetch (applied across every downstream source). */
-    setBlockRange(range?: Range): this {
-        this.blockRange = range
-        return this
-    }
-
     /** Configure the set of fetched fields — infers the block type `F` for `build()`. */
     setFields<T extends FieldSelection>(fields: T): EvmFallbackDataSourceBuilder<T> {
         this.fields = fields
         return this as unknown as EvmFallbackDataSourceBuilder<T>
-    }
-
-    /** Add a query — a set of item filters sharing a block range (accepts a {@link QueryBuilder}). */
-    addQuery(query: Query | QueryBuilder): this {
-        this.requests.push(query instanceof QueryBuilder ? query.build() : query)
-        return this
-    }
-
-    /** Shorthand for {@link addQuery} that only sets `includeAllBlocks` (and optionally a range). */
-    includeAllBlocks(range?: Range): this {
-        return this.addQuery({range: range ?? {from: 0}, request: {includeAllBlocks: true}})
-    }
-
-    /** Shorthand for {@link addQuery} with a single log filter. */
-    addLog(options: LogRequest & BlockRange): this {
-        let {range, ...req} = options
-        return this.addQuery({range: range ?? {from: 0}, request: {logs: [req]}})
-    }
-
-    /** Shorthand for {@link addQuery} with a single transaction filter. */
-    addTransaction(options: TransactionRequest & BlockRange): this {
-        let {range, ...req} = options
-        return this.addQuery({range: range ?? {from: 0}, request: {transactions: [req]}})
-    }
-
-    /** Shorthand for {@link addQuery} with a single trace filter. */
-    addTrace(options: TraceRequest & BlockRange): this {
-        let {range, ...req} = options
-        return this.addQuery({range: range ?? {from: 0}, request: {traces: [req]}})
-    }
-
-    /** Shorthand for {@link addQuery} with a single state-diff filter. */
-    addStateDiff(options: StateDiffRequest & BlockRange): this {
-        let {range, ...req} = options
-        return this.addQuery({range: range ?? {from: 0}, request: {stateDiffs: [req]}})
-    }
-
-    // Merge + range-bound the accumulated queries (mirrors DataSourceBuilder#getRequests).
-    private getRequests(): RangeRequestList<DataRequest> {
-        function concat<T>(a?: T[], b?: T[]): T[] | undefined {
-            let result = [...(a ?? []), ...(b ?? [])]
-            return result.length === 0 ? undefined : result
-        }
-
-        let requests = mergeRangeRequests(this.requests, (a, b) => ({
-            includeAllBlocks: a.includeAllBlocks || b.includeAllBlocks,
-            logs: concat(a.logs, b.logs),
-            transactions: concat(a.transactions, b.transactions),
-            traces: concat(a.traces, b.traces),
-            stateDiffs: concat(a.stateDiffs, b.stateDiffs),
-        }))
-
-        return applyRangeBound(requests, this.blockRange)
     }
 
     /** Build one downstream source from its config, applying the shared field selection + query. */
@@ -202,8 +107,8 @@ export class EvmFallbackDataSourceBuilder<F extends FieldSelection = {}> {
                 // Lazy: this is the only point that touches the optional @subsquid/evm-rpc peer.
                 return loadRpcStream().evmRpcStream({...options, fields, requests})
             }
-            case 'source':
-                return cfg.source
+            case 'custom':
+                return cfg.buildSource(fields, requests)
         }
     }
 
