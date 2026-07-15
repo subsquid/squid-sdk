@@ -18,7 +18,7 @@ The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpa
 | Subpath | Contents | Source |
 | --- | --- | --- |
 | `evm` | EVM stream types & data-request model | re-export of `@subsquid/evm-stream` |
-| `evm/rpc` | RPC-backed EVM data source (`EvmRpcDataSourceBuilder` / `evmRpcStream`, Portal-compatible output) | **owned** (folded in) |
+| `evm/rpc` | RPC-backed EVM data source (`EvmRpcDataSourceBuilder`, Portal-compatible output) | **owned** (folded in) |
 | `evm/fallback` | `EvmFallbackDataSourceBuilder` — the EVM binding of the fallback supervisor | **owned** (folded in) |
 | `fallback` | VM-agnostic fallback supervisor: drives the lowest-index healthy source of N | **owned** (folded in) |
 | `solana` | Solana stream | re-export of `@subsquid/solana-stream` |
