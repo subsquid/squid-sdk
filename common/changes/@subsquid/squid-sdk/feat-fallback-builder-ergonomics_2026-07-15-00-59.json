@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "comment": "evm/fallback: new fluent EvmFallbackDataSourceBuilder (with EvmPortalDataSourceBuilder / EvmRpcDataSourceBuilder) mirroring @subsquid/evm-stream's DataSourceBuilder. BREAKING: removes the old createEvmFallbackSource / EvmFallbackOptions / EvmFallbackSourceConfig API.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/squid-sdk"
+}

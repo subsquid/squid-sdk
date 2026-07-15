@@ -3,8 +3,8 @@ import {evm} from '@subsquid/portal-client'
 
 /**
  * Copied verbatim from `@subsquid/evm-stream` `portal/source.ts` (`mapFieldSelection`,
- * `mapBlock`) — both are module-internal there (not re-exported), and the plan (§5 S1 / C2)
- * sanctions copying these ~30 lines rather than widening evm-stream's public API. Keeping
+ * `mapBlock`) — both are module-internal there (not re-exported), so we copy these ~30 lines
+ * rather than widening evm-stream's public API. Keeping
  * them identical is what makes the RPC source's output match the Portal source's by reusing
  * the exact same decoder + post-cast mapping.
  */

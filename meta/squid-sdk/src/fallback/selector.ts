@@ -1,7 +1,7 @@
 import {SourceHealth} from './health'
 
 /**
- * Picks the active source from the ranked list using the trinary health asymmetrically (§4):
+ * Picks the active source from the ranked list using the trinary health asymmetrically:
  *  - **failover / cold start** tries the lowest-index `healthy` *or* `unknown` source —
  *    `unknown` optimistically, because the stream itself is the fastest health test;
  *  - **switch-up** only ever promotes to a capability-confirmed `healthy` source of *higher*

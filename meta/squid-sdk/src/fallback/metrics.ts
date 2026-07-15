@@ -17,7 +17,7 @@ const HEALTH_STATES = ['healthy', 'unhealthy', 'unknown'] as const
 
 /**
  * A `MetricsSink` exporting a {@link FallbackDataSource}'s observable state as Prometheus gauges
- * (§4 — "unhealthiness reflected in metrics"): which source is active, per-source trinary health,
+ * (unhealthiness reflected in metrics): which source is active, per-source trinary health,
  * lag/staleness/chain-stalled, and the cumulative switch count. Each gauge reads `source.metrics()`
  * on scrape via prom-client's `collect`, so there is nothing to push.
  */

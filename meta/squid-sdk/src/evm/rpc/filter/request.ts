@@ -84,7 +84,7 @@ export function flattenRequest(req: StreamDataRequest): FlatDataRequest {
 
 /**
  * The coarse data types an RPC source must fetch to satisfy a request. Drives both
- * the evm-rpc fetch toggles and the capability the §4 probe must verify (a node
+ * the evm-rpc fetch toggles and the capability the probe must verify (a node
  * missing trace/stateDiff support for a request that needs them is "unhealthy").
  */
 export interface RequiredData {

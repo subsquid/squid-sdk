@@ -2,7 +2,7 @@ import {SourceErrorInfo} from './diagnostics'
 import {Health, ResolvedPolicy} from './policy'
 
 /**
- * Per-source trinary health state machine (plan §4). Pure and timer-free — the driver feeds it
+ * Per-source trinary health state machine. Pure and timer-free — the driver feeds it
  * signals (`onStreamError`, `onBatch`, liveness/capability probe results) and reads `state`;
  * cooldown expiry is resolved lazily against the injected clock on each `state` read.
  *

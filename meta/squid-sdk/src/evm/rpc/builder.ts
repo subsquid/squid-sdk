@@ -8,11 +8,11 @@ import {EvmRpcStreamDataSource, RpcMethodOptions} from './source/data-source'
 export interface EvmRpcStreamConfig<F extends FieldSelection> {
     /** JSON-RPC endpoint URL. */
     url: string
-    /** Known network slug or chainId — selects the per-network C1 preset (§5 S5). */
+    /** Known network slug or chainId — selects the per-network preset. */
     network?: string | number
     fields: F
     requests: RangeRequestList<DataRequest>
-    /** Explicit C1 validation/finality overrides (merged over the preset). */
+    /** Explicit validation/finality overrides (merged over the preset). */
     rpc?: NetworkOverrides['rpc']
     /** Explicit trace/stateDiff method overrides (merged over the preset). */
     method?: RpcMethodOptions
@@ -23,8 +23,8 @@ export interface EvmRpcStreamConfig<F extends FieldSelection> {
 }
 
 /**
- * Build an RPC `DataSource<Block<F>>` from a simple config, resolving the per-network C1 settings
- * from `network` (preset) ⊕ explicit overrides (§5 S5 / S6). `evm-rpc` auto-handles
+ * Build an RPC `DataSource<Block<F>>` from a simple config, resolving the per-network settings
+ * from `network` (preset) ⊕ explicit overrides. `evm-rpc` auto-handles
  * chainId/response-shape quirks; this only supplies the deploy-config layer it can't auto-detect.
  */
 export function evmRpcStream<F extends FieldSelection>(config: EvmRpcStreamConfig<F>): EvmRpcStreamDataSource<F> {

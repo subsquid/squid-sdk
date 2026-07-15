@@ -1,10 +1,13 @@
-import {DataRequest, DataSourceBuilder, EVMDataSource, FieldSelection} from '@subsquid/evm-stream'
-import {EvmRpcClient, Rpc} from '@subsquid/evm-rpc'
-import {BlockRef, BlockStream, StreamRequest} from '@subsquid/util-internal-data-source'
-import {RangeRequestList} from '@subsquid/util-internal-range'
+import type {EVMDataSource, FieldSelection} from '@subsquid/evm-stream'
+import type {BlockRef, BlockStream, StreamRequest} from '@subsquid/util-internal-data-source'
 import {describe, expect, it} from 'vitest'
 
-import {createEvmFallbackSource} from './source'
+import {
+    type EvmDownstreamSourceBuilder,
+    EvmFallbackDataSourceBuilder,
+    EvmPortalDataSourceBuilder,
+    EvmRpcDataSourceBuilder,
+} from './builder'
 
 /**
  * Live end-to-end test: drive a fallback built from a real Portal source and a real RPC source,
@@ -23,22 +26,15 @@ const FIELDS = {
     log: {address: true, topics: true},
 } satisfies FieldSelection
 
-const REQUESTS: RangeRequestList<DataRequest> = [
-    {range: {from: FROM, to: TO}, request: {transactions: [{}], logs: [{}]}},
-]
-
-function portalSource(): EVMDataSource<typeof FIELDS> {
-    return new DataSourceBuilder()
-        .setPortal(PORTAL_URL)
+/** Build a fallback over `primary` + a real RPC source, with the shared query defined once here. */
+function fallback(primary: EvmDownstreamSourceBuilder) {
+    return new EvmFallbackDataSourceBuilder()
+        .setDownstreamSources([primary, new EvmRpcDataSourceBuilder().setRpc({url: RPC_URL, capacity: 5})])
         .setBlockRange({from: FROM, to: TO})
         .setFields(FIELDS)
         .addTransaction({})
         .addLog({})
         .build()
-}
-
-function rpc(): Rpc {
-    return new Rpc({client: new EvmRpcClient({url: RPC_URL, capacity: 5})})
 }
 
 async function streamNumbers(source: {getFinalizedStream(req: StreamRequest): BlockStream<any>}): Promise<number[]> {
@@ -49,7 +45,8 @@ async function streamNumbers(source: {getFinalizedStream(req: StreamRequest): Bl
     return out
 }
 
-// An EVM source that always fails — used to force a failover to the next source.
+// An EVM source that always fails — used to force a failover to the next source. Injected via the
+// public `EvmDownstreamSourceBuilder` interface (the escape hatch for an arbitrary pre-built source).
 class BrokenSource implements EVMDataSource<typeof FIELDS> {
     async getHead(): Promise<BlockRef> {
         throw new Error('primary down')
@@ -66,29 +63,20 @@ class BrokenSource implements EVMDataSource<typeof FIELDS> {
     }
 }
 
+const brokenPrimary: EvmDownstreamSourceBuilder = {
+    defaultName: 'broken',
+    buildSource: () => new BrokenSource(),
+}
+
 describe.skipIf(!ENABLED)('EVM fallback — live', () => {
     it('streams a range through the primary (Portal)', async () => {
-        let fb = createEvmFallbackSource({
-            fields: FIELDS,
-            requests: REQUESTS,
-            sources: [
-                {type: 'portal', source: portalSource()},
-                {type: 'rpc', rpc: rpc()},
-            ],
-        })
+        let fb = fallback(new EvmPortalDataSourceBuilder().setPortal(PORTAL_URL))
 
         expect(await streamNumbers(fb)).toEqual([FROM, FROM + 1, TO])
     }, 120_000)
 
     it('fails over to the RPC source when the primary is down', async () => {
-        let fb = createEvmFallbackSource({
-            fields: FIELDS,
-            requests: REQUESTS,
-            sources: [
-                {type: 'portal', source: new BrokenSource()},
-                {type: 'rpc', rpc: rpc()},
-            ],
-        })
+        let fb = fallback(brokenPrimary)
 
         expect(fb.activeIndex).toBeUndefined()
         expect(await streamNumbers(fb)).toEqual([FROM, FROM + 1, TO])
