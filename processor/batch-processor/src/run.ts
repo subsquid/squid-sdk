@@ -3,7 +3,7 @@ import {last, maybeLast, runProgram, Throttler} from '@subsquid/util-internal'
 import {Database, DatabaseTransactResult, FinalDatabaseState, HashAndHeight, HotDatabaseState} from './database'
 import {DataSource, isForkException, BlockRef, type BlockBatch} from '@subsquid/util-internal-data-source'
 import assert from 'assert'
-import {MetricsSink, PrometheusServer, RunnerMetrics} from '@subsquid/util-internal-processor-tools'
+import {type MetricsSink, PrometheusServer, RunnerMetrics} from '@subsquid/util-internal-processor-tools'
 import {formatHead, getItemsCount} from './util'
 
 export {PrometheusServer}
