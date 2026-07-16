@@ -91,6 +91,23 @@ const rpcSource = new EvmRpcDataSourceBuilder()
     .build()
 ```
 
+## Fallback metrics
+
+When a fallback source is run through the processor (`run(src, db, handler, {prometheus})` from
+`@subsquid/batch-processor`), its `sqd_fallback_*` gauges are registered on the processor's `/metrics`
+**automatically** — no manual wiring. The exported series:
+
+- `sqd_fallback_active{source}` — 1 for the active source, 0 for standbys.
+- `sqd_fallback_source_health{source,state,check,reason,code}` — trinary per-source health; the
+  `unhealthy` row carries the cause as `check`/`reason`/`code` labels.
+- `sqd_fallback_lag_blocks`, `sqd_fallback_staleness_ms`, `sqd_fallback_chain_stalled`,
+  `sqd_fallback_switches` — fallback-wide gauges.
+
+`run()` picks these up because the built source exposes `getMetricsSink()`. To export them onto a
+different registry, or under a custom prefix, the sink is also available directly:
+`fallbackMetricsSink(source, prefix?)` from `@subsquid/squid-sdk/fallback` (idempotent per registry,
+so adding it manually alongside the automatic registration is safe).
+
 ## Optional EVM peers
 
 The `fallback` supervisor is VM-agnostic and pulls no EVM code. The EVM RPC source (`evm/rpc`) and

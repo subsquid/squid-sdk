@@ -3,7 +3,7 @@ import {last, maybeLast, runProgram, Throttler} from '@subsquid/util-internal'
 import {Database, DatabaseTransactResult, FinalDatabaseState, HashAndHeight, HotDatabaseState} from './database'
 import {DataSource, isForkException, BlockRef, type BlockBatch} from '@subsquid/util-internal-data-source'
 import assert from 'assert'
-import {PrometheusServer, RunnerMetrics} from '@subsquid/util-internal-processor-tools'
+import {MetricsSink, PrometheusServer, RunnerMetrics} from '@subsquid/util-internal-processor-tools'
 import {formatHead, getItemsCount} from './util'
 
 export {PrometheusServer}
@@ -22,6 +22,20 @@ export interface BlockBase {
 
 export interface RunOptions {
     prometheus?: PrometheusServer
+}
+
+/**
+ * Optional capability: a data source that exposes its own Prometheus metrics. When present, `run()`
+ * registers the returned sink on the metrics server automatically, so a source's gauges (e.g. a
+ * fallback source's `sqd_fallback_*`) appear on `/metrics` with no manual wiring. Duck-typed here
+ * rather than added to the `DataSource` interface, which must not depend on prom-client.
+ */
+interface MetricsSource {
+    getMetricsSink(): MetricsSink
+}
+
+function hasMetricsSink(src: unknown): src is MetricsSource {
+    return typeof (src as Partial<MetricsSource>).getMetricsSink === 'function'
 }
 
 /**
@@ -160,6 +174,10 @@ export class Processor<B extends BlockBase, S> {
         if (prometheusServer == null) return
 
         prometheusServer.addRunnerMetrics(this.metrics)
+        // Auto-register the data source's own metrics (e.g. a fallback source's `sqd_fallback_*`).
+        if (hasMetricsSink(this.src)) {
+            prometheusServer.addMetricsSink(this.src.getMetricsSink())
+        }
         let listening = await prometheusServer.serve()
         log.info(`prometheus metrics are served on port ${listening.port}`)
     }

@@ -1,11 +1,13 @@
 import {Logger, createLogger} from '@subsquid/logger'
 import {BlockBatch, BlockRef, BlockStream, DataSource, StreamRequest, isForkException} from '@subsquid/util-internal-data-source'
+import type {MetricsSink} from '@subsquid/util-internal-processor-tools'
 import {FiniteRange} from '@subsquid/util-internal-range'
 
 import {safeReturn, withTimeout} from './async'
 import {ProbeResult} from './capability'
 import {SourceErrorInfo, capabilityFailure, classifyError, freshnessFailure} from './diagnostics'
 import {SourceHealth} from './health'
+import {fallbackMetricsSink} from './metrics'
 import {AllSourcesDownError, FallbackPolicy, Health, ResolvedPolicy, resolvePolicy} from './policy'
 import {Selector} from './selector'
 
@@ -261,6 +263,15 @@ export class FallbackDataSource<B> implements DataSource<B> {
         }
 
         return 0
+    }
+
+    /**
+     * A Prometheus sink exporting this fallback's observable state (`sqd_fallback_*` gauges). The
+     * batch-processor's `run()` calls this automatically when the source is passed to it, so the
+     * gauges appear on the processor's `/metrics` with no manual `addMetricsSink` wiring.
+     */
+    getMetricsSink(): MetricsSink {
+        return fallbackMetricsSink(this)
     }
 
     /** Snapshot of the observable state for export to a metrics surface. */
