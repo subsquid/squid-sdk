@@ -7,7 +7,7 @@
     "test": "make test"
   },
   "dependencies": {
-    "@subsquid/batch-processor": "^1.0.0",
+    "@subsquid/batch-processor": "^1.1.0",
     "@subsquid/graphql-server": "^4.12.1",
     "@subsquid/typeorm-migration": "^1.4.0",
     "@subsquid/typeorm-store": "^1.9.1",
