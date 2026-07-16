@@ -5,13 +5,26 @@ them through **subpaths**, so a squid can depend on a single package:
 
 ```ts
 import {EvmFallbackDataSourceBuilder} from '@subsquid/squid-sdk/evm/fallback'
-import {EvmRpcStreamDataSource}       from '@subsquid/squid-sdk/evm/rpc'
-import {FallbackDataSource}           from '@subsquid/squid-sdk/fallback'
-import {PortalClient}                 from '@subsquid/squid-sdk/client/portal'
-import {def}                          from '@subsquid/squid-sdk/util'
+import {EvmRpcDataSourceBuilder}       from '@subsquid/squid-sdk/evm/rpc'
+import {FallbackDataSource}            from '@subsquid/squid-sdk/fallback'
+import {PortalClient}                  from '@subsquid/squid-sdk/client/portal'
+import {def}                           from '@subsquid/squid-sdk/util'
 ```
 
 The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpaths.
+
+## Where to start
+
+| I want to… | Import |
+| --- | --- |
+| Build an EVM fallback data source | `import {EvmFallbackDataSourceBuilder} from '@subsquid/squid-sdk/evm/fallback'` |
+| Build a single RPC EVM source | `import {EvmRpcDataSourceBuilder} from '@subsquid/squid-sdk/evm/rpc'` |
+| Build a single Portal EVM source | `import {DataSourceBuilder} from '@subsquid/squid-sdk/evm'` |
+| Catch all-sources-down / type a policy | `import {AllSourcesDownError, FallbackPolicy} from '@subsquid/squid-sdk/evm/fallback'` |
+| Export fallback metrics onto a custom registry | `import {fallbackMetricsSink} from '@subsquid/squid-sdk/fallback'` |
+
+Editor autocomplete lists the subpaths: type `@subsquid/squid-sdk/` and, one level down,
+`@subsquid/squid-sdk/evm/` — see [TypeScript resolution](#typescript-resolution) for how that works.
 
 ## Subpaths
 
@@ -131,3 +144,13 @@ deliberate:
 
 Shipping both means `@subsquid/squid-sdk/<subpath>` type-checks regardless of a squid's
 `moduleResolution`. At runtime Node always honors `exports`.
+
+### Subpath autocomplete
+
+For nested subpaths (`evm/rpc`, `util/range`, …), classic resolution only surfaces a subpath's
+children in editor autocomplete when the parent is a real directory on disk — otherwise typing
+`@subsquid/squid-sdk/evm/` completes to nothing. So the build emits a small **directory redirect**
+per subpath: `evm/rpc/package.json` with `types`/`main` pointing back into `lib/`
+(`scripts/gen-subpath-stubs.cjs`, run after `tsc`). These are generated, git-ignored, and shipped via
+`files`; Node never consults them (it resolves via `exports`) — they exist only so editors can
+enumerate and complete the subpaths.

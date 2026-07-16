@@ -6,7 +6,7 @@ import assert from 'assert'
 
 import {redactUrl} from '../../redact'
 import {EvmQueryBuilder} from '../query-builder'
-import {getNetworkPreset, NetworkOverrides, resolveNetworkSettings} from './networks'
+import {EvmNetwork, getNetworkPreset, NetworkOverrides, resolveNetworkSettings} from './networks'
 import {EvmRpcStreamDataSource, RpcMethodOptions} from './source/data-source'
 
 const log = createLogger('sqd:evm-rpc')
@@ -15,8 +15,12 @@ const log = createLogger('sqd:evm-rpc')
 export interface EvmRpcOptions {
     /** JSON-RPC endpoint URL. */
     url: string
-    /** Known network slug or chainId — selects the per-network preset (trace/debug method, validation). */
-    network?: string | number
+    /**
+     * Known network slug or chainId — selects the per-network preset (trace/debug method, validation).
+     * Known slugs are offered in autocomplete; any other slug/chainId is accepted but runs without a
+     * preset (validation off, with a warning) unless you supply explicit `rpc`/`method` overrides.
+     */
+    network?: EvmNetwork
     /** Explicit validation/finality overrides (merged over the preset). */
     rpc?: NetworkOverrides['rpc']
     /** Explicit trace/stateDiff method overrides (merged over the preset). */

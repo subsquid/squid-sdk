@@ -10,7 +10,14 @@
   },
   "files": [
     "lib",
-    "src"
+    "src",
+    "evm",
+    "solana",
+    "fuel",
+    "fallback",
+    "util",
+    "client",
+    "logger"
   ],
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -135,7 +142,7 @@
     }
   },
   "scripts": {
-    "build": "rm -rf lib && tsc",
+    "build": "rm -rf lib && tsc && node scripts/gen-subpath-stubs.cjs",
     "test": "vitest --run",
     "test:lfs": "VITEST_LFS=1 vitest --run"
   },

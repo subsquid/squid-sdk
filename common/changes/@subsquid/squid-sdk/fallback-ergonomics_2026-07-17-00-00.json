@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "comment": "evm/fallback: richer `setDownstreamSources` docstring (all `type` variants + a portal/rpc `@example`) so the empty-array call site is self-documenting. evm/rpc: `network` is now typed `EvmNetwork` — the known preset slugs autocomplete while any other slug/chainId is still accepted (`KnownNetwork` is derived from the shipped presets and test-guarded against drift). Editor discoverability: the build emits a directory redirect per subpath so nested paths like `@subsquid/squid-sdk/evm/` autocomplete their children under classic (node10) resolution. BREAKING: the `fallback` subpath no longer re-exports internal helpers (redactUrl, redactText, classifyError, freshnessFailure, capabilityFailure, resolvePolicy, ResolvedPolicy, Selector, SourceHealth) — its public surface is now just the supervisor, its options/metrics, the policy, the all-down error, the capability-probe API, and the metrics sink.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/squid-sdk"
+}
