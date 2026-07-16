@@ -10,3 +10,5 @@
 /util/
 /client/
 /logger/
+/processor/
+/store/

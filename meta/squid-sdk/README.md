@@ -22,6 +22,8 @@ The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpa
 | Build a single Portal EVM source | `import {DataSourceBuilder} from '@subsquid/squid-sdk/evm'` |
 | Catch all-sources-down / type a policy | `import {AllSourcesDownError, FallbackPolicy} from '@subsquid/squid-sdk/evm/fallback'` |
 | Export fallback metrics onto a custom registry | `import {fallbackMetricsSink} from '@subsquid/squid-sdk/fallback'` |
+| Run a processor over a source | `import {run} from '@subsquid/squid-sdk/processor'` |
+| Store to a TypeORM database | `import {TypeormDatabase} from '@subsquid/squid-sdk/store/typeorm'` |
 
 Editor autocomplete lists the subpaths: type `@subsquid/squid-sdk/` and, one level down,
 `@subsquid/squid-sdk/evm/` — see [TypeScript resolution](#typescript-resolution) for how that works.
@@ -33,6 +35,7 @@ Editor autocomplete lists the subpaths: type `@subsquid/squid-sdk/` and, one lev
 | `evm` | EVM stream types & data-request model | re-export of `@subsquid/evm-stream` |
 | `evm/rpc` | RPC-backed EVM data source (`EvmRpcDataSourceBuilder`, Portal-compatible output) | **owned** (folded in) |
 | `evm/fallback` | `EvmFallbackDataSourceBuilder` — the EVM binding of the fallback supervisor | **owned** (folded in) |
+| `evm/objects` | augmented EVM data model | re-export of `@subsquid/evm-objects` |
 | `fallback` | VM-agnostic fallback supervisor: drives the lowest-index healthy source of N | **owned** (folded in) |
 | `solana` | Solana stream | re-export of `@subsquid/solana-stream` |
 | `fuel` | Fuel stream | re-export of `@subsquid/fuel-stream` |
@@ -48,10 +51,14 @@ Editor autocomplete lists the subpaths: type `@subsquid/squid-sdk/` and, one lev
 | `client/rpc` | JSON-RPC client | re-export of `@subsquid/rpc-client` |
 | `client/http` | HTTP client | re-export of `@subsquid/http-client` |
 | `logger` | logging | re-export of `@subsquid/logger` |
+| `processor` | batch-processor runner (`run`, `PrometheusServer`, `Database`) | re-export of `@subsquid/batch-processor` |
+| `store/typeorm` | TypeORM storage for mappings | re-export of `@subsquid/typeorm-store` |
 
 The `evm/rpc`, `evm/fallback`, and `fallback` subpaths are owned by this package (their standalone
 packages were folded in and removed). Everything else is a re-export of a package that is still
-published standalone — import it either way.
+published standalone — import it either way. `store/typeorm` re-exports `@subsquid/typeorm-store`,
+which needs `typeorm` and `@subsquid/big-decimal` as peers — install them in a squid that stores to a
+database.
 
 ## EVM fallback source
 

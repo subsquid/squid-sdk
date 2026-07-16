@@ -17,7 +17,9 @@
     "fallback",
     "util",
     "client",
-    "logger"
+    "logger",
+    "processor",
+    "store"
   ],
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -42,6 +44,11 @@
       "types": "./lib/evm/fallback/index.d.ts",
       "import": "./lib/evm/fallback/index.js",
       "require": "./lib/evm/fallback/index.js"
+    },
+    "./evm/objects": {
+      "types": "./lib/evm/objects/index.d.ts",
+      "import": "./lib/evm/objects/index.js",
+      "require": "./lib/evm/objects/index.js"
     },
     "./solana": {
       "types": "./lib/solana/index.d.ts",
@@ -117,6 +124,16 @@
       "types": "./lib/logger/index.d.ts",
       "import": "./lib/logger/index.js",
       "require": "./lib/logger/index.js"
+    },
+    "./processor": {
+      "types": "./lib/processor/index.d.ts",
+      "import": "./lib/processor/index.js",
+      "require": "./lib/processor/index.js"
+    },
+    "./store/typeorm": {
+      "types": "./lib/store/typeorm/index.d.ts",
+      "import": "./lib/store/typeorm/index.js",
+      "require": "./lib/store/typeorm/index.js"
     }
   },
   "typesVersions": {
@@ -124,6 +141,7 @@
       "evm": ["./lib/evm/index.d.ts"],
       "evm/rpc": ["./lib/evm/rpc/index.d.ts"],
       "evm/fallback": ["./lib/evm/fallback/index.d.ts"],
+      "evm/objects": ["./lib/evm/objects/index.d.ts"],
       "solana": ["./lib/solana/index.d.ts"],
       "fuel": ["./lib/fuel/index.d.ts"],
       "fallback": ["./lib/fallback/index.d.ts"],
@@ -138,7 +156,9 @@
       "client/portal": ["./lib/client/portal/index.d.ts"],
       "client/rpc": ["./lib/client/rpc/index.d.ts"],
       "client/http": ["./lib/client/http/index.d.ts"],
-      "logger": ["./lib/logger/index.d.ts"]
+      "logger": ["./lib/logger/index.d.ts"],
+      "processor": ["./lib/processor/index.d.ts"],
+      "store/typeorm": ["./lib/store/typeorm/index.d.ts"]
     }
   },
   "scripts": {
@@ -147,6 +167,8 @@
     "test:lfs": "VITEST_LFS=1 vitest --run"
   },
   "dependencies": {
+    "@subsquid/batch-processor": "^1.0.0",
+    "@subsquid/evm-objects": "^0.0.3",
     "@subsquid/evm-stream": "^0.1.3",
     "@subsquid/fuel-stream": "^1.2.0",
     "@subsquid/http-client": "^1.8.1",
@@ -154,6 +176,7 @@
     "@subsquid/portal-client": "^0.6.0",
     "@subsquid/rpc-client": "^4.15.1",
     "@subsquid/solana-stream": "^1.1.2",
+    "@subsquid/typeorm-store": "^1.9.1",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-data-source": "^0.0.0",
     "@subsquid/util-internal-hex": "^1.2.3",
@@ -177,9 +200,11 @@
     }
   },
   "devDependencies": {
+    "@subsquid/big-decimal": "^1.0.0",
     "@subsquid/evm-normalization": "^0.0.5",
     "@subsquid/evm-rpc": "^0.0.5",
     "@types/node": "^24.0.0",
+    "typeorm": "^0.3.17",
     "typescript": "5.5.4",
     "vitest": "4.1.5"
   }
