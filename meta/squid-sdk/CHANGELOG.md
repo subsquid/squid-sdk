@@ -1,6 +1,14 @@
 # Change Log - @subsquid/squid-sdk
 
-This log was last generated on Wed, 15 Jul 2026 22:15:56 GMT and should not be manually modified.
+This log was last generated on Thu, 16 Jul 2026 19:47:53 GMT and should not be manually modified.
+
+## 0.4.0
+Thu, 16 Jul 2026 19:47:53 GMT
+
+### Minor changes
+
+- evm/fallback: richer `setDownstreamSources` docstring (all `type` variants + a portal/rpc `@example`) so the empty-array call site is self-documenting. evm/rpc: `network` is now typed `EvmNetwork` — the known preset slugs autocomplete while any other slug/chainId is still accepted (`KnownNetwork` is derived from the shipped presets and test-guarded against drift). Editor discoverability: the build emits a directory redirect per subpath so nested paths like `@subsquid/squid-sdk/evm/` autocomplete their children under classic (node10) resolution. The `fallback` subpath now re-exports only its intended public surface — the supervisor, its options/metrics, the policy, the all-down error, the capability-probe API, and the metrics sink; internal helpers (redactUrl, redactText, classifyError, freshnessFailure, capabilityFailure, resolvePolicy, ResolvedPolicy, Selector, SourceHealth) that were previously reachable through it are no longer exported. New subpaths: `evm/objects` (@subsquid/evm-objects), `processor` (@subsquid/batch-processor), and `store/typeorm` (@subsquid/typeorm-store; needs `typeorm`/`@subsquid/big-decimal` peers).
+- feat(fallback): FallbackDataSource now exposes `getMetricsSink()`, so a fallback source passed to the batch-processor's `run()` gets its `sqd_fallback_*` gauges registered on `/metrics` automatically — no manual `addMetricsSink(fallbackMetricsSink(src))` needed. `fallbackMetricsSink` is now idempotent per registry, so a leftover manual registration alongside the automatic one no longer throws on duplicate gauge names.
 
 ## 0.3.0
 Wed, 15 Jul 2026 22:15:56 GMT
