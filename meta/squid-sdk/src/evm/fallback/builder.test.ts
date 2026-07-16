@@ -1,4 +1,5 @@
 import type {EVMDataSource} from '@subsquid/evm-stream'
+import {Registry} from 'prom-client'
 import {describe, expect, it, vi} from 'vitest'
 
 import {FallbackDataSource} from '../../fallback/fallback'
@@ -126,6 +127,18 @@ describe('EvmFallbackDataSourceBuilder', () => {
         // Not exempt: the custom source receives the same shared field selection + query as the rest.
         expect(seen?.fields).toEqual({log: {topics: true}})
         expect(seen?.requests[0].request.logs).toEqual([{where: {address: ['0xabc']}}])
+    })
+
+    it('exposes a metrics sink so the batch-processor auto-registers sqd_fallback_* gauges', async () => {
+        const fb = new EvmFallbackDataSourceBuilder()
+            .setDownstreamSources([{type: 'rpc', url: 'https://a.example', name: 'primary'}])
+            .setCapabilityProbe(false)
+            .build()
+
+        // This is the hook `run()` duck-types (`getMetricsSink()`); registering it must populate the gauges.
+        let registry = new Registry()
+        fb.getMetricsSink().register(registry)
+        expect(await registry.metrics()).toContain('sqd_fallback_active{source="primary"}')
     })
 
     it('throws an actionable error when a portal/rpc source is missing its url at runtime', () => {

@@ -1,7 +1,7 @@
 import type {MetricsSink} from '@subsquid/util-internal-processor-tools'
 import {Gauge, Registry} from 'prom-client'
 
-import {FallbackMetrics} from './fallback'
+import type {FallbackMetrics} from './fallback'
 
 export interface FallbackMetricsSource {
     metrics(): FallbackMetrics
@@ -24,6 +24,15 @@ const HEALTH_STATES = ['healthy', 'unhealthy', 'unknown'] as const
 export function fallbackMetricsSink(source: FallbackMetricsSource, prefix = 'sqd_fallback'): MetricsSink {
     return {
         register(registry: Registry) {
+            // Idempotent per (registry, prefix): if this gauge set is already registered, skip, so the
+            // batch-processor's automatic registration coexists with a leftover manual
+            // `addMetricsSink(fallbackMetricsSink(src))` without prom-client throwing on a duplicate gauge
+            // name. Keyed on the *last*-registered gauge (`_switches`) so a registration that failed partway
+            // (a name collision on a later gauge) is not mistaken for a complete one. Note it keys on the
+            // prefix, not the source: two distinct fallback sources sharing one registry need different
+            // prefixes (the fallback-wide gauges have no `source` label), else the second would no-op.
+            if (registry.getSingleMetric(`${prefix}_switches`)) return
+
             new Gauge({
                 name: `${prefix}_active`,
                 help: 'Currently active fallback source (1 = active, 0 = standby)',
