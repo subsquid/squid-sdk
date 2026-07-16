@@ -775,28 +775,16 @@ export function mapRawBlock(raw: RawBlock, options?: MappingOptions): Block {
         }
 
         if (options?.withTraces) {
-            if (tx.debugFrame_) {
-                for (let frame of mapDebugFrame(transactionIndex, tx.debugFrame_)) {
-                    block.traces!.push(frame)
-                }
-            } else if (tx.traceReplay_?.trace) {
-                for (let frame of tx.traceReplay_.trace) {
-                    block.traces!.push(mapTrace(frame, transactionIndex))
-                }
+            let debugFrame = assertNotNull(tx.debugFrame_)
+            for (let frame of mapDebugFrame(transactionIndex, debugFrame)) {
+                block.traces!.push(frame)
             }
         }
 
         if (options?.withStateDiffs) {
-            if (tx.debugStateDiff_) {
-                for (let diff of mapDebugStateDiff(transactionIndex, tx.debugStateDiff_)) {
-                    block.stateDiffs!.push(diff)
-                }
-            } else if (tx.traceReplay_?.stateDiff) {
-                for (let diff of mapReplayStateDiff(tx.traceReplay_.stateDiff, transactionIndex)) {
-                    if (diff.kind != '=') {
-                        block.stateDiffs!.push(diff)
-                    }
-                }
+            let debugStateDiff = assertNotNull(tx.debugStateDiff_)
+            for (let diff of mapDebugStateDiff(transactionIndex, debugStateDiff)) {
+                block.stateDiffs!.push(diff)
             }
         }
     }
