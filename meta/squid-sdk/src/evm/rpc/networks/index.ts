@@ -44,8 +44,9 @@ export type KnownNetwork = (typeof KNOWN_NETWORKS)[number]
 /**
  * The `network` selector for an RPC source: a known preset slug (offered in editor autocomplete), or
  * any other slug/chainId. Unknown values are accepted — they resolve to empty settings (validation
- * off) with a runtime warning. The `string & {}` member keeps the known-slug suggestions visible
- * while still allowing an arbitrary string.
+ * off); building an RPC source (`evmRpcStream` / the builders) logs a warning in that case, though
+ * {@link resolveNetworkSettings} itself does not. The `string & {}` member keeps the known-slug
+ * suggestions visible while still allowing an arbitrary string.
  */
 export type EvmNetwork = KnownNetwork | (string & {}) | number
 
