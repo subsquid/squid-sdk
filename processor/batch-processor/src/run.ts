@@ -35,7 +35,7 @@ interface MetricsSource {
 }
 
 function hasMetricsSink(src: unknown): src is MetricsSource {
-    return typeof (src as Partial<MetricsSource>).getMetricsSink === 'function'
+    return src != null && typeof (src as Partial<MetricsSource>).getMetricsSink === 'function'
 }
 
 /**
