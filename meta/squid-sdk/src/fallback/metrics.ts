@@ -24,9 +24,12 @@ const HEALTH_STATES = ['healthy', 'unhealthy', 'unknown'] as const
 export function fallbackMetricsSink(source: FallbackMetricsSource, prefix = 'sqd_fallback'): MetricsSink {
     return {
         register(registry: Registry) {
-            // Idempotent: the batch-processor auto-registers this sink, so a leftover manual
-            // `addMetricsSink(fallbackMetricsSink(src))` would otherwise double-register and prom-client
-            // would throw on the duplicate gauge name. Registering the same source twice is a no-op.
+            // Idempotent per (registry, prefix): if these gauges are already registered, skip, so the
+            // batch-processor's automatic registration coexists with a leftover manual
+            // `addMetricsSink(fallbackMetricsSink(src))` without prom-client throwing on a duplicate gauge
+            // name. Note this keys on the prefix, not the source: two *distinct* fallback sources sharing
+            // one registry must use different prefixes — the fallback-wide gauges (lag/staleness/switches)
+            // have no `source` label to separate them — else this would silently no-op the second.
             if (registry.getSingleMetric(`${prefix}_active`)) return
 
             new Gauge({
