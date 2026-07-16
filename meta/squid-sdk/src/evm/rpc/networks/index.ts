@@ -23,6 +23,33 @@ export const NETWORK_PRESETS: NetworkPreset[] = [
     cronosMainnet,
 ]
 
+/**
+ * Slugs of the shipped network presets. Passing one of these (or the matching chainId) as `network`
+ * unlocks the preset's block validation + trace/debug method tuning. Kept in sync with
+ * {@link NETWORK_PRESETS} by a unit test.
+ */
+export const KNOWN_NETWORKS = [
+    'ethereum-mainnet',
+    'optimism-mainnet',
+    'base-mainnet',
+    'arbitrum-one',
+    'gnosis-mainnet',
+    'polygon-mainnet',
+    'cronos-mainnet',
+] as const
+
+/** A slug of a shipped network preset (see {@link KNOWN_NETWORKS}). */
+export type KnownNetwork = (typeof KNOWN_NETWORKS)[number]
+
+/**
+ * The `network` selector for an RPC source: a known preset slug (offered in editor autocomplete), or
+ * any other slug/chainId. Unknown values are accepted — they resolve to empty settings (validation
+ * off); building an RPC source (`evmRpcStream` / the builders) logs a warning in that case, though
+ * {@link resolveNetworkSettings} itself does not. The `string & {}` member keeps the known-slug
+ * suggestions visible while still allowing an arbitrary string.
+ */
+export type EvmNetwork = KnownNetwork | (string & {}) | number
+
 const BY_SLUG = new Map(NETWORK_PRESETS.map((p) => [p.slug, p]))
 const BY_CHAIN_ID = new Map(NETWORK_PRESETS.map((p) => [p.chainId, p]))
 

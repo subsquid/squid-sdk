@@ -61,7 +61,25 @@ export class EvmFallbackDataSourceBuilder<F extends FieldSelection = {}> extends
     private policy?: FallbackPolicy
     private capabilityProbe: boolean | CapabilityProbeOptions = true
 
-    /** Ordered downstream sources, most-preferred first. The fallback drives the first healthy one. */
+    /**
+     * The ordered list of downstream sources, most-preferred first — the fallback drives the first
+     * healthy one and fails over (and back up) as health changes. Each entry is a plain tagged config
+     * object; the shared field selection + query (`setFields`/`addLog`/…) is applied to every source,
+     * so they all fetch identical data.
+     *
+     * - `{type: 'portal', url}` — a SQD Network Portal dataset (same options as `DataSourceBuilder#setPortal`).
+     * - `{type: 'rpc', url, network?}` — a JSON-RPC endpoint; set `network` to a known slug/chainId to
+     *   enable block validation + trace/debug method tuning ({@link EvmRpcSourceConfig}).
+     * - `{type: 'custom', buildSource}` — the escape hatch ({@link EvmCustomSourceConfig}).
+     *
+     * `name` is optional on each entry and defaults to `` `${type}-${index}` `` in metrics/logs.
+     *
+     * @example
+     * .setDownstreamSources([
+     *     {type: 'portal', url: 'https://portal.sqd.dev/datasets/ethereum-mainnet'},
+     *     {type: 'rpc', url: process.env.RPC_URL!, network: 'ethereum-mainnet'},
+     * ])
+     */
     setDownstreamSources(sources: EvmFallbackSourceConfig[]): this {
         this.downstream = sources
         return this

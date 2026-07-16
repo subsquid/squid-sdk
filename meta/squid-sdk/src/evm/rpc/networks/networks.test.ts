@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest'
 
 import {evmRpcStream} from '../builder'
-import {getNetworkPreset, resolveNetworkSettings} from './index'
+import {getNetworkPreset, KNOWN_NETWORKS, NETWORK_PRESETS, resolveNetworkSettings} from './index'
 
 /**
  * Golden tests: each assertion encodes the documented infra deploy config for that network
@@ -95,5 +95,13 @@ describe('evmRpcStream builder', () => {
         })
         expect(typeof ds.getStream).toBe('function')
         expect(typeof ds.getFinalizedHead).toBe('function')
+    })
+})
+
+describe('KNOWN_NETWORKS', () => {
+    // The `network` autocomplete union (KnownNetwork) is derived from KNOWN_NETWORKS; this keeps it
+    // in sync with the shipped presets so the hints never drift from what actually has a preset.
+    it('lists exactly the shipped preset slugs', () => {
+        expect([...KNOWN_NETWORKS].sort()).toEqual(NETWORK_PRESETS.map((p) => p.slug).sort())
     })
 })

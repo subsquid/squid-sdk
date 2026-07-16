@@ -5,13 +5,28 @@ them through **subpaths**, so a squid can depend on a single package:
 
 ```ts
 import {EvmFallbackDataSourceBuilder} from '@subsquid/squid-sdk/evm/fallback'
-import {EvmRpcStreamDataSource}       from '@subsquid/squid-sdk/evm/rpc'
-import {FallbackDataSource}           from '@subsquid/squid-sdk/fallback'
-import {PortalClient}                 from '@subsquid/squid-sdk/client/portal'
-import {def}                          from '@subsquid/squid-sdk/util'
+import {EvmRpcDataSourceBuilder}       from '@subsquid/squid-sdk/evm/rpc'
+import {FallbackDataSource}            from '@subsquid/squid-sdk/fallback'
+import {PortalClient}                  from '@subsquid/squid-sdk/client/portal'
+import {def}                           from '@subsquid/squid-sdk/util'
 ```
 
 The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpaths.
+
+## Where to start
+
+| I want to… | Import |
+| --- | --- |
+| Build an EVM fallback data source | `import {EvmFallbackDataSourceBuilder} from '@subsquid/squid-sdk/evm/fallback'` |
+| Build a single RPC EVM source | `import {EvmRpcDataSourceBuilder} from '@subsquid/squid-sdk/evm/rpc'` |
+| Build a single Portal EVM source | `import {DataSourceBuilder} from '@subsquid/squid-sdk/evm'` |
+| Catch all-sources-down / type a policy | `import {AllSourcesDownError, FallbackPolicy} from '@subsquid/squid-sdk/evm/fallback'` |
+| Export fallback metrics onto a custom registry | `import {fallbackMetricsSink} from '@subsquid/squid-sdk/fallback'` |
+| Run a processor over a source | `import {run} from '@subsquid/squid-sdk/processor'` |
+| Store to a TypeORM database | `import {TypeormDatabase} from '@subsquid/squid-sdk/store/typeorm'` |
+
+Editor autocomplete lists the subpaths: type `@subsquid/squid-sdk/` and, one level down,
+`@subsquid/squid-sdk/evm/` — see [TypeScript resolution](#typescript-resolution) for how that works.
 
 ## Subpaths
 
@@ -20,6 +35,7 @@ The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpa
 | `evm` | EVM stream types & data-request model | re-export of `@subsquid/evm-stream` |
 | `evm/rpc` | RPC-backed EVM data source (`EvmRpcDataSourceBuilder`, Portal-compatible output) | **owned** (folded in) |
 | `evm/fallback` | `EvmFallbackDataSourceBuilder` — the EVM binding of the fallback supervisor | **owned** (folded in) |
+| `evm/objects` | augmented EVM data model | re-export of `@subsquid/evm-objects` |
 | `fallback` | VM-agnostic fallback supervisor: drives the lowest-index healthy source of N | **owned** (folded in) |
 | `solana` | Solana stream | re-export of `@subsquid/solana-stream` |
 | `fuel` | Fuel stream | re-export of `@subsquid/fuel-stream` |
@@ -35,10 +51,14 @@ The root import (`@subsquid/squid-sdk`) is intentionally empty — use the subpa
 | `client/rpc` | JSON-RPC client | re-export of `@subsquid/rpc-client` |
 | `client/http` | HTTP client | re-export of `@subsquid/http-client` |
 | `logger` | logging | re-export of `@subsquid/logger` |
+| `processor` | batch-processor runner (`run`, `PrometheusServer`, `Database`) | re-export of `@subsquid/batch-processor` |
+| `store/typeorm` | TypeORM storage for mappings | re-export of `@subsquid/typeorm-store` |
 
 The `evm/rpc`, `evm/fallback`, and `fallback` subpaths are owned by this package (their standalone
 packages were folded in and removed). Everything else is a re-export of a package that is still
-published standalone — import it either way.
+published standalone — import it either way. `store/typeorm` re-exports `@subsquid/typeorm-store`,
+which needs `typeorm` and `@subsquid/big-decimal` as peers — install them in a squid that stores to a
+database.
 
 ## EVM fallback source
 
@@ -131,3 +151,13 @@ deliberate:
 
 Shipping both means `@subsquid/squid-sdk/<subpath>` type-checks regardless of a squid's
 `moduleResolution`. At runtime Node always honors `exports`.
+
+### Subpath autocomplete
+
+For nested subpaths (`evm/rpc`, `util/range`, …), classic resolution only surfaces a subpath's
+children in editor autocomplete when the parent is a real directory on disk — otherwise typing
+`@subsquid/squid-sdk/evm/` completes to nothing. So the build emits a small **directory redirect**
+per subpath: `evm/rpc/package.json` with `types`/`main` pointing back into `lib/`
+(`scripts/gen-subpath-stubs.cjs`, run after `tsc`). These are generated, git-ignored, and shipped via
+`files`; Node never consults them (it resolves via `exports`) — they exist only so editors can
+enumerate and complete the subpaths.
