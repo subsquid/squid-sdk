@@ -708,4 +708,35 @@ describe('Rpc Class Integration', () => {
         })
     })
 
+    describe('Hedera duplicated receipts', () => {
+        // eth_getBlockReceipts on hedera-mainnet returns a phantom duplicate receipt
+        // (tx 0xe305d66.. at index 12) not present in the block's tx list. The block's
+        // own cumulativeGasUsed still counts that dropped copy, so the cumulative-gas
+        // running-sum check can never hold once the duplicate is filtered — it must be
+        // skipped for hedera, otherwise the dump process crash-loops.
+        it('block 97395350: filters the phantom receipt without asserting on cumulativeGasUsed', async () => {
+            const fixtureBlock = loadBlock('hedera', 97395350)
+            const fixtureReceipts = loadReceipts('hedera', 97395350)
+            expect(fixtureBlock.transactions.length).toEqual(8)
+            expect(fixtureReceipts.length).toEqual(9) // includes the phantom duplicate
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0x127')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(97395350), true], fixtureBlock)
+            mockClient.setFixture('eth_getBlockReceipts', ['latest'], fixtureReceipts)
+            mockClient.setFixture('eth_getBlockReceipts', [toQty(97395350)], fixtureReceipts)
+
+            const rpc = new Rpc({ client: mockClient as any, checkCumulativeGasUsed: true })
+
+            const blocks = await rpc.getBlockBatch([97395350], { receipts: true, transactions: true })
+            expect(blocks).toHaveLength(1)
+
+            const block = blocks[0]
+            expect(block._isInvalid).toBeFalsy()
+            // phantom receipt (index 12) dropped — 8 receipts match 8 transactions
+            expect(block.receipts?.length).toEqual(8)
+            expect(block.receipts!.map(r => parseInt(r.transactionIndex, 16))).toEqual([0, 1, 2, 3, 7, 8, 9, 14])
+        })
+    })
+
 })

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "skip cumulativeGasUsed running-sum check on hedera-mainnet where filtered duplicate receipts make it unsatisfiable",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
