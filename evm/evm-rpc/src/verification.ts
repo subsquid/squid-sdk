@@ -342,7 +342,8 @@ function encodeTransaction(tx: Transaction): Buffer {
             BigInt(tx.yParity ?? assertNotNull(tx.v, 'tx.v is missing')),
             BigInt(assertNotNull(tx.r, 'tx.r is missing')),
             BigInt(assertNotNull(tx.s, 'tx.s is missing')),
-            decodeHex(assertNotNull(tx.nonceKey, 'tx.nonceKey is missing')),
+            // nonceKey is a quantity (uint), not a byte string
+            BigInt(assertNotNull(tx.nonceKey, 'tx.nonceKey is missing')),
             BigInt(tx.timeoutTimestamp ?? 0),
         ])
         return Buffer.concat([Buffer.from([0x3f]), Buffer.from(payload)])
@@ -900,7 +901,8 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
             BigInt(assertNotNull(tx.value, 'tx.value is missing')),
             decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
             decodeAccessList(tx.accessList ?? []),
-            decodeHex(assertNotNull(tx.nonceKey, 'tx.nonceKey is missing')),
+            // nonceKey is a quantity (uint), not a byte string
+            BigInt(assertNotNull(tx.nonceKey, 'tx.nonceKey is missing')),
             BigInt(tx.timeoutTimestamp ?? 0),
         ])
         return Buffer.concat([Buffer.from([0x3f]), Buffer.from(payload)])
