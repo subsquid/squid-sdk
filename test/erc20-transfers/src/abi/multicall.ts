@@ -67,15 +67,20 @@ export class Multicall extends ContractBase {
         let [calls, pageSize] = this.makeCalls(args)
         if (calls.length === 0) return []
 
-        const pages = Array.from(splitArray(pageSize, calls))
-        const results = await Promise.all(
-            pages.map(async (page) => {
-                const {returnData} = await this.eth_call(aggregate, {calls: page})
-                return returnData.map((data, i) => page[i].func.decodeResult(data))
-            }),
-        )
+        const promises: Promise<FunctionReturn<AnyFunc>[]>[] = []
+        for (let page of splitArray(pageSize, calls)) {
+            promises.push(
+                this.eth_call(aggregate, {calls: page}).then(({returnData}) => {
+                    return returnData.map((data, i) => page[i].func.decodeResult(data))
+                }),
+            )
+        }
 
-        return results.flat()
+        const result: FunctionReturn<AnyFunc>[] = []
+        for (let group of await Promise.all(promises)) {
+            result.push(...group)
+        }
+        return result
     }
 
     tryAggregate<TF extends AnyFunc>(
@@ -97,31 +102,36 @@ export class Multicall extends ContractBase {
         let [calls, pageSize] = this.makeCalls(args)
         if (calls.length === 0) return []
 
-        const pages = Array.from(splitArray(pageSize, calls))
-        const results = await Promise.all(
-            pages.map(async (page) => {
-                const response = await this.eth_call(tryAggregate, {
+        const promises: Promise<MulticallResult<AnyFunc>[]>[] = []
+        for (let page of splitArray(pageSize, calls)) {
+            promises.push(
+                this.eth_call(tryAggregate, {
                     requireSuccess: false,
                     calls: page,
-                })
-                return response.map((res, i) => {
-                    if (res.success) {
-                        try {
-                            return {
-                                success: true,
-                                value: page[i].func.decodeResult(res.returnData),
+                }).then((response) => {
+                    return response.map((res, i) => {
+                        if (res.success) {
+                            try {
+                                return {
+                                    success: true,
+                                    value: page[i].func.decodeResult(res.returnData),
+                                }
+                            } catch (err: any) {
+                                return {success: false, returnData: res.returnData}
                             }
-                        } catch (err: any) {
-                            return {success: false, returnData: res.returnData}
+                        } else {
+                            return {success: false}
                         }
-                    } else {
-                        return {success: false}
-                    }
-                })
-            }),
-        )
+                    })
+                }),
+            )
+        }
 
-        return results.flat()
+        const result: MulticallResult<AnyFunc>[] = []
+        for (let group of await Promise.all(promises)) {
+            result.push(...group)
+        }
+        return result
     }
 
     private makeCalls(args: any[]): [calls: Call[], page: number] {
