@@ -134,12 +134,16 @@ function* mapDebugFrame(
                 break
             }
             case 'SELFDESTRUCT': {
+                if (frame.to == null) {
+                    console.warn('found degenerate selfdestruct frame', JSON.stringify(frame))
+                    assert(frame.from == '0x0000000000000000000000000000000000000000')
+                }
                 trace = {
                     ...base,
                     type: 'selfdestruct',
                     action: {
                         address: frame.from.toLowerCase(),
-                        refundAddress: assertNotNull(frame.to).toLowerCase(),
+                        refundAddress: frame.to ? frame.to.toLowerCase() : undefined,
                         balance: frame.value ?? undefined
                     }
                 }

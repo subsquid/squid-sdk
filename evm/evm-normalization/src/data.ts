@@ -274,7 +274,7 @@ export interface TraceRewardAction {
 
 export interface TraceSelfdestructAction {
     address: Bytes20
-    refundAddress: Bytes20
+    refundAddress?: Bytes20
     balance?: Qty
 }
 
