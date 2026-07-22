@@ -528,7 +528,7 @@ export class Rpc {
         // Group all txs by (sender, nonce) so we can detect multi-tx-per-nonce cases.
         let txsBySenderNonce = new Map<string, Transaction[]>()
         for (let tx of transactions) {
-            let key = `${tx.from}:${qty2Int(tx.nonce)}`
+            let key = `${tx.from}:${qty2Int(assertNotNull(tx.nonce, 'tx.nonce is missing'))}`
             let list = txsBySenderNonce.get(key)
             if (list == null) {
                 list = []
@@ -540,7 +540,7 @@ export class Rpc {
         let phantomHashes = new Set<string>()
         for (let candidate of candidates) {
             let nonceAfter = nonceAfterBySender.get(candidate.from)!
-            let txNonce = qty2Int(candidate.nonce)
+            let txNonce = qty2Int(assertNotNull(candidate.nonce, 'tx.nonce is missing'))
 
             if (txNonce >= nonceAfter) {
                 // Nonce not consumed at this block — definitely phantom.

@@ -169,7 +169,7 @@ function encodeTransaction(tx: Transaction): Buffer {
     if (tx.type == '0x0') {
         return Buffer.from(
             RLP.encode([
-                BigInt(tx.nonce),
+                BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
                 BigInt(assertNotNull(tx.gasPrice, 'tx.gasPrice is missing')),
                 BigInt(tx.gas),
                 tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
@@ -183,7 +183,7 @@ function encodeTransaction(tx: Transaction): Buffer {
     } else if (tx.type == '0x1') {
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             BigInt(assertNotNull(tx.gasPrice, 'tx.gasPrice is missing')),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
@@ -198,7 +198,7 @@ function encodeTransaction(tx: Transaction): Buffer {
     } else if (tx.type == '0x2') {
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
@@ -215,7 +215,7 @@ function encodeTransaction(tx: Transaction): Buffer {
         // https://eips.ethereum.org/EIPS/eip-4844
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
@@ -234,7 +234,7 @@ function encodeTransaction(tx: Transaction): Buffer {
         // https://eips.ethereum.org/EIPS/eip-7702
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
@@ -263,7 +263,7 @@ function encodeTransaction(tx: Transaction): Buffer {
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
             decodeHex(tx.from),
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
@@ -288,7 +288,7 @@ function encodeTransaction(tx: Transaction): Buffer {
         // https://github.com/OffchainLabs/go-ethereum/blob/7503143fd13f73e46a966ea2c42a058af96f7fcf/core/types/arb_types.go#L161
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             decodeHex(tx.from),
             BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
@@ -331,7 +331,7 @@ function encodeTransaction(tx: Transaction): Buffer {
         // EIP-1559 base fields + nonceKey and timeoutTimestamp appended after the signature
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
@@ -584,7 +584,7 @@ function encodeTempoTransactionFields(tx: Transaction): any[] {
         assertNotNull(tx.calls, 'tx.calls is missing for 0x76 tx').map(encodeTempoCall),
         decodeAccessList(tx.accessList ?? []),
         BigInt(assertNotNull(tx.nonceKey, 'tx.nonceKey is missing for 0x76 tx')),
-        BigInt(tx.nonce),
+        BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
         // valid_before: u64 when present, 0x80 (empty string) when null
         tx.validBefore != null ? BigInt(tx.validBefore) : Buffer.alloc(0),
         // valid_after: u64 when present, 0x80 (empty string) when null
@@ -636,7 +636,7 @@ function encodeTempoTransactionFieldsForSigning(tx: Transaction): any[] {
         assertNotNull(tx.calls, 'tx.calls is missing for 0x76 tx').map(encodeTempoCall),
         decodeAccessList(tx.accessList ?? []),
         BigInt(assertNotNull(tx.nonceKey, 'tx.nonceKey is missing for 0x76 tx')),
-        BigInt(tx.nonce),
+        BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
         tx.validBefore != null ? BigInt(tx.validBefore) : Buffer.alloc(0),
         tx.validAfter != null ? BigInt(tx.validAfter) : Buffer.alloc(0),
         // fee_token: skipped when fee_payer_signature is present
@@ -803,7 +803,7 @@ export function isBloomSuperset(superset: string, subset: string): boolean {
 function serializeTransaction(tx: Transaction): Uint8Array | undefined {
     if (tx.type == '0x0') {
         let fields = [
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
@@ -820,7 +820,7 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
     } else if (tx.type == '0x1') {
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             BigInt(tx.gasPrice ?? 0),
             BigInt(tx.gas),
             tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
@@ -832,7 +832,7 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
     } else if (tx.type == '0x2') {
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
@@ -845,7 +845,7 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
     } else if (tx.type == '0x3') {
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
@@ -860,7 +860,7 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
     } else if (tx.type == '0x4') {
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
@@ -893,7 +893,7 @@ function serializeTransaction(tx: Transaction): Uint8Array | undefined {
         // Stable v1.4.0 custom transaction type — signing payload (no signature)
         let payload = RLP.encode([
             BigInt(assertNotNull(tx.chainId, 'tx.chainId is missing')),
-            BigInt(tx.nonce),
+            BigInt(assertNotNull(tx.nonce, 'tx.nonce is missing')),
             BigInt(assertNotNull(tx.maxPriorityFeePerGas, 'tx.maxPriorityFeePerGas is missing')),
             BigInt(assertNotNull(tx.maxFeePerGas, 'tx.maxFeePerGas is missing')),
             BigInt(tx.gas),
