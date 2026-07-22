@@ -555,7 +555,7 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
     return {
         transactionIndex: qty2Int(src.transactionIndex),
         hash: src.hash,
-        nonce: qty2Int(src.nonce),
+        nonce: src.nonce != null ? qty2Int(src.nonce) : undefined,
         from: src.from.toLowerCase(),
         to: src.to ? src.to.toLowerCase() : undefined,
         input: src.input ?? undefined,
