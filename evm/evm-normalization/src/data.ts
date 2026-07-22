@@ -172,7 +172,8 @@ export interface TempoFeePayerSignature {
 export interface Transaction {
     transactionIndex: number,
     hash: Bytes32,
-    nonce: number,
+    // Optional: Optimism deposit transactions (type 0x7e) omit nonce entirely
+    nonce?: number,
     from: Bytes20,
     to?: Bytes20,
     // Optional for Tempo 0x76 transactions which use batched `calls` instead of `input`

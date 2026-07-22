@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-normalization",
+      "comment": "tolerate Optimism deposit transactions (type 0x7e) that omit the nonce field: normalized Transaction.nonce is now optional",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-normalization"
+}
