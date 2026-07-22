@@ -674,8 +674,10 @@ export function getTraceTransactionReplayValidator(tracers: TraceReplayTraces): 
     return object({
         transactionHash: option(BYTES),
         ...project(tracers, {
-            trace: array(TraceFrame),
-            stateDiff: record(BYTES, TraceStateDiff)
+            // Nullable: a provider may return null for an individual tx's trace or
+            // stateDiff. Tolerated here and flagged for retry in addTraceTxReplays.
+            trace: nullable(array(TraceFrame)),
+            stateDiff: nullable(record(BYTES, TraceStateDiff))
         })
     }) as unknown as Validator<TraceTransactionReplay>
 }

@@ -1177,6 +1177,14 @@ export class Rpc {
             let txs = new Set(block.block.transactions.map(getTxHash))
 
             for (let rep of replays) {
+                // A provider may return null for an individual tx's trace or
+                // stateDiff. Flag the block for retry instead of crashing ingestion.
+                if ((traces.trace && rep.trace == null) || (traces.stateDiff && rep.stateDiff == null)) {
+                    block._isInvalid = true
+                    block._errorMessage = 'missing trace or stateDiff for some transactions'
+                    break
+                }
+
                 if (!rep.transactionHash) {
                     let txHash: Bytes32 | null | undefined = undefined
                     for (let frame of rep.trace || []) {
@@ -1192,6 +1200,7 @@ export class Rpc {
                     block._errorMessage = 'trace_replayBlockTransactions returned a trace of a different block'
                 }
             }
+            if (block._isInvalid) continue
 
             block.traceReplays = replays
         }
