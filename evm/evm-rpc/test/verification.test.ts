@@ -74,7 +74,13 @@ describe('Verification Functions', () => {
                 })
             }
 
-            it('withdrawalsRoot verification', async () => {
+            it.skipIf(
+                // OP-stack repurposes the withdrawalsRoot header field (post-Canyon it holds
+                // the L2ToL1MessagePasser storage root, not the withdrawals-list MPT root),
+                // so it cannot be reconstructed from the (empty) withdrawals list. The ingester
+                // does not verify withdrawals-root for these chains either.
+                fixture.chain === 'optimism'
+            )('withdrawalsRoot verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 if (block.withdrawalsRoot == null) return
 
