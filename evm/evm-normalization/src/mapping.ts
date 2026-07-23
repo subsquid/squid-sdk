@@ -139,7 +139,9 @@ function* mapDebugFrame(
                     type: 'selfdestruct',
                     action: {
                         address: frame.from.toLowerCase(),
-                        refundAddress: assertNotNull(frame.to).toLowerCase(),
+                        // callTracer omits `to` on a self-referential SELFDESTRUCT;
+                        // the beneficiary is then the account itself.
+                        refundAddress: (frame.to ?? frame.from).toLowerCase(),
                         balance: frame.value ?? undefined
                     }
                 }

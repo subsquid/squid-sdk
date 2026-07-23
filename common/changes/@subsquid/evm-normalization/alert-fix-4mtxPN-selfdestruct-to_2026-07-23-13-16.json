@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-normalization",
+      "comment": "Tolerate SELFDESTRUCT debug frames that omit `to` by falling back to the self-destructing account",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-normalization"
+}
