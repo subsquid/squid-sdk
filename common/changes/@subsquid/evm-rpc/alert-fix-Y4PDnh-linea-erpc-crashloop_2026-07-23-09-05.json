@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "Retry eRPC ErrUpstreamsExhausted / ErrFailsafeRetryExceeded responses instead of crashing on the misnormalized JSON-RPC error",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
