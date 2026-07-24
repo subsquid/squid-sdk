@@ -383,7 +383,7 @@ export const TraceActionCreate = object({
     from: BYTES,
     value: QTY,
     gas: QTY,
-    init: BYTES,
+    init: option(BYTES),
     creation_method: option(oneOf({
         create: constant('create'),
         create2: constant('create2')

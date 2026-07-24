@@ -237,7 +237,7 @@ export interface TraceCreateAction {
     from: Bytes20,
     value?: Qty,
     gas: Qty,
-    init: Bytes,
+    init?: Bytes,
     creationMethod?: 'create' | 'create2'
 }
 

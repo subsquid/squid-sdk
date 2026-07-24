@@ -306,15 +306,6 @@ function* mapReplayStateDiff(
 
 
 function mapAction(action: rpc.TraceActionCreate | rpc.TraceActionCall | rpc.TraceActionReward | rpc.TraceActionSelfdestruct): TraceCreateAction | TraceCallAction | TraceRewardAction | TraceSelfdestructAction {
-    if ('init' in action) {
-        return {
-            from: action.from.toLowerCase(),
-            value: action.value,
-            gas: action.gas,
-            init: action.init,
-            creationMethod: action.creation_method ?? undefined
-        }
-    }
     if ('callType' in action) {
         return {
             from: action.from.toLowerCase(),
@@ -332,10 +323,19 @@ function mapAction(action: rpc.TraceActionCreate | rpc.TraceActionCall | rpc.Tra
             rewardType: action.rewardType
         }
     }
+    if ('refundAddress' in action) {
+        return {
+            address: action.address.toLowerCase(),
+            refundAddress: action.refundAddress.toLowerCase(),
+            balance: action.balance
+        }
+    }
     return {
-        address: action.address.toLowerCase(),
-        refundAddress: action.refundAddress.toLowerCase(),
-        balance: action.balance
+        from: action.from.toLowerCase(),
+        value: action.value,
+        gas: action.gas,
+        init: action.init ?? undefined,
+        creationMethod: action.creation_method ?? undefined
     }
 }
 
