@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/hyperliquid-fills-data-service",
+      "comment": "reopen the gateway subscription when it keeps streaming stale blocks",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/hyperliquid-fills-data-service"
+}
