@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "validate debug call-frame mapper safety and add off, observe, and reject modes for semantic consistency checks",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}

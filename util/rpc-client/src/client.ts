@@ -115,6 +115,10 @@ interface Req {
 export class RpcClient {
     private counter = 0
     private queue = new Heap<Req>(byPriority)
+    /**
+     * Log- and metric-safe endpoint identifier. The transport keeps using the
+     * original URL supplied to the constructor.
+     */
     public readonly url: string
     private con: Connection
     private maxBatchCallSize: number
@@ -139,7 +143,7 @@ export class RpcClient {
     private closed = false
 
     constructor(options: RpcClientOptions) {
-        this.url = trimCredentials(options.url)
+        this.url = redactRpcUrl(options.url)
         this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false, options.headers)
         this.maxBatchCallSize = options.maxBatchCallSize ?? Number.MAX_SAFE_INTEGER
         this.capacity = this.maxCapacity = options.capacity || 10
@@ -149,7 +153,7 @@ export class RpcClient {
 
         this.log = options.log === null
             ? undefined
-            : options.log || createLogger('sqd:rpc-client', {rpcUrl: this.url})
+            : (options.log || createLogger('sqd:rpc-client')).child({rpcUrl: this.url})
 
         if (options.rateLimit) {
             assert(options.rateLimit > 0)
@@ -585,10 +589,23 @@ function getCallPriority(req: Req): number {
 }
 
 
-function trimCredentials(url: string): string {
+/**
+ * Remove credentials from an RPC endpoint before it is included in logs,
+ * metrics, or error context.
+ *
+ * The query and fragment are dropped because providers commonly put API keys
+ * there. Key-like path segments are masked while ordinary routing components
+ * remain visible so operators can still identify the endpoint.
+ */
+export function redactRpcUrl(url: string): string {
     let u = new URL(url)
     u.password = ''
     u.username = ''
+    u.search = ''
+    u.hash = ''
+    u.pathname = u.pathname
+        .replace(/sqd_[A-Za-z0-9]+/g, 'sqd_***')
+        .replace(/[A-Za-z0-9_-]{24,}/g, '***')
     return u.toString()
 }
 
@@ -606,5 +623,4 @@ function isExecutionTimeoutError(err: unknown): boolean {
 function isRequestTimedOutError(err: unknown): boolean {
     return err instanceof RpcError && /request.*timed out/i.test(err.message)
 }
-
 

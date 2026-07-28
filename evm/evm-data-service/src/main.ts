@@ -1,10 +1,17 @@
 import {createLogger} from '@subsquid/logger'
+import {CALL_FRAME_VALIDATION_MODES, type CallFrameValidationMode} from '@subsquid/evm-rpc'
 import {runProgram} from '@subsquid/util-internal'
 import {nat, positiveInt, positiveReal, Url} from '@subsquid/util-internal-commander'
-import {Block, BlockStream, DataSource, runDataService, StreamRequest} from '@subsquid/util-internal-data-service'
+import {
+    type Block,
+    type BlockStream,
+    type DataSource,
+    runDataService,
+    type StreamRequest
+} from '@subsquid/util-internal-data-service'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
-import {Command} from 'commander'
-import {DataSourceOptions} from './data-source/setup'
+import {Command, Option} from 'commander'
+import type {DataSourceOptions} from './data-source/setup'
 import {WorkerClient} from './data-source/worker-client'
 
 
@@ -36,6 +43,14 @@ runProgram(async () => {
     program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
     program.option('--verify-withdrawals-root', 'Verify block withdrawals against withdrawals root')
     program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
+    program.addOption(
+        new Option(
+            '--call-frame-validation <mode>',
+            'Validate semantic call-frame consistency; reject requires --verify-tx-root and --verify-tx-sender'
+        )
+            .choices([...CALL_FRAME_VALIDATION_MODES])
+            .default('off')
+    )
     program.option('--skip-log-index-check', 'Do not check log indices within a block are sequential')
     program.option('--skip-cumulative-gas-used-check', 'Do not check cumulativeGasUsed consistency across transactions')
     program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
@@ -65,10 +80,17 @@ runProgram(async () => {
         verifyReceiptsRoot?: boolean
         verifyWithdrawalsRoot?: boolean
         verifyLogsBloom?: boolean
+        callFrameValidation: CallFrameValidationMode
         skipLogIndexCheck?: boolean
         skipCumulativeGasUsedCheck?: boolean
         useGasUsedForReceiptsRoot?: boolean
         autoAdjustFinalizedHead?: boolean
+    }
+
+    // Rpc enforces this too, but it is constructed in a worker - catch it here so a
+    // misconfiguration is a CLI error rather than a worker crash.
+    if (args.callFrameValidation === 'reject' && !(args.verifyTxRoot && args.verifyTxSender)) {
+        program.error('--call-frame-validation reject requires --verify-tx-root and --verify-tx-sender')
     }
 
     let dataSourceOptions: DataSourceOptions = {
@@ -91,6 +113,7 @@ runProgram(async () => {
         verifyReceiptsRoot: args.verifyReceiptsRoot,
         verifyWithdrawalsRoot: args.verifyWithdrawalsRoot,
         verifyLogsBloom: args.verifyLogsBloom,
+        callFrameValidation: args.callFrameValidation,
         skipLogIndexCheck: args.skipLogIndexCheck,
         skipCumulativeGasUsedCheck: args.skipCumulativeGasUsedCheck,
         useGasUsedForReceiptsRoot: args.useGasUsedForReceiptsRoot

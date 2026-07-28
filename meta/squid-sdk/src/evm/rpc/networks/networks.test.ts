@@ -5,8 +5,8 @@ import {getNetworkPreset, KNOWN_NETWORKS, NETWORK_PRESETS, resolveNetworkSetting
 
 /**
  * Golden tests: each assertion encodes the documented infra deploy config for that network
- * (`infra/.../evm-hotblocks/networks/<net>`), so a drift between a preset and the dataset's real
- * config fails here. (plan §5 S5)
+ * (`infra/.../evm-hotblocks/networks/<net>`) plus non-rejecting SDK safety observations, so a
+ * drift between a preset and the dataset's behavior fails here. (plan §5 S5)
  */
 describe('network presets — match the infra deploy config', () => {
     it('ethereum-mainnet: full validation, default trace/diff methods', () => {
@@ -18,6 +18,7 @@ describe('network presets — match the infra deploy config', () => {
             verifyTxRoot: true,
             verifyReceiptsRoot: true,
             verifyLogsBloom: true,
+            callFrameValidation: 'observe',
         })
         expect(p.method).toEqual({})
     })
@@ -27,6 +28,7 @@ describe('network presets — match the infra deploy config', () => {
             const p = getNetworkPreset(slug)!
             expect(p.method).toEqual({useDebugApiForStateDiffs: true})
             expect(p.rpc?.verifyTxSender).toBe(true)
+            expect(p.rpc?.callFrameValidation).toBe('observe')
         }
     })
 
@@ -34,6 +36,7 @@ describe('network presets — match the infra deploy config', () => {
         const p = getNetworkPreset(42161)!
         expect(p.slug).toBe('arbitrum-one')
         expect(p.rpc?.verifyTxSender).toBe(true)
+        expect(p.rpc?.callFrameValidation).toBe('observe')
         expect(p.method).toEqual({})
     })
 
@@ -70,11 +73,16 @@ describe('resolveNetworkSettings', () => {
 
     it('overlays explicit overrides on the preset', () => {
         const s = resolveNetworkSettings('polygon-mainnet', {
-            rpc: {verifyTxSender: true, finalityConfirmation: 256},
+            rpc: {
+                verifyTxSender: true,
+                finalityConfirmation: 256,
+                callFrameValidation: 'off',
+            },
             method: {useTraceApi: true},
         })
         expect(s.rpc.verifyTxSender).toBe(true) // override wins
         expect(s.rpc.finalityConfirmation).toBe(256)
+        expect(s.rpc.callFrameValidation).toBe('off')
         expect(s.rpc.verifyBlockHash).toBe(true) // from preset
         expect(s.method).toEqual({useTraceApi: true})
     })

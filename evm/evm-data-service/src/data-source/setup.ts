@@ -1,5 +1,5 @@
-import {Rpc, EvmRpcDataSource, EvmRpcClient} from '@subsquid/evm-rpc'
-import {Block, DataSource} from '@subsquid/util-internal-data-service'
+import {type CallFrameValidationMode, Rpc, EvmRpcDataSource, EvmRpcClient} from '@subsquid/evm-rpc'
+import type {Block, DataSource} from '@subsquid/util-internal-data-service'
 import {createLogger} from '@subsquid/logger'
 import {Mapping} from './mapping'
 
@@ -28,6 +28,7 @@ export interface DataSourceOptions {
     verifyReceiptsRoot?: boolean
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
+    callFrameValidation?: CallFrameValidationMode
     skipLogIndexCheck?: boolean
     skipCumulativeGasUsedCheck?: boolean
     useGasUsedForReceiptsRoot?: boolean
@@ -54,6 +55,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         verifyReceiptsRoot: options.verifyReceiptsRoot,
         verifyWithdrawalsRoot: options.verifyWithdrawalsRoot,
         verifyLogsBloom: options.verifyLogsBloom,
+        callFrameValidation: options.callFrameValidation,
         checkLogIndex: !options.skipLogIndexCheck,
         checkCumulativeGasUsed: !options.skipCumulativeGasUsedCheck,
         useGasUsedForReceiptsRoot: options.useGasUsedForReceiptsRoot

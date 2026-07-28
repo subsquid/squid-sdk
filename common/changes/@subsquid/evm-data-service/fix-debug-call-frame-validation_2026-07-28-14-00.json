@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-data-service",
+      "comment": "add a call-frame validation mode option for EVM data-service ingestion",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-data-service"
+}

@@ -27,10 +27,30 @@ import { Block, DataRequest, Qty, Bytes, Bytes32 } from './types'
 import { qty2Int, toQty, getTxHash } from './util'
 import { ChainUtils } from './chain-utils'
 import { EvmRpcClient } from './rpc-client'
-import { isBloomSuperset, logsBloom } from './verification'
+import {
+    checkCallFrameTree,
+    checkDebugFrameStructure,
+    isBloomSuperset,
+    logsBloom
+} from './verification'
 
 
 export type Commitment = 'finalized' | 'latest'
+export const CALL_FRAME_VALIDATION_MODES = ['off', 'observe', 'reject'] as const
+const CALL_FRAME_VIOLATION_SAMPLE_LIMIT = 3
+
+/**
+ * Controls semantic call-frame consistency checks. Structural requirements needed
+ * by normalization are enforced independently in every mode.
+ */
+export type CallFrameValidationMode = (typeof CALL_FRAME_VALIDATION_MODES)[number]
+
+
+interface CallFrameViolationSample {
+    transactionIndex: number
+    transactionHash: Bytes32
+    violation: string
+}
 
 
 export interface RpcOptions {
@@ -42,6 +62,12 @@ export interface RpcOptions {
     verifyReceiptsRoot?: boolean
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
+    /**
+     * `off` skips semantic checks, `observe` logs one bounded violation summary
+     * per block while accepting it, and `reject` marks violations invalid.
+     * `reject` requires transaction root and sender verification.
+     */
+    callFrameValidation?: CallFrameValidationMode
     checkLogIndex?: boolean
     checkCumulativeGasUsed?: boolean
     useGasUsedForReceiptsRoot?: boolean
@@ -57,6 +83,7 @@ export class Rpc {
     private verifyReceiptsRoot?: boolean
     private verifyWithdrawalsRoot?: boolean
     private verifyLogsBloom?: boolean
+    private callFrameValidation: CallFrameValidationMode
     private checkLogIndex?: boolean
     private checkCumulativeGasUsed?: boolean
     private useGasUsedForReceiptsRoot?: boolean
@@ -73,6 +100,15 @@ export class Rpc {
         this.verifyReceiptsRoot = options.verifyReceiptsRoot
         this.verifyWithdrawalsRoot = options.verifyWithdrawalsRoot
         this.verifyLogsBloom = options.verifyLogsBloom
+        this.callFrameValidation = options.callFrameValidation ?? 'off'
+        if (!CALL_FRAME_VALIDATION_MODES.includes(this.callFrameValidation)) {
+            throw new Error(`unsupported callFrameValidation mode: ${this.callFrameValidation}`)
+        }
+        if (this.callFrameValidation === 'reject' && (!options.verifyTxRoot || !options.verifyTxSender)) {
+            throw new Error(
+                "callFrameValidation 'reject' requires verifyTxRoot and verifyTxSender"
+            )
+        }
         this.checkLogIndex = options.checkLogIndex
         this.checkCumulativeGasUsed = options.checkCumulativeGasUsed
         this.useGasUsedForReceiptsRoot = options.useGasUsedForReceiptsRoot
@@ -126,7 +162,16 @@ export class Rpc {
     }
 
     async getBlockBatch(numbers: number[], req?: DataRequest): Promise<Block[]> {
-        let blocks = await this.getBlocks(numbers, req?.transactions ?? false)
+        let transactionsRequested = req?.transactions ?? false
+        // Semantic checks need the sender and target from full transaction
+        // objects. Fetch those details internally even when the caller only
+        // requested transaction hashes, then restore the requested shape.
+        let needsTransactionsForCallFrameValidation =
+            !!req?.traces &&
+            !req.useTraceApi &&
+            this.callFrameValidation !== 'off'
+        let withTransactions = transactionsRequested || needsTransactionsForCallFrameValidation
+        let blocks = await this.getBlocks(numbers, withTransactions)
 
         let chain: Block[] = []
 
@@ -138,6 +183,12 @@ export class Rpc {
         }
 
         await this.addRequestedData(chain, req)
+
+        if (!transactionsRequested && withTransactions) {
+            for (let block of chain) {
+                block.block.transactions = block.block.transactions.map(getTxHash)
+            }
+        }
 
         return chain
     }
@@ -1114,6 +1165,85 @@ export class Rpc {
             } else {
                 block.debugFrames = this.matchDebugTrace('debug call frame', block, frames, utils)
             }
+            this.validateDebugFrames(block)
+        }
+    }
+
+    private validateDebugFrames(block: Block): void {
+        if (block._isInvalid || block.debugFrames == null) return
+
+        let violatingTransactionCount = 0
+        let violationSamples: CallFrameViolationSample[] = []
+
+        for (let i = 0; i < block.debugFrames.length; i++) {
+            let frame = block.debugFrames[i]
+            let tx = block.block.transactions[i]
+            if (frame == null || tx == null) continue
+
+            let transactionHash = getTxHash(tx)
+
+            if (frame.txHash != null && frame.txHash.toLowerCase() !== transactionHash.toLowerCase()) {
+                block._isInvalid = true
+                block._errorMessage =
+                    `invalid debug call frames for transaction ${transactionHash}: ` +
+                    `response is labelled with transaction ${frame.txHash}`
+                return
+            }
+
+            let structuralViolation = checkDebugFrameStructure(frame.result)
+            if (structuralViolation) {
+                block._isInvalid = true
+                block._errorMessage =
+                    `invalid debug call frames for transaction ${transactionHash}: ${structuralViolation}`
+                return
+            }
+
+            if (this.callFrameValidation === 'off') continue
+
+            if (typeof tx === 'string') {
+                block._isInvalid = true
+                let context = `cannot validate debug call frames for transaction ${transactionHash}`
+                block._errorMessage = `${context}: full transaction details are missing`
+                return
+            }
+
+            let violation = checkCallFrameTree(tx, frame.result)
+            if (violation === undefined) continue
+
+            if (this.callFrameValidation === 'observe') {
+                violatingTransactionCount += 1
+                if (violationSamples.length < CALL_FRAME_VIOLATION_SAMPLE_LIMIT) {
+                    violationSamples.push({
+                        transactionIndex: i,
+                        transactionHash,
+                        violation
+                    })
+                }
+            } else {
+                // Rejection keeps an unsafe response out of the archive and lets the
+                // existing retry/fallback path ask another upstream.
+                block._isInvalid = true
+                block._errorMessage =
+                    `invalid debug call frames for transaction ${transactionHash}: ${violation}`
+                return
+            }
+        }
+
+        if (violatingTransactionCount > 0) {
+            let transactionLabel = violatingTransactionCount === 1 ? 'transaction' : 'transactions'
+            let transactionSummary = `${violatingTransactionCount} ${transactionLabel}`
+            this.log.warn(
+                {
+                    rpcEndpoint: this.client.url,
+                    blockNumber: block.number,
+                    blockHash: block.hash,
+                    callFrameValidation: this.callFrameValidation,
+                    violatingTransactionCount,
+                    violationSamples,
+                    omittedViolationCount: violatingTransactionCount - violationSamples.length
+                },
+                `debug call frame consistency violations observed in ${transactionSummary}; block accepted`
+            )
         }
     }
 

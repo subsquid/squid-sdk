@@ -17,6 +17,7 @@ const CHAIN_IDS: Record<string, string> = {
     stable: '0x3dc',
     'stable-testnet': '0x899',
     'bittensor-testnet': '0x3b1',
+    'ethereum-sepolia': '0xaa36a7',
 }
 
 
@@ -70,6 +71,20 @@ export function loadAllReceipts(chain: string, blockNumber: number): Receipt[] {
         }
     }
     return receipts
+}
+
+
+/**
+ * Loads a captured `debug_traceBlockByNumber` response. `variant` selects between
+ * responses to the same call from different providers.
+ */
+export function loadDebugFrames(chain: string, blockNumber: number, variant?: string): any[] {
+    const name = variant ? `debug-frames.${variant}.json` : 'debug-frames.json'
+    const path = Path.join(FIXTURES_DIR, chain, blockNumber.toString(), name)
+    if (!fs.existsSync(path)) {
+        throw new Error(`Fixture not found: ${path}`)
+    }
+    return JSON.parse(fs.readFileSync(path, 'utf-8'))
 }
 
 

@@ -1,3 +1,5 @@
+import {redactRpcUrl} from '@subsquid/rpc-client'
+
 /**
  * Strip credentials from a URL before it reaches a log line: drop userinfo, query string (where
  * `?apikey=…` lives) and the fragment (`#…`, which can carry a token too), and mask key-like path
@@ -11,15 +13,7 @@
 export function redactUrl(u?: string): string | undefined {
     if (!u) return undefined
     try {
-        let url = new URL(u)
-        url.username = ''
-        url.password = ''
-        url.search = ''
-        url.hash = ''
-        url.pathname = url.pathname
-            .replace(/sqd_[A-Za-z0-9]+/g, 'sqd_***')
-            .replace(/[A-Za-z0-9_-]{24,}/g, '***')
-        return url.toString()
+        return redactRpcUrl(u)
     } catch {
         return undefined
     }
