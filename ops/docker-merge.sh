@@ -11,7 +11,10 @@ pkg_name="$(node ops/pkg-name.js "$pkg_path")"
 pkg_version="$(node ops/pkg-version.js "$pkg_path")" || exit 1
 major=$(echo "$pkg_version" | cut -d '.' -f1) || exit 1
 
-git tag -a "${pkg_name}_v${pkg_version}" -m "${pkg_name} v${pkg_version}" --force
+# Annotated tags need a committer identity, which CI runners no longer ship with.
+git -c user.name="${GIT_AUTHOR_NAME:-squid-sdk-ci}" \
+    -c user.email="${GIT_AUTHOR_EMAIL:-ci@subsquid.io}" \
+    tag -a "${pkg_name}_v${pkg_version}" -m "${pkg_name} v${pkg_version}" --force
 
 digests_dir="/tmp/digests/$img"
 sources=$(printf "docker.io/subsquid/$img@sha256:%s " $(ls "$digests_dir"))
