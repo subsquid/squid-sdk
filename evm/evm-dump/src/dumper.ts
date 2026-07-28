@@ -1,7 +1,20 @@
-import {Rpc, EvmRpcDataSource, EvmRpcClient} from '@subsquid/evm-rpc'
-import {RawBlock, toRawBlock} from '@subsquid/evm-normalization'
+import {
+    CALL_FRAME_VALIDATION_MODES,
+    type CallFrameValidationMode,
+    Rpc,
+    EvmRpcDataSource,
+    EvmRpcClient
+} from '@subsquid/evm-rpc'
+import {type RawBlock, toRawBlock} from '@subsquid/evm-normalization'
 import {def} from '@subsquid/util-internal'
-import {Command, Dumper, DumperOptions, Range, positiveInt} from '@subsquid/util-internal-dump-cli'
+import {
+    type Command,
+    Dumper,
+    type DumperOptions,
+    Option,
+    type Range,
+    positiveInt
+} from '@subsquid/util-internal-dump-cli'
 
 
 interface Options extends DumperOptions {
@@ -19,6 +32,7 @@ interface Options extends DumperOptions {
     verifyReceiptsRoot?: boolean
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
+    callFrameValidation?: CallFrameValidationMode
     skipLogIndexCheck?: boolean
     skipCumulativeGasUsedCheck?: boolean
     useGasUsedForReceiptsRoot?: boolean
@@ -42,6 +56,14 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
         program.option('--verify-withdrawals-root', 'Verify block withdrawals against withdrawals root')
         program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
+        program.addOption(
+            new Option(
+                '--call-frame-validation <mode>',
+                'Validate semantic call-frame consistency; reject requires --verify-tx-root and --verify-tx-sender'
+            )
+                .choices([...CALL_FRAME_VALIDATION_MODES])
+                .default('off')
+        )
         program.option('--skip-log-index-check', 'Do not check log indices within a block are sequential')
         program.option('--skip-cumulative-gas-used-check', 'Do not check cumulativeGasUsed consistency across transactions')
         program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
@@ -86,6 +108,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 verifyReceiptsRoot: this.options().verifyReceiptsRoot,
                 verifyWithdrawalsRoot: this.options().verifyWithdrawalsRoot,
                 verifyLogsBloom: this.options().verifyLogsBloom,
+                callFrameValidation: this.options().callFrameValidation,
                 checkLogIndex: !this.options().skipLogIndexCheck,
                 checkCumulativeGasUsed: !this.options().skipCumulativeGasUsedCheck,
                 useGasUsedForReceiptsRoot: this.options().useGasUsedForReceiptsRoot,

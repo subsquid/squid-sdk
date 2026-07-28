@@ -1,4 +1,5 @@
-import {RpcMethodOptions} from '../source/data-source'
+import type {CallFrameValidationMode} from '@subsquid/evm-rpc'
+import type {RpcMethodOptions} from '../source/data-source'
 
 /**
  * Validation + finality settings (the per-chain deploy-config layer) passed to the
@@ -12,6 +13,7 @@ export interface RpcValidationOptions {
     verifyReceiptsRoot?: boolean
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
+    callFrameValidation?: CallFrameValidationMode
     checkLogIndex?: boolean
     checkCumulativeGasUsed?: boolean
     useGasUsedForReceiptsRoot?: boolean

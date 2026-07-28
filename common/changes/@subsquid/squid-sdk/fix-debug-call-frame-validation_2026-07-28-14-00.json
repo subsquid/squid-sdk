@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "comment": "expose call-frame validation modes and shadow-observe consistency violations in standard EVM network presets",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/squid-sdk"
+}

@@ -1,6 +1,6 @@
 import * as rpc from '@subsquid/evm-rpc'
 import {qty2Int, toQty, getTxHash, Bytes, Bytes20, Bytes32} from '@subsquid/evm-rpc'
-import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
+import {addErrorContext, assertNotNull, ensureError, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     Block,
@@ -60,96 +60,125 @@ function* mapDebugFrame(
         return
     }
 
-    for (let {traceAddress, subtraces, frame} of traverseDebugFrame(debugFrameResult.result, [])) {
-        let base = {
-            transactionIndex,
-            traceAddress,
-            subtraces,
-            error: frame.error ?? undefined,
-            revertReason: frame.revertReason ?? undefined,
-        }
-        let trace: Trace
-
-        switch(frame.type) {
-            case 'CREATE':
-            case 'create':
-            case 'CREATE2': {
-                trace = {
-                    ...base,
-                    type: 'create',
-                    action: {
-                        from: frame.from.toLowerCase(),
-                        value: frame.value ?? undefined,
-                        gas: frame.gas,
-                        init: assertNotNull(frame.input),
-                    },
-                }
-
-                let result: Partial<TraceCreateResult> = {}
-                if (frame.gasUsed) {
-                    result.gasUsed = frame.gasUsed
-                }
-                if (frame.output) {
-                    result.code = frame.output
-                }
-                if (frame.to) {
-                    result.address = frame.to.toLowerCase()
-                }
-                if (!isEmpty(result)) {
-                    assertNotNull(result.gasUsed)
-                    trace.result = result as TraceCreateResult
-                }
-                break
-            }
-            case 'CALL':
-            case 'call':
-            case 'CALLCODE':
-            case 'DELEGATECALL':
-            case 'delegateCall':
-            case 'STATICCALL':
-            case 'INVALID': {
-                trace = {
-                    ...base,
-                    type: 'call',
-                    action: {
-                        callType: frame.type.toLowerCase(),
-                        from: frame.from.toLowerCase(),
-                        to: assertNotNull(frame.to).toLowerCase(),
-                        value: frame.value ?? undefined,
-                        gas: frame.gas,
-                        input: assertNotNull(frame.input),
-                    }
-                }
-
-                let result: Partial<TraceCallResult> = {}
-                if (frame.gasUsed) {
-                    result.gasUsed = frame.gasUsed
-                }
-                if (frame.output) {
-                    result.output = frame.output
-                }
-                if (!isEmpty(result)) {
-                    trace.result = result
-                }
-                break
-            }
-            case 'SELFDESTRUCT': {
-                trace = {
-                    ...base,
-                    type: 'selfdestruct',
-                    action: {
-                        address: frame.from.toLowerCase(),
-                        refundAddress: assertNotNull(frame.to).toLowerCase(),
-                        balance: frame.value ?? undefined
-                    }
-                }
-                break
-            }
-            default:
-                throw unexpectedCase(frame.type)
-        }
-        yield trace
+    for (let node of traverseDebugFrame(debugFrameResult.result, [])) {
+        yield mapDebugFrameNode(transactionIndex, node)
     }
+}
+
+
+// Providers do return structurally valid but semantically broken frames, and a single
+// one of them aborts the whole block. The assertions below name neither the transaction
+// nor the frame, so locating the culprit in a 900-frame block means re-fetching the
+// trace by hand - annotate the failure instead.
+function mapDebugFrameNode(
+    transactionIndex: number,
+    node: {traceAddress: number[]; subtraces: number; frame: rpc.DebugFrame}
+): Trace {
+    try {
+        return buildDebugFrameTrace(transactionIndex, node)
+    } catch(err: any) {
+        throw addErrorContext(ensureError(err), {
+            transactionIndex,
+            traceAddress: node.traceAddress,
+            frameType: node.frame.type
+        })
+    }
+}
+
+
+function buildDebugFrameTrace(
+    transactionIndex: number,
+    node: {traceAddress: number[]; subtraces: number; frame: rpc.DebugFrame}
+): Trace {
+    let {traceAddress, subtraces, frame} = node
+    let base = {
+        transactionIndex,
+        traceAddress,
+        subtraces,
+        error: frame.error ?? undefined,
+        revertReason: frame.revertReason ?? undefined,
+    }
+    let trace: Trace
+
+    switch(frame.type) {
+        case 'CREATE':
+        case 'create':
+        case 'CREATE2': {
+            trace = {
+                ...base,
+                type: 'create',
+                action: {
+                    from: frame.from.toLowerCase(),
+                    value: frame.value ?? undefined,
+                    gas: frame.gas,
+                    init: assertNotNull(frame.input),
+                },
+            }
+
+            let result: Partial<TraceCreateResult> = {}
+            if (frame.gasUsed) {
+                result.gasUsed = frame.gasUsed
+            }
+            if (frame.output) {
+                result.code = frame.output
+            }
+            if (frame.to) {
+                result.address = frame.to.toLowerCase()
+            }
+            if (!isEmpty(result)) {
+                assertNotNull(result.gasUsed)
+                trace.result = result as TraceCreateResult
+            }
+            break
+        }
+        case 'CALL':
+        case 'call':
+        case 'CALLCODE':
+        case 'DELEGATECALL':
+        case 'delegateCall':
+        case 'STATICCALL':
+        case 'INVALID': {
+            trace = {
+                ...base,
+                type: 'call',
+                action: {
+                    callType: frame.type.toLowerCase(),
+                    from: frame.from.toLowerCase(),
+                    to: assertNotNull(frame.to).toLowerCase(),
+                    value: frame.value ?? undefined,
+                    gas: frame.gas,
+                    input: assertNotNull(frame.input),
+                }
+            }
+
+            let result: Partial<TraceCallResult> = {}
+            if (frame.gasUsed) {
+                result.gasUsed = frame.gasUsed
+            }
+            if (frame.output) {
+                result.output = frame.output
+            }
+            if (!isEmpty(result)) {
+                trace.result = result
+            }
+            break
+        }
+        case 'SELFDESTRUCT': {
+            trace = {
+                ...base,
+                type: 'selfdestruct',
+                action: {
+                    address: frame.from.toLowerCase(),
+                    refundAddress: assertNotNull(frame.to).toLowerCase(),
+                    balance: frame.value ?? undefined
+                }
+            }
+            break
+        }
+        default:
+            throw unexpectedCase(frame.type)
+    }
+    return trace
 }
 
 

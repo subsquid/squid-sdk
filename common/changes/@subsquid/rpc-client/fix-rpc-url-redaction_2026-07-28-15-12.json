@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "redact credentials from RPC endpoint metadata and expose a shared endpoint-redaction helper",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}

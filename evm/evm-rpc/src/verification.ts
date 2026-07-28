@@ -1036,3 +1036,211 @@ export async function withdrawalsRoot(withdrawals: Withdrawal[]) {
 
     return toHex(trie.root())
 }
+
+
+const CALL_FRAME_TYPES = new Set([
+    'CALL', 'call',
+    'CALLCODE',
+    'DELEGATECALL', 'delegateCall',
+    'STATICCALL',
+    'INVALID'
+])
+
+// INVALID is a top-level execution outcome, not a nested-only call kind: unlike
+// DELEGATECALL/STATICCALL/CALLCODE it can legitimately appear as a root frame.
+const ROOT_CALL_FRAME_TYPES = new Set(['CALL', 'call', 'INVALID'])
+const CREATE_FRAME_TYPES = new Set([
+    'CREATE', 'create',
+    'CREATE2'
+])
+const SELFDESTRUCT_FRAME_TYPES = new Set(['SELFDESTRUCT'])
+const MAPPABLE_FRAME_TYPES = new Set([
+    ...CALL_FRAME_TYPES,
+    ...CREATE_FRAME_TYPES,
+    ...SELFDESTRUCT_FRAME_TYPES
+])
+
+
+export interface CallFrame {
+    type: string
+    from: Bytes20
+    to?: Bytes20 | null
+    input?: string | null
+    output?: string | null
+    gasUsed?: string | null
+    calls?: CallFrame[] | null
+}
+
+
+/**
+ * Checks the non-heuristic requirements needed to map every debug frame.
+ *
+ * These checks are safe to enforce for every network: accepting a violation would only
+ * defer the same failure to normalization, after the RPC response has been archived.
+ */
+export function checkDebugFrameStructure(root: CallFrame): string | undefined {
+    return checkFrameStructure(root, [])
+}
+
+
+function checkFrameStructure(frame: CallFrame, traceAddress: number[]): string | undefined {
+    let label = frameLabel(traceAddress)
+
+    // Normalization treats a root STOP result as an empty trace list. The same
+    // type nested in a tree has no mapper representation.
+    if (frame.type === 'STOP' && traceAddress.length === 0) {
+        if (frame.calls?.length) {
+            return 'root STOP frame has subcalls'
+        }
+        return
+    }
+
+    if (!MAPPABLE_FRAME_TYPES.has(frame.type)) {
+        return `${label} has unsupported type ${frame.type}`
+    }
+
+    if (!isAddress(frame.from)) {
+        return `${label} has invalid from address ${frame.from}`
+    }
+
+    if (frame.to != null && !isAddress(frame.to)) {
+        return `${label} has invalid to address ${frame.to}`
+    }
+
+    if (CALL_FRAME_TYPES.has(frame.type)) {
+        if (frame.to == null) {
+            return `${callFrameLabel(traceAddress)} has no target`
+        }
+        if (frame.input == null) {
+            return `${callFrameLabel(traceAddress)} has no input`
+        }
+    } else if (CREATE_FRAME_TYPES.has(frame.type)) {
+        if (frame.input == null) {
+            return `${createFrameLabel(traceAddress)} has no init code`
+        }
+        // Truthiness, not null-ness: the mapper builds the result from truthy fields
+        // and then asserts gasUsed, so `gasUsed: ''` would still abort normalization.
+        if ((frame.to || frame.output) && !frame.gasUsed) {
+            return `${createFrameLabel(traceAddress)} has a result but no gas used`
+        }
+    } else if (SELFDESTRUCT_FRAME_TYPES.has(frame.type) && frame.to == null) {
+        return `${selfdestructFrameLabel(traceAddress)} has no beneficiary`
+    }
+
+    let calls = frame.calls ?? []
+    for (let i = 0; i < calls.length; i++) {
+        let violation = checkFrameStructure(calls[i], [...traceAddress, i])
+        if (violation) return violation
+    }
+}
+
+
+/**
+ * Checks that a structurally mappable call tree is internally consistent and
+ * agrees with its transaction.
+ *
+ * Returns a description of the first violation, or `undefined` when the tree checks out.
+ *
+ * This is a semantic consistency check, not proof of trace correctness: debug traces
+ * have no consensus commitment, and a self-consistent but incorrect tree can still pass.
+ */
+export function checkCallFrameTree(
+    tx: {from: Bytes20; to?: Bytes20 | null},
+    root: CallFrame
+): string | undefined {
+    // A root STOP maps to an empty trace list, so there is nothing to agree with the
+    // transaction about. The structural check owns this shape.
+    if (root.type === 'STOP') return
+
+    if (!sameAddress(root.from, tx.from)) {
+        return `root frame is executed by ${root.from}, but the transaction is sent by ${tx.from}`
+    }
+
+    if (tx.to == null) {
+        if (!CREATE_FRAME_TYPES.has(root.type)) {
+            return `root frame has type ${root.type}, but the transaction creates a contract`
+        }
+    } else {
+        if (!ROOT_CALL_FRAME_TYPES.has(root.type)) {
+            return `root frame has type ${root.type}, but the transaction calls ${tx.to}`
+        }
+        if (!sameAddress(root.to, tx.to)) {
+            return `root frame calls ${root.to ?? 'nothing'}, but the transaction calls ${tx.to}`
+        }
+    }
+
+    return checkSubcalls(root, [])
+}
+
+
+function checkSubcalls(parent: CallFrame, traceAddress: number[]): string | undefined {
+    // DELEGATECALL and CALLCODE run the callee's code in the caller's context,
+    // so the executing address stays the same
+    let executor = isContextPreserving(parent.type) ? parent.from : parent.to
+    let calls = parent.calls || []
+
+    for (let i = 0; i < calls.length; i++) {
+        let call = calls[i]
+        let at = [...traceAddress, i]
+
+        if (executor != null && !sameAddress(call.from, executor)) {
+            return `frame ${at.join('/')} is executed by ${call.from}, but ${executor} is on top of the call stack`
+        }
+
+        if (SELFDESTRUCT_FRAME_TYPES.has(call.type) && call.to == null) {
+            return `${selfdestructFrameLabel(at)} has no beneficiary`
+        }
+
+        // An unknown child type cannot define the execution context for its own
+        // children. Keep validating independent ancestors and siblings, but leave
+        // that subtree to the structural validator.
+        if (!MAPPABLE_FRAME_TYPES.has(call.type)) continue
+
+        let violation = checkSubcalls(call, at)
+        if (violation) return violation
+    }
+}
+
+
+function isContextPreserving(type: string): boolean {
+    switch(type) {
+        case 'DELEGATECALL':
+        case 'delegateCall':
+        case 'CALLCODE':
+            return true
+        default:
+            return false
+    }
+}
+
+
+function frameLabel(traceAddress: number[]): string {
+    return traceAddress.length === 0 ? 'root frame' : `frame ${traceAddress.join('/')}`
+}
+
+
+function callFrameLabel(traceAddress: number[]): string {
+    return traceAddress.length === 0 ? 'root call frame' : `call frame ${traceAddress.join('/')}`
+}
+
+
+function createFrameLabel(traceAddress: number[]): string {
+    return traceAddress.length === 0 ? 'root create frame' : `create frame ${traceAddress.join('/')}`
+}
+
+
+function selfdestructFrameLabel(traceAddress: number[]): string {
+    return traceAddress.length === 0
+        ? 'root selfdestruct frame'
+        : `selfdestruct frame ${traceAddress.join('/')}`
+}
+
+
+function isAddress(value: string): boolean {
+    return /^0x[0-9a-fA-F]{40}$/.test(value)
+}
+
+
+function sameAddress(a?: Bytes20 | null, b?: Bytes20 | null): boolean {
+    return a != null && b != null && a.toLowerCase() === b.toLowerCase()
+}

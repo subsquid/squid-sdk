@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest'
+import {RpcClient} from '@subsquid/rpc-client'
+import {describe, expect, it, vi} from 'vitest'
 
 import {classifyError, redactText, redactUrl} from './diagnostics'
 
@@ -27,6 +28,29 @@ describe('redactUrl', () => {
     it('returns undefined for an unparseable value rather than leak it', () => {
         expect(redactUrl('not a url')).toBeUndefined()
         expect(redactUrl(undefined)).toBeUndefined()
+    })
+})
+
+describe('RpcClient endpoint redaction', () => {
+    it('exposes a log-safe URL while retaining useful routing context', () => {
+        let client = new RpcClient({
+            url: 'wss://user:pass@rpc.example.com/v1/0123456789abcdef0123456789abcdef?apikey=secret#token',
+            log: null,
+        })
+
+        expect(client.url).toBe('wss://rpc.example.com/v1/***')
+        expect(client.getMetrics().url).toBe(client.url)
+    })
+
+    it('overrides unsafe endpoint context on a supplied logger', () => {
+        let child = vi.fn(() => ({}))
+
+        new RpcClient({
+            url: 'https://user:pass@rpc.example.com/sqd_secret?apikey=secret',
+            log: {child} as any,
+        })
+
+        expect(child).toHaveBeenCalledWith({rpcUrl: 'https://rpc.example.com/sqd_***'})
     })
 })
 

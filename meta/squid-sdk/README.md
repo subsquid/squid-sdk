@@ -90,6 +90,16 @@ validation and pick the right trace/state-diff method. Without either — an unk
 and no overrides — validation is off and dataset parity with the Portal is **not guaranteed**; the
 source logs a warning in that case rather than failing silently.
 
+Semantic debug call-frame validation is controlled by `rpc.callFrameValidation`: `off` skips the
+heuristic, `observe` logs violations while accepting the block, and `reject` retries/rejects a
+violating block. Standard-validation presets use `observe` so network-specific tracer behavior can
+be measured before enforcement. Observe mode emits at most one warning per block, with the affected
+transaction count and up to three sample violations. `reject` requires both `verifyTxRoot` and
+`verifyTxSender`; these anchor the root frame to checked transaction data. Structural requirements
+needed by normalization (supported frame types, complete call targets/inputs, and valid addresses)
+are always enforced, because accepting them would only move the same failure into archive
+normalization.
+
 To catch an all-sources-down failure or type a policy, `AllSourcesDownError` and `FallbackPolicy` are
 re-exported from this subpath (also available from `@subsquid/squid-sdk/fallback`).
 

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-normalization",
+      "comment": "include transaction and trace-address context in debug call-frame mapping errors",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-normalization"
+}
