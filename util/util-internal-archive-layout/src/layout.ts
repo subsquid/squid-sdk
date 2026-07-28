@@ -279,6 +279,8 @@ export class ArchiveLayout {
                         for await (let lines of splitLines(dataChunks)) {
                             for (let line of lines) {
                                 let block: B = JSON.parse(line)
+                                block = convertToOldFormat(block)
+                                assertNotNull(block.height)
                                 if (r.from <= block.height && block.height <= rangeEnd(r)) {
                                     blocks.push(block)
                                     if (blocks.length > 10) {
@@ -444,4 +446,21 @@ function* pack<T>(items: T[], size: number): Iterable<T[]> {
     }
 
     items.splice(0, offset)
+}
+
+
+// helps to convert data if it was written in the new format
+// but parquet writer required the old one
+function convertToOldFormat(block: any) {
+    if (block.height != null) {
+        return block
+    }
+    assertNotNull(block.hash)
+    assertNotNull(block.number)
+    return {
+        hash: block.hash,
+        height: block.number,
+        slot: block.number,
+        block: block.block
+    }
 }
