@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal",
+      "comment": "Throttler: with prefetch enabled, serve the cached value instead of blocking on an in-flight refresh, so a hung head/finalized fetch can no longer wedge ingest head-polling loops",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}

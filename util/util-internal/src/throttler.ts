@@ -32,9 +32,11 @@ export class Throttler<T> {
         let now = Date.now()
         if (now - this.lastAccess < this.interval) {
             return this.lastValue
-        } else {
-            return this.performCall(0)
         }
+        let pending = this.performCall(0)
+        // A prefetching throttler must not block callers on an in-flight refresh once a value
+        // exists — return the last value and let a slow/hung refresh settle in the background.
+        return this.prefetch && this.lastAccess > -Infinity ? this.lastValue : pending
     }
 
     private performCall(pause: number): Promise<T> {

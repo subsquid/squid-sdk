@@ -339,7 +339,7 @@ importers:
         version: file:projects/types-test.tgz
       '@rush-temp/util-internal':
         specifier: file:./projects/util-internal.tgz
-        version: file:projects/util-internal.tgz
+        version: file:projects/util-internal.tgz(esbuild@0.27.7)(tsx@4.21.0)
       '@rush-temp/util-internal-archive-client':
         specifier: file:./projects/util-internal-archive-client.tgz
         version: file:projects/util-internal-archive-client.tgz
@@ -1406,7 +1406,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/erc20-transfers@file:projects/erc20-transfers.tgz':
-    resolution: {integrity: sha512-a0NVshKVkYr7K4Y1qIl3JBdlGJBmYAk3Cu6Crp4QY9G9vVt0x/E7wqUROArvAo//6PIHge9puyrS/iD5TDLJKA==, tarball: file:projects/erc20-transfers.tgz}
+    resolution: {integrity: sha512-5agkTAoEOVDkvQ53tJQNR6/cp2Wc8jb+OrKQYtVicfiq2Qk61vsliFkcZxEOOlvgAhI9TG1wgQkC2hXM5OBQPQ==, tarball: file:projects/erc20-transfers.tgz}
     version: 0.0.0
 
   '@rush-temp/evm-abi@file:projects/evm-abi.tgz':
@@ -1586,7 +1586,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/solana-example@file:projects/solana-example.tgz':
-    resolution: {integrity: sha512-TCMmjScRrcc98mNzZjuccEbMeAnZDGBPZWFRQdV8d7EI77Zkw7fHa/LVO+h3rhqgDwaHvRzxPCtrB/n9DHjCKw==, tarball: file:projects/solana-example.tgz}
+    resolution: {integrity: sha512-rxhzgY1yCIzDuS5th7F5naZXFCGbMzST1757ZzzOuMIMcjoIXSR/Y9BW4Yw3/yTLFofaiOrzGJSL2Vh3itAfrA==, tarball: file:projects/solana-example.tgz}
     version: 0.0.0
 
   '@rush-temp/solana-ingest@file:projects/solana-ingest.tgz':
@@ -1622,7 +1622,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/squid-sdk@file:projects/squid-sdk.tgz':
-    resolution: {integrity: sha512-lHjSptBD+Brxc2MGsdpgD6ss+xxQMOCXC35LR7g+3w3bXHz1MMUQwdbE7MLdI4fbIm8h17bIHfJdytir4HLgCg==, tarball: file:projects/squid-sdk.tgz}
+    resolution: {integrity: sha512-fvCSmBgnZcJV3cx/XUmT9NbgYoe51e6mgvyUuGHpQYY8IKptS1GS/NaSS+UeHyRN+ts1ASvrOPb9xAFga5oXrA==, tarball: file:projects/squid-sdk.tgz}
     version: 0.0.0
 
   '@rush-temp/ss58-codec@file:projects/ss58-codec.tgz':
@@ -1842,7 +1842,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/util-internal@file:projects/util-internal.tgz':
-    resolution: {integrity: sha512-a4u6NJ4ZvTAYIzGdRKR7+IBEzY/EQsqAsHE5iabQw2uDp12WFQJ2q7ExjcOCjHTRW7mLii/uNV8CJrBOSI9dUQ==, tarball: file:projects/util-internal.tgz}
+    resolution: {integrity: sha512-8vPykKIwnW0ZGAHBWAr5jVV2AByw3jOGjQ3nqWbpGnQp+qds0Na2f3/s925myv3ujjK6Ntvn1etwd7Sb7Jk2Xg==, tarball: file:projects/util-internal.tgz}
     version: 0.0.0
 
   '@rush-temp/util-naming@file:projects/util-naming.tgz':
@@ -7425,10 +7425,34 @@ snapshots:
       '@types/node': 24.0.15
       typescript: 5.5.4
 
-  '@rush-temp/util-internal@file:projects/util-internal.tgz':
+  '@rush-temp/util-internal@file:projects/util-internal.tgz(esbuild@0.27.7)(tsx@4.21.0)':
     dependencies:
       '@types/node': 24.0.15
       typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.0.15)(esbuild@0.27.7)(tsx@4.21.0)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
 
   '@rush-temp/util-naming@file:projects/util-naming.tgz':
     dependencies:
