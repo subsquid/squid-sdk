@@ -12,20 +12,33 @@ export interface IngestBatch {
 }
 
 
+export interface HyperliquidGatewayOptions {
+    blockBufferSize?: number
+    subscriptionTimeout?: number
+    stalenessThreshold?: number
+    stalenessTimeout?: number
+}
+
+
 export class HyperliquidGateway {
     private blockBufferSize: number
     private subscriptionTimeout: number
+    private stalenessThreshold: number
+    private stalenessTimeout: number
     private log: Logger
 
     constructor(
         private client: RpcClient,
-        blockBufferSize?: number,
-        subscriptionTimeout?: number,
+        options: HyperliquidGatewayOptions = {},
     ) {
-        this.blockBufferSize = blockBufferSize ?? 10
+        this.blockBufferSize = options.blockBufferSize ?? 10
         assert(this.blockBufferSize > 0)
-        this.subscriptionTimeout = subscriptionTimeout ?? 10_000
+        this.subscriptionTimeout = options.subscriptionTimeout ?? 10_000
         assert(this.subscriptionTimeout > 0)
+        this.stalenessThreshold = options.stalenessThreshold ?? 60_000
+        assert(this.stalenessThreshold > 0)
+        this.stalenessTimeout = options.stalenessTimeout ?? 60_000
+        assert(this.stalenessTimeout > 0)
         this.log = createLogger('sqd:hyperliquid-data-service:gateway')
     }
 
@@ -36,8 +49,14 @@ export class HyperliquidGateway {
         let run = async () => {
             while (!queue.isClosed()) {
                 try {
-                    if (lastBlock != undefined) {
-                        from = lastBlock + 1
+                    // Resume past what is buffered, not merely past what was consumed:
+                    // the queue can still hold blocks the consumer has not reached.
+                    let buffered = queue.peek()
+                    let resumeAfter = buffered == null || buffered instanceof Error || buffered.blocks.length === 0
+                        ? lastBlock
+                        : last(buffered.blocks).block_number
+                    if (resumeAfter != undefined) {
+                        from = resumeAfter + 1
                     }
                     await this.subscribe(queue, from)
                 } catch(err: any) {
@@ -71,6 +90,14 @@ export class HyperliquidGateway {
             future.reject(new SubscriptionError(`no blocks were received during the last ${this.subscriptionTimeout} ms`))
         })
 
+        let bestAge = Infinity
+        let staleTimer = new Timer(this.stalenessTimeout, () => {
+            future.reject(new SubscriptionError(
+                `stream is stale: block age stayed above ${this.stalenessThreshold} ms ` +
+                `for ${this.stalenessTimeout} ms without progress`
+            ))
+        })
+
         timer.start()
 
         let handle = this.client.subscribe({
@@ -93,11 +120,24 @@ export class HyperliquidGateway {
                     return
                 }
 
+                let blockAge = Date.now() - Date.parse(msg.block_time)
+
                 if (this.log.isDebug()) {
-                    this.log.debug({
-                        blockNumber: msg.block_number,
-                        blockAge: Date.now() - Date.parse(msg.block_time)
-                    }, 'received')
+                    this.log.debug({blockNumber: msg.block_number, blockAge}, 'received')
+                }
+
+                // Reset only on a new low: a reopened subscription replays its backlog,
+                // and that catch-up must not read as the stall it is curing.
+                if (Number.isFinite(blockAge)) {
+                    if (blockAge <= this.stalenessThreshold) {
+                        bestAge = Infinity
+                        staleTimer.stop()
+                    } else if (blockAge < bestAge) {
+                        bestAge = blockAge
+                        staleTimer.reset()
+                    } else {
+                        staleTimer.start()
+                    }
                 }
 
                 let batch = queue.peek()
@@ -124,6 +164,7 @@ export class HyperliquidGateway {
         function stop() {
             handle.close()
             timer.stop()
+            staleTimer.stop()
         }
 
         queue.addCloseListener(stop)

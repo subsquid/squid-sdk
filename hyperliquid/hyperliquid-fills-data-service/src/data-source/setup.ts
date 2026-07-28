@@ -14,6 +14,8 @@ export interface DataSourceOptions {
     gatewayProxy: string
     gatewayBlockQueueSize?: number
     gatewaySubscriptionTimeout?: number
+    gatewayStalenessThreshold?: number
+    gatewayStalenessTimeout?: number
 }
 
 
@@ -24,7 +26,12 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         retryAttempts: 5,
         log
     })
-    let gateway = new HyperliquidGateway(rpc, options.gatewayBlockQueueSize, options.gatewaySubscriptionTimeout)
+    let gateway = new HyperliquidGateway(rpc, {
+        blockBufferSize: options.gatewayBlockQueueSize,
+        subscriptionTimeout: options.gatewaySubscriptionTimeout,
+        stalenessThreshold: options.gatewayStalenessThreshold,
+        stalenessTimeout: options.gatewayStalenessTimeout
+    })
     let dataSource = new HyperliquidGatewayDataSource(gateway)
     return new Mapping(dataSource)
 }

@@ -17,6 +17,8 @@ runProgram(async () => {
     program.requiredOption('--gateway-proxy <url>', 'Hyperliquid gateway proxy URL')
     program.option('--gateway-block-queue-size <number>', 'Max queue size of gateway subscription', positiveInt, 10)
     program.option('--gateway-subscription-timeout <ms>', 'Max timeout of gateway subscription', positiveInt, 10000)
+    program.option('--gateway-staleness-threshold <ms>', 'Block age above which the gateway subscription counts as stale', positiveInt, 60000)
+    program.option('--gateway-staleness-timeout <ms>', 'How long a stale subscription may fail to catch up before it is reopened', positiveInt, 60000)
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
     program.parse()
@@ -25,6 +27,8 @@ runProgram(async () => {
         gatewayProxy: string
         gatewayBlockQueueSize: number
         gatewaySubscriptionTimeout: number
+        gatewayStalenessThreshold: number
+        gatewayStalenessTimeout: number
         blockCacheSize: number
         port: number
     }
@@ -32,7 +36,9 @@ runProgram(async () => {
     let dataSourceOptions: DataSourceOptions = {
         gatewayProxy: args.gatewayProxy,
         gatewayBlockQueueSize: args.gatewayBlockQueueSize,
-        gatewaySubscriptionTimeout: args.gatewaySubscriptionTimeout
+        gatewaySubscriptionTimeout: args.gatewaySubscriptionTimeout,
+        gatewayStalenessThreshold: args.gatewayStalenessThreshold,
+        gatewayStalenessTimeout: args.gatewayStalenessTimeout
     }
 
     let mainWorker = new WorkerClient(dataSourceOptions)
