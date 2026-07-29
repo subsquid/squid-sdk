@@ -457,9 +457,10 @@ function convertToOldFormat(block: any) {
     }
     assertNotNull(block.hash)
     assertNotNull(block.number)
+    assertNotNull(block.block.blockHeight)
     return {
         hash: block.hash,
-        height: block.number,
+        height: block.block.blockHeight,
         slot: block.number,
         block: block.block
     }
