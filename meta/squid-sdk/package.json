@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/squid-sdk",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Umbrella package for the Squid SDK: data sources and utilities exposed as subpaths",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -174,9 +174,9 @@
     "@subsquid/http-client": "^1.8.1",
     "@subsquid/logger": "^1.6.0",
     "@subsquid/portal-client": "^0.6.0",
-    "@subsquid/rpc-client": "^4.15.1",
+    "@subsquid/rpc-client": "^4.16.0",
     "@subsquid/solana-stream": "^1.1.2",
-    "@subsquid/typeorm-store": "^1.9.1",
+    "@subsquid/typeorm-store": "^1.9.2",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-data-source": "^0.0.0",
     "@subsquid/util-internal-hex": "^1.2.3",
@@ -188,8 +188,8 @@
     "prom-client": "^14.2.0"
   },
   "peerDependencies": {
-    "@subsquid/evm-normalization": "^0.0.5",
-    "@subsquid/evm-rpc": "^0.0.5"
+    "@subsquid/evm-normalization": "^0.0.6",
+    "@subsquid/evm-rpc": "^0.1.0"
   },
   "peerDependenciesMeta": {
     "@subsquid/evm-normalization": {
@@ -201,8 +201,8 @@
   },
   "devDependencies": {
     "@subsquid/big-decimal": "^1.0.0",
-    "@subsquid/evm-normalization": "^0.0.5",
-    "@subsquid/evm-rpc": "^0.0.5",
+    "@subsquid/evm-normalization": "^0.0.6",
+    "@subsquid/evm-rpc": "^0.1.0",
     "@types/node": "^24.0.0",
     "typeorm": "^0.3.17",
     "typescript": "5.5.4",
