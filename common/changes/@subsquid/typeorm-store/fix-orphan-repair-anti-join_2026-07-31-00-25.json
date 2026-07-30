@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "Fix connect() crash-looping on a deep hot window: express the orphan-repair pass as NOT EXISTS anti-joins instead of NOT IN (SELECT ...), which the planner degrades to a per-row rescan once the subquery no longer fits in work_mem",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}

@@ -5,6 +5,7 @@ import {DataSource, EntityManager} from 'typeorm'
 import {ChangeTracker, rollbackBlock} from './hot'
 import {TemplateMutation, TemplateRegistryTracker} from './templates'
 import {DatabaseState, FinalTxInfo, HashAndHeight, HotBlock, HotTxInfo} from './interfaces'
+import {orphanRepairStatements} from './repair'
 import {Store} from './store'
 
 
@@ -296,31 +297,11 @@ export class TypeormDatabase {
     }
 
     private async repairOrphans(em: EntityManager): Promise<void> {
-        let schema = this.escapedSchema()
-
-        // Orphan hot_change_log rows whose block_height has no matching
-        // hot_block. Normally the FK + cascade prevents this, but it can be
-        // reached via manual constraint disable, partial restores, etc.
-        await em.query(
-            `DELETE FROM ${schema}.hot_change_log
-              WHERE block_height NOT IN (SELECT height FROM ${schema}.hot_block)`
-        )
-
-        // Orphan hot_block rows that have no sentinel/change-log entry —
-        // they did not go through insertHotBlock. The cascade FK on
-        // hot_change_log cleans up the (empty) child rows automatically.
-        await em.query(
-            `DELETE FROM ${schema}.hot_block
-              WHERE height NOT IN (SELECT block_height FROM ${schema}.hot_change_log)`
-        )
-
-        // Orphan template_registry rows whose height matches neither a
-        // finalized state nor any surviving hot_block.
-        await em.query(
-            `DELETE FROM ${schema}.template_registry
-              WHERE height > COALESCE((SELECT height FROM ${schema}.status WHERE id = 0), -1)
-                AND height NOT IN (SELECT height FROM ${schema}.hot_block)`
-        )
+        // Written as NOT EXISTS anti-joins rather than NOT IN (SELECT ...) —
+        // see the doc comment on orphanRepairStatements for why that matters.
+        for (let sql of orphanRepairStatements(this.escapedSchema())) {
+            await em.query(sql)
+        }
     }
 
     private deleteHotBlocks(em: EntityManager, finalizedHeight: number): Promise<void> {
