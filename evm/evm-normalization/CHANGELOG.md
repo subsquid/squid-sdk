@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-normalization
 
-This log was last generated on Wed, 15 Jul 2026 22:15:56 GMT and should not be manually modified.
+This log was last generated on Thu, 30 Jul 2026 15:44:58 GMT and should not be manually modified.
+
+## 0.0.6
+Thu, 30 Jul 2026 15:44:58 GMT
+
+### Patches
+
+- include transaction and trace-address context in debug call-frame mapping errors
 
 ## 0.0.5
 Wed, 15 Jul 2026 22:15:56 GMT

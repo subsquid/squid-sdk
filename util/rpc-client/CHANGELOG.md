@@ -1,6 +1,13 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Tue, 23 Jun 2026 17:42:56 GMT and should not be manually modified.
+This log was last generated on Thu, 30 Jul 2026 15:44:58 GMT and should not be manually modified.
+
+## 4.16.0
+Thu, 30 Jul 2026 15:44:58 GMT
+
+### Minor changes
+
+- redact credentials from RPC endpoint metadata and expose a shared endpoint-redaction helper
 
 ## 4.15.1
 Tue, 23 Jun 2026 17:42:56 GMT

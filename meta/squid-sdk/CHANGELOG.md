@@ -1,6 +1,13 @@
 # Change Log - @subsquid/squid-sdk
 
-This log was last generated on Thu, 16 Jul 2026 19:47:53 GMT and should not be manually modified.
+This log was last generated on Thu, 30 Jul 2026 15:44:58 GMT and should not be manually modified.
+
+## 0.5.0
+Thu, 30 Jul 2026 15:44:58 GMT
+
+### Minor changes
+
+- expose call-frame validation modes and shadow-observe consistency violations in standard EVM network presets
 
 ## 0.4.0
 Thu, 16 Jul 2026 19:47:53 GMT

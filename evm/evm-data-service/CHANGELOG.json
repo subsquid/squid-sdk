@@ -2,6 +2,29 @@
   "name": "@subsquid/evm-data-service",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/evm-data-service_v0.1.0",
+      "date": "Thu, 30 Jul 2026 15:44:58 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add a call-frame validation mode option for EVM data-service ingestion"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.5` to `0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.5` to `0.0.6`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.15.1` to `4.16.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.9",
       "tag": "@subsquid/evm-data-service_v0.0.9",
       "date": "Wed, 15 Jul 2026 22:15:56 GMT",

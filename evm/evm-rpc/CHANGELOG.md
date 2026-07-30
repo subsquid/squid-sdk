@@ -1,6 +1,17 @@
 # Change Log - @subsquid/evm-rpc
 
-This log was last generated on Wed, 15 Jul 2026 22:15:56 GMT and should not be manually modified.
+This log was last generated on Thu, 30 Jul 2026 15:44:58 GMT and should not be manually modified.
+
+## 0.1.0
+Thu, 30 Jul 2026 15:44:58 GMT
+
+### Minor changes
+
+- validate debug call-frame mapper safety and add off, observe, and reject modes for semantic consistency checks
+
+### Patches
+
+- encode Stable 0x3f transaction nonceKey as a quantity (uint) instead of a byte string
 
 ## 0.0.5
 Wed, 15 Jul 2026 22:15:56 GMT

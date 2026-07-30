@@ -2,6 +2,31 @@
   "name": "@subsquid/evm-rpc",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/evm-rpc_v0.1.0",
+      "date": "Thu, 30 Jul 2026 15:44:58 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "encode Stable 0x3f transaction nonceKey as a quantity (uint) instead of a byte string"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "validate debug call-frame mapper safety and add off, observe, and reject modes for semantic consistency checks"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.15.1` to `4.16.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.15.1` to `4.16.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.5",
       "tag": "@subsquid/evm-rpc_v0.0.5",
       "date": "Wed, 15 Jul 2026 22:15:56 GMT",

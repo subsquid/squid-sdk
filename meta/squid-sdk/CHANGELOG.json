@@ -2,6 +2,38 @@
   "name": "@subsquid/squid-sdk",
   "entries": [
     {
+      "version": "0.5.0",
+      "tag": "@subsquid/squid-sdk_v0.5.0",
+      "date": "Thu, 30 Jul 2026 15:44:58 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "expose call-frame validation modes and shadow-observe consistency violations in standard EVM network presets"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.15.1` to `4.16.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-store\" from `^1.9.1` to `1.9.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.5` to `0.0.6`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.5` to `0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.5` to `0.0.6`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.5` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.4.0",
       "tag": "@subsquid/squid-sdk_v0.4.0",
       "date": "Thu, 16 Jul 2026 19:47:53 GMT",

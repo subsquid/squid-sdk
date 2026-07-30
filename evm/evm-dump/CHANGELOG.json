@@ -2,6 +2,26 @@
   "name": "@subsquid/evm-dump",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/evm-dump_v0.1.0",
+      "date": "Thu, 30 Jul 2026 15:44:58 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add a call-frame validation mode option to the EVM archiver CLI"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.5` to `0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.5` to `0.0.6`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.5",
       "tag": "@subsquid/evm-dump_v0.0.5",
       "date": "Wed, 15 Jul 2026 22:15:56 GMT",

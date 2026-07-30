@@ -2,6 +2,26 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "1.9.2",
+      "tag": "@subsquid/typeorm-store_v1.9.2",
+      "date": "Thu, 30 Jul 2026 15:44:58 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Fix connect() crash-looping on a deep hot window: express the orphan-repair pass as NOT EXISTS anti-joins instead of NOT IN (SELECT ...), which the planner degrades to a per-row rescan once the subquery no longer fits in work_mem"
+          }
+        ],
+        "none": [
+          {
+            "comment": "Add a test for the DB_SCHEMA === stateSchema case (entity data and processor state sharing one schema)"
+          },
+          {
+            "comment": "Add a test verifying entity data lands in DB_SCHEMA while processor state stays in stateSchema (two independent dials)"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.9.1",
       "tag": "@subsquid/typeorm-store_v1.9.1",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

@@ -2,6 +2,23 @@
   "name": "@subsquid/hyperliquid-fills-data-service",
   "entries": [
     {
+      "version": "0.0.3",
+      "tag": "@subsquid/hyperliquid-fills-data-service_v0.0.3",
+      "date": "Thu, 30 Jul 2026 15:44:58 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "reopen the gateway subscription when it keeps streaming stale blocks"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.15.1` to `4.16.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.2",
       "tag": "@subsquid/hyperliquid-fills-data-service_v0.0.2",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

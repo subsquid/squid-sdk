@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Thu, 30 Jul 2026 15:44:58 GMT and should not be manually modified.
+
+## 1.9.2
+Thu, 30 Jul 2026 15:44:58 GMT
+
+### Patches
+
+- Fix connect() crash-looping on a deep hot window: express the orphan-repair pass as NOT EXISTS anti-joins instead of NOT IN (SELECT ...), which the planner degrades to a per-row rescan once the subquery no longer fits in work_mem
 
 ## 1.9.1
 Mon, 11 May 2026 05:34:26 GMT
