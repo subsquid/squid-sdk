@@ -2,6 +2,10 @@ import {mapRpcBlock} from '@subsquid/evm-normalization'
 import {Block, DataRequest, FieldSelection} from '@subsquid/evm-stream'
 import {EvmRpcDataSource, Rpc, DataRequest as RpcDataRequest, Block as RpcBlock} from '@subsquid/evm-rpc'
 import {BlockBatch, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-source'
+import {
+    dropEmptyBlocks as dropEmptyBlocksGeneric,
+    streamBoundedRanges as streamBoundedRangesGeneric,
+} from '../../../common/bounded-stream'
 import {FiniteRange, RangeRequest, RangeRequestList, applyRangeBound, getSize} from '@subsquid/util-internal-range'
 
 import {decodeBlock} from '../decode/decode'
@@ -189,75 +193,35 @@ export function keptByPosition<P, Q>(projected: P[], pre: Q[], kept: Q[]): P[] {
 
 
 /**
- * Stream the inner RPC source per *request range*, intersected with the caller's `[from, to]`
- * window — exactly like the Portal source, which issues one query per range. Blocks in a gap
- * between non-contiguous ranges are never streamed, so they can't leak through unfiltered: that
- * would break the Portal-compatible / drop-in guarantee and disagree with `getBlocksCountInRange`,
- * which counts only the request ranges.
- *
- * `parentHash` is threaded through *contiguous* ranges so the inner source's continuity/fork
- * detection keeps working across a seam, and is dropped across a gap (there is no parent to
- * assert there). The caller's `parentHash` is preserved for the very first streamed block *when the
- * stream starts within the first request range* (no leading gap) — that is what lets a fallback
- * detect a fork when it resumes after switching sources. If the stream instead starts inside a gap
- * (`range.from !== expectedFrom` on the first range), there is no asserted parent, so it is dropped.
+ * Stream the inner RPC source per *request range* — see the shared
+ * {@link streamBoundedRangesGeneric} for the range/parentHash semantics. EVM raw blocks already
+ * carry `{number, hash}`, so the identity serves as the block reference.
  */
-export async function* streamBoundedRanges(
+export function streamBoundedRanges(
     inner: Pick<DataSource<RpcBlock>, 'getStream' | 'getFinalizedStream'>,
     requests: RangeRequestList<unknown>,
     req: StreamRequest,
     finalized: boolean,
 ): BlockStream<RpcBlock> {
-    let ranges = applyRangeBound(requests, {from: req.from, to: req.to})
-
-    let parentHash = req.parentHash
-    let expectedFrom = req.from
-
-    for (let {range} of ranges) {
-        // A gap precedes this range (or the stream starts inside one): don't hand the inner source
-        // a parentHash it would treat as a fork.
-        if (range.from !== expectedFrom) parentHash = undefined
-
-        let streamReq: StreamRequest = {from: range.from, to: range.to, parentHash}
-        let stream = finalized ? inner.getFinalizedStream(streamReq) : inner.getStream(streamReq)
-
-        for await (let batch of stream) {
-            yield batch
-
-            let last = batch.blocks[batch.blocks.length - 1]
-            if (last) {
-                parentHash = last.hash
-                expectedFrom = last.number + 1
-            }
-        }
-
-        // The next *contiguous* range begins right after this one; a larger jump is a gap.
-        if (range.to != null) expectedFrom = Math.max(expectedFrom, range.to + 1)
-    }
+    return streamBoundedRangesGeneric(inner, requests, req, finalized, (b) => b)
 }
 
 type AnyDecodedBlock = {header: {number: number}; logs: unknown[]; transactions: unknown[]; traces: unknown[]; stateDiffs: unknown[]}
 
 /**
- * Drop blocks left empty after filtering, matching the Portal — which forwards `includeAllBlocks`
- * to the server and, when it is false, returns only blocks with matching data. A block is kept iff
- * it carries data, its range opted into `includeAllBlocks`, or it is a *boundary* block.
- *
- * The batch's first and last blocks are always kept even when empty, mirroring the Portal: the last
- * block lets the consumer's cursor advance to the batch end (without it, progress would stall on a
- * dataless tail), and the first anchors chain continuity. Keeping them is also what makes a
- * `[Portal, RPC]` fallback transparent — both sides drop the same interior empties.
+ * Drop blocks left empty after filtering — see the shared {@link dropEmptyBlocksGeneric} for the
+ * boundary-block semantics. A decoded EVM block is empty when all four item arrays are.
  */
 export function dropEmptyBlocks<B extends AnyDecodedBlock>(
     blocks: B[],
     includeAllBlocks: (blockNumber: number) => boolean,
 ): B[] {
-    return blocks.filter((b, i) => {
-        if (i === 0 || i === blocks.length - 1) return true // boundary blocks: always present
-        if (includeAllBlocks(b.header.number)) return true
-
-        return b.logs.length > 0 || b.transactions.length > 0 || b.traces.length > 0 || b.stateDiffs.length > 0
-    })
+    return dropEmptyBlocksGeneric(
+        blocks,
+        includeAllBlocks,
+        (b) => b.header.number,
+        (b) => b.logs.length > 0 || b.transactions.length > 0 || b.traces.length > 0 || b.stateDiffs.length > 0,
+    )
 }
 
 // Re-export so the bounded-stream consumer can apply request range bounds the same way.

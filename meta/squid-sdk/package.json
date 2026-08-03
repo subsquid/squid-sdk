@@ -55,6 +55,16 @@
       "import": "./lib/solana/index.js",
       "require": "./lib/solana/index.js"
     },
+    "./solana/rpc": {
+      "types": "./lib/solana/rpc/index.d.ts",
+      "import": "./lib/solana/rpc/index.js",
+      "require": "./lib/solana/rpc/index.js"
+    },
+    "./solana/fallback": {
+      "types": "./lib/solana/fallback/index.d.ts",
+      "import": "./lib/solana/fallback/index.js",
+      "require": "./lib/solana/fallback/index.js"
+    },
     "./fuel": {
       "types": "./lib/fuel/index.d.ts",
       "import": "./lib/fuel/index.js",
@@ -138,27 +148,75 @@
   },
   "typesVersions": {
     "*": {
-      "evm": ["./lib/evm/index.d.ts"],
-      "evm/rpc": ["./lib/evm/rpc/index.d.ts"],
-      "evm/fallback": ["./lib/evm/fallback/index.d.ts"],
-      "evm/objects": ["./lib/evm/objects/index.d.ts"],
-      "solana": ["./lib/solana/index.d.ts"],
-      "fuel": ["./lib/fuel/index.d.ts"],
-      "fallback": ["./lib/fallback/index.d.ts"],
-      "util": ["./lib/util/index.d.ts"],
-      "util/data-source": ["./lib/util/data-source/index.d.ts"],
-      "util/range": ["./lib/util/range/index.d.ts"],
-      "util/hex": ["./lib/util/hex/index.d.ts"],
-      "util/json": ["./lib/util/json/index.d.ts"],
-      "util/validation": ["./lib/util/validation/index.d.ts"],
-      "util/processor-tools": ["./lib/util/processor-tools/index.d.ts"],
-      "util/timeout": ["./lib/util/timeout/index.d.ts"],
-      "client/portal": ["./lib/client/portal/index.d.ts"],
-      "client/rpc": ["./lib/client/rpc/index.d.ts"],
-      "client/http": ["./lib/client/http/index.d.ts"],
-      "logger": ["./lib/logger/index.d.ts"],
-      "processor": ["./lib/processor/index.d.ts"],
-      "store/typeorm": ["./lib/store/typeorm/index.d.ts"]
+      "evm": [
+        "./lib/evm/index.d.ts"
+      ],
+      "evm/rpc": [
+        "./lib/evm/rpc/index.d.ts"
+      ],
+      "evm/fallback": [
+        "./lib/evm/fallback/index.d.ts"
+      ],
+      "evm/objects": [
+        "./lib/evm/objects/index.d.ts"
+      ],
+      "solana": [
+        "./lib/solana/index.d.ts"
+      ],
+      "solana/rpc": [
+        "./lib/solana/rpc/index.d.ts"
+      ],
+      "solana/fallback": [
+        "./lib/solana/fallback/index.d.ts"
+      ],
+      "fuel": [
+        "./lib/fuel/index.d.ts"
+      ],
+      "fallback": [
+        "./lib/fallback/index.d.ts"
+      ],
+      "util": [
+        "./lib/util/index.d.ts"
+      ],
+      "util/data-source": [
+        "./lib/util/data-source/index.d.ts"
+      ],
+      "util/range": [
+        "./lib/util/range/index.d.ts"
+      ],
+      "util/hex": [
+        "./lib/util/hex/index.d.ts"
+      ],
+      "util/json": [
+        "./lib/util/json/index.d.ts"
+      ],
+      "util/validation": [
+        "./lib/util/validation/index.d.ts"
+      ],
+      "util/processor-tools": [
+        "./lib/util/processor-tools/index.d.ts"
+      ],
+      "util/timeout": [
+        "./lib/util/timeout/index.d.ts"
+      ],
+      "client/portal": [
+        "./lib/client/portal/index.d.ts"
+      ],
+      "client/rpc": [
+        "./lib/client/rpc/index.d.ts"
+      ],
+      "client/http": [
+        "./lib/client/http/index.d.ts"
+      ],
+      "logger": [
+        "./lib/logger/index.d.ts"
+      ],
+      "processor": [
+        "./lib/processor/index.d.ts"
+      ],
+      "store/typeorm": [
+        "./lib/store/typeorm/index.d.ts"
+      ]
     }
   },
   "scripts": {
@@ -189,13 +247,21 @@
   },
   "peerDependencies": {
     "@subsquid/evm-normalization": "^0.0.6",
-    "@subsquid/evm-rpc": "^0.1.0"
+    "@subsquid/evm-rpc": "^0.1.0",
+    "@subsquid/solana-rpc": "^1.0.0",
+    "@subsquid/solana-normalization": "^1.0.0"
   },
   "peerDependenciesMeta": {
     "@subsquid/evm-normalization": {
       "optional": true
     },
     "@subsquid/evm-rpc": {
+      "optional": true
+    },
+    "@subsquid/solana-rpc": {
+      "optional": true
+    },
+    "@subsquid/solana-normalization": {
       "optional": true
     }
   },
@@ -206,6 +272,8 @@
     "@types/node": "^24.0.0",
     "typeorm": "^0.3.17",
     "typescript": "5.5.4",
-    "vitest": "4.1.5"
+    "vitest": "4.1.5",
+    "@subsquid/solana-rpc": "^1.0.0",
+    "@subsquid/solana-normalization": "^1.0.0"
   }
 }
