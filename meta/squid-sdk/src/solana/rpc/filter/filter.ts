@@ -337,7 +337,9 @@ function include<T>(set: Set<T>, items?: Iterable<T>): void {
 function* findInstructionChildren<I extends {instructionAddress: number[]}>(items: I[], addr: number[]): Iterable<I> {
     if (items.length == 0) return
     let beg = bisect(items, addr, (ins, a) => addressCompare(ins.instructionAddress, a))
-    while (beg < items.length && isChildAddress(items[beg].instructionAddress, addr)) {
+    // `addr` is the parent: keep every item whose address it prefixes (the instruction itself and
+    // its inner instructions' items — a contiguous run in (transaction, address) order).
+    while (beg < items.length && isChildAddress(addr, items[beg].instructionAddress)) {
         yield items[beg]
         beg += 1
     }

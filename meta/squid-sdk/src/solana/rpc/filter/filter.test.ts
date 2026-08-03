@@ -25,6 +25,7 @@ function mkBlock(): Block {
         ],
         logs: [
             {transactionIndex: 0, logIndex: 0, instructionAddress: [0], programId: TOKEN_PROGRAM, kind: 'log'},
+            {transactionIndex: 0, logIndex: 1, instructionAddress: [0, 0], programId: OTHER_PROGRAM, kind: 'log'},
             {transactionIndex: 1, logIndex: 0, instructionAddress: [0], programId: OTHER_PROGRAM, kind: 'log'},
         ],
         balances: [
@@ -78,7 +79,8 @@ describe('filterBlockItems', () => {
         expect(block.transactions.map((tx) => tx.transactionIndex)).toEqual([0])
         // the matched instruction plus its inner instruction, in address order
         expect(block.instructions.map((i) => i.instructionAddress)).toEqual([[0], [0, 0]])
-        expect(block.logs.map((l) => l.transactionIndex)).toEqual([0])
+        // logs of the instruction itself AND of its inner instructions
+        expect(block.logs.map((l) => l.instructionAddress)).toEqual([[0], [0, 0]])
     })
 
     it('filters transactions by fee payer and pulls their items via include', () => {
