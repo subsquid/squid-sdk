@@ -2,7 +2,7 @@ import {bigdecimalTransformer} from '../../transformers'
 import {Column} from './Column'
 import {ColumnCommonOptions} from './common'
 
-export type BigDecimalColumnOptions = Pick<ColumnCommonOptions, 'name' | 'unique' | 'nullable' | 'default' | 'comment'>
+export type BigDecimalColumnOptions = Pick<ColumnCommonOptions, 'name' | 'unique' | 'nullable' | 'default' | 'comment' | 'primary'>
 
 /**
  * BigDecimalColumn decorator is used to mark a specific class property as a `numeric` table column.
