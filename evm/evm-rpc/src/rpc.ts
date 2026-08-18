@@ -204,6 +204,9 @@ export class Rpc {
             validateError: info => {
                 if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
                 if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
+                // eRPC routed the block to an upstream that lacks it; a sibling
+                // upstream may have it, so retry instead of crashing the dump.
+                if (info.data?.code === 'ErrEndpointMissingData') throw new RetryError()
                 throw new RpcError(info)
             }
         })
