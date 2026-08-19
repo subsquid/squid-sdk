@@ -74,7 +74,12 @@ describe('Verification Functions', () => {
                 })
             }
 
-            it('withdrawalsRoot verification', async () => {
+            it.skipIf(
+                // OP-stack chains store the root of the L2-to-L1 message tree in
+                // withdrawalsRoot, while the JSON-RPC `withdrawals` list stays
+                // empty - the root cannot be recomputed from the list.
+                fixture.chain === 'base-mainnet'
+            )('withdrawalsRoot verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 if (block.withdrawalsRoot == null) return
 
