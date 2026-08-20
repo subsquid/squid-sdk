@@ -2,6 +2,23 @@
   "name": "@subsquid/squid-sdk",
   "entries": [
     {
+      "version": "0.6.0",
+      "tag": "@subsquid/squid-sdk_v0.6.0",
+      "date": "Thu, 20 Aug 2026 12:45:29 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add Solana RPC and fallback data sources: SolanaRpcDataSourceBuilder (solana/rpc) and SolanaFallbackDataSourceBuilder (solana/fallback), mirroring the EVM counterparts"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/solana-stream\" from `^1.1.2` to `1.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.5.0",
       "tag": "@subsquid/squid-sdk_v0.5.0",
       "date": "Thu, 30 Jul 2026 15:44:58 GMT",
