@@ -6,6 +6,7 @@ import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
 import {Connection, HttpHeaders, RpcCall, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
 import {RateMeter} from './rate'
+import {redactRpcUrl, redactRpcUrlsInText} from './redact'
 import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
 import {WsConnection} from './transport/ws'
@@ -480,7 +481,10 @@ export class RpcClient {
                 httpResponseBody = reason.response.body
             }
             this.log.warn({
-                reason: reason.toString(),
+                // The transport already scrubs its own errors, but `reason` can
+                // originate outside it (e.g. subscription plumbing), so redact
+                // here as well — this text quotes third-party error messages.
+                reason: redactRpcUrlsInText(reason.toString()),
                 httpResponseBody,
                 rpcCall: req?.call
             }, 'connection failure')
@@ -586,27 +590,6 @@ function getCallPriority(req: Req): number {
     } else {
         return req.call.id
     }
-}
-
-
-/**
- * Remove credentials from an RPC endpoint before it is included in logs,
- * metrics, or error context.
- *
- * The query and fragment are dropped because providers commonly put API keys
- * there. Key-like path segments are masked while ordinary routing components
- * remain visible so operators can still identify the endpoint.
- */
-export function redactRpcUrl(url: string): string {
-    let u = new URL(url)
-    u.password = ''
-    u.username = ''
-    u.search = ''
-    u.hash = ''
-    u.pathname = u.pathname
-        .replace(/sqd_[A-Za-z0-9]+/g, 'sqd_***')
-        .replace(/[A-Za-z0-9_-]{24,}/g, '***')
-    return u.toString()
 }
 
 
