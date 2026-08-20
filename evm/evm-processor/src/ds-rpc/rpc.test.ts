@@ -72,6 +72,13 @@ describe('getBlockByHash', () => {
         assert.strictEqual(await rpc.getBlockByHash('0xabc', false), null)
     })
 
+    it('returns null for "cannot query unfinalized data" error (Avalanche)', async () => {
+        let rpc = new Rpc(mockClient({
+            eth_getBlockByHash: {error: {code: -32000, message: 'cannot query unfinalized data'}}
+        }))
+        assert.strictEqual(await rpc.getBlockByHash('0xabc', false), null)
+    })
+
     it('throws for other RPC errors', async () => {
         let rpc = new Rpc(mockClient({
             eth_getBlockByHash: {error: {code: -32000, message: 'internal server error'}}
