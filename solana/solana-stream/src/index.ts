@@ -1,4 +1,5 @@
 export * from './data/model'
+export type * from './data/request'
 export * from './instruction'
 export * from './builder'
 export * from './query'
