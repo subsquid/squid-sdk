@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/squid-sdk",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Umbrella package for the Squid SDK: data sources and utilities exposed as subpaths",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -233,7 +233,7 @@
     "@subsquid/logger": "^1.6.0",
     "@subsquid/portal-client": "^0.6.0",
     "@subsquid/rpc-client": "^4.16.0",
-    "@subsquid/solana-stream": "^1.1.2",
+    "@subsquid/solana-stream": "^1.2.0",
     "@subsquid/typeorm-store": "^1.9.2",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-data-source": "^0.0.0",
