@@ -249,6 +249,7 @@
     "@subsquid/evm-normalization": "^0.0.6",
     "@subsquid/evm-rpc": "^0.1.0",
     "@subsquid/solana-rpc": "^1.0.0",
+    "@subsquid/solana-rpc-data": "^1.0.0",
     "@subsquid/solana-normalization": "^1.0.0"
   },
   "peerDependenciesMeta": {
@@ -259,6 +260,9 @@
       "optional": true
     },
     "@subsquid/solana-rpc": {
+      "optional": true
+    },
+    "@subsquid/solana-rpc-data": {
       "optional": true
     },
     "@subsquid/solana-normalization": {
@@ -274,6 +278,7 @@
     "typescript": "5.5.4",
     "vitest": "4.1.5",
     "@subsquid/solana-rpc": "^1.0.0",
+    "@subsquid/solana-rpc-data": "^1.0.0",
     "@subsquid/solana-normalization": "^1.0.0"
   }
 }
