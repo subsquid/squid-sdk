@@ -378,10 +378,11 @@ export class Rpc {
             params: [block.block.number]
         }))
 
-        let results = await this.reduceBatchOnRetry(call, {
+        let results = await this.reduceBatchOnRetry<(Receipt | null)[] | null | typeof RESPONSE_TOO_BIG>(call, {
             validateResult: getResultValidator(nullable(array(nullable(Receipt)))),
             validateError: info => {
                 if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
+                if (isResponseTooBig(info)) return RESPONSE_TOO_BIG
                 throw new RpcError(info)
             }
         })
@@ -390,6 +391,14 @@ export class Rpc {
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let rawReceipts = results[i]
+            if (rawReceipts == RESPONSE_TOO_BIG) {
+                this.log.warn({
+                    blockNumber: block.number,
+                    blockHash: block.hash,
+                    transactionCount: block.block.transactions.length
+                }, 'block receipts response too big, fetching receipts per transaction')
+                rawReceipts = await this.getReceiptsByTransaction(block)
+            }
             if (rawReceipts == null) {
                 block._isInvalid = true
                 block._errorMessage = 'eth_getBlockReceipts returned null'
@@ -520,6 +529,17 @@ export class Rpc {
                 block._errorMessage = `got invalid number of receipts from eth_getBlockReceipts`
             }
         }
+    }
+
+    private async getReceiptsByTransaction(block: Block): Promise<Receipt[]> {
+        let call = block.block.transactions.map(tx => ({
+            method: 'eth_getTransactionReceipt',
+            params: [getTxHash(tx)]
+        }))
+
+        return this.reduceBatchOnRetry(call, {
+            validateResult: getResultValidator(Receipt)
+        })
     }
 
     /**
@@ -1103,7 +1123,7 @@ export class Rpc {
                     blockHash: block.hash,
                     transactionCount: block.block.transactions.length
                 }, 'state diff response too big, tracing per transaction')
-                diffs = await this.debugStateDiffsByTransaction(block, traceConfig)
+                diffs = await this.getDebugStateDiffsByTransaction(block, traceConfig)
             }
 
             if (diffs == null) {
@@ -1117,7 +1137,7 @@ export class Rpc {
         }
     }
 
-    private async debugStateDiffsByTransaction(block: Block, traceConfig: unknown): Promise<DebugStateDiffResult[]> {
+    private async getDebugStateDiffsByTransaction(block: Block, traceConfig: unknown): Promise<DebugStateDiffResult[]> {
         let txHashes = block.block.transactions.map(getTxHash)
         let call = txHashes.map(txHash => ({
             method: 'debug_traceTransaction',
@@ -1196,7 +1216,7 @@ export class Rpc {
                     blockHash: block.hash,
                     transactionCount: block.block.transactions.length
                 }, 'call frame response too big, tracing per transaction')
-                frames = await this.debugFramesByTransaction(block, traceConfig)
+                frames = await this.getDebugFramesByTransaction(block, traceConfig)
             }
 
             if (frames == null) {
@@ -1211,7 +1231,7 @@ export class Rpc {
         }
     }
 
-    private async debugFramesByTransaction(block: Block, traceConfig: unknown): Promise<DebugFrameResult[]> {
+    private async getDebugFramesByTransaction(block: Block, traceConfig: unknown): Promise<DebugFrameResult[]> {
         let txHashes = block.block.transactions.map(getTxHash)
         let call = txHashes.map(txHash => ({
             method: 'debug_traceTransaction',
@@ -1471,6 +1491,7 @@ const RESPONSE_TOO_BIG = Symbol('RESPONSE_TOO_BIG')
 // handled by reduceBatchOnRetry(), which splits the batch before this check is used.
 function isResponseTooBig(err: RpcErrorInfo): boolean {
     if (/response is too big/i.test(err.message)) return true
+    if (/response is too large/i.test(err.message)) return true
     if (/response too large/i.test(err.message)) return true
     return false
 }

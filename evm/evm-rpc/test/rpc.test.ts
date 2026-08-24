@@ -72,6 +72,30 @@ describe('Rpc Class Integration', () => {
             expect(blocks[0].receipts!.length).toBeGreaterThan(0)
         })
 
+        it('falls back to per-transaction receipts when eth_getBlockReceipts response is too big', async () => {
+            const fixtureBlock = loadBlock('ethereum', 18000000)
+            const fixtureReceipts = loadReceipts('ethereum', 18000000)
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0x1')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(18000000), true], fixtureBlock)
+            mockClient.setFixture('eth_getBlockReceipts', ['latest'], fixtureReceipts)
+            mockClient.setFixture(
+                'eth_getBlockReceipts',
+                [toQty(18000000)],
+                {error: {code: -32008, message: 'Response is too big'}}
+            )
+            for (let receipt of fixtureReceipts) {
+                mockClient.setFixture('eth_getTransactionReceipt', [receipt.transactionHash], receipt)
+            }
+
+            const rpc = new Rpc({ client: mockClient as any })
+
+            const blocks = await rpc.getBlockBatch([18000000], { receipts: true, transactions: true })
+            expect(blocks).toHaveLength(1)
+            expect(blocks[0].receipts).toEqual(fixtureReceipts)
+        })
+
         it('fixes invalid receipt logIndex values returned by RPC', async () => {
             const fixtureBlock = loadBlock('stable-testnet', 42767022)
             const fixtureReceipts = loadReceipts('stable-testnet', 42767022)

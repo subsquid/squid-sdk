@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-rpc",
-      "comment": "fall back to per-transaction debug tracing when a block trace response is too large",
+      "comment": "fall back to per-transaction debug tracing and receipts when a block response is too large",
       "type": "patch"
     }
   ],
