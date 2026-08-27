@@ -65,7 +65,14 @@ export class HttpClient {
     private baseUrl?: string
     private agent: AgentProvider
     private retrySchedule: number[]
-    private retryAttempts: number
+    /**
+     * Retry budget configured for this client, `0` when none was configured.
+     *
+     * Readable so that wrappers can defer to a caller's configuration instead of
+     * overriding it. Note that the constructor maps an unset option and an explicit
+     * `0` onto the same value, so this cannot distinguish the two.
+     */
+    readonly retryAttempts: number
     private httpTimeout: number
     private requestCounter = 0
 

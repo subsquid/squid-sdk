@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "a configured `retryAttempts` (including `Infinity`) is no longer overridden by the client's own default of 6",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "expose the configured `retryAttempts` as a readonly property, so wrappers can defer to a caller's retry configuration instead of overriding it",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}

@@ -8,6 +8,16 @@ export * from './query'
 
 const USER_AGENT = `@subsquid/portal-client (https://sqd.ai)`
 
+/**
+ * Retry budget applied to portal requests when the caller configured none.
+ *
+ * `HttpClient` performs no retries at all by default, which is a poor fit for portal
+ * traffic, so portal requests opt into a budget. This is only a *default*: an explicit
+ * `retryAttempts` — per request, in {@link PortalClientOptions.http}, or on a
+ * caller-supplied `HttpClient` — takes precedence over it.
+ */
+const DEFAULT_RETRY_ATTEMPTS = 6
+
 export interface PortalClientOptions {
     /**
      * The URL of the portal dataset.
@@ -16,6 +26,11 @@ export interface PortalClientOptions {
 
     /**
      * Optional custom HTTP client to use.
+     *
+     * Its `retryAttempts` — whether given as options or already set on a supplied
+     * `HttpClient` — is the retry budget for every portal request. Leaving it unset
+     * (or `0`) falls back to 6 attempts, since `HttpClient` itself would otherwise
+     * perform no retries.
      */
     http?: HttpClient | HttpClientOptions
 
@@ -135,10 +150,15 @@ export class PortalClient {
     private maxIdleTime: number
     private maxWaitTime: number
     private headRetrySchedule: number[]
+    private defaultRetryAttempts: number
 
     constructor(options: PortalClientOptions) {
         this.url = new URL(options.url)
         this.client = options.http instanceof HttpClient ? options.http : new HttpClient(options.http)
+        // `HttpClient` collapses "unset" and an explicit `0` into `0`, so both fall back
+        // to our default. A caller wanting no retries at all passes `retryAttempts: 0`
+        // per request, which outranks this.
+        this.defaultRetryAttempts = this.client.retryAttempts || DEFAULT_RETRY_ATTEMPTS
         this.headPollInterval = options.headPollInterval ?? 0
         this.maxBytes = options.maxBytes ?? 50 * 1024 * 1024
         this.maxIdleTime = options.maxIdleTime ?? 500
@@ -285,7 +305,7 @@ export class PortalClient {
     private request<T = any>(method: string, url: string, options: RequestOptions & HttpBody = {}) {
         return this.client.request<T>(method, url, {
             ...options,
-            retryAttempts: options.retryAttempts ?? 6,
+            retryAttempts: options.retryAttempts ?? this.defaultRetryAttempts,
             headers: {
                 'User-Agent': USER_AGENT,
                 ...options?.headers,
