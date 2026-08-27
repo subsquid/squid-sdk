@@ -2,12 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/portal-client",
-      "comment": "a configured `retryAttempts` (including `Infinity`) is no longer overridden by the client's own default",
-      "type": "patch"
-    },
-    {
-      "packageName": "@subsquid/portal-client",
-      "comment": "the default retry budget goes from 6 attempts to 20, so portal requests now keep retrying for about five minutes (was about 33 seconds) before failing",
+      "comment": "a configured `retryAttempts` (including `Infinity`) is no longer overridden by the client's own default, and that default goes from 6 retries to 20, so portal requests now keep retrying for about five minutes (was about 33 seconds) before failing",
       "type": "minor"
     }
   ],

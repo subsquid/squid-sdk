@@ -15,13 +15,15 @@ const USER_AGENT = `@subsquid/portal-client (https://sqd.ai)`
  * traffic, so portal requests opt into a budget.
  *
  * Sized to keep retrying for roughly five minutes, so that a stream rides out a portal
- * restart or a brief upstream outage instead of failing the processor. Against
- * `HttpClient`'s default `retrySchedule` — `[10, 100, 500, 2000, 10000, 20000]` ms, whose
- * last entry repeats — the first six attempts spend 32.6 s and each further attempt adds
- * 20 s, so 20 attempts span 5 min 13 s of backoff. Time spent on the attempts themselves
- * is on top of that, and is bounded by `httpTimeout` per attempt. A different
- * `retrySchedule` changes the span; `default_retry_budget_is_about_five_minutes` in the
- * tests guards the pairing.
+ * restart or a brief upstream outage instead of failing the processor.
+ *
+ * Note that the option counts *retries*, not total requests: `n` means one initial
+ * request plus up to `n` more. Against `HttpClient`'s default `retrySchedule` —
+ * `[10, 100, 500, 2000, 10000, 20000]` ms, whose last entry repeats — the first six
+ * retries pause for 32.6 s in total and every further retry adds 20 s, so 20 retries
+ * span 5 min 13 s of backoff across 21 requests. Time spent on the requests themselves
+ * is on top of that, bounded by `httpTimeout` each. A different `retrySchedule` changes
+ * the span; `default_retry_budget_is_about_five_minutes` in the tests guards the pairing.
  *
  * Precedence is per-request `retryAttempts` > the budget configured on the client
  * (through {@link PortalClientOptions.http}, or already set on a supplied `HttpClient`)
@@ -44,10 +46,10 @@ export interface PortalClientOptions {
      * Its `retryAttempts` — whether given as options or already set on a supplied
      * `HttpClient` — becomes the *default* retry budget for portal requests; a
      * per-request `retryAttempts` still overrides it. Leaving it unset falls back to 20
-     * attempts — roughly five minutes of backoff — since `HttpClient` itself would
-     * otherwise perform none. Note that `0` is indistinguishable from unset once
-     * `HttpClient` has stored it, so it falls back as well — to turn retries off, pass
-     * `retryAttempts: 0` per request.
+     * retries — one request plus 20 more, roughly five minutes of backoff — since
+     * `HttpClient` itself would otherwise perform none. Note that `0` is
+     * indistinguishable from unset once `HttpClient` has stored it, so it falls back as
+     * well — to turn retries off, pass `retryAttempts: 0` per request.
      */
     http?: HttpClient | HttpClientOptions
 
