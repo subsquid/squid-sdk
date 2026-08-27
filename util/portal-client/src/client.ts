@@ -12,9 +12,14 @@ const USER_AGENT = `@subsquid/portal-client (https://sqd.ai)`
  * Retry budget applied to portal requests when the caller configured none.
  *
  * `HttpClient` performs no retries at all by default, which is a poor fit for portal
- * traffic, so portal requests opt into a budget. This is only a *default*: an explicit
- * `retryAttempts` — per request, in {@link PortalClientOptions.http}, or on a
- * caller-supplied `HttpClient` — takes precedence over it.
+ * traffic, so portal requests opt into a budget.
+ *
+ * Precedence is per-request `retryAttempts` > the budget configured on the client
+ * (through {@link PortalClientOptions.http}, or already set on a supplied `HttpClient`)
+ * > this default. With one exception: `HttpClient` stores an unset option and an
+ * explicit `0` as the same value, so a client configured with `retryAttempts: 0` cannot
+ * be told apart from an unconfigured one and falls back here too. Turning retries off
+ * therefore takes a per-request `retryAttempts: 0`.
  */
 const DEFAULT_RETRY_ATTEMPTS = 6
 
@@ -28,9 +33,11 @@ export interface PortalClientOptions {
      * Optional custom HTTP client to use.
      *
      * Its `retryAttempts` — whether given as options or already set on a supplied
-     * `HttpClient` — is the retry budget for every portal request. Leaving it unset
-     * (or `0`) falls back to 6 attempts, since `HttpClient` itself would otherwise
-     * perform no retries.
+     * `HttpClient` — becomes the *default* retry budget for portal requests; a
+     * per-request `retryAttempts` still overrides it. Leaving it unset falls back to 6
+     * attempts, since `HttpClient` itself would otherwise perform none. Note that `0`
+     * is indistinguishable from unset once `HttpClient` has stored it, so it falls back
+     * as well — to turn retries off, pass `retryAttempts: 0` per request.
      */
     http?: HttpClient | HttpClientOptions
 
