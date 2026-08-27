@@ -5,8 +5,8 @@
     "build": "rm -rf lib && tsc"
   },
   "devDependencies": {
-    "@subsquid/http-client": "^1.8.1",
-    "@subsquid/rpc-client": "^4.16.0",
+    "@subsquid/http-client": "^1.9.0",
+    "@subsquid/rpc-client": "^4.16.1",
     "@subsquid/scale-codec": "^4.0.1",
     "@subsquid/substrate-metadata-explorer": "^3.2.0",
     "@subsquid/substrate-runtime": "^2.0.1",

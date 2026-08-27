@@ -27,11 +27,11 @@
     "blake2b": "^2.1.4"
   },
   "peerDependencies": {
-    "@subsquid/rpc-client": "^4.16.0",
+    "@subsquid/rpc-client": "^4.16.1",
     "@subsquid/substrate-runtime": "^2.0.1"
   },
   "devDependencies": {
-    "@subsquid/rpc-client": "^4.16.0",
+    "@subsquid/rpc-client": "^4.16.1",
     "@subsquid/substrate-runtime": "^2.0.1",
     "@types/node": "^24.0.0",
     "typescript": "5.5.4"

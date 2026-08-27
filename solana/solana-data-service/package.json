@@ -18,7 +18,7 @@
     "bs58": "^5.0.0",
     "commander": "^11.1.0",
     "@subsquid/logger": "^1.6.0",
-    "@subsquid/rpc-client": "^4.16.0",
+    "@subsquid/rpc-client": "^4.16.1",
     "@subsquid/solana-normalization": "^1.0.0",
     "@subsquid/solana-rpc": "^1.0.0",
     "@subsquid/solana-rpc-data": "^1.0.0",

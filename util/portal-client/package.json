@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/portal-client",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "SQD Portal API",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -25,11 +25,11 @@
     "@subsquid/util-internal-validation": "^0.9.0"
   },
   "peerDependencies": {
-    "@subsquid/http-client": "^1.8.1"
+    "@subsquid/http-client": "^1.9.0"
   },
   "peerDependenciesMeta": {},
   "devDependencies": {
-    "@subsquid/http-client": "^1.8.1",
+    "@subsquid/http-client": "^1.9.0",
     "@types/node": "^24.0.0",
     "typescript": "5.5.4",
     "vitest": "4.1.5"
