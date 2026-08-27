@@ -71,6 +71,13 @@ describe('PortalClient head null-retries', () => {
 })
 
 /**
+ * `DEFAULT_RETRY_ATTEMPTS` is module-private; read the value the client resolved for an
+ * unconfigured transport rather than restating the constant here.
+ */
+const DEFAULT_ATTEMPTS: number = (new PortalClient({url: 'http://localhost/datasets/test'}) as any)
+    .defaultRetryAttempts
+
+/**
  * Build a PortalClient over a transport that answers `statuses` in order (the last
  * entry repeats), counting every attempt the retry loop makes. Retry pauses are
  * zeroed so the real loop in `HttpClient.request` runs at full speed.
@@ -93,18 +100,31 @@ describe('PortalClient retry budget', () => {
     it('applies its own default when the caller configured none', async () => {
         let {portal, attempts} = retryProbe([503])
         await assert.rejects(portal.getHead())
-        // 1 initial attempt + 6 retries
-        assert.strictEqual(attempts(), 7)
+        // 1 initial attempt + 20 retries
+        assert.strictEqual(attempts(), 21)
     })
 
     it('honors retryAttempts: Infinity instead of capping it at the default', async () => {
-        // Eight failures is more than the default budget would survive: under the
-        // regression this rejected on the 7th attempt.
-        let {portal, attempts} = retryProbe([503, 503, 503, 503, 503, 503, 503, 503, 200], {
-            retryAttempts: Infinity,
-        })
+        // More failures than the default budget would survive, so this cannot pass by
+        // falling back to the default.
+        let statuses = new Array(DEFAULT_ATTEMPTS + 5).fill(503).concat(200)
+        let {portal, attempts} = retryProbe(statuses, {retryAttempts: Infinity})
         assert.deepStrictEqual(await portal.getHead(), HEAD)
-        assert.strictEqual(attempts(), 9)
+        assert.strictEqual(attempts(), statuses.length)
+    })
+
+    it('default_retry_budget_is_about_five_minutes', () => {
+        // DEFAULT_RETRY_ATTEMPTS is tuned against HttpClient's default retrySchedule;
+        // a change to either that breaks the ~5 minute target should fail here.
+        let {retrySchedule} = new HttpClient({log: null})
+        let backoff = 0
+        for (let i = 0; i < DEFAULT_ATTEMPTS; i++) {
+            backoff += retrySchedule[Math.min(i, retrySchedule.length - 1)]
+        }
+        assert.ok(
+            backoff > 4.5 * 60_000 && backoff < 5.5 * 60_000,
+            `${DEFAULT_ATTEMPTS} attempts over [${retrySchedule}] spend ${backoff} ms, which is not about five minutes`
+        )
     })
 
     it('honors a budget lower than the default', async () => {
@@ -125,7 +145,7 @@ describe('PortalClient retry budget', () => {
     it('falls back to the default when a supplied HttpClient configured no retries', async () => {
         let {portal, attempts} = retryProbe([503], new HttpClient({log: null, retrySchedule: [0]}))
         await assert.rejects(portal.getHead())
-        assert.strictEqual(attempts(), 7)
+        assert.strictEqual(attempts(), DEFAULT_ATTEMPTS + 1)
     })
 
     it('lets a per-request budget override the configured one', async () => {

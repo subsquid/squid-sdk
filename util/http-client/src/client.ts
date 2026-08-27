@@ -64,7 +64,14 @@ export class HttpClient {
     protected headers?: Record<string, string | number | bigint>
     private baseUrl?: string
     private agent: AgentProvider
-    private retrySchedule: number[]
+    /**
+     * Backoff pauses (in milliseconds) between retries. The final entry repeats for
+     * every attempt beyond its length.
+     *
+     * Readable together with {@link retryAttempts} so that wrappers can work out how
+     * long a retry budget actually spans.
+     */
+    readonly retrySchedule: number[]
     /**
      * Retry budget configured for this client, `0` when none was configured.
      *
