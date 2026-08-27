@@ -69,9 +69,10 @@ export class HttpClient {
      * every attempt beyond its length.
      *
      * Readable together with {@link retryAttempts} so that wrappers can work out how
-     * long a retry budget actually spans.
+     * long a retry budget actually spans. Exposed for observation only, hence the
+     * readonly element type: mutating it would silently change retry behaviour.
      */
-    readonly retrySchedule: number[]
+    readonly retrySchedule: readonly number[]
     /**
      * Retry budget configured for this client, `0` when none was configured.
      *
