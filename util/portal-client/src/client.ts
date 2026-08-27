@@ -8,6 +8,32 @@ export * from './query'
 
 const USER_AGENT = `@subsquid/portal-client (https://sqd.ai)`
 
+/**
+ * Retry budget applied to portal requests when the caller configured none.
+ *
+ * `HttpClient` performs no retries at all by default, which is a poor fit for portal
+ * traffic, so portal requests opt into a budget.
+ *
+ * Sized to keep retrying for roughly five minutes, so that a stream rides out a portal
+ * restart or a brief upstream outage instead of failing the processor.
+ *
+ * Note that the option counts *retries*, not total requests: `n` means one initial
+ * request plus up to `n` more. Against `HttpClient`'s default `retrySchedule` —
+ * `[10, 100, 500, 2000, 10000, 20000]` ms, whose last entry repeats — the first six
+ * retries pause for 32.6 s in total and every further retry adds 20 s, so 20 retries
+ * span 5 min 13 s of backoff across 21 requests. Time spent on the requests themselves
+ * is on top of that, bounded by `httpTimeout` each. A different `retrySchedule` changes
+ * the span; `default_retry_budget_is_about_five_minutes` in the tests guards the pairing.
+ *
+ * Precedence is per-request `retryAttempts` > the budget configured on the client
+ * (through {@link PortalClientOptions.http}, or already set on a supplied `HttpClient`)
+ * > this default. With one exception: `HttpClient` stores an unset option and an
+ * explicit `0` as the same value, so a client configured with `retryAttempts: 0` cannot
+ * be told apart from an unconfigured one and falls back here too. Turning retries off
+ * therefore takes a per-request `retryAttempts: 0`.
+ */
+const DEFAULT_RETRY_ATTEMPTS = 20
+
 export interface PortalClientOptions {
     /**
      * The URL of the portal dataset.
@@ -16,6 +42,14 @@ export interface PortalClientOptions {
 
     /**
      * Optional custom HTTP client to use.
+     *
+     * Its `retryAttempts` — whether given as options or already set on a supplied
+     * `HttpClient` — becomes the *default* retry budget for portal requests; a
+     * per-request `retryAttempts` still overrides it. Leaving it unset falls back to 20
+     * retries — one request plus 20 more, roughly five minutes of backoff — since
+     * `HttpClient` itself would otherwise perform none. Note that `0` is
+     * indistinguishable from unset once `HttpClient` has stored it, so it falls back as
+     * well — to turn retries off, pass `retryAttempts: 0` per request.
      */
     http?: HttpClient | HttpClientOptions
 
@@ -135,10 +169,15 @@ export class PortalClient {
     private maxIdleTime: number
     private maxWaitTime: number
     private headRetrySchedule: number[]
+    private defaultRetryAttempts: number
 
     constructor(options: PortalClientOptions) {
         this.url = new URL(options.url)
         this.client = options.http instanceof HttpClient ? options.http : new HttpClient(options.http)
+        // `HttpClient` collapses "unset" and an explicit `0` into `0`, so both fall back
+        // to our default. A caller wanting no retries at all passes `retryAttempts: 0`
+        // per request, which outranks this.
+        this.defaultRetryAttempts = this.client.retryAttempts || DEFAULT_RETRY_ATTEMPTS
         this.headPollInterval = options.headPollInterval ?? 0
         this.maxBytes = options.maxBytes ?? 50 * 1024 * 1024
         this.maxIdleTime = options.maxIdleTime ?? 500
@@ -285,7 +324,7 @@ export class PortalClient {
     private request<T = any>(method: string, url: string, options: RequestOptions & HttpBody = {}) {
         return this.client.request<T>(method, url, {
             ...options,
-            retryAttempts: options.retryAttempts ?? 6,
+            retryAttempts: options.retryAttempts ?? this.defaultRetryAttempts,
             headers: {
                 'User-Agent': USER_AGENT,
                 ...options?.headers,
