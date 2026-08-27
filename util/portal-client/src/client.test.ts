@@ -80,12 +80,14 @@ const DEFAULT_ATTEMPTS: number = (
 
 /**
  * Build a PortalClient over a transport that answers `statuses` in order (the last
- * entry repeats), counting every attempt the retry loop makes. Retry pauses are
- * zeroed so the real loop in `HttpClient.request` runs at full speed.
+ * entry repeats), counting every request the retry loop makes. The real loop in
+ * `HttpClient.request` runs, so pauses are forced to zero to keep it fast — these
+ * tests count requests and never depend on the backoff. Options given here cannot
+ * reinstate a schedule; a caller passing a whole `HttpClient` must zero it itself.
  */
 function retryProbe(statuses: number[], http?: HttpClientOptions | HttpClient) {
     let attempts = 0
-    let client = http instanceof HttpClient ? http : new HttpClient({log: null, retrySchedule: [0], ...http})
+    let client = http instanceof HttpClient ? http : new HttpClient({log: null, ...http, retrySchedule: [0]})
     // Stands in for node-fetch `Headers`; the retry path only ever looks up `retry-after`.
     let headers = new Headers() as any
     ;(client as any).performRequestWithTimeout = async () => {
