@@ -89,7 +89,9 @@ export class HttpClient {
         this.headers = options.headers
         this.setBaseUrl(options.baseUrl)
         this.agent = options.agent || defaultAgentProvider
-        this.retrySchedule = options.retrySchedule || [10, 100, 500, 2000, 10000, 20000]
+        // Copied, not aliased: the property is exposed readonly, so the caller must not
+        // be able to retune a live client by mutating the array it passed in.
+        this.retrySchedule = options.retrySchedule ? [...options.retrySchedule] : [10, 100, 500, 2000, 10000, 20000]
         this.retryAttempts = options.retryAttempts || 0
         this.httpTimeout = options.httpTimeout ?? 20000
     }

@@ -74,8 +74,9 @@ describe('PortalClient head null-retries', () => {
  * `DEFAULT_RETRY_ATTEMPTS` is module-private; read the value the client resolved for an
  * unconfigured transport rather than restating the constant here.
  */
-const DEFAULT_ATTEMPTS: number = (new PortalClient({url: 'http://localhost/datasets/test'}) as any)
-    .defaultRetryAttempts
+const DEFAULT_ATTEMPTS: number = (
+    new PortalClient({url: 'http://localhost/datasets/test', http: {log: null}}) as any
+).defaultRetryAttempts
 
 /**
  * Build a PortalClient over a transport that answers `statuses` in order (the last
