@@ -1,6 +1,13 @@
 # Change Log - @subsquid/http-client
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Thu, 27 Aug 2026 13:59:40 GMT and should not be manually modified.
+
+## 1.9.0
+Thu, 27 Aug 2026 13:59:40 GMT
+
+### Minor changes
+
+- expose the configured `retryAttempts` and `retrySchedule` as readonly properties, so wrappers can defer to a caller's retry configuration instead of overriding it, and can work out how long a retry budget spans
 
 ## 1.8.1
 Mon, 11 May 2026 05:34:26 GMT

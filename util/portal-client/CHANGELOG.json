@@ -2,6 +2,26 @@
   "name": "@subsquid/portal-client",
   "entries": [
     {
+      "version": "0.7.0",
+      "tag": "@subsquid/portal-client_v0.7.0",
+      "date": "Thu, 27 Aug 2026 13:59:40 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "a configured `retryAttempts` (including `Infinity`) is no longer overridden by the client's own default, and that default goes from 6 retries to 20, so portal requests now keep retrying for about five minutes (was about 33 seconds) before failing"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.8.1` to `1.9.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.8.1` to `1.9.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.6.0",
       "tag": "@subsquid/portal-client_v0.6.0",
       "date": "Wed, 08 Jul 2026 22:11:26 GMT",
