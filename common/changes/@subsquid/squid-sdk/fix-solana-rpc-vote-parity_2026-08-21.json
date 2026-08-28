@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "comment": "solana/rpc: strip vote transactions before normalization, matching the Portal dataset producers - transactionIndex (and derived item ids) now agree with Portal-sourced data",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/squid-sdk"
+}

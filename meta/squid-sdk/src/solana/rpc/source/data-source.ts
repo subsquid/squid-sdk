@@ -1,5 +1,6 @@
 import {mapRpcBlock} from '@subsquid/solana-normalization'
 import {Block as RpcBlock, RpcApi, SolanaRpcDataSource} from '@subsquid/solana-rpc'
+import {removeVoteTransactions} from '@subsquid/solana-rpc-data'
 import {Block, DataRequest, FieldSelection} from '@subsquid/solana-stream'
 import {createLogger} from '@subsquid/logger'
 import {BlockBatch, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-source'
@@ -102,12 +103,7 @@ export class SolanaRpcStreamDataSource<F extends FieldSelection> implements Data
     }
 
     private mapBlock(raw: RpcBlock): Block<F> {
-        let normalized = mapRpcBlock(raw.slot, raw.block, log)
-        let request = this.requestFor(raw.slot)
-        if (request) {
-            filterBlockItems(normalized, request)
-        }
-        return decodeBlock(normalized, this.fields)
+        return mapRawBlock(raw, this.fields, this.requestFor(raw.slot))
     }
 
     private requestFor(slot: number): DataRequest | undefined {
@@ -119,6 +115,29 @@ export class SolanaRpcStreamDataSource<F extends FieldSelection> implements Data
 
         return undefined
     }
+}
+
+/**
+ * Map one raw RPC block to the Portal-shaped block model: strip votes, normalize, filter, decode.
+ *
+ * Vote transactions are removed BEFORE normalization because that is how the Portal datasets are
+ * produced (both `solana-ingest --no-votes` and the hot-blocks `solana-data-service` call
+ * `removeVoteTransactions` first) — `removeVoteTransactions` stamps each kept transaction with its
+ * original position (`_index`), which `mapRpcBlock` adopts as `transactionIndex`. Skipping this
+ * step would number transactions differently from the Portal whenever a vote precedes them in the
+ * raw `getBlock` order, changing every item id derived from the index.
+ */
+export function mapRawBlock<F extends FieldSelection>(
+    raw: RpcBlock,
+    fields: F,
+    request: DataRequest | undefined,
+): Block<F> {
+    removeVoteTransactions(raw.block)
+    let normalized = mapRpcBlock(raw.slot, raw.block, log)
+    if (request) {
+        filterBlockItems(normalized, request)
+    }
+    return decodeBlock(normalized, fields)
 }
 
 /**

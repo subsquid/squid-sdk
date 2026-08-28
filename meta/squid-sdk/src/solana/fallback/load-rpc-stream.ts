@@ -1,4 +1,4 @@
-const RPC_PEERS = ['@subsquid/solana-rpc', '@subsquid/solana-normalization']
+const RPC_PEERS = ['@subsquid/solana-rpc', '@subsquid/solana-rpc-data', '@subsquid/solana-normalization']
 
 /**
  * Load the sibling `solana/rpc` subpath lazily, only when an `rpc` source is actually built.
