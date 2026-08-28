@@ -114,6 +114,14 @@ export interface ColumnCommonOptions {
      */
     name?: string
     /**
+     * Indicates if this column is a part of the primary key.
+     *
+     * `id` is marked with the dedicated `@PrimaryColumn()` decorator instead;
+     * this option covers the additional columns of a composite primary key,
+     * declared via `@entity(pk: [...])`.
+     */
+    primary?: boolean
+    /**
      * Specifies if column's value must be unique or not.
      */
     unique?: boolean

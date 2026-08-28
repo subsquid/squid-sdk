@@ -78,3 +78,52 @@ export class Data {
     @ManyToOne(() => Item)
     item?: Item | null
 }
+
+/**
+ * Composite primary key, shaped as codegen emits it for
+ * `@entity(pk: ["id", "timestamp"])`: `id` keeps its own primary column and the
+ * extra key column is marked in place. Several rows may share an `id`,
+ * distinguished by `timestamp`.
+ */
+@Entity()
+export class Versioned {
+    constructor(props?: Partial<Versioned>) {
+        Object.assign(this, props)
+    }
+
+    @PrimaryColumn()
+    id!: string
+
+    @Column('timestamp with time zone', {primary: true})
+    timestamp!: Date
+
+    @Column('text', {nullable: true})
+    value?: string | null
+}
+
+/**
+ * Three-column key whose last column carries a value transformer — the change
+ * log has to record the transformed (driver-facing) value, or an entity-derived
+ * key would never match the row-derived one.
+ */
+@Entity()
+export class VersionedWide {
+    constructor(props?: Partial<VersionedWide>) {
+        Object.assign(this, props)
+    }
+
+    @PrimaryColumn()
+    id!: string
+
+    @Column('timestamp with time zone', {primary: true})
+    timestamp!: Date
+
+    @Column('numeric', {
+        primary: true,
+        transformer: {from: (s?: string) => (s == null ? null : BigInt(s)), to: (val?: bigint) => val?.toString()},
+    })
+    seq!: bigint
+
+    @Column('text', {nullable: true})
+    value?: string | null
+}

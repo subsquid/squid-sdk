@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-codegen",
+      "comment": "Generate composite primary keys declared with @entity(pk: [...]): `id` keeps @PrimaryColumn(), the remaining key columns are marked with `{primary: true}` on their own typed decorator. Output for entities without `pk` is unchanged",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen"
+}
