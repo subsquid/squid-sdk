@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "Treat HTTP 529 as retriable error",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}
