@@ -106,7 +106,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         index.line(`export * from "./${toCamelCase(name)}.model"`)
         const out = dir.file(`${toCamelCase(name)}.model.ts`)
         const imports = new ImportRegistry(name)
-        imports.useTypeormStore('Entity', 'Column', 'PrimaryColumn')
+        imports.useTypeormStore('Entity', 'PrimaryColumn')
         out.lazy(() => imports.render(model, out))
         out.line()
         printComment(entity, out)
@@ -148,6 +148,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                         }
                         break
                     case 'enum':
+                        imports.useTypeormStore('Column')
                         addIndexAnnotation(entity, key, imports, out, nameIndex)
                         out.line(
                             `@Column_("varchar", {length: ${getEnumMaxLength(
@@ -193,6 +194,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                         break
                     case 'object':
                     case 'union':
+                        imports.useTypeormStore('Column')
                         imports.useMarshal()
                         out.line(
                             `@Column_("jsonb", {transformer: {to: obj => ${marshalToJson(
@@ -220,6 +222,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                                 break
                             }
                             case 'enum':
+                                imports.useTypeormStore('Column')
                                 out.line(
                                     `@Column_("varchar", {length: ${getEnumMaxLength(
                                         model,
@@ -230,6 +233,7 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             case 'object':
                             case 'union':
                             case 'list':
+                                imports.useTypeormStore('Column')
                                 imports.useMarshal()
                                 out.line(
                                     `@Column_("jsonb", {transformer: {to: obj => ${marshalToJson(

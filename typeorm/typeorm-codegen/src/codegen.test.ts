@@ -71,6 +71,67 @@ describe('generateOrmModels — entity table name pruning (PR #514)', () => {
 
 // docs-beta/en/sdk/squid-sdk/reference/schema-file/entities.mdx (+ intro.mdx)
 describe('scalars, id and nullability', () => {
+    it('only imports Column when generated fields use it', () => {
+        const generated = generate(`
+            type ScalarOnly @entity {
+                id: ID!
+                name: String!
+            }
+
+            type WithEnum @entity {
+                id: ID!
+                status: Status!
+            }
+
+            type WithEnumArray @entity {
+                id: ID!
+                statuses: [Status!]!
+            }
+
+            type WithObject @entity {
+                id: ID!
+                metadata: Metadata!
+            }
+
+            type WithUnion @entity {
+                id: ID!
+                owner: Owner!
+            }
+
+            type WithLists @entity {
+                id: ID!
+                metadata: [Metadata!]!
+                owners: [Owner!]!
+                matrix: [[Int!]!]!
+            }
+
+            enum Status { ACTIVE }
+            type Metadata { name: String! }
+            type User { id: String! }
+            type Team { id: String! }
+            union Owner = User | Team
+        `)
+
+        const scalarOnly = generated.read('scalarOnly.model.ts')
+        expect(scalarOnly).not.toMatch(/\bColumn as Column_\b/)
+        expect(scalarOnly).toContain(
+            'import {Entity as Entity_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_} from "@subsquid/typeorm-store"',
+        )
+
+        for (const model of [
+            generated.read('withEnum.model.ts'),
+            generated.read('withEnumArray.model.ts'),
+            generated.read('withObject.model.ts'),
+            generated.read('withUnion.model.ts'),
+            generated.read('withLists.model.ts'),
+        ]) {
+            expect(model).toMatch(/\bColumn as Column_\b/)
+        }
+
+        const lists = generated.read('withLists.model.ts')
+        expect(lists.match(/@Column_\("jsonb"/g)).toHaveLength(3)
+    })
+
     const schema = `
         type Scalar @entity {
             id: ID!
