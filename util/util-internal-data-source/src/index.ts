@@ -33,6 +33,14 @@ export type BlockStream<B> = AsyncIterable<BlockBatch<B>>
 export interface DataSource<B> {
     getHead(): Promise<BlockRef>
 
+    /**
+     * Head number without the hash, for callers that need liveness/lag rather than a resume
+     * anchor. Optional: consumers fall back to `getHead().number`. An EVM RPC source answers it
+     * with `eth_blockNumber`, which is far cheaper for the provider than the
+     * `eth_getBlockByNumber` lookup a full {@link BlockRef} requires.
+     */
+    getHeight?(): Promise<number>
+
     getFinalizedHead(): Promise<BlockRef>
     
     // FIXME: maybe it's better to pass it as an option to `getStream`

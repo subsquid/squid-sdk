@@ -43,6 +43,11 @@ export class EvmRpcDataSource implements DataSource<Block> {
         }
     }
 
+    /** The cheap liveness poll: `eth_blockNumber`, no block lookup. */
+    getHeight(): Promise<number> {
+        return this.rpc.getHeight()
+    }
+
     async *getFinalizedStream(req: StreamRequest): BlockStream<Block> {
         let stream = this.ensureContinuity(
             this.ingest('finalized', req),
