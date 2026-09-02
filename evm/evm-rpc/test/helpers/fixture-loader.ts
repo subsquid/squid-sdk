@@ -19,6 +19,7 @@ const CHAIN_IDS: Record<string, string> = {
     'bittensor-testnet': '0x3b1',
     'base-mainnet': '0x2105',
     'ethereum-sepolia': '0xaa36a7',
+    'avalanche-testnet': '0xa869',
 }
 
 

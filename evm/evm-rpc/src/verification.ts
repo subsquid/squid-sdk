@@ -29,7 +29,80 @@ import {Bytes20, Bytes32, Qty} from './types'
 
 
 export function blockHash(block: GetBlock) {
-    return hashBlockHeader(ethereumHeaderFields(block))
+    let encoded = RLP.encode(ethereumHeaderFields(block))
+    return toHex(keccak256(encoded))
+}
+
+
+// Placeholder for an absent optional header field; RLP-encodes to 0x80 (the
+// empty byte string), matching coreth's handling of nil optional fields.
+const EMPTY_BUFFER = Buffer.alloc(0)
+
+
+function bigintOrEmpty(value: string | null | undefined): bigint | Buffer {
+    return value == null ? EMPTY_BUFFER : BigInt(value)
+}
+
+
+function decodeHexOrEmpty(value: string | null | undefined): Buffer {
+    return value == null ? EMPTY_BUFFER : decodeHex(value)
+}
+
+
+function trimTrailingEmpty(fields: any[]) {
+    while (fields.length > 0 && fields[fields.length - 1] === EMPTY_BUFFER) {
+        fields.pop()
+    }
+}
+
+
+/**
+ * Block hash for Avalanche C-Chain networks. The header extends the geth
+ * layout with `extDataHash` and optional extras:
+ * https://github.com/ava-labs/avalanchego/blob/master/vms/saevm/cchain/README.md#block-header-changes
+ */
+export function avalancheBlockHash(block: GetBlock) {
+    let fields: any[] = [
+        decodeHex(block.parentHash),
+        decodeHex(block.sha3Uncles),
+        decodeHex(block.miner),
+        decodeHex(block.stateRoot),
+        decodeHex(block.transactionsRoot),
+        decodeHex(block.receiptsRoot),
+        decodeHex(block.logsBloom),
+        BigInt(assertNotNull(block.difficulty, 'block.difficulty is missing')),
+        BigInt(block.number),
+        BigInt(block.gasLimit),
+        BigInt(block.gasUsed),
+        BigInt(block.timestamp),
+        decodeHex(block.extraData),
+        decodeHex(assertNotNull(block.mixHash, 'block.mixHash is missing')),
+        decodeHex(assertNotNull(block.nonce, 'block.nonce is missing')),
+        decodeHex(assertNotNull(block.extDataHash, 'block.extDataHash is missing')),
+        // optional fields
+        bigintOrEmpty(block.baseFeePerGas),
+        bigintOrEmpty(block.extDataGasUsed),
+        bigintOrEmpty(block.blockGasCost),
+        bigintOrEmpty(block.blobGasUsed),
+        bigintOrEmpty(block.excessBlobGas),
+        decodeHexOrEmpty(block.parentBeaconBlockRoot),
+        bigintOrEmpty(block.timestampMilliseconds),
+        bigintOrEmpty(block.minDelayExcess),
+        bigintOrEmpty(block.targetExponent),
+        bigintOrEmpty(block.minPriceExponent),
+        bigintOrEmpty(block.settledHeight),
+        bigintOrEmpty(block.settledGasUnix),
+        bigintOrEmpty(block.settledGasNumerator),
+        bigintOrEmpty(block.settledExcess),
+    ]
+    trimTrailingEmpty(fields)
+    return toHex(keccak256(RLP.encode(fields)))
+}
+
+
+export function extDataHash(block: GetBlock): Bytes32 {
+    let extData = decodeHex(assertNotNull(block.blockExtraData, 'block.blockExtraData is missing'))
+    return toHex(keccak256(RLP.encode(extData)))
 }
 
 
@@ -70,11 +143,6 @@ export function tempoBlockHash(block: GetBlock) {
     if (block.consensusContext) {
         fields.push(encodeTempoConsensusContext(block.consensusContext))
     }
-    return hashBlockHeader(fields)
-}
-
-
-function hashBlockHeader(fields: any[]) {
     let encoded = RLP.encode(fields)
     return toHex(keccak256(encoded))
 }

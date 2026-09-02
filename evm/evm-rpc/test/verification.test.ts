@@ -90,6 +90,13 @@ describe('Verification Functions', () => {
                 expect(computed).toEqual(block.withdrawalsRoot)
             })
 
+            it('extData verification', () => {
+                const block = loadBlock(fixture.chain, fixture.blockNumber)
+                if (block.extDataHash == null) return // non-Avalanche fixtures
+                const utils = new ChainUtils(getChainId(fixture.chain))
+                expect(block.extDataHash).toEqual(utils.calculateExtDataHash(block))
+            })
+
             it('transaction sender recovery', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 if (!block.transactions || block.transactions.length === 0) return

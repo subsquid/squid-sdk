@@ -2,7 +2,9 @@ import {assertNotNull} from '@subsquid/util-internal'
 import {GetBlock, Log, Receipt, Transaction, Withdrawal} from './rpc-data'
 import {Qty} from './types'
 import {
+    avalancheBlockHash,
     blockHash,
+    extDataHash,
     tempoBlockHash,
     logsBloom,
     receiptsRoot,
@@ -37,6 +39,8 @@ export class ChainUtils {
     public readonly isCronosMainnet: boolean
     public readonly isShibariumMainnet: boolean
     public readonly isHederaMainnet: boolean
+    public readonly isAvalancheMainnet: boolean
+    public readonly isAvalancheTestnet: boolean
     public readonly isPolygonBased: boolean
     public readonly useGasUsedForReceiptsRoot: boolean
 
@@ -55,6 +59,8 @@ export class ChainUtils {
         this.isCronosMainnet = chainId == '0x19' // Chain ID 25
         this.isShibariumMainnet = chainId == '0x6d'
         this.isHederaMainnet = chainId == '0x127'
+        this.isAvalancheMainnet = chainId == '0xa86a'
+        this.isAvalancheTestnet = chainId == '0xa869'
         this.isPolygonBased = this.isPolygonMainnet || this.isPolygonAmoy || this.isShibariumMainnet
         this.useGasUsedForReceiptsRoot = options?.useGasUsedForReceiptsRoot ?? false
     }
@@ -74,7 +80,19 @@ export class ChainUtils {
         if (this.isTempo) {
             return tempoBlockHash(block)
         }
+        if (this.isAvalancheMainnet || this.isAvalancheTestnet) {
+            return avalancheBlockHash(block)
+        }
         return blockHash(block)
+    }
+
+    calculateExtDataHash(block: GetBlock) {
+        let dataHash = assertNotNull(block.extDataHash, 'block.extDataHash is missing')
+        // pre-ApricotPhase1 Avalanche headers carry no extDataHash field at all,
+        // so the zero value here is a marshaling artifact rather than a real
+        // commitment — there is nothing to calculate, return the header value as-is
+        if (dataHash == "0x0000000000000000000000000000000000000000000000000000000000000000") return dataHash
+        return extDataHash(block)
     }
 
     calculateTransactionsRoot(block: GetBlock) {

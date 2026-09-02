@@ -665,6 +665,18 @@ function mapBlockHeader(src: rpc.GetBlock): BlockHeader {
         sharedGasLimit: src.sharedGasLimit ?? undefined,
         timestampMillisPart: src.timestampMillisPart ?? undefined,
         consensusContext: src.consensusContext ? mapTempoConsensusContext(src.consensusContext) : undefined,
+        blockExtraData: src.blockExtraData ?? undefined,
+        blockGasCost: src.blockGasCost ?? undefined,
+        extDataGasUsed: src.extDataGasUsed ?? undefined,
+        extDataHash: src.extDataHash ?? undefined,
+        minDelayExcess: src.minDelayExcess ?? undefined,
+        timestampMilliseconds: src.timestampMilliseconds ?? undefined,
+        targetExponent: src.targetExponent ?? undefined,
+        minPriceExponent: src.minPriceExponent ?? undefined,
+        settledHeight: src.settledHeight ?? undefined,
+        settledGasUnix: src.settledGasUnix ?? undefined,
+        settledGasNumerator: src.settledGasNumerator ?? undefined,
+        settledExcess: src.settledExcess ?? undefined,
     }
 }
 

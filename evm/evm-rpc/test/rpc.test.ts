@@ -246,6 +246,61 @@ describe('Rpc Class Integration', () => {
             expect(blocks.length).toEqual(1)
         })
 
+        it('exposes Avalanche block header fields', async () => {
+            const fixtureBlock = loadBlock('avalanche-testnet', 58119344)
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0xa869')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(58119344), true], fixtureBlock)
+
+            const rpc = new Rpc({ client: mockClient as any })
+
+            const blocks = await rpc.getBlockBatch([58119344], { transactions: true })
+            expect(blocks).toBeTruthy()
+            expect(blocks.length).toEqual(1)
+            const block = blocks[0].block
+            expect(block.targetExponent).toEqual('0xf0a451')
+            expect(block.minPriceExponent).toEqual('0xd49a784bcd1b8b0')
+            expect(block.settledHeight).toEqual('0x376d4ae')
+            expect(block.settledGasUnix).toEqual('0x6a971370')
+            expect(block.settledGasNumerator).toEqual('0x83720')
+            expect(block.settledExcess).toEqual('0x131b81f7')
+            expect(block.blockExtraData).toEqual('0x')
+            expect(block.extDataHash).toEqual('0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421')
+            expect(block.minDelayExcess).toEqual('0x6cd69c')
+            expect(block.timestampMilliseconds).toEqual('0x1a05e240f88')
+            expect(block.blockGasCost).toEqual('0x0')
+            expect(block.extDataGasUsed).toEqual('0x0')
+        })
+
+        it('verifies extData hash for Avalanche blocks', async () => {
+            const fixtureBlock = loadBlock('avalanche-testnet', 58119344)
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0xa869')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(58119344), true], fixtureBlock)
+
+            const rpc = new Rpc({client: mockClient as any, verifyExtDataHash: true})
+
+            const blocks = await rpc.getBlockBatch([58119344], {transactions: true})
+            expect(blocks).toBeTruthy()
+            expect(blocks[0].block.blockExtraData).toEqual(fixtureBlock.blockExtraData)
+        })
+
+        it('detects tampered blockExtraData', async () => {
+            const fixtureBlock = loadBlock('avalanche-testnet', 58119344)
+            const tampered = {...fixtureBlock, blockExtraData: '0xdeadbeef'}
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0xa869')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(58119344), true], tampered)
+
+            const rpc = new Rpc({client: mockClient as any, verifyExtDataHash: true})
+
+            await expect(rpc.getBlockBatch([58119344], {transactions: true}))
+                .rejects.toThrow('failed to verify extData hash')
+        })
+
         describe('Cronos phantom transaction stripping', () => {
             // Cronos (Ethermint) blocks may contain "phantom transactions" — txs that
             // were included by CometBFT but failed during EVM execution and never got

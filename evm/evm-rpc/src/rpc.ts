@@ -60,6 +60,7 @@ export interface RpcOptions {
     client: EvmRpcClient,
     finalityConfirmation?: number
     verifyBlockHash?: boolean
+    verifyExtDataHash?: boolean
     verifyTxSender?: boolean
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
@@ -81,6 +82,7 @@ export class Rpc {
     private client: EvmRpcClient
     private finalityConfirmation?: number
     private verifyBlockHash?: boolean
+    private verifyExtDataHash?: boolean
     private verifyTxSender?: boolean
     private verifyTxRoot?: boolean
     private verifyReceiptsRoot?: boolean
@@ -98,6 +100,7 @@ export class Rpc {
         this.client = options.client
         this.finalityConfirmation = options.finalityConfirmation
         this.verifyBlockHash = options.verifyBlockHash
+        this.verifyExtDataHash = options.verifyExtDataHash
         this.verifyTxSender = options.verifyTxSender
         this.verifyTxRoot = options.verifyTxRoot
         this.verifyReceiptsRoot = options.verifyReceiptsRoot
@@ -237,6 +240,11 @@ export class Rpc {
         if (this.verifyBlockHash) {
             let blockHash = utils.calculateBlockHash(block)
             assert.equal(block.hash, blockHash, 'failed to verify block hash')
+        }
+
+        if (this.verifyExtDataHash && block.extDataHash != null) {
+            let extDataHash = utils.calculateExtDataHash(block)
+            assert.equal(block.extDataHash, extDataHash, 'failed to verify extData hash')
         }
 
         if (this.verifyTxRoot && withTransactions) {
