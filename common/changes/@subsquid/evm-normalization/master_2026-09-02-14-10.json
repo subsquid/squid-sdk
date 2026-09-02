@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "expose Avalanche block header fields (blockExtraData, extDataHash, minDelayExcess, timestampMilliseconds, targetExponent, minPriceExponent, settled*) on the normalized block header",
+      "type": "minor",
+      "packageName": "@subsquid/evm-normalization"
+    }
+  ],
+  "packageName": "@subsquid/evm-normalization"
+}

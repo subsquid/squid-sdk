@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "expose Avalanche block header fields on GetBlock, verify block hashes and the extDataHash commitment",
+      "type": "minor",
+      "packageName": "@subsquid/evm-rpc"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
