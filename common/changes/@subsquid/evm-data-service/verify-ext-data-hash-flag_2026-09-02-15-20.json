@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-data-service",
+      "comment": "add --verify-ext-data-hash flag: check blockExtraData against the extDataHash header commitment",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-data-service"
+}

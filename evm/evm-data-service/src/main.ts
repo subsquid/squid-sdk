@@ -38,6 +38,7 @@ runProgram(async () => {
     program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
     program.option('--use-debug-trace-block-by-number', 'Use debug_traceBlockByNumber instead of debug_traceBlockByHash')
     program.option('--verify-block-hash', 'Verify block header against block hash')
+    program.option('--verify-ext-data-hash', 'Verify block extData payload against the extDataHash header commitment')
     program.option('--verify-tx-sender', 'Check if transaction sender matches sender recovered from signature')
     program.option('--verify-tx-root', 'Verify block transactions against transactions root')
     program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
@@ -75,6 +76,7 @@ runProgram(async () => {
         useDebugApiForStatediffs?: boolean
         useDebugTraceBlockByNumber?: boolean
         verifyBlockHash?: boolean
+        verifyExtDataHash?: boolean
         verifyTxSender?: boolean
         verifyTxRoot?: boolean
         verifyReceiptsRoot?: boolean
@@ -108,6 +110,7 @@ runProgram(async () => {
         useDebugApiForStateDiffs: args.useDebugApiForStatediffs,
         useDebugTraceBlockByNumber: args.useDebugTraceBlockByNumber,
         verifyBlockHash: args.verifyBlockHash,
+        verifyExtDataHash: args.verifyExtDataHash,
         verifyTxSender: args.verifyTxSender,
         verifyTxRoot: args.verifyTxRoot,
         verifyReceiptsRoot: args.verifyReceiptsRoot,
