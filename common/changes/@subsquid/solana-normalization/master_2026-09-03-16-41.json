@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-normalization",
+      "comment": "expose the transactionConfig field (v1 message compute budget: computeUnitLimit, heapSize, loadedAccountsDataSizeLimit, priorityFee) on the normalized transaction",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-normalization"
+}

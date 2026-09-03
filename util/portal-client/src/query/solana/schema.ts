@@ -59,6 +59,13 @@ const AddressTableLookup = object({
     writableIndexes: array(NAT),
 })
 
+const TransactionConfig = object({
+    computeUnitLimit: nullable(NAT),
+    heapSize: nullable(NAT),
+    loadedAccountsDataSizeLimit: nullable(NAT),
+    priorityFee: nullable(BIG_NAT),
+})
+
 function getTransactionSchema(fields: FieldSelection) {
     return object(
         project(fields.transaction, {
@@ -69,6 +76,7 @@ function getTransactionSchema(fields: FieldSelection) {
             }),
             accountKeys: array(B58),
             addressTableLookups: array(AddressTableLookup),
+            transactionConfig: option(TransactionConfig),
             numReadonlySignedAccounts: NAT,
             numReadonlyUnsignedAccounts: NAT,
             numRequiredSignatures: NAT,

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "accept the transactionConfig field of Solana v1 transactions in portal query results",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}

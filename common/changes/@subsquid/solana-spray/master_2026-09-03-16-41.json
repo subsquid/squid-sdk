@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-spray",
+      "comment": "support the transactionConfig field of Solana v1 transactions in the notification schema",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-spray"
+}

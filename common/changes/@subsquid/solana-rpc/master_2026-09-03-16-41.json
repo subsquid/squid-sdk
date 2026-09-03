@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-rpc",
+      "comment": "request Solana v1 transactions (maxSupportedTransactionVersion: 1) in getBlock batches and blockSubscribe, so block fetching no longer fails with -32015 once the v1 transaction format is active",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/solana-rpc"
+}
