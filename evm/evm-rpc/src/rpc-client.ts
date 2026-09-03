@@ -29,6 +29,9 @@ export class EvmRpcClient extends RpcClient {
             if (this.isRpcRateLimitError(err)) {
                 return true
             }
+            if (this.isErpcUpstreamsExhaustedError(err)) {
+                return true
+            }
             if (this.isRpcInternalError(err)) {
                 return this.retryInternalServerErrors
             }
@@ -39,6 +42,17 @@ export class EvmRpcClient extends RpcClient {
             }
         }
         return false
+    }
+
+    /**
+     * eRPC replies with HTTP 200 + a JSON-RPC error when its whole upstream set
+     * is temporarily unavailable (all providers rate-limited / 5xx). It attaches
+     * a stable `data.code` and can normalize the code to a misleading value
+     * (e.g. -32601), so key off `data.code` and retry like a direct provider 5xx.
+     */
+    isErpcUpstreamsExhaustedError(err: RpcError): boolean {
+        let code = (err.data as any)?.code
+        return code === 'ErrUpstreamsExhausted' || code === 'ErrFailsafeRetryExceeded'
     }
 
     isRpcInternalError(err: RpcError): boolean {
