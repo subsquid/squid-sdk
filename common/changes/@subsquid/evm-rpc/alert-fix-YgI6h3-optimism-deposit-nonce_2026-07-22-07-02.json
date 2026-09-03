@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "Treat transaction `nonce` as optional so OP-stack deposit txs (type 0x7e) that omit it (e.g. from Alchemy) no longer fail validation",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
