@@ -1106,19 +1106,26 @@ export async function withdrawalsRoot(withdrawals: Withdrawal[]) {
 }
 
 
+// Debug tracers serialize call kinds with inconsistent casing across node
+// implementations (geth `CALL`, some tracers `call`, zkSync-era `Call`), so every
+// membership test below compares the canonical upper-cased form.
+function canonicalFrameType(type: string): string {
+    return type.toUpperCase()
+}
+
 const CALL_FRAME_TYPES = new Set([
-    'CALL', 'call',
+    'CALL',
     'CALLCODE',
-    'DELEGATECALL', 'delegateCall',
+    'DELEGATECALL',
     'STATICCALL',
     'INVALID'
 ])
 
 // INVALID is a top-level execution outcome, not a nested-only call kind: unlike
 // DELEGATECALL/STATICCALL/CALLCODE it can legitimately appear as a root frame.
-const ROOT_CALL_FRAME_TYPES = new Set(['CALL', 'call', 'INVALID'])
+const ROOT_CALL_FRAME_TYPES = new Set(['CALL', 'INVALID'])
 const CREATE_FRAME_TYPES = new Set([
-    'CREATE', 'create',
+    'CREATE',
     'CREATE2'
 ])
 const SELFDESTRUCT_FRAME_TYPES = new Set(['SELFDESTRUCT'])
@@ -1153,17 +1160,18 @@ export function checkDebugFrameStructure(root: CallFrame): string | undefined {
 
 function checkFrameStructure(frame: CallFrame, traceAddress: number[]): string | undefined {
     let label = frameLabel(traceAddress)
+    let type = canonicalFrameType(frame.type)
 
     // Normalization treats a root STOP result as an empty trace list. The same
     // type nested in a tree has no mapper representation.
-    if (frame.type === 'STOP' && traceAddress.length === 0) {
+    if (type === 'STOP' && traceAddress.length === 0) {
         if (frame.calls?.length) {
             return 'root STOP frame has subcalls'
         }
         return
     }
 
-    if (!MAPPABLE_FRAME_TYPES.has(frame.type)) {
+    if (!MAPPABLE_FRAME_TYPES.has(type)) {
         return `${label} has unsupported type ${frame.type}`
     }
 
@@ -1175,14 +1183,14 @@ function checkFrameStructure(frame: CallFrame, traceAddress: number[]): string |
         return `${label} has invalid to address ${frame.to}`
     }
 
-    if (CALL_FRAME_TYPES.has(frame.type)) {
+    if (CALL_FRAME_TYPES.has(type)) {
         if (frame.to == null) {
             return `${callFrameLabel(traceAddress)} has no target`
         }
         if (frame.input == null) {
             return `${callFrameLabel(traceAddress)} has no input`
         }
-    } else if (CREATE_FRAME_TYPES.has(frame.type)) {
+    } else if (CREATE_FRAME_TYPES.has(type)) {
         if (frame.input == null) {
             return `${createFrameLabel(traceAddress)} has no init code`
         }
@@ -1191,7 +1199,7 @@ function checkFrameStructure(frame: CallFrame, traceAddress: number[]): string |
         if ((frame.to || frame.output) && !frame.gasUsed) {
             return `${createFrameLabel(traceAddress)} has a result but no gas used`
         }
-    } else if (SELFDESTRUCT_FRAME_TYPES.has(frame.type) && frame.to == null) {
+    } else if (SELFDESTRUCT_FRAME_TYPES.has(type) && frame.to == null) {
         return `${selfdestructFrameLabel(traceAddress)} has no beneficiary`
     }
 
@@ -1218,18 +1226,18 @@ export function checkCallFrameTree(
 ): string | undefined {
     // A root STOP maps to an empty trace list, so there is nothing to agree with the
     // transaction about. The structural check owns this shape.
-    if (root.type === 'STOP') return
+    if (canonicalFrameType(root.type) === 'STOP') return
 
     if (!sameAddress(root.from, tx.from)) {
         return `root frame is executed by ${root.from}, but the transaction is sent by ${tx.from}`
     }
 
     if (tx.to == null) {
-        if (!CREATE_FRAME_TYPES.has(root.type)) {
+        if (!CREATE_FRAME_TYPES.has(canonicalFrameType(root.type))) {
             return `root frame has type ${root.type}, but the transaction creates a contract`
         }
     } else {
-        if (!ROOT_CALL_FRAME_TYPES.has(root.type)) {
+        if (!ROOT_CALL_FRAME_TYPES.has(canonicalFrameType(root.type))) {
             return `root frame has type ${root.type}, but the transaction calls ${tx.to}`
         }
         if (!sameAddress(root.to, tx.to)) {
@@ -1255,14 +1263,14 @@ function checkSubcalls(parent: CallFrame, traceAddress: number[]): string | unde
             return `frame ${at.join('/')} is executed by ${call.from}, but ${executor} is on top of the call stack`
         }
 
-        if (SELFDESTRUCT_FRAME_TYPES.has(call.type) && call.to == null) {
+        if (SELFDESTRUCT_FRAME_TYPES.has(canonicalFrameType(call.type)) && call.to == null) {
             return `${selfdestructFrameLabel(at)} has no beneficiary`
         }
 
         // An unknown child type cannot define the execution context for its own
         // children. Keep validating independent ancestors and siblings, but leave
         // that subtree to the structural validator.
-        if (!MAPPABLE_FRAME_TYPES.has(call.type)) continue
+        if (!MAPPABLE_FRAME_TYPES.has(canonicalFrameType(call.type))) continue
 
         let violation = checkSubcalls(call, at)
         if (violation) return violation
@@ -1271,9 +1279,8 @@ function checkSubcalls(parent: CallFrame, traceAddress: number[]): string | unde
 
 
 function isContextPreserving(type: string): boolean {
-    switch(type) {
+    switch(canonicalFrameType(type)) {
         case 'DELEGATECALL':
-        case 'delegateCall':
         case 'CALLCODE':
             return true
         default:
