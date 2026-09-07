@@ -530,26 +530,7 @@ export class RpcClient {
     }
 
     isConnectionError(err: Error): boolean {
-        if (err instanceof RetryError) return true
-        if (isRateLimitError(err)) return true
-        if (isExecutionTimeoutError(err)) return true
-        if (isRequestTimedOutError(err)) return true
-        if (err instanceof RpcConnectionError) return true
-        if (isHttpConnectionError(err)) return true
-        if (err instanceof HttpTimeoutError) return true
-        if (err instanceof HttpError) {
-            switch(err.response.status) {
-                case 408:
-                case 429:
-                case 502:
-                case 503:
-                case 504:
-                    return true
-                default:
-                    return false
-            }
-        }
-        return false
+        return isRetryableError(err)
     }
 
     reset(reason?: RpcConnectionError): void {
@@ -593,8 +574,46 @@ function getCallPriority(req: Req): number {
 }
 
 
+/**
+ * Classifies transient failures that should be retried rather than propagated.
+ * Exported so the retry policy can be unit-tested independently of a live connection.
+ */
+export function isRetryableError(err: unknown): boolean {
+    if (err instanceof RetryError) return true
+    if (isRateLimitError(err)) return true
+    if (isExecutionTimeoutError(err)) return true
+    if (isRequestTimedOutError(err)) return true
+    if (isUpstreamNotSyncedError(err)) return true
+    if (err instanceof RpcConnectionError) return true
+    if (isHttpConnectionError(err)) return true
+    if (err instanceof HttpTimeoutError) return true
+    if (err instanceof HttpError) {
+        switch (err.response.status) {
+            case 408:
+            case 429:
+            case 502:
+            case 503:
+            case 504:
+                return true
+            default:
+                return false
+        }
+    }
+    return false
+}
+
+
 function isRateLimitError(err: unknown): boolean {
     return err instanceof RpcError && /rate limit/i.test(err.message)
+}
+
+
+// erpc/load-balancing proxies briefly report a finalized head ahead of the
+// upstream node's synced tip; the block appears within seconds, so retry.
+function isUpstreamNotSyncedError(err: unknown): boolean {
+    return err instanceof RpcError &&
+        (/upstreams? not synced/i.test(err.message) ||
+            /does not have the requested block/i.test(err.message))
 }
 
 
