@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-data-source",
+      "comment": "Add an optional getHeight() to DataSource — a number-only head poll for liveness/lag consumers, cheaper than getHead() where the backing protocol distinguishes the two",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-data-source"
+}

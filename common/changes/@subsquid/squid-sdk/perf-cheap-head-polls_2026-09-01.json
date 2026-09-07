@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "comment": "The fallback source's freshness head polls prefer a source's number-only getHeight() (eth_blockNumber on EVM RPC sources) over the full getHead() block lookup",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/squid-sdk"
+}

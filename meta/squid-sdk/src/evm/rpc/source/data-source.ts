@@ -99,6 +99,13 @@ export class EvmRpcStreamDataSource<F extends FieldSelection> implements DataSou
         return this.inner.getHead()
     }
 
+    // Forwarded explicitly, like every method here: this adapter is what the fallback holds, so
+    // an optional contract method it omits is invisible — the fallback would silently downgrade
+    // every head poll to the full eth_getBlockByNumber lookup.
+    getHeight(): Promise<number> {
+        return this.inner.getHeight()
+    }
+
     getFinalizedHead(): Promise<BlockRef> {
         return this.inner.getFinalizedHead()
     }

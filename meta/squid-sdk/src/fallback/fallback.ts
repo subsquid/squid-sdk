@@ -328,14 +328,14 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
         try {
             let head = await this.headWithTimeout(i)
-            this.#headCache[i] = {value: head.number, at: now}
+            this.#headCache[i] = {value: head, at: now}
             // The head fetch doubles as the liveness probe: a fresh head is proof the source
             // is reachable, so it counts toward the `M` passes that promote a standby to `healthy`
             // — without which it could never be eligible for eager switch-up. A reachable source
             // is also when we (re)confirm its capability.
             this.health[i].onLivenessPass()
             this.#maybeProbeCapability(i)
-            return head.number
+            return head
         } catch (e) {
             this.#headCache[i] = {value: undefined, at: now}
             this.failSource(i, classifyError('liveness', e))
@@ -349,10 +349,15 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * active source: on timeout this rejects, and `getCachedHead` records a liveness failure. `null`
      * disables the guard and defers to the underlying client's own request timeout.
      */
-    private headWithTimeout(i: number): Promise<BlockRef> {
+    private headWithTimeout(i: number): Promise<number> {
         let timeoutMs = this.policy.headPollTimeoutMs
+        // Only the head NUMBER is consumed by the freshness machinery, so a source offering the
+        // cheaper number-only poll (`eth_blockNumber` on an EVM RPC source, vs a full block
+        // lookup) is preferred.
+        let source = this.sources[i].source
+        let head = source.getHeight ? source.getHeight() : source.getHead().then(h => h.number)
         return withTimeout(
-            this.sources[i].source.getHead(),
+            head,
             timeoutMs,
             () => new Error(`head poll timed out after ${timeoutMs}ms`),
         )
