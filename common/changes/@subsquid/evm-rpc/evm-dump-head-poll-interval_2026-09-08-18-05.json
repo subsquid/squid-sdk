@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "Make the head poll interval configurable through `EvmRpcDataSourceOptions.headPollInterval`. Defaults to the previous hard-coded 100ms.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
