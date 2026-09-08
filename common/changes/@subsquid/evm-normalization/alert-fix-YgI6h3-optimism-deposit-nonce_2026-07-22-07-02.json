@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-normalization",
+      "comment": "Treat normalized transaction `nonce` as optional so OP-stack deposit txs (type 0x7e) that omit it no longer fail mapping",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-normalization"
+}
