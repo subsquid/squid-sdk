@@ -11,6 +11,13 @@ export interface EvmRpcDataSourceOptions {
     req: DataRequest
     strideSize?: number
     strideConcurrency?: number
+    /**
+     * Pause before asking for the chain head again, once caught up with it.
+     *
+     * Defaults to 100ms, which suits head-following consumers.
+     * Archiving is not latency sensitive and should set this much higher.
+     */
+    headPollInterval?: number
 }
 
 
@@ -19,12 +26,14 @@ export class EvmRpcDataSource implements DataSource<Block> {
     public readonly req: DataRequest
     private strideSize: number
     private strideConcurrency: number
+    private headPollInterval: number
 
     constructor(options: EvmRpcDataSourceOptions) {
         this.rpc = options.rpc
         this.req = options.req
         this.strideSize = Math.max(1, options.strideSize ?? 5)
         this.strideConcurrency = Math.max(1, Math.min(options.strideConcurrency ?? 5, this.rpc.getConcurrency()))
+        this.headPollInterval = Math.max(0, options.headPollInterval ?? 100)
     }
 
     async getFinalizedHead(): Promise<BlockRef> {
@@ -117,6 +126,7 @@ export class EvmRpcDataSource implements DataSource<Block> {
             range,
             strideSize: this.strideSize,
             strideConcurrency: this.strideConcurrency,
+            headPollInterval: this.headPollInterval,
         })
     }
 }

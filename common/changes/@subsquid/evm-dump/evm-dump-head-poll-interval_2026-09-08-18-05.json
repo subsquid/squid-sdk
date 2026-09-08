@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-dump",
+      "comment": "Add `--head-poll-interval`, defaulting to 1000ms, so a caught-up dumper stops re-asking for the chain head ten times a second.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-dump"
+}

@@ -20,6 +20,7 @@ import {
 interface Options extends DumperOptions {
     retryInternalServerErrors?: boolean
     finalityConfirmation?: number
+    headPollInterval?: number
     withReceipts?: boolean
     withTraces?: boolean
     withStatediffs?: boolean
@@ -45,6 +46,12 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.description('Data archiving tool for EVM-based chains')
         program.option('--retry-internal-server-errors', 'If set, the internal server errors from the RPC endpoint will be treated as retryable')
         program.option('--finality-confirmation <number>', 'Finality offset from the head of a chain', positiveInt)
+        program.option(
+            '--head-poll-interval <ms>',
+            'How long to wait before asking for the chain head again, once caught up with it',
+            positiveInt,
+            1000
+        )
         program.option('--with-receipts', 'Fetch transaction receipt data')
         program.option('--with-traces', 'Fetch EVM call traces')
         program.option('--with-statediffs', 'Fetch EVM state updates')
@@ -116,6 +123,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 checkCumulativeGasUsed: !this.options().skipCumulativeGasUsedCheck,
                 useGasUsedForReceiptsRoot: this.options().useGasUsedForReceiptsRoot,
             }),
+            headPollInterval: this.options().headPollInterval,
             req: {
                 transactions: true,
                 logs: !this.options().withReceipts,
