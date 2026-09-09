@@ -110,8 +110,10 @@ export class Rpc {
 
     getBlockBatch(slots: number[], options?: GetBlockOptions): Promise<(GetBlock | null | undefined)[]> {
         assert(
-            options?.maxSupportedTransactionVersion == null || options.maxSupportedTransactionVersion === 0,
-            'maximum supported transaction version is 0'
+            options?.maxSupportedTransactionVersion == null ||
+                options.maxSupportedTransactionVersion === 0 ||
+                options.maxSupportedTransactionVersion === 1,
+            'maximum supported transaction version is 1'
         )
         let call: RpcCall[] = new Array(slots.length)
         for (let i = 0; i < slots.length; i++) {

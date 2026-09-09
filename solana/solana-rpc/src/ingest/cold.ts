@@ -245,7 +245,7 @@ async function getColdSlots(
 ): Promise<(GetBlock | undefined)[]> {
     let result = await rpc.getBlockBatch(slots, {
         commitment: 'finalized',
-        maxSupportedTransactionVersion: 0,
+        maxSupportedTransactionVersion: 1,
         rewards: !!req.rewards,
         transactionDetails: req.transactions ? 'full' : 'none'
     })

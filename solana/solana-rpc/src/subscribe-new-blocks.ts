@@ -43,7 +43,7 @@ class BlockSubscription {
                     commitment: 'confirmed',
                     showRewards: this.req.rewards,
                     transactionDetails: this.req.transactions ? 'full' : 'none',
-                    maxSupportedTransactionVersion: 0,
+                    maxSupportedTransactionVersion: 1,
                     encoding: 'json'
                 }
             ],

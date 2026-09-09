@@ -98,7 +98,7 @@ export class PollStream {
 
         let blocks = await this.rpc.getBlockBatch(slots, {
             commitment: this.commitment,
-            maxSupportedTransactionVersion: 0,
+            maxSupportedTransactionVersion: 1,
             rewards: this.req.rewards,
             transactionDetails: this.req.transactions ? 'full' : 'none'
         })
