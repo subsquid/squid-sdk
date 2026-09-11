@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-ingest",
+      "comment": "resume archive listing from the last served chunk instead of re-walking the whole bucket on every fetch",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/hyperliquid-replica-cmds-ingest"
+}

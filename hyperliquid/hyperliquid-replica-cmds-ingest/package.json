@@ -16,7 +16,8 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.462.0",
@@ -34,6 +35,7 @@
   "devDependencies": {
     "@types/node": "^24.0.0",
     "@types/lz4": "^0.6.4",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }
