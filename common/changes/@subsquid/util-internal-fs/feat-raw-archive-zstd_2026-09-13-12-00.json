@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-fs",
+      "comment": "`LocalFs.readStream()` rejects on a missing file",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-fs"
+}

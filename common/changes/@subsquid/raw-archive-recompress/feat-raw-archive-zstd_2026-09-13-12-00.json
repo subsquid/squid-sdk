@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/raw-archive-recompress",
+      "comment": "tool converting gzip data chunks of a raw archive to zstd",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/raw-archive-recompress"
+}

@@ -150,6 +150,15 @@ COPY --from=tron-data-service-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/tron/tron-data-service/lib/main.js"]
 
 
+FROM deps AS raw-archive-recompress-builder
+RUN node common/scripts/install-run-rush.js build --to @subsquid/raw-archive-recompress
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/raw-archive-recompress
+
+FROM node AS raw-archive-recompress
+COPY --from=raw-archive-recompress-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/util/raw-archive-recompress/bin/run.js"]
+
+
 FROM deps AS fuel-dump-builder
 RUN node common/scripts/install-run-rush.js build --to @subsquid/fuel-dump
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/fuel-dump

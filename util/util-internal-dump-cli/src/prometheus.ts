@@ -6,6 +6,7 @@ import {collectDefaultMetrics, Gauge, Counter, Registry} from 'prom-client'
 
 export class PrometheusServer {
     private registry = new Registry()
+    private compressionGauge: Gauge
     private chainHeightGauge: Gauge
     private lastWrittenBlockGauge: Gauge
     private rpcRequestsGauge: Gauge
@@ -40,6 +41,13 @@ export class PrometheusServer {
                 }
                 this.set(chainHeight)
             }
+        })
+
+        this.compressionGauge = new Gauge({
+            name: 'sqd_dump_raw_compression',
+            help: 'Compression of the data chunks being written (1 for the active one)',
+            labelNames: ['compression'],
+            registers: [this.registry]
         })
 
         this.lastWrittenBlockGauge = new Gauge({
@@ -158,6 +166,12 @@ export class PrometheusServer {
         })
 
         collectDefaultMetrics({register: this.registry})
+    }
+
+    setCompression(active: string) {
+        for (let compression of ['gzip', 'zstd']) {
+            this.compressionGauge.set({compression}, compression == active ? 1 : 0)
+        }
     }
 
     setLastWrittenBlock(block: number) {

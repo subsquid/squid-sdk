@@ -2,7 +2,7 @@ import {last, waitDrain} from '@subsquid/util-internal'
 import {assertRange, Range} from '@subsquid/util-internal-range'
 import assert from 'assert'
 import {StringDecoder} from 'node:string_decoder'
-import zlib from 'zlib'
+import {Compression, createCompressor} from './compression'
 
 
 export async function* splitLines(bytes: AsyncIterable<Buffer>): AsyncIterable<string[]> {
@@ -46,12 +46,13 @@ class LineSplitter {
 }
 
 
-export class GzipBuffer {
-    private stream = zlib.createGzip()
+export class CompressedBuffer {
+    private stream
     private buf: Buffer[] = []
     private size = 0
 
-    constructor() {
+    constructor(compression: Compression, level?: number) {
+        this.stream = createCompressor(compression, level)
         this.stream.on('data', chunk => {
             this.buf.push(chunk)
             this.size += chunk.length
@@ -79,6 +80,11 @@ export class GzipBuffer {
             this.stream.end()
         })
     }
+}
+
+
+export function isNotFoundError(err: any): boolean {
+    return err?.code === 'ENOENT' || err?.name === 'NoSuchKey' || err?.$metadata?.httpStatusCode === 404
 }
 
 
