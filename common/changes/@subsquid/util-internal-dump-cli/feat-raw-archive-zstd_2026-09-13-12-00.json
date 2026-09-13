@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "comment": "add `--compression` and `--compression-level` options",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-cli"
+}

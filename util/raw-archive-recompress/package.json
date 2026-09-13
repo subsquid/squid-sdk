@@ -1,14 +1,17 @@
 {
-  "name": "@subsquid/util-internal-archive-layout",
-  "version": "2.0.0",
-  "description": "Utilities for Subsquid Archive filesystem layout",
+  "name": "@subsquid/raw-archive-recompress",
+  "version": "0.0.0",
+  "description": "Converts gzip data chunks of a raw archive to zstd",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
-  "main": "lib/index.js",
+  "bin": {
+    "raw-archive-recompress": "./bin/run.js"
+  },
   "files": [
+    "bin",
     "lib",
     "src"
   ],
@@ -17,15 +20,14 @@
     "test": "vitest --run"
   },
   "dependencies": {
+    "@subsquid/logger": "^1.6.0",
     "@subsquid/util-internal": "^3.3.1",
-    "@subsquid/util-internal-hex": "^1.2.3",
-    "@subsquid/util-internal-range": "^0.3.0"
-  },
-  "peerDependencies": {
-    "@subsquid/util-internal-fs": "^0.2.0"
+    "@subsquid/util-internal-archive-layout": "^2.0.0",
+    "@subsquid/util-internal-commander": "^1.4.0",
+    "@subsquid/util-internal-fs": "^0.2.0",
+    "commander": "^11.1.0"
   },
   "devDependencies": {
-    "@subsquid/util-internal-fs": "^0.2.0",
     "@types/node": "^24.0.0",
     "typescript": "5.5.4",
     "vitest": "4.1.5"

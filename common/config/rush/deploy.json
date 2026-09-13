@@ -23,6 +23,7 @@
     "@subsquid/bitcoin-ingest",
     "@subsquid/fuel-dump",
     "@subsquid/fuel-ingest",
+    "@subsquid/raw-archive-recompress",
     "@subsquid/evm-data-service",
     "@subsquid/evm-dump",
     "@subsquid/evm-ingest",

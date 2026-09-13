@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-archive-layout",
+      "comment": "read and write zstd data chunks",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-archive-layout"
+}
