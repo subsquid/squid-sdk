@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:49:58 GMT and should not be manually modified.
+
+## 8.8.2
+Mon, 14 Sep 2026 10:49:58 GMT
+
+### Patches
+
+- don't expose v5 general extrinsics' transaction extension fields to squids
 
 ## 8.8.1
 Mon, 11 May 2026 05:34:26 GMT
