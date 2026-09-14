@@ -128,6 +128,36 @@ describe('EvmRpcDataSource retry behavior', () => {
         assert.strictEqual(deliveredBlocks[0].header.hash, BLOCK1_HASH)
     })
 
+    it('retries and delivers block after "cannot query unfinalized data" from debug_traceBlockByHash (Avalanche)', async () => {
+        let traceCalls = 0
+
+        let ds = new EvmRpcDataSource({
+            rpc: mockRpc({
+                eth_blockNumber: () => ({result: '0x1'}),
+                eth_getBlockByNumber: () => ({result: block1()}),
+                debug_traceBlockByHash: () => {
+                    if (traceCalls++ === 0) {
+                        return {error: {code: -32000, message: 'cannot query unfinalized data'}}
+                    }
+                    return {result: []}
+                }
+            }),
+            finalityConfirmation: 0,
+            headPollInterval: 0
+        })
+
+        let deliveredBlocks: any[] = []
+        await ds.processHotBlocks(
+            [{range: {from: 1, to: 1}, request: {traces: [{}]}}],
+            {height: 0, hash: GENESIS_HASH, top: []},
+            async upd => { deliveredBlocks.push(...upd.blocks) }
+        )
+
+        assert.ok(traceCalls >= 2, `debug_traceBlockByHash should have been called at least twice, got ${traceCalls}`)
+        assert.strictEqual(deliveredBlocks.length, 1)
+        assert.strictEqual(deliveredBlocks[0].header.hash, BLOCK1_HASH)
+    })
+
     it('propagates unexpected eth_getLogs error without retrying', async () => {
         let getLogsCalls = 0
 
