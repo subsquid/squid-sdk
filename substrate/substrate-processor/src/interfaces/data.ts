@@ -16,7 +16,8 @@ type Selector<Props extends string, Exclusion extends string = ''> = {
 
 export interface FieldSelection {
     block?: Selector<keyof base.BlockHeader, BlockRequiredFields>
-    extrinsic?: Selector<keyof base.Extrinsic, ExtrinsicRequiredFields>
+    // extension fields feed tip parsing in substrate-data; no data source maps them to extrinsics
+    extrinsic?: Selector<keyof base.Extrinsic, ExtrinsicRequiredFields | 'extensionVersion' | 'extensions'>
     call?: Selector<keyof base.Call, CallRequiredFields>
     event?: Selector<keyof base.Event, EventRequiredFields>
 }
