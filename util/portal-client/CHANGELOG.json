@@ -2,6 +2,18 @@
   "name": "@subsquid/portal-client",
   "entries": [
     {
+      "version": "0.8.0",
+      "tag": "@subsquid/portal-client_v0.8.0",
+      "date": "Mon, 14 Sep 2026 10:05:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "accept the transactionConfig field of Solana v1 transactions in portal query results"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.7.0",
       "tag": "@subsquid/portal-client_v0.7.0",
       "date": "Thu, 27 Aug 2026 13:59:40 GMT",

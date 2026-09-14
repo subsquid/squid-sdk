@@ -1,6 +1,13 @@
 # Change Log - @subsquid/portal-client
 
-This log was last generated on Thu, 27 Aug 2026 13:59:40 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 0.8.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- accept the transactionConfig field of Solana v1 transactions in portal query results
 
 ## 0.7.0
 Thu, 27 Aug 2026 13:59:40 GMT

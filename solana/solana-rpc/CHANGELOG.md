@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-rpc
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 1.1.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- request Solana v1 transactions (maxSupportedTransactionVersion: 1) in getBlock batches and blockSubscribe, so block fetching no longer fails with -32015 once the v1 transaction format is active
 
 ## 1.0.0
 Mon, 11 May 2026 05:34:26 GMT
