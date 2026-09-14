@@ -30,13 +30,14 @@ export function getOtherCompression(compression: Compression): Compression {
 }
 
 
-export function createCompressor(compression: Compression, level?: number): Transform {
+export function createCompressor(compression: Compression, level?: number, chunkSize?: number): Transform {
     switch(compression) {
         case 'gzip':
-            return zlib.createGzip(level == null ? undefined : {level})
+            return zlib.createGzip({level, chunkSize})
         case 'zstd':
             assertZstdSupport()
             return zlib.createZstdCompress({
+                chunkSize,
                 params: {
                     [zlib.constants.ZSTD_c_compressionLevel]: level ?? DEFAULT_ZSTD_LEVEL,
                     [zlib.constants.ZSTD_c_checksumFlag]: 1,
@@ -48,13 +49,13 @@ export function createCompressor(compression: Compression, level?: number): Tran
 }
 
 
-export function createDecompressor(compression: Compression): Transform {
+export function createDecompressor(compression: Compression, chunkSize?: number): Transform {
     switch(compression) {
         case 'gzip':
-            return zlib.createGunzip()
+            return zlib.createGunzip({chunkSize})
         case 'zstd':
             assertZstdSupport()
-            return zlib.createZstdDecompress()
+            return zlib.createZstdDecompress({chunkSize})
     }
 }
 

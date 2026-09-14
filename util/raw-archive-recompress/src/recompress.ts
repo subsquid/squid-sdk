@@ -21,6 +21,10 @@ import {setTimeout as sleep} from 'timers/promises'
 const GZIP_FILE = getBlocksFileName('gzip')
 const ZSTD_FILE = getBlocksFileName('zstd')
 
+// Every zlib output chunk crosses the main thread. With the 16 KiB default it,
+// not the thread pool, capped parallel conversion at about two dozen workers.
+const ZLIB_CHUNK_SIZE = 1024 * 1024
+
 
 /**
  * Chunks below the highest unfinished one that workers may already have converted.
@@ -167,9 +171,9 @@ export async function convertChunk(
     let zstdParts: Buffer[] = []
     await pipeline(
         Readable.from([gzip]),
-        createDecompressor('gzip'),
+        createDecompressor('gzip', ZLIB_CHUNK_SIZE),
         source,
-        createCompressor('zstd', level),
+        createCompressor('zstd', level, ZLIB_CHUNK_SIZE),
         new Writable({
             write(data: Buffer, _, cb) {
                 zstdParts.push(data)
@@ -182,7 +186,7 @@ export async function convertChunk(
     let roundTrip = new PayloadDigest()
     await pipeline(
         Readable.from([zstd]),
-        createDecompressor('zstd'),
+        createDecompressor('zstd', ZLIB_CHUNK_SIZE),
         roundTrip,
         new Writable({
             write(_data, _, cb) {
