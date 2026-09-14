@@ -4,9 +4,10 @@ import {createHash} from 'crypto'
 import {mkdtemp, readdir, readFile, rename, rm, writeFile} from 'fs/promises'
 import {tmpdir} from 'os'
 import path from 'path'
+import {setTimeout as sleep} from 'timers/promises'
 import {gunzipSync, zstdCompressSync} from 'zlib'
 import {afterEach, beforeEach, describe, expect, it} from 'vitest'
-import {convert, getStatus} from './recompress'
+import {convert, forEachDescending, getStatus} from './recompress'
 
 
 function makeBlock(n: number) {
@@ -162,5 +163,100 @@ describe('raw-archive-recompress', () => {
 
         await expect(convert(layout())).rejects.toThrow(/does not match/)
         expect(await readdir(renamed)).toEqual([getBlocksFileName('gzip')])
+    })
+
+    it('splits the archive between --to and --from without gaps or overlaps', async () => {
+        await writeBlocks(root, 2999, 'gzip')
+        let gzipChunks = await countFiles(root, 'gzip')
+        await writeBlocks(root, 3499, 'zstd')
+
+        // The lower range is the larger one and goes first: a boundary search over the whole archive
+        // would now land in its zstd run and skip the gzip chunks of the upper range.
+        let lower = await convert(layout(), {to: 2000, resumeWindow: 2})
+        expect(lower.chunks).toBeGreaterThan(0)
+        expect((await getStatus(layout(), {to: 2000})).gzipChunks).toBe(0)
+
+        let upper = await convert(layout(), {from: 2000, resumeWindow: 2})
+        expect(upper.chunks).toBeGreaterThan(0)
+        expect(lower.chunks + upper.chunks).toBe(gzipChunks)
+        expect(await countFiles(root, 'gzip')).toBe(0)
+        expect((await convert(layout())).chunks).toBe(0)
+        expect(await readBlocks(root)).toEqual(Array.from({length: 3500}, (_, n) => makeBlock(n)))
+    })
+
+    it('converts with several workers', async () => {
+        await writeBlocks(root, 1999, 'gzip')
+        let gzipChunks = await countFiles(root, 'gzip')
+        await writeBlocks(root, 2999, 'zstd')
+
+        let result = await convert(layout(), {concurrency: 8})
+        expect(result.chunks).toBe(gzipChunks)
+        expect(await countFiles(root, 'gzip')).toBe(0)
+        expect(await readBlocks(root)).toEqual(Array.from({length: 3000}, (_, n) => makeBlock(n)))
+    })
+
+    it('resumes over zstd chunks left below gzip ones by interrupted workers', async () => {
+        await writeBlocks(root, 999, 'gzip')
+        let gzipChunks = await countFiles(root, 'gzip')
+        await writeBlocks(root, 1999, 'zstd')
+
+        let dirs = await listChunkDirs(root)
+        let converted = [gzipChunks - 2, gzipChunks - 4, gzipChunks - 5]
+        for (let i of converted) {
+            let gzipFile = path.join(dirs[i], getBlocksFileName('gzip'))
+            await writeFile(path.join(dirs[i], getBlocksFileName('zstd')), zstdCompressSync(gunzipSync(await readFile(gzipFile))))
+            await rm(gzipFile)
+        }
+
+        // the boundary lands on one of the converted chunks; only the window above it reaches the gzip ones there
+        let result = await convert(layout(), {concurrency: 2, resumeWindow: 5})
+        expect(result.chunks).toBe(gzipChunks - converted.length)
+        expect(await countFiles(root, 'gzip')).toBe(0)
+        expect(await readBlocks(root)).toEqual(Array.from({length: 2000}, (_, n) => makeBlock(n)))
+    })
+
+    it('stops taking chunks after a worker fails', async () => {
+        await writeBlocks(root, 1999, 'gzip')
+        await writeBlocks(root, 2999, 'zstd')
+
+        let gzipChunks = (await getStatus(layout())).gzipChunks!
+        let victim = (await listChunkDirs(root))[gzipChunks - 1]
+        await rename(victim, victim.replace(/-[0-9a-z]+$/, '-deadbeef'))
+
+        await expect(convert(layout(), {concurrency: 4})).rejects.toThrow(/does not match/)
+        expect(await countFiles(root, 'gzip')).toBeGreaterThan(gzipChunks / 2)
+    })
+})
+
+
+describe('forEachDescending', () => {
+    it('visits every index once, newest first per worker', async () => {
+        let visited: number[] = []
+        await forEachDescending(99, 7, 16, async i => {
+            await sleep(i % 3)
+            visited.push(i)
+        })
+        expect(visited.slice().sort((a, b) => a - b)).toEqual(Array.from({length: 100}, (_, i) => i))
+    })
+
+    it('never takes an index a window or more below the highest unfinished one', async () => {
+        let unfinished = new Set<number>()
+        let maxGap = 0
+        await forEachDescending(63, 4, 5, async i => {
+            unfinished.add(i)
+            maxGap = Math.max(maxGap, Math.max(...unfinished) - i)
+            // the newest index is slow, so the others would run far ahead without the window
+            await sleep(i == 63 ? 50 : 1)
+            unfinished.delete(i)
+        })
+        expect(maxGap).toBeLessThan(5)
+    })
+
+    it('does nothing for an empty range', async () => {
+        let calls = 0
+        await forEachDescending(-1, 4, 16, async () => {
+            calls += 1
+        })
+        expect(calls).toBe(0)
     })
 })
