@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-runtime",
+      "comment": "decode metadata v15 and v16, describe transaction extension pipelines per version and decode v5 general extrinsics of any extension version",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/substrate-runtime"
+}
