@@ -1,4 +1,5 @@
 import {Logger} from '@subsquid/logger'
+import {last} from '@subsquid/util-internal'
 import {
     ArchiveLayout,
     checkShorHashMatch,
@@ -21,6 +22,27 @@ const GZIP_FILE = getBlocksFileName('gzip')
 const ZSTD_FILE = getBlocksFileName('zstd')
 
 
+/**
+ * Chunks below the highest unfinished one that workers may already have converted.
+ *
+ * A restart rescans this many chunks above the boundary it finds,
+ * so it must not depend on `concurrency`, which can differ between runs.
+ */
+export const RESUME_WINDOW = 1024
+
+
+export interface ChunkRange {
+    /**
+     * Skip chunks that start below this block
+     */
+    from?: number
+    /**
+     * Skip chunks that start at or above this block
+     */
+    to?: number
+}
+
+
 export interface ArchiveStatus {
     chunks: number
     newest?: Compression
@@ -36,13 +58,14 @@ export interface ArchiveStatus {
 }
 
 
-export interface ConvertOptions {
-    /**
-     * Stop before the first chunk that starts below this block
-     */
-    from?: number
+export interface ConvertOptions extends ChunkRange {
     level?: number
     bytesPerSecond?: number
+    concurrency?: number
+    /**
+     * Defaults to `RESUME_WINDOW`; smaller values let tests reach past the rescan
+     */
+    resumeWindow?: number
     log?: Logger
 }
 
@@ -54,8 +77,14 @@ export interface ConvertResult {
 }
 
 
-export async function getStatus(layout: ArchiveLayout): Promise<ArchiveStatus> {
-    let chunks = await listChunks(layout)
+/**
+ * Status of the chunks in `range`.
+ *
+ * Parallel conversions of disjoint ranges leave zstd runs between gzip runs,
+ * so only the status of a range that one conversion owns is meaningful.
+ */
+export async function getStatus(layout: ArchiveLayout, range: ChunkRange = {}): Promise<ArchiveStatus> {
+    let chunks = selectRange(await listChunks(layout), range)
     let boundary = await findZstdBoundary(layout, chunks)
     if (boundary == null) {
         return {
@@ -73,47 +102,65 @@ export async function getStatus(layout: ArchiveLayout): Promise<ArchiveStatus> {
 
 
 /**
- * Converts gzip chunks below the trailing run of zstd chunks, newest first.
+ * Converts gzip chunks of `options` range, newest first.
  *
- * Going downwards keeps the archive a run of gzip chunks followed by a run of zstd chunks
- * at every moment, which is what `getStatus()` relies on and what makes a restart resume.
+ * Going downwards keeps the range a run of gzip chunks followed by a run of zstd chunks,
+ * except for at most `RESUME_WINDOW` chunks below the highest unfinished one.
+ * A restart finds the boundary and rescans that window above it, skipping zstd chunks.
  */
 export async function convert(layout: ArchiveLayout, options: ConvertOptions = {}): Promise<ConvertResult> {
-    let chunks = await listChunks(layout)
-    let boundary = await findZstdBoundary(layout, chunks)
-    if (boundary == null) {
+    let all = await listChunks(layout)
+    if (all.length == 0 || await getChunkCompression(layout, last(all)) != 'zstd') {
         throw new Error('the newest data chunk is not zstd, switch the writer to zstd first')
     }
+
+    let chunks = selectRange(all, options)
+    let window = options.resumeWindow ?? RESUME_WINDOW
+    let boundary = await findZstdBoundary(layout, chunks) ?? chunks.length
+    let start = Math.min(boundary + window, chunks.length) - 1
 
     let result: ConvertResult = {chunks: 0, gzipBytes: 0, zstdBytes: 0}
     let limiter = new ByteRateLimiter(options.bytesPerSecond)
 
-    // a crash between writing .zst and deleting .gz leaves both
-    await deleteLeftoverGzip(layout, chunks[boundary])
-
-    for (let i = boundary - 1; i >= 0; i--) {
+    await forEachDescending(start, options.concurrency ?? 1, window, async i => {
         let chunk = chunks[i]
-        if (options.from != null && chunk.from < options.from) break
-
         let sizes = await convertChunk(layout, chunk, options.level)
+        if (sizes == null) return
+
         result.chunks += 1
         result.gzipBytes += sizes.gzipBytes
         result.zstdBytes += sizes.zstdBytes
         options.log?.info(`${getChunkPath(chunk)}: ${sizes.gzipBytes} -> ${sizes.zstdBytes} bytes`)
 
         await limiter.consume(sizes.gzipBytes + sizes.zstdBytes)
-    }
+    })
 
     return result
 }
 
 
+/**
+ * Converts one chunk. Returns `undefined` when the chunk is already zstd.
+ */
 export async function convertChunk(
     layout: ArchiveLayout,
     chunk: DataChunk,
     level?: number
-): Promise<{gzipBytes: number, zstdBytes: number}> {
+): Promise<{gzipBytes: number, zstdBytes: number} | undefined> {
     let fs = layout.getChunkFs(chunk)
+
+    let files = await fs.ls()
+    if (files.includes(ZSTD_FILE)) {
+        // a crash between writing .zst and deleting .gz leaves both
+        if (files.includes(GZIP_FILE)) {
+            await fs.delete(GZIP_FILE)
+        }
+        return
+    }
+    if (!files.includes(GZIP_FILE)) {
+        throw new Error(`${getChunkPath(chunk)}: no blocks file`)
+    }
+
     let gzip = Buffer.from(await fs.readFile(GZIP_FILE))
 
     let source = new PayloadDigest()
@@ -157,6 +204,72 @@ export async function convertChunk(
 }
 
 
+/**
+ * Runs `task` for `start, start - 1, ..., 0` on `concurrency` workers.
+ *
+ * An index is taken only while it is less than `window` below the highest unfinished one,
+ * so a crash leaves finished tasks below an unfinished one only within that window.
+ * After a failure no new task starts; the running ones finish before the error is thrown.
+ */
+export async function forEachDescending(
+    start: number,
+    concurrency: number,
+    window: number,
+    task: (index: number) => Promise<void>
+): Promise<void> {
+    let next = start
+    let unfinished = new Set<number>()
+    let waiters: (() => void)[] = []
+    let failed = false
+
+    function wakeUp(): void {
+        let ws = waiters
+        waiters = []
+        for (let resolve of ws) {
+            resolve()
+        }
+    }
+
+    async function worker(): Promise<void> {
+        while (!failed && next >= 0) {
+            let highest = unfinished.size > 0 ? Math.max(...unfinished) : next
+            if (highest - next >= window) {
+                await new Promise<void>(resolve => waiters.push(resolve))
+                continue
+            }
+
+            let index = next
+            next -= 1
+            unfinished.add(index)
+            try {
+                await task(index)
+            } catch (err) {
+                failed = true
+                throw err
+            } finally {
+                unfinished.delete(index)
+                wakeUp()
+            }
+        }
+    }
+
+    let workers = Array.from({length: Math.max(1, concurrency)}, () => worker())
+    let results = await Promise.allSettled(workers)
+    for (let r of results) {
+        if (r.status == 'rejected') throw r.reason
+    }
+}
+
+
+function selectRange(chunks: DataChunk[], range: ChunkRange): DataChunk[] {
+    return chunks.filter(chunk => {
+        let aboveFrom = range.from == null || chunk.from >= range.from
+        let belowTo = range.to == null || chunk.from < range.to
+        return aboveFrom && belowTo
+    })
+}
+
+
 async function listChunks(layout: ArchiveLayout): Promise<DataChunk[]> {
     let chunks: DataChunk[] = []
     for await (let chunk of layout.getDataChunks()) {
@@ -171,7 +284,7 @@ async function listChunks(layout: ArchiveLayout): Promise<DataChunk[]> {
  */
 async function findZstdBoundary(layout: ArchiveLayout, chunks: DataChunk[]): Promise<number | undefined> {
     if (chunks.length == 0) return
-    if (await getChunkCompression(layout, chunks[chunks.length - 1]) != 'zstd') return
+    if (await getChunkCompression(layout, last(chunks)) != 'zstd') return
 
     let lo = 0
     let hi = chunks.length - 1
@@ -192,15 +305,6 @@ export async function getChunkCompression(layout: ArchiveLayout, chunk: DataChun
     if (files.includes(ZSTD_FILE)) return 'zstd'
     if (files.includes(GZIP_FILE)) return 'gzip'
     throw new Error(`${getChunkPath(chunk)}: no blocks file`)
-}
-
-
-async function deleteLeftoverGzip(layout: ArchiveLayout, chunk: DataChunk): Promise<void> {
-    let fs = layout.getChunkFs(chunk)
-    let files = await fs.ls()
-    if (files.includes(ZSTD_FILE) && files.includes(GZIP_FILE)) {
-        await fs.delete(GZIP_FILE)
-    }
 }
 
 
