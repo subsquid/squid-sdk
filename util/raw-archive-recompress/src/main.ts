@@ -1,17 +1,45 @@
+import {S3Client} from '@aws-sdk/client-s3'
+import {NodeHttpHandler} from '@smithy/node-http-handler'
 import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
 import {ArchiveLayout, DEFAULT_ZSTD_LEVEL, getChunkPath} from '@subsquid/util-internal-archive-layout'
-import {FileOrUrl, nat, positiveReal} from '@subsquid/util-internal-commander'
-import {createFs} from '@subsquid/util-internal-fs'
-import {Command} from 'commander'
-import {convert, getStatus} from './recompress'
+import {FileOrUrl, nat, positiveInt, positiveReal} from '@subsquid/util-internal-commander'
+import {createFs, S3Fs} from '@subsquid/util-internal-fs'
+import {Command, InvalidArgumentError} from 'commander'
+import {availableParallelism} from 'os'
+import {ChunkRange, convert, getStatus} from './recompress'
+
+
+// zlib streams run on the libuv thread pool, which has 4 threads unless this is set before its first use
+process.env.UV_THREADPOOL_SIZE ??= String(availableParallelism())
 
 
 const log = createLogger('sqd:raw-archive-recompress')
 
 
 function openArchive(url: string): ArchiveLayout {
-    return new ArchiveLayout(createFs(url))
+    if (!url.startsWith('s3://')) {
+        return new ArchiveLayout(createFs(url))
+    }
+
+    // Without timeouts the SDK waits for a stalled response forever and the process never exits.
+    // `requestTimeout` is socket idle time, so a slow 128 MiB transfer is not cut off.
+    let client = new S3Client({
+        endpoint: process.env.AWS_S3_ENDPOINT,
+        requestHandler: new NodeHttpHandler({
+            connectionTimeout: 10_000,
+            requestTimeout: 60_000
+        })
+    })
+    return new ArchiveLayout(new S3Fs({root: url.slice('s3://'.length), client}))
+}
+
+
+function checkRange(range: ChunkRange): ChunkRange {
+    if (range.from != null && range.to != null && range.from >= range.to) {
+        throw new InvalidArgumentError('--from must be below --to')
+    }
+    return range
 }
 
 
@@ -25,12 +53,17 @@ program
     .command('status')
     .description('Print where the trailing run of zstd chunks starts')
     .argument('<archive>', 'Either local dir or s3:// url', FileOrUrl(['s3:']))
-    .action(async (archive: string) => {
-        let status = await getStatus(openArchive(archive))
+    .option('--from <block>', 'Only chunks that start at or above this block', nat)
+    .option('--to <block>', 'Only chunks that start below this block', nat)
+    .action(async (archive: string, options: ChunkRange) => {
+        let range = checkRange(options)
+        let status = await getStatus(openArchive(archive), range)
         let firstZstdChunk = status.firstZstdChunk
 
         let report = {
             archive,
+            from: range.from ?? null,
+            to: range.to ?? null,
             chunks: status.chunks,
             newest: status.newest ?? null,
             firstZstdChunk: firstZstdChunk ? getChunkPath(firstZstdChunk) : null,
@@ -45,11 +78,16 @@ program
     .description('Convert gzip chunks below the trailing run of zstd chunks, newest first')
     .argument('<archive>', 'Either local dir or s3:// url', FileOrUrl(['s3:']))
     .option('--from <block>', 'Stop before the first chunk that starts below this block', nat)
+    .option('--to <block>', 'Skip chunks that start at or above this block; with --from on another host, splits the archive', nat)
+    .option('--concurrency <number>', 'Chunks converted at once', positiveInt, 1)
     .option('--level <number>', 'zstd compression level', nat, DEFAULT_ZSTD_LEVEL)
     .option('--rate-limit <MB/s>', 'Limit of bytes read and written, in megabytes per second', positiveReal)
-    .action(async (archive: string, options: {from?: number, level: number, rateLimit?: number}) => {
+    .action(async (archive: string, options: ChunkRange & {concurrency: number, level: number, rateLimit?: number}) => {
+        let range = checkRange(options)
         let result = await convert(openArchive(archive), {
-            from: options.from,
+            from: range.from,
+            to: range.to,
+            concurrency: options.concurrency,
             level: options.level,
             bytesPerSecond: options.rateLimit == null ? undefined : options.rateLimit * 1024 * 1024,
             log
