@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/raw-archive-recompress",
-      "comment": "convert `--to` and `--concurrency`; `status --from/--to` reports one range",
+      "comment": "convert `--to` and `--concurrency`; `status --from/--to` reports one range; S3 requests time out instead of hanging",
       "type": "minor"
     }
   ],

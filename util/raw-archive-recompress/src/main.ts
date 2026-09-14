@@ -1,8 +1,10 @@
+import {S3Client} from '@aws-sdk/client-s3'
+import {NodeHttpHandler} from '@smithy/node-http-handler'
 import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
 import {ArchiveLayout, DEFAULT_ZSTD_LEVEL, getChunkPath} from '@subsquid/util-internal-archive-layout'
 import {FileOrUrl, nat, positiveInt, positiveReal} from '@subsquid/util-internal-commander'
-import {createFs} from '@subsquid/util-internal-fs'
+import {createFs, S3Fs} from '@subsquid/util-internal-fs'
 import {Command, InvalidArgumentError} from 'commander'
 import {availableParallelism} from 'os'
 import {ChunkRange, convert, getStatus} from './recompress'
@@ -16,7 +18,20 @@ const log = createLogger('sqd:raw-archive-recompress')
 
 
 function openArchive(url: string): ArchiveLayout {
-    return new ArchiveLayout(createFs(url))
+    if (!url.startsWith('s3://')) {
+        return new ArchiveLayout(createFs(url))
+    }
+
+    // Without timeouts the SDK waits for a stalled response forever and the process never exits.
+    // `requestTimeout` is socket idle time, so a slow 128 MiB transfer is not cut off.
+    let client = new S3Client({
+        endpoint: process.env.AWS_S3_ENDPOINT,
+        requestHandler: new NodeHttpHandler({
+            connectionTimeout: 10_000,
+            requestTimeout: 60_000
+        })
+    })
+    return new ArchiveLayout(new S3Fs({root: url.slice('s3://'.length), client}))
 }
 
 
