@@ -11,6 +11,10 @@ export const COMPRESSIONS: readonly Compression[] = ['gzip', 'zstd']
 export const DEFAULT_ZSTD_LEVEL = 9
 
 
+// 2^27 is the largest window zstd decoders accept without extra settings
+const ZSTD_WINDOW_LOG = 27
+
+
 export function getBlocksFileName(compression: Compression): string {
     switch(compression) {
         case 'gzip':
@@ -35,7 +39,9 @@ export function createCompressor(compression: Compression, level?: number): Tran
             return zlib.createZstdCompress({
                 params: {
                     [zlib.constants.ZSTD_c_compressionLevel]: level ?? DEFAULT_ZSTD_LEVEL,
-                    [zlib.constants.ZSTD_c_checksumFlag]: 1
+                    [zlib.constants.ZSTD_c_checksumFlag]: 1,
+                    [zlib.constants.ZSTD_c_enableLongDistanceMatching]: 1,
+                    [zlib.constants.ZSTD_c_windowLog]: ZSTD_WINDOW_LOG
                 }
             })
     }
