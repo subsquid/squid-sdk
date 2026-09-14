@@ -17,6 +17,10 @@ interface RawChunk {
 
 
 export class HyperliquidArchive {
+    // Last chunk we served. Lets a subsequent forward fetch resume near the
+    // head instead of re-listing the whole archive from the root every time.
+    private cursor?: RawChunk
+
     constructor(private fs: Fs, private log: Logger) { }
 
     async *getRawBlocks(range?: Range): AsyncIterable<Block[]> {
@@ -52,17 +56,26 @@ export class HyperliquidArchive {
     }
 
     private async *getRawChunks(range: FiniteRange): AsyncIterable<RawChunk> {
+        // Folders are chronologically ordered (tops are ISO-8601, subfolders are
+        // YYYYMMDD) and block numbers grow monotonically, so when the request
+        // moves forward we can resume from the last served chunk and skip listing
+        // all the already-consumed folders. Fall back to a full walk otherwise.
+        let resume = this.cursor
+        if (resume != null && resume.block > range.from) resume = undefined
+
         this.log.debug('listing root folder')
         let tops = await this.fs.ls()
 
-        let prevChunk: RawChunk | undefined
+        let prevChunk: RawChunk | undefined = resume
         for (let i = 0; i < tops.length; i++) {
             let top = tops[i]
+            if (resume != null && top < resume.top) continue
 
             this.log.debug(`listing ${top} folder`)
             let subfolders = await this.fs.ls(`${top}`)
             for (let j = 0; j < subfolders.length; j++) {
                 let subfolder = subfolders[j]
+                if (resume != null && top == resume.top && subfolder < resume.subfolder) continue
 
                 this.log.debug(`listing ${top}/${subfolder} folder`)
                 let files = await this.fs.ls(`${top}`, `${subfolder}`)
@@ -71,13 +84,16 @@ export class HyperliquidArchive {
                     let block = parseFile(filename) + 1 // first block in each file it is filename + 1
                     let rawChunk = { filename, subfolder, top, block }
                     if (block == range.from) {
+                        this.cursor = rawChunk
                         yield rawChunk
                     } else if (block > range.from) {
                         let lastChunk = assertNotNull(prevChunk, `block ${range.from} is not supported`)
                         if (lastChunk.block < range.from) {
+                            this.cursor = lastChunk
                             yield lastChunk
                         }
                         if (block > range.to) return
+                        this.cursor = rawChunk
                         yield rawChunk
                     }
 
