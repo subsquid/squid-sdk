@@ -60,6 +60,15 @@ function* mapDebugFrame(
         return
     }
 
+    // Scroll nodes return a structurally empty call frame ({"type": "", "from": "", ...}, or the
+    // equivalent `{}` result) for failed L1 message transactions (tx type 126, L1MessageTx):
+    // the geth callTracer has no call frame to reconstruct for them.
+    // https://github.com/scroll-tech/go-ethereum/issues/1170
+    // Treat an empty/missing top-level frame type as "trace is not available".
+    if (!debugFrameResult.result.type) {
+        return
+    }
+
     for (let node of traverseDebugFrame(debugFrameResult.result, [])) {
         yield mapDebugFrameNode(transactionIndex, node)
     }
