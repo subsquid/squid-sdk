@@ -258,7 +258,9 @@ export const Transaction = object({
     input: option(BYTES),
     maxFeePerGas: option(QTY),
     maxPriorityFeePerGas: option(QTY),
-    nonce: SMALL_QTY,
+    // Optional: OP-stack deposit transactions (type 0x7e) may omit `nonce`
+    // entirely (e.g. Alchemy), so it can't be required for every tx type.
+    nonce: option(SMALL_QTY),
     v: option(QTY),
     r: option(BYTES),
     s: option(BYTES),
