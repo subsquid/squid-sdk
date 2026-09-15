@@ -23,7 +23,7 @@ export async function getBlocks(
 
         if (indices.length == 0) return blocks
 
-        if (retries == 5) {
+        if (retries == MAX_RETRIES) {
             // When a provider silently stops serving some blocks or a method,
             // the bare "failed to load blocks: N" message names neither the
             // endpoint nor the reason. Attach both so a single log line
@@ -48,7 +48,16 @@ export async function getBlocks(
             )
         }
 
-        await wait(100)
+        // Some providers intermittently return null / an `_isInvalid` block for
+        // a block that genuinely has data — e.g. a flaky `eth_getBlockReceipts`
+        // that serves the very same block on a later attempt. A fixed ~0.5s of
+        // retries (5 x 100ms) is too short to ride out such a transient
+        // degradation window, so the bad response would propagate as a fatal
+        // error and crash-loop the dumper. Back off exponentially (mirroring the
+        // rpc-client's own escalating pause) so a transient hiccup is absorbed,
+        // while a genuinely unservable block still fails loudly once the budget
+        // is exhausted.
+        await wait(Math.min(100 * 2 ** retries, MAX_RETRY_BACKOFF_MS))
         let result = await rpc.getBlockBatch(indices.map(i => numbers[i]), req)
         for (let i = 0; i < result.length; i++) {
             blocks[indices[i]] = result[i]
@@ -57,3 +66,11 @@ export async function getBlocks(
         retries += 1
     }
 }
+
+
+// Retry budget for transiently missing / invalid blocks. With exponential
+// backoff capped at MAX_RETRY_BACKOFF_MS this spans ~40s before failing, enough
+// to absorb a flaky provider window without crash-looping while still surfacing
+// a persistently unservable block.
+const MAX_RETRIES = 10
+const MAX_RETRY_BACKOFF_MS = 10_000
