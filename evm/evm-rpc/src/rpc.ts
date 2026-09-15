@@ -206,7 +206,7 @@ export class Rpc {
         }))
 
         let results = await this.reduceBatchOnRetry(call, {
-            validateResult: getResultValidator(nullable(GetBlock)),
+            validateResult: validateGetBlockResult,
             validateError: info => {
                 if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
                 if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
@@ -1480,6 +1480,20 @@ function getResultValidator<V extends Validator>(validator: V): (result: unknown
         } else {
             return result as any
         }
+    }
+}
+
+
+const validateGetBlock = getResultValidator(nullable(GetBlock))
+
+// A malformed `eth_getBlockByNumber` result (e.g. a proxy/upstream transiently
+// dropping a tx field) is almost always transient: retry instead of crashing.
+export function validateGetBlockResult(result: unknown): GetBlock | null {
+    try {
+        return validateGetBlock(result)
+    } catch (err) {
+        if (err instanceof DataValidationError) throw new RetryError()
+        throw err
     }
 }
 
