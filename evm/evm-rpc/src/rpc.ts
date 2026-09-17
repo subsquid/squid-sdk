@@ -16,6 +16,8 @@ import {
     GetBlock,
     Receipt,
     TraceFrame,
+    DebugFrame,
+    DebugStateDiff,
     DebugStateDiffResult,
     DebugFrameResult,
     TraceReplayTraces,
@@ -33,6 +35,7 @@ import {
     // isBloomSuperset,
     // logsBloom
 } from './verification'
+import { RpcErrorInfo } from '@subsquid/rpc-client/lib/interfaces'
 
 
 export type Commitment = 'finalized' | 'latest'
@@ -57,6 +60,7 @@ export interface RpcOptions {
     client: EvmRpcClient,
     finalityConfirmation?: number
     verifyBlockHash?: boolean
+    verifyExtDataHash?: boolean
     verifyTxSender?: boolean
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
@@ -78,6 +82,7 @@ export class Rpc {
     private client: EvmRpcClient
     private finalityConfirmation?: number
     private verifyBlockHash?: boolean
+    private verifyExtDataHash?: boolean
     private verifyTxSender?: boolean
     private verifyTxRoot?: boolean
     private verifyReceiptsRoot?: boolean
@@ -95,6 +100,7 @@ export class Rpc {
         this.client = options.client
         this.finalityConfirmation = options.finalityConfirmation
         this.verifyBlockHash = options.verifyBlockHash
+        this.verifyExtDataHash = options.verifyExtDataHash
         this.verifyTxSender = options.verifyTxSender
         this.verifyTxRoot = options.verifyTxRoot
         this.verifyReceiptsRoot = options.verifyReceiptsRoot
@@ -236,6 +242,11 @@ export class Rpc {
             assert.equal(block.hash, blockHash, 'failed to verify block hash')
         }
 
+        if (this.verifyExtDataHash && block.extDataHash != null) {
+            let extDataHash = utils.calculateExtDataHash(block)
+            assert.equal(block.extDataHash, extDataHash, 'failed to verify extData hash')
+        }
+
         if (this.verifyTxRoot && withTransactions) {
             let txRoot = await utils.calculateTransactionsRoot(block)
             assert.equal(block.transactionsRoot, txRoot, 'failed to verify transactions root')
@@ -375,10 +386,11 @@ export class Rpc {
             params: [block.block.number]
         }))
 
-        let results = await this.reduceBatchOnRetry(call, {
+        let results = await this.reduceBatchOnRetry<Receipt[] | null | typeof RESPONSE_TOO_BIG>(call, {
             validateResult: getResultValidator(nullable(array(Receipt))),
             validateError: info => {
                 if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
+                if (isResponseTooBig(info)) return RESPONSE_TOO_BIG
                 throw new RpcError(info)
             }
         })
@@ -387,6 +399,14 @@ export class Rpc {
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let receipts = results[i]
+            if (receipts == RESPONSE_TOO_BIG) {
+                this.log.warn({
+                    blockNumber: block.number,
+                    blockHash: block.hash,
+                    transactionCount: block.block.transactions.length
+                }, 'block receipts response too big, fetching receipts per transaction')
+                receipts = await this.getReceiptsByTransaction(block)
+            }
             if (receipts == null) {
                 block._isInvalid = true
                 block._errorMessage = 'eth_getBlockReceipts returned null'
@@ -518,6 +538,17 @@ export class Rpc {
                 block._errorMessage = `got invalid number of receipts from eth_getBlockReceipts`
             }
         }
+    }
+
+    private async getReceiptsByTransaction(block: Block): Promise<Receipt[]> {
+        let call = block.block.transactions.map(tx => ({
+            method: 'eth_getTransactionReceipt',
+            params: [getTxHash(tx)]
+        }))
+
+        return this.reduceBatchOnRetry(call, {
+            validateResult: getResultValidator(Receipt)
+        })
     }
 
     /**
@@ -1080,11 +1111,12 @@ export class Rpc {
             }
         })
 
-        let results = await this.reduceBatchOnRetry(call, {
+        let results = await this.reduceBatchOnRetry<DebugStateDiffResult[] | null | typeof RESPONSE_TOO_BIG>(call, {
             validateResult: getResultValidator(array(DebugStateDiffResult)),
             validateError: info => {
                 if (info.message.includes('not found')) return null
                 if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                if (isResponseTooBig(info)) return RESPONSE_TOO_BIG
                 throw new RpcError(info)
             }
         })
@@ -1093,6 +1125,16 @@ export class Rpc {
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let diffs = results[i]
+
+            if (diffs == RESPONSE_TOO_BIG) {
+                this.log.warn({
+                    blockNumber: block.number,
+                    blockHash: block.hash,
+                    transactionCount: block.block.transactions.length
+                }, 'state diff response too big, tracing per transaction')
+                diffs = await this.getDebugStateDiffsByTransaction(block, traceConfig)
+            }
+
             if (diffs == null) {
                 block._isInvalid = true
                 block._errorMessage = "failed to get debug state diffs for a block"
@@ -1102,6 +1144,23 @@ export class Rpc {
                 block.debugStateDiffs = this.matchDebugTrace('debug state diff', block, diffs, utils)
             }
         }
+    }
+
+    private async getDebugStateDiffsByTransaction(block: Block, traceConfig: unknown): Promise<DebugStateDiffResult[]> {
+        let txHashes = block.block.transactions.map(getTxHash)
+        let call = txHashes.map(txHash => ({
+            method: 'debug_traceTransaction',
+            params: [txHash, traceConfig]
+        }))
+
+        let results = await this.reduceBatchOnRetry(call, {
+            validateResult: getResultValidator(DebugStateDiff)
+        })
+
+        return results.map((result, i) => ({
+            result,
+            txHash: txHashes[i]
+        }))
     }
 
     private async addDebugFrames(blocks: Block[], req: DataRequest): Promise<void> {
@@ -1136,7 +1195,7 @@ export class Rpc {
 
         let validateFrameResult = getResultValidator(array(DebugFrameResult))
 
-        let results = await this.reduceBatchOnRetry(call, {
+        let results = await this.reduceBatchOnRetry<DebugFrameResult[] | null | typeof RESPONSE_TOO_BIG>(call, {
             validateResult: result => {
                 if (Array.isArray(result)) {
                     // Moonbeam quirk
@@ -1151,6 +1210,7 @@ export class Rpc {
             validateError: info => {
                 if (info.message.includes('not found')) return null
                 if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
+                if (isResponseTooBig(info)) return RESPONSE_TOO_BIG
                 throw new RpcError(info)
             }
         })
@@ -1158,6 +1218,16 @@ export class Rpc {
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let frames = results[i]
+
+            if (frames == RESPONSE_TOO_BIG) {
+                this.log.warn({
+                    blockNumber: block.number,
+                    blockHash: block.hash,
+                    transactionCount: block.block.transactions.length
+                }, 'call frame response too big, tracing per transaction')
+                frames = await this.getDebugFramesByTransaction(block, traceConfig)
+            }
+
             if (frames == null) {
                 block._isInvalid = true
                 block._errorMessage = "failed to get debug call frames for a block"
@@ -1168,6 +1238,23 @@ export class Rpc {
             }
             this.validateDebugFrames(block)
         }
+    }
+
+    private async getDebugFramesByTransaction(block: Block, traceConfig: unknown): Promise<DebugFrameResult[]> {
+        let txHashes = block.block.transactions.map(getTxHash)
+        let call = txHashes.map(txHash => ({
+            method: 'debug_traceTransaction',
+            params: [txHash, traceConfig]
+        }))
+
+        let results = await this.reduceBatchOnRetry(call, {
+            validateResult: getResultValidator(DebugFrame)
+        })
+
+        return results.map((result, i) => ({
+            result,
+            txHash: txHashes[i]
+        }))
     }
 
     private validateDebugFrames(block: Block): void {
@@ -1360,7 +1447,7 @@ export class Rpc {
     isBatchRetryableError(err: any): boolean {
         if (this.client.isConnectionError(err)) return true
         if (err instanceof RpcProtocolError) return true
-        if (err instanceof RpcError && err.message == 'response too large') return true
+        if (err instanceof RpcError && /response.*too large/i.test(err.message)) return true
         if (err instanceof RpcError && err.code == -32000) return true
         return false
     }
@@ -1403,6 +1490,19 @@ function isEmpty(obj: object): boolean {
         return false
     }
     return true
+}
+
+
+const RESPONSE_TOO_BIG = Symbol('RESPONSE_TOO_BIG')
+
+
+// Matches oversized responses from a single RPC call. Batch-level errors are
+// handled by reduceBatchOnRetry(), which splits the batch before this check is used.
+function isResponseTooBig(err: RpcErrorInfo): boolean {
+    if (/response is too big/i.test(err.message)) return true
+    if (/response is too large/i.test(err.message)) return true
+    if (/response too large/i.test(err.message)) return true
+    return false
 }
 
 

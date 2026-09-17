@@ -3,6 +3,7 @@ import {Logger} from '@subsquid/logger'
 import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
 import {RpcError, RpcProtocolError} from '../errors'
 import {Connection, RpcRequest, RpcResponse} from '../interfaces'
+import {redactRpcUrlsInError} from '../redact'
 
 
 class RpcHttpClient extends HttpClient {
@@ -61,12 +62,23 @@ export class HttpConnection implements Connection {
         return Promise.resolve()
     }
 
+    private async post(json: RpcRequest | RpcRequest[], timeout?: number): Promise<any> {
+        try {
+            return await this.http.post(this.url, {
+                json,
+                httpTimeout: timeout,
+                retryAttempts: 0
+            })
+        } catch (err: any) {
+            // Fetch-level errors quote the request URL verbatim, and RPC URLs
+            // routinely carry API keys — scrub before the error escapes the
+            // transport (into logs or user-facing stack traces).
+            throw redactRpcUrlsInError(err)
+        }
+    }
+
     async call(req: RpcRequest, timeout?: number): Promise<RpcResponse> {
-        let res: RpcResponse = await this.http.post(this.url, {
-            json: req,
-            httpTimeout: timeout,
-            retryAttempts: 0
-        })
+        let res: RpcResponse = await this.post(req, timeout)
         if (req.id !== res.id) {
             // Many endpoints/proxies return a JSON-RPC error envelope with `id: null`
             // (per spec for parse/invalid-request errors, but also commonly for rate
@@ -80,11 +92,7 @@ export class HttpConnection implements Connection {
     }
 
     async batchCall(batch: RpcRequest[], timeout?: number): Promise<RpcResponse[]> {
-        let res: RpcResponse[] = await this.http.post(this.url, {
-            json: batch,
-            httpTimeout: timeout,
-            retryAttempts: 0
-        })
+        let res: RpcResponse[] = await this.post(batch, timeout)
         if (!Array.isArray(res)) {
             // A server that rejects the whole batch (rate limit, oversized request,
             // upstream failure, ...) often replies with a single JSON-RPC error

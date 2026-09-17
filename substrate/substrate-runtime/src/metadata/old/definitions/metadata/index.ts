@@ -5,6 +5,8 @@ import {V11} from "./v11"
 import {V12} from "./v12"
 import {V13} from "./v13"
 import {V14} from "./v14"
+import {V15} from "./v15"
+import {V16} from "./v16"
 import {V9} from "./v9"
 
 
@@ -17,6 +19,8 @@ export const types: OldTypes['types'] = {
     ...V12,
     ...V13,
     ...V14,
+    ...V15,
+    ...V16,
     Metadata: {
         _enum: {
             V0: 'DoNotConstruct',
@@ -34,7 +38,9 @@ export const types: OldTypes['types'] = {
             V11: 'MetadataV11',
             V12: 'MetadataV12',
             V13: 'MetadataV13',
-            V14: 'MetadataV14'
+            V14: 'MetadataV14',
+            V15: 'MetadataV15',
+            V16: 'MetadataV16'
         }
     }
 }

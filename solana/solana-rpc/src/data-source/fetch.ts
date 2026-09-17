@@ -29,7 +29,7 @@ export async function requestMissingSlots(
 
     let result = await rpc.getBlockBatch(missing.map(i => slots[i].slot), {
         commitment,
-        maxSupportedTransactionVersion: 0,
+        maxSupportedTransactionVersion: 1,
         rewards: !!req.rewards,
         transactionDetails: req.transactions ? 'full' : 'none'
     })

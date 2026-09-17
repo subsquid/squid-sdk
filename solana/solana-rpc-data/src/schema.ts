@@ -39,9 +39,21 @@ export const AddressTableLookup = object({
 export type AddressTableLookup = GetSrcType<typeof AddressTableLookup>
 
 
+export const TransactionConfig = object({
+    computeUnitLimit: nullable(NAT),
+    heapSize: nullable(NAT),
+    loadedAccountsDataSizeLimit: nullable(NAT),
+    priorityFee: nullable(ANY_NAT)
+})
+
+
+export type TransactionConfig = GetSrcType<typeof TransactionConfig>
+
+
 export const TransactionMessage = object({
     accountKeys: array(B58),
     addressTableLookups: option(array(AddressTableLookup)),
+    transactionConfig: option(TransactionConfig),
     header: object({
         numReadonlySignedAccounts: NAT,
         numReadonlyUnsignedAccounts: NAT,

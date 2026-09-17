@@ -23,6 +23,7 @@ export interface DataSourceOptions {
     useDebugApiForStateDiffs?: boolean
     useDebugTraceBlockByNumber?: boolean
     verifyBlockHash?: boolean
+    verifyExtDataHash?: boolean
     verifyTxSender?: boolean
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
@@ -50,6 +51,7 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         client: httpRpcClient,
         finalityConfirmation: options.finalityConfirmation,
         verifyBlockHash: options.verifyBlockHash,
+        verifyExtDataHash: options.verifyExtDataHash,
         verifyTxRoot: options.verifyTxRoot,
         verifyTxSender: options.verifyTxSender,
         verifyReceiptsRoot: options.verifyReceiptsRoot,

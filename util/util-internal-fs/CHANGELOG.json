@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-fs",
   "entries": [
     {
+      "version": "0.2.1",
+      "tag": "@subsquid/util-internal-fs_v0.2.1",
+      "date": "Mon, 14 Sep 2026 10:49:58 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "`LocalFs.readStream()` rejects on a missing file"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/util-internal-fs_v0.2.0",
       "date": "Thu, 25 Jul 2024 11:48:18 GMT",

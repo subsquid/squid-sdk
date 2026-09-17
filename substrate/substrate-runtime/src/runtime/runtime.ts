@@ -1,7 +1,7 @@
 import {Codec as ScaleCodec, JsonCodec, Ti} from '@subsquid/scale-codec'
 import * as sts from '@subsquid/scale-type-system'
 import {ExternalEnum} from '@subsquid/scale-type-system'
-import {assertNotNull, last} from '@subsquid/util-internal'
+import {assertNotNull, last, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     Bytes,
@@ -49,7 +49,14 @@ export class Runtime {
         runtimeVersion: RuntimeVersionId,
         metadata: Bytes | Uint8Array | Metadata,
         typesBundle?: OldTypesBundle | OldSpecsBundle,
-        private _rpc?: RpcClient
+        private _rpc?: RpcClient,
+        /**
+         * Optional metadata of a newer version than `metadata`,
+         * e.g. a v15/v16 blob which describes transaction extension
+         * pipelines of new extrinsics. When unavailable or unusable,
+         * `metadata` is used instead.
+         */
+        extensionsMetadata?: Bytes | Uint8Array | Metadata
     ) {
         if (typeof metadata == 'string' || metadata instanceof Uint8Array) {
             metadata = decodeMetadata(metadata)
@@ -59,7 +66,7 @@ export class Runtime {
         this.implName = runtimeVersion.implName
         this.implVersion = runtimeVersion.implVersion
         this.metadata = metadata
-        this.description = getRuntimeDescription(this.metadata, this.specName, this.specVersion, typesBundle)
+        this.description = this.buildDescription(typesBundle, extensionsMetadata)
         this.events = new EACRegistry(this.description.types, this.description.event)
         this.calls = new EACRegistry(this.description.types, this.description.call)
         this.scaleCodec = new ScaleCodec(this.description.types)
@@ -69,6 +76,19 @@ export class Runtime {
     get rpc(): RpcClient {
         if (this._rpc == null) throw new Error('RPC client is not available')
         return this._rpc
+    }
+
+    private buildDescription(typesBundle?: OldTypesBundle | OldSpecsBundle, extensionsMetadata?: Bytes | Uint8Array | Metadata): RuntimeDescription {
+        if (extensionsMetadata == null) {
+            return getRuntimeDescription(this.metadata, this.specName, this.specVersion, typesBundle)
+        }
+        if (typeof extensionsMetadata == 'string' || extensionsMetadata instanceof Uint8Array) {
+            extensionsMetadata = decodeMetadata(extensionsMetadata)
+        }
+        if (extensionsMetadata.__kind != 'V15' && extensionsMetadata.__kind != 'V16') {
+            throw unexpectedCase(extensionsMetadata.__kind)
+        }
+        return getRuntimeDescription(extensionsMetadata, this.specName, this.specVersion, typesBundle)
     }
 
     hasStorageItem(name: QualifiedName): boolean {

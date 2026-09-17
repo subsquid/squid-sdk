@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-normalization
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 1.1.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- expose the transactionConfig field (v1 message compute budget: computeUnitLimit, heapSize, loadedAccountsDataSizeLimit, priorityFee) on the normalized transaction
 
 ## 1.0.0
 Mon, 11 May 2026 05:34:26 GMT

@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-runtime",
   "entries": [
     {
+      "version": "2.1.0",
+      "tag": "@subsquid/substrate-runtime_v2.1.0",
+      "date": "Mon, 14 Sep 2026 10:05:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "decode metadata v15 and v16, describe transaction extension pipelines per version and decode v5 general extrinsics of any extension version"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.1",
       "tag": "@subsquid/substrate-runtime_v2.0.1",
       "date": "Fri, 06 Dec 2024 12:39:20 GMT",

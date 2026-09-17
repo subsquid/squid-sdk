@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/squid-sdk",
-  "version": "0.5.0",
+  "version": "0.6.2",
   "description": "Umbrella package for the Squid SDK: data sources and utilities exposed as subpaths",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -54,6 +54,16 @@
       "types": "./lib/solana/index.d.ts",
       "import": "./lib/solana/index.js",
       "require": "./lib/solana/index.js"
+    },
+    "./solana/rpc": {
+      "types": "./lib/solana/rpc/index.d.ts",
+      "import": "./lib/solana/rpc/index.js",
+      "require": "./lib/solana/rpc/index.js"
+    },
+    "./solana/fallback": {
+      "types": "./lib/solana/fallback/index.d.ts",
+      "import": "./lib/solana/fallback/index.js",
+      "require": "./lib/solana/fallback/index.js"
     },
     "./fuel": {
       "types": "./lib/fuel/index.d.ts",
@@ -138,27 +148,75 @@
   },
   "typesVersions": {
     "*": {
-      "evm": ["./lib/evm/index.d.ts"],
-      "evm/rpc": ["./lib/evm/rpc/index.d.ts"],
-      "evm/fallback": ["./lib/evm/fallback/index.d.ts"],
-      "evm/objects": ["./lib/evm/objects/index.d.ts"],
-      "solana": ["./lib/solana/index.d.ts"],
-      "fuel": ["./lib/fuel/index.d.ts"],
-      "fallback": ["./lib/fallback/index.d.ts"],
-      "util": ["./lib/util/index.d.ts"],
-      "util/data-source": ["./lib/util/data-source/index.d.ts"],
-      "util/range": ["./lib/util/range/index.d.ts"],
-      "util/hex": ["./lib/util/hex/index.d.ts"],
-      "util/json": ["./lib/util/json/index.d.ts"],
-      "util/validation": ["./lib/util/validation/index.d.ts"],
-      "util/processor-tools": ["./lib/util/processor-tools/index.d.ts"],
-      "util/timeout": ["./lib/util/timeout/index.d.ts"],
-      "client/portal": ["./lib/client/portal/index.d.ts"],
-      "client/rpc": ["./lib/client/rpc/index.d.ts"],
-      "client/http": ["./lib/client/http/index.d.ts"],
-      "logger": ["./lib/logger/index.d.ts"],
-      "processor": ["./lib/processor/index.d.ts"],
-      "store/typeorm": ["./lib/store/typeorm/index.d.ts"]
+      "evm": [
+        "./lib/evm/index.d.ts"
+      ],
+      "evm/rpc": [
+        "./lib/evm/rpc/index.d.ts"
+      ],
+      "evm/fallback": [
+        "./lib/evm/fallback/index.d.ts"
+      ],
+      "evm/objects": [
+        "./lib/evm/objects/index.d.ts"
+      ],
+      "solana": [
+        "./lib/solana/index.d.ts"
+      ],
+      "solana/rpc": [
+        "./lib/solana/rpc/index.d.ts"
+      ],
+      "solana/fallback": [
+        "./lib/solana/fallback/index.d.ts"
+      ],
+      "fuel": [
+        "./lib/fuel/index.d.ts"
+      ],
+      "fallback": [
+        "./lib/fallback/index.d.ts"
+      ],
+      "util": [
+        "./lib/util/index.d.ts"
+      ],
+      "util/data-source": [
+        "./lib/util/data-source/index.d.ts"
+      ],
+      "util/range": [
+        "./lib/util/range/index.d.ts"
+      ],
+      "util/hex": [
+        "./lib/util/hex/index.d.ts"
+      ],
+      "util/json": [
+        "./lib/util/json/index.d.ts"
+      ],
+      "util/validation": [
+        "./lib/util/validation/index.d.ts"
+      ],
+      "util/processor-tools": [
+        "./lib/util/processor-tools/index.d.ts"
+      ],
+      "util/timeout": [
+        "./lib/util/timeout/index.d.ts"
+      ],
+      "client/portal": [
+        "./lib/client/portal/index.d.ts"
+      ],
+      "client/rpc": [
+        "./lib/client/rpc/index.d.ts"
+      ],
+      "client/http": [
+        "./lib/client/http/index.d.ts"
+      ],
+      "logger": [
+        "./lib/logger/index.d.ts"
+      ],
+      "processor": [
+        "./lib/processor/index.d.ts"
+      ],
+      "store/typeorm": [
+        "./lib/store/typeorm/index.d.ts"
+      ]
     }
   },
   "scripts": {
@@ -169,13 +227,13 @@
   "dependencies": {
     "@subsquid/batch-processor": "^1.1.0",
     "@subsquid/evm-objects": "^0.0.3",
-    "@subsquid/evm-stream": "^0.1.3",
+    "@subsquid/evm-stream": "^0.1.5",
     "@subsquid/fuel-stream": "^1.2.0",
-    "@subsquid/http-client": "^1.8.1",
+    "@subsquid/http-client": "^1.9.0",
     "@subsquid/logger": "^1.6.0",
-    "@subsquid/portal-client": "^0.6.0",
-    "@subsquid/rpc-client": "^4.16.0",
-    "@subsquid/solana-stream": "^1.1.2",
+    "@subsquid/portal-client": "^0.8.0",
+    "@subsquid/rpc-client": "^4.16.1",
+    "@subsquid/solana-stream": "^1.3.0",
     "@subsquid/typeorm-store": "^1.9.2",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-data-source": "^0.0.0",
@@ -188,8 +246,10 @@
     "prom-client": "^14.2.0"
   },
   "peerDependencies": {
-    "@subsquid/evm-normalization": "^0.0.6",
-    "@subsquid/evm-rpc": "^0.1.0"
+    "@subsquid/evm-normalization": "^0.1.0",
+    "@subsquid/evm-rpc": "^0.2.0",
+    "@subsquid/solana-rpc": "^1.1.0",
+    "@subsquid/solana-normalization": "^1.1.0"
   },
   "peerDependenciesMeta": {
     "@subsquid/evm-normalization": {
@@ -197,15 +257,23 @@
     },
     "@subsquid/evm-rpc": {
       "optional": true
+    },
+    "@subsquid/solana-rpc": {
+      "optional": true
+    },
+    "@subsquid/solana-normalization": {
+      "optional": true
     }
   },
   "devDependencies": {
     "@subsquid/big-decimal": "^1.0.0",
-    "@subsquid/evm-normalization": "^0.0.6",
-    "@subsquid/evm-rpc": "^0.1.0",
+    "@subsquid/evm-normalization": "^0.1.0",
+    "@subsquid/evm-rpc": "^0.2.0",
     "@types/node": "^24.0.0",
     "typeorm": "^0.3.17",
     "typescript": "5.5.4",
-    "vitest": "4.1.5"
+    "vitest": "4.1.5",
+    "@subsquid/solana-rpc": "^1.1.0",
+    "@subsquid/solana-normalization": "^1.1.0"
   }
 }

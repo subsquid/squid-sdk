@@ -1,6 +1,23 @@
 # Change Log - @subsquid/squid-sdk
 
-This log was last generated on Thu, 30 Jul 2026 15:44:58 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 0.6.2
+Mon, 14 Sep 2026 10:05:38 GMT
+
+_Version update only_
+
+## 0.6.1
+Thu, 27 Aug 2026 13:59:40 GMT
+
+_Version update only_
+
+## 0.6.0
+Thu, 20 Aug 2026 12:45:29 GMT
+
+### Minor changes
+
+- add Solana RPC and fallback data sources: SolanaRpcDataSourceBuilder (solana/rpc) and SolanaFallbackDataSourceBuilder (solana/fallback), mirroring the EVM counterparts
 
 ## 0.5.0
 Thu, 30 Jul 2026 15:44:58 GMT

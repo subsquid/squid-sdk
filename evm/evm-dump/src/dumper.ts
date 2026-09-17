@@ -20,6 +20,7 @@ import {
 interface Options extends DumperOptions {
     retryInternalServerErrors?: boolean
     finalityConfirmation?: number
+    headPollInterval?: number
     withReceipts?: boolean
     withTraces?: boolean
     withStatediffs?: boolean
@@ -27,6 +28,7 @@ interface Options extends DumperOptions {
     useDebugApiForStatediffs?: boolean
     useDebugTraceBlockByNumber?: boolean
     verifyBlockHash?: boolean
+    verifyExtDataHash?: boolean
     verifyTxSender?: boolean
     verifyTxRoot?: boolean
     verifyReceiptsRoot?: boolean
@@ -44,6 +46,12 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.description('Data archiving tool for EVM-based chains')
         program.option('--retry-internal-server-errors', 'If set, the internal server errors from the RPC endpoint will be treated as retryable')
         program.option('--finality-confirmation <number>', 'Finality offset from the head of a chain', positiveInt)
+        program.option(
+            '--head-poll-interval <ms>',
+            'How long to wait before asking for the chain head again, once caught up with it',
+            positiveInt,
+            1000
+        )
         program.option('--with-receipts', 'Fetch transaction receipt data')
         program.option('--with-traces', 'Fetch EVM call traces')
         program.option('--with-statediffs', 'Fetch EVM state updates')
@@ -51,6 +59,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
         program.option('--use-debug-trace-block-by-number', 'Use debug_traceBlockByNumber instead of debug_traceBlockByHash')
         program.option('--verify-block-hash', 'Verify block header against block hash')
+        program.option('--verify-ext-data-hash', 'Verify block extData payload against the extDataHash header commitment')
         program.option('--verify-tx-sender', 'Check if transaction sender matches sender recovered from signature')
         program.option('--verify-tx-root', 'Verify block transactions against transactions root')
         program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
@@ -103,6 +112,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 client: this.rpc(),
                 finalityConfirmation: this.options().finalityConfirmation,
                 verifyBlockHash: this.options().verifyBlockHash,
+                verifyExtDataHash: this.options().verifyExtDataHash,
                 verifyTxSender: this.options().verifyTxSender,
                 verifyTxRoot: this.options().verifyTxRoot,
                 verifyReceiptsRoot: this.options().verifyReceiptsRoot,
@@ -113,6 +123,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 checkCumulativeGasUsed: !this.options().skipCumulativeGasUsedCheck,
                 useGasUsedForReceiptsRoot: this.options().useGasUsedForReceiptsRoot,
             }),
+            headPollInterval: this.options().headPollInterval,
             req: {
                 transactions: true,
                 logs: !this.options().withReceipts,

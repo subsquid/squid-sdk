@@ -1,6 +1,13 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Thu, 30 Jul 2026 15:44:58 GMT and should not be manually modified.
+This log was last generated on Thu, 27 Aug 2026 13:59:40 GMT and should not be manually modified.
+
+## 4.16.1
+Thu, 27 Aug 2026 13:59:40 GMT
+
+### Patches
+
+- redact RPC URLs (which routinely carry API keys) from transport error messages, stack traces and connection-failure logs
 
 ## 4.16.0
 Thu, 30 Jul 2026 15:44:58 GMT

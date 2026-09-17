@@ -658,6 +658,20 @@ export const GetBlock = object({
     sharedGasLimit: option(QTY),
     timestampMillisPart: option(QTY),
     consensusContext: option(TempoConsensusContext),
+    // Avalanche-specific block header fields
+    // https://github.com/ava-labs/avalanchego/blob/master/vms/saevm/cchain/README.md#block-header-changes
+    blockExtraData: option(BYTES),
+    blockGasCost: option(QTY),
+    extDataGasUsed: option(QTY),
+    extDataHash: option(BYTES),
+    minDelayExcess: option(QTY),
+    timestampMilliseconds: option(QTY),
+    targetExponent: option(QTY),
+    minPriceExponent: option(QTY),
+    settledHeight: option(QTY),
+    settledGasUnix: option(QTY),
+    settledGasNumerator: option(QTY),
+    settledExcess: option(QTY),
 })
 
 

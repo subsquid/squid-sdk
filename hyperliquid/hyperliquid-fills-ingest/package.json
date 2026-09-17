@@ -27,7 +27,7 @@
     "@subsquid/util-internal-ingest-cli": "^0.2.1",
     "@subsquid/util-internal-json": "^1.2.4",
     "@subsquid/util-internal-validation": "^0.9.0",
-    "@subsquid/util-internal-fs": "^0.2.0",
+    "@subsquid/util-internal-fs": "^0.2.1",
     "@subsquid/util-internal-range": "^0.3.0",
     "lz4": "^0.6.4"
   },

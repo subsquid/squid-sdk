@@ -74,7 +74,12 @@ describe('Verification Functions', () => {
                 })
             }
 
-            it('withdrawalsRoot verification', async () => {
+            it.skipIf(
+                // OP-stack chains store the root of the L2-to-L1 message tree in
+                // withdrawalsRoot, while the JSON-RPC `withdrawals` list stays
+                // empty - the root cannot be recomputed from the list.
+                fixture.chain === 'base-mainnet'
+            )('withdrawalsRoot verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 if (block.withdrawalsRoot == null) return
 
@@ -83,6 +88,13 @@ describe('Verification Functions', () => {
                 const withdrawals = assertNotNull(block.withdrawals)
                 const computed = await utils.calculateWithdrawalsRoot(withdrawals)
                 expect(computed).toEqual(block.withdrawalsRoot)
+            })
+
+            it('extData verification', () => {
+                const block = loadBlock(fixture.chain, fixture.blockNumber)
+                if (block.extDataHash == null) return // non-Avalanche fixtures
+                const utils = new ChainUtils(getChainId(fixture.chain))
+                expect(block.extDataHash).toEqual(utils.calculateExtDataHash(block))
             })
 
             it('transaction sender recovery', async () => {

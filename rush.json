@@ -911,6 +911,12 @@
       "versionPolicyName": "docker"
     },
     {
+      "packageName": "@subsquid/raw-archive-recompress",
+      "projectFolder": "util/raw-archive-recompress",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
       "packageName": "@subsquid/util-internal-binary-heap",
       "projectFolder": "util/util-internal-binary-heap",
       "shouldPublish": true,

@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-rpc-data",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/solana-rpc-data_v1.1.0",
+      "date": "Mon, 14 Sep 2026 10:05:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "accept the transactionConfig field of Solana v1 transaction messages in the raw RPC block schema"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.0.0",
       "tag": "@subsquid/solana-rpc-data_v1.0.0",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

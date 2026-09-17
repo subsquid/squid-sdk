@@ -1,0 +1,37 @@
+{
+  "name": "@subsquid/raw-archive-recompress",
+  "version": "0.1.0",
+  "description": "Converts gzip data chunks of a raw archive to zstd",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "raw-archive-recompress": "./bin/run.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.462.0",
+    "@smithy/node-http-handler": "^2.1.10",
+    "@subsquid/logger": "^1.6.0",
+    "@subsquid/util-internal": "^3.3.1",
+    "@subsquid/util-internal-archive-layout": "^2.1.0",
+    "@subsquid/util-internal-commander": "^1.4.0",
+    "@subsquid/util-internal-fs": "^0.2.1",
+    "commander": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
+  }
+}
