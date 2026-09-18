@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-worker-thread",
+      "comment": "Make serializeError produce a structured-clone-safe payload so a transient upstream error (e.g. HTTP 429) thrown out of a worker-thread stream cannot crash it with an opaque \"unserializable error\"",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-worker-thread"
+}
