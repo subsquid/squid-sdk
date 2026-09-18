@@ -29,6 +29,9 @@ export class EvmRpcClient extends RpcClient {
             if (this.isRpcRateLimitError(err)) {
                 return true
             }
+            if (this.isResponseTooLargeError(err)) {
+                return true
+            }
             if (this.isRpcInternalError(err)) {
                 return this.retryInternalServerErrors
             }
@@ -39,6 +42,19 @@ export class EvmRpcClient extends RpcClient {
             }
         }
         return false
+    }
+
+    isResponseTooLargeError(err: RpcError): boolean {
+        // Some providers (e.g. okx xlayer-mainnet, code -32020) intermittently reject a
+        // request whose response exceeds an internal backend size cap. This is a transient
+        // backend condition — the exact same block fetches fine moments later — so it must
+        // be retried rather than crash the dumper into a restart loop. Treating it as
+        // retryable also lets reduceBatchOnRetry split an oversized eth_getBlockReceipts
+        // batch, the same way geth's "response too large" is already handled.
+        return (
+            err.code === -32020 || // okx "backend response too large"
+            /response too large/i.test(err.message)
+        )
     }
 
     isRpcInternalError(err: RpcError): boolean {
