@@ -1,0 +1,121 @@
+{
+  "network": "devnet",
+  "defect": "incomplete",
+  "scenario": "reverted-parent",
+  "traceAddress": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "defectiveClient": "anvil/v1.0.0",
+  "defectiveTransactionHash": "0xb663088d71ed10a729c168751f4c5f455c0c040948b8b1444a8280ce588695e5",
+  "completeClient": "Geth/v1.17.5-stable-9621c6ad/linux-arm64/go1.26.5",
+  "completeTransactionHash": "0xbc9bee8f56d2a363830c4247622612dc4ce19a63f96837f2a8c8fe69de02be2f",
+  "defective": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x441d8",
+    "gasUsed": "0x844e",
+    "to": "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9",
+        "gas": "0x426be",
+        "gasUsed": "0x280a",
+        "to": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+        "input": "0x",
+        "error": "execution reverted",
+        "calls": [
+          {
+            "from": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+            "gas": "0x40c10",
+            "gasUsed": "0x1dc6",
+            "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+            "input": "0x",
+            "calls": [
+              {
+                "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+                "gas": "0x3f1cd",
+                "gasUsed": "0x138a",
+                "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+                "input": "0x",
+                "calls": [
+                  {
+                    "from": "0x0000000000000000000000000000000000000000",
+                    "gas": "0x0",
+                    "gasUsed": "0x0",
+                    "input": "0x",
+                    "type": "SELFDESTRUCT"
+                  }
+                ],
+                "value": "0x0",
+                "type": "CALLCODE"
+              }
+            ],
+            "value": "0x0",
+            "type": "CALL"
+          }
+        ],
+        "value": "0x0",
+        "type": "CALL"
+      }
+    ],
+    "value": "0xde0b6b3a7640000",
+    "type": "CALL"
+  },
+  "complete": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x493e0",
+    "gasUsed": "0x88fe",
+    "to": "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9",
+        "gas": "0x42534",
+        "gasUsed": "0x2b2a",
+        "to": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+        "input": "0x",
+        "error": "execution reverted",
+        "calls": [
+          {
+            "from": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+            "gas": "0x40903",
+            "gasUsed": "0x1f56",
+            "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+            "input": "0x",
+            "calls": [
+              {
+                "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+                "gas": "0x3ed43",
+                "gasUsed": "0x138a",
+                "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+                "input": "0x",
+                "calls": [
+                  {
+                    "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+                    "gas": "0x0",
+                    "gasUsed": "0x0",
+                    "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+                    "input": "0x",
+                    "value": "0xde0b6b3a7640000",
+                    "type": "SELFDESTRUCT"
+                  }
+                ],
+                "value": "0x0",
+                "type": "CALLCODE"
+              }
+            ],
+            "value": "0x0",
+            "type": "CALL"
+          }
+        ],
+        "value": "0x0",
+        "type": "CALL"
+      }
+    ],
+    "value": "0xde0b6b3a7640000",
+    "type": "CALL"
+  }
+}

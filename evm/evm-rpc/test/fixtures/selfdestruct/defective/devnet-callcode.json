@@ -1,0 +1,73 @@
+{
+  "network": "devnet",
+  "defect": "incomplete",
+  "scenario": "callcode",
+  "traceAddress": [
+    0,
+    0
+  ],
+  "defectiveClient": "anvil/v1.0.0",
+  "defectiveTransactionHash": "0x913777d30ad70a8081caf08a6c782b879fed68abd452f1e3fb4bc41c5a55f830",
+  "completeClient": "Geth/v1.17.5-stable-9621c6ad/linux-arm64/go1.26.5",
+  "completeTransactionHash": "0x82e94045325adb0618047371be84200d43603375a20188da30cff0f525c1f3e6",
+  "defective": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x441d8",
+    "gasUsed": "0x6fce",
+    "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "gas": "0x426be",
+        "gasUsed": "0x138a",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "calls": [
+          {
+            "from": "0x0000000000000000000000000000000000000000",
+            "gas": "0x0",
+            "gasUsed": "0x0",
+            "input": "0x",
+            "type": "SELFDESTRUCT"
+          }
+        ],
+        "value": "0x0",
+        "type": "CALLCODE"
+      }
+    ],
+    "value": "0xde0b6b3a7640000",
+    "type": "CALL"
+  },
+  "complete": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x493e0",
+    "gasUsed": "0x715e",
+    "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "gas": "0x42534",
+        "gasUsed": "0x138a",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "calls": [
+          {
+            "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+            "gas": "0x0",
+            "gasUsed": "0x0",
+            "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+            "input": "0x",
+            "value": "0xde0b6b3a7640000",
+            "type": "SELFDESTRUCT"
+          }
+        ],
+        "value": "0x0",
+        "type": "CALLCODE"
+      }
+    ],
+    "value": "0xde0b6b3a7640000",
+    "type": "CALL"
+  }
+}

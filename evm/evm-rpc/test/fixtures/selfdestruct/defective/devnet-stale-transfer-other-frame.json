@@ -1,0 +1,93 @@
+{
+  "network": "devnet",
+  "defect": "stale-entry",
+  "scenario": "stale-transfer-other-frame",
+  "recovery": "unavailable: anvil serves no custom tracer, and its chain differs from geth\u2019s",
+  "traceAddress": [
+    1
+  ],
+  "defectiveClient": "anvil/v1.0.0",
+  "defectiveTransactionHash": "0xbb983cde125558c5eaf0e48f5e671f56272614751e157148ee7ae1bb6fd5aeab",
+  "completeClient": "Geth/v1.17.5-stable",
+  "completeTransactionHash": "0x19d357029e2ef88c434fd4251ad527160056c7c78acc1b73f718ec93390e1ddb",
+  "defective": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x441d8",
+    "gasUsed": "0x943a",
+    "to": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+        "gas": "0x426be",
+        "gasUsed": "0x246a",
+        "to": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+        "input": "0x",
+        "calls": [
+          {
+            "from": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "gas": "0x3f271",
+            "gasUsed": "0x0",
+            "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "input": "0x",
+            "value": "0x1",
+            "type": "CALL"
+          }
+        ],
+        "value": "0x0",
+        "type": "CALL"
+      },
+      {
+        "from": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+        "gas": "0x0",
+        "gasUsed": "0x0",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "value": "0x1",
+        "type": "SELFDESTRUCT"
+      }
+    ],
+    "value": "0x0",
+    "type": "CALL"
+  },
+  "complete": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x493e0",
+    "gasUsed": "0x9c6e",
+    "to": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+        "gas": "0x42534",
+        "gasUsed": "0x2b0e",
+        "to": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+        "input": "0x",
+        "calls": [
+          {
+            "from": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "gas": "0x3ea64",
+            "gasUsed": "0x0",
+            "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "input": "0x",
+            "value": "0x1",
+            "type": "CALL"
+          }
+        ],
+        "value": "0x0",
+        "type": "CALL"
+      },
+      {
+        "from": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+        "gas": "0x0",
+        "gasUsed": "0x0",
+        "to": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+        "input": "0x",
+        "value": "0xa",
+        "type": "SELFDESTRUCT"
+      }
+    ],
+    "value": "0x0",
+    "type": "CALL"
+  }
+}

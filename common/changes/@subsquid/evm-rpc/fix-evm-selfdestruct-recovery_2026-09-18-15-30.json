@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "recover selfdestruct call frames misreported by revm-based tracers with an opcode-level trace, and reject the block when they cannot be recovered",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
