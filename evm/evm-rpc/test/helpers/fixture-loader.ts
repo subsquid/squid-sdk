@@ -20,6 +20,8 @@ const CHAIN_IDS: Record<string, string> = {
     'base-mainnet': '0x2105',
     'ethereum-sepolia': '0xaa36a7',
     'avalanche-testnet': '0xa869',
+    'geth-dev': '0x539',
+    anvil: '0x7a69',
 }
 
 

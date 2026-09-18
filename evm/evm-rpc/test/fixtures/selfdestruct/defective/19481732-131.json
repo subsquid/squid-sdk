@@ -1,0 +1,74 @@
+{
+  "network": "mainnet",
+  "defect": "stale-entry",
+  "blockNumber": 19481732,
+  "transactionIndex": 131,
+  "transactionHash": "0x833a78e6ac9466865d9c8e5311b1820b12d5c0b103466bcdbf8b3db058a849e3",
+  "traceAddress": [
+    0,
+    0
+  ],
+  "defectiveClient": "reth/v2.4.0-943af24/x86_64-unknown-linux-gnu",
+  "defective": {
+    "from": "0xb4f1e5db68512f06d378b5e02e7ebbe7d2c705ef",
+    "gas": "0x68ec",
+    "gasUsed": "0x6795",
+    "to": "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de",
+    "input": "0x01",
+    "calls": [
+      {
+        "from": "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de",
+        "gas": "0x1508",
+        "gasUsed": "0x13ef",
+        "to": "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de",
+        "input": "0x83197ef0",
+        "calls": [
+          {
+            "from": "0xb4f1e5db68512f06d378b5e02e7ebbe7d2c705ef",
+            "gas": "0x0",
+            "gasUsed": "0x0",
+            "to": "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de",
+            "input": "0x",
+            "value": "0x1",
+            "type": "SELFDESTRUCT"
+          }
+        ],
+        "value": "0x0",
+        "type": "CALL"
+      }
+    ],
+    "value": "0x1",
+    "type": "CALL"
+  },
+  "complete": {
+    "from": "0xb4f1e5db68512f06d378b5e02e7ebbe7d2c705ef",
+    "gas": "0x68ec",
+    "gasUsed": "0x6795",
+    "to": "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de",
+    "input": "0x01",
+    "calls": [
+      {
+        "from": "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de",
+        "gas": "0x1508",
+        "gasUsed": "0x13ef",
+        "to": "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de",
+        "input": "0x83197ef0",
+        "calls": [
+          {
+            "from": "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de",
+            "gas": "0x0",
+            "gasUsed": "0x0",
+            "to": "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de",
+            "input": "0x",
+            "value": "0x1",
+            "type": "SELFDESTRUCT"
+          }
+        ],
+        "value": "0x0",
+        "type": "CALL"
+      }
+    ],
+    "value": "0x1",
+    "type": "CALL"
+  }
+}

@@ -1133,6 +1133,7 @@ export interface CallFrame {
     type: string
     from: Bytes20
     to?: Bytes20 | null
+    value?: Qty | null
     input?: string | null
     output?: string | null
     gasUsed?: string | null
@@ -1270,6 +1271,293 @@ function checkSubcalls(parent: CallFrame, traceAddress: number[]): string | unde
 }
 
 
+/**
+ * One `SELFDESTRUCT` as an opcode-level tracer saw it, bound to the call path
+ * its frame occupies.
+ */
+export interface SelfdestructEvent {
+    traceAddress: number[]
+    account: Bytes20
+    beneficiary: Bytes20
+    balance: Qty
+    /**
+     * Balance observed at the preceding balance-preserving opcode in this frame.
+     */
+    preBalance?: Qty
+}
+
+
+/**
+ * Rebuilds call paths from a tracer stream of `enter`, `exit` and `sd` items.
+ *
+ * The frames a call tree holds are entered in execution order, so counting
+ * entries per depth yields the same trace addresses the tree uses. Items that
+ * do not parse are skipped: a short or malformed stream simply yields fewer
+ * events, and the caller rejects what it cannot bind.
+ */
+export function selfdestructEvents(stream: unknown[]): SelfdestructEvent[] {
+    let path: number[] = []
+    let children: number[] = [0]
+    let found: SelfdestructEvent[] = []
+
+    for (let item of stream) {
+        if (item == null || typeof item !== 'object') continue
+        let rec = item as Record<string, unknown>
+
+        switch (rec.t) {
+            case 'enter': {
+                let index = children[children.length - 1]++
+                path.push(index)
+                children.push(0)
+                break
+            }
+            case 'exit':
+                if (path.length > 0) {
+                    path.pop()
+                    children.pop()
+                }
+                break
+            case 'sd': {
+                let index = children[children.length - 1]++
+
+                let {from, to, bal, preBalance} = rec
+                if (typeof from !== 'string' || typeof to !== 'string' || typeof bal !== 'string') {
+                    continue
+                }
+
+                found.push({
+                    traceAddress: [...path, index],
+                    account: from.toLowerCase(),
+                    beneficiary: to.toLowerCase(),
+                    balance: bal,
+                    preBalance: typeof preBalance === 'string' ? preBalance : undefined
+                })
+                break
+            }
+        }
+    }
+
+    return found
+}
+
+
+/**
+ * What a revm-based tracer gets wrong about an existing contract's post-Cancun
+ * selfdestruct-to-self.
+ *
+ * That opcode moves nothing and so records no journal entry, while the tracer
+ * builds the frame from the most recent journal entry of the whole transaction
+ * (bluealloy/revm#3834). Either nothing is there to read, or an earlier entry is:
+ * a balance transfer or an earlier selfdestruct, made by any account in any frame.
+ * The reverse cannot happen: a selfdestruct that sends funds to another account
+ * records its own entry. Matching parties alone do not confirm a self-targeting
+ * frame's balance: older versions also journal self-calls, whose amounts can
+ * differ from the account's balance.
+ *
+ * - `incomplete`: no entry to read, `from` is zero, `to` and `value` are unset.
+ * - `stale-entry`: an earlier entry was read instead, so the frame repeats a value
+ *   movement that already happened in this transaction.
+ */
+export type SelfdestructDefect =
+    | {kind: 'incomplete'}
+    | {kind: 'stale-entry', reportedFrom: Bytes20, reportedTo: Bytes20}
+
+
+export interface DefectiveSelfdestruct {
+    traceAddress: number[]
+    /**
+     * The account executing the opcode, per the enclosing frame's call context.
+     * `undefined` when the tree does not name it.
+     */
+    executor?: Bytes20
+    defect: SelfdestructDefect
+}
+
+
+/**
+ * `applied`: the frame now carries what the opcode did.
+ * `confirmed`: the frame already did — a genuine selfdestruct that happens to
+ * repeat an earlier movement.
+ */
+export type SelfdestructRepair = 'applied' | 'confirmed'
+
+
+interface Movement {
+    from: string
+    to: string
+    value: string
+}
+
+
+/**
+ * Finds selfdestruct frames that a revm-based tracer may have built from the
+ * wrong journal entry.
+ *
+ * Suspicion is not proof: a frame that repeats an earlier movement can also be
+ * genuine, which only an opcode-level trace can tell ({@link repairDefectiveSelfdestruct}).
+ */
+export function findDefectiveSelfdestructs(root: CallFrame): DefectiveSelfdestruct[] {
+    let found: DefectiveSelfdestruct[] = []
+    let moved: Movement[] = []
+
+    recordMovement(root, moved)
+    collectDefectiveSelfdestructs(root, [], moved, found)
+    return found
+}
+
+
+// A call moves funds only when it carries a value, but a selfdestruct records
+// its entry whatever the balance was, and a later defective frame can repeat it.
+function recordMovement(frame: CallFrame, moved: Movement[]): void {
+    if (!frame.to || frame.value == null) return
+
+    let recordsEntry = SELFDESTRUCT_FRAME_TYPES.has(frame.type)
+    let zeroValue = frame.value === '0x0' || frame.value === '0x'
+    if (!recordsEntry && zeroValue) return
+
+    moved.push({
+        from: frame.from.toLowerCase(),
+        to: frame.to.toLowerCase(),
+        value: frame.value
+    })
+}
+
+
+function repeatsMovement(frame: CallFrame, moved: Movement[]): boolean {
+    if (frame.to == null || frame.value == null) return false
+
+    let from = frame.from.toLowerCase()
+    let to = frame.to.toLowerCase()
+    return moved.some(m => m.from === from && m.to === to && m.value === frame.value)
+}
+
+
+function collectDefectiveSelfdestructs(
+    parent: CallFrame,
+    traceAddress: number[],
+    moved: Movement[],
+    found: DefectiveSelfdestruct[]
+): void {
+    let executor = isContextPreserving(parent.type) ? parent.from : parent.to
+    if (executor != null && !isAddress(executor)) {
+        executor = undefined
+    }
+
+    let calls = parent.calls ?? []
+    for (let i = 0; i < calls.length; i++) {
+        let child = calls[i]
+        let at = [...traceAddress, i]
+
+        if (SELFDESTRUCT_FRAME_TYPES.has(child.type)) {
+            // The frame's own payload is not evidence about itself, so it joins
+            // the movements only after it has been judged.
+            let defect = selfdestructDefect(child, moved)
+            if (defect) {
+                found.push({
+                    traceAddress: at,
+                    executor: executor?.toLowerCase(),
+                    defect
+                })
+            }
+            recordMovement(child, moved)
+        } else {
+            recordMovement(child, moved)
+            collectDefectiveSelfdestructs(child, at, moved, found)
+        }
+    }
+}
+
+
+function selfdestructDefect(frame: CallFrame, moved: Movement[]): SelfdestructDefect | undefined {
+    if (isZeroAddress(frame.from) && frame.to == null && frame.value == null) {
+        return {kind: 'incomplete'}
+    }
+
+    if (repeatsMovement(frame, moved)) {
+        return {
+            kind: 'stale-entry',
+            reportedFrom: frame.from.toLowerCase(),
+            reportedTo: (frame.to ?? '').toLowerCase()
+        }
+    }
+}
+
+
+/**
+ * Settles a suspect frame against what an opcode-level tracer saw.
+ *
+ * A preceding balance-preserving opcode supplies the pre-selfdestruct balance
+ * even when the tracer's step callback runs after execution. Without that
+ * snapshot, a zero balance cannot distinguish a burn from an existing empty
+ * account, so that ambiguity is refused when the parties already match; a payload
+ * with different parties is the known no-op defect and can use the unchanged
+ * balance. Selfdestructs sending elsewhere have their own journal entry, so
+ * matching parties suffice to confirm their original payload.
+ *
+ * Returns the outcome, or why the frame cannot be settled. A refused frame is
+ * left untouched.
+ */
+export function repairDefectiveSelfdestruct(
+    root: CallFrame,
+    defect: DefectiveSelfdestruct,
+    events: SelfdestructEvent[]
+): {repair: SelfdestructRepair} | {refused: string} {
+    let path = defect.traceAddress.join('/')
+
+    let matching = events.filter(e => e.traceAddress.join('/') === path)
+    if (matching.length !== 1) {
+        return {refused: `the tracer reports no single selfdestruct at ${path}`}
+    }
+    let event = matching[0]
+
+    if (defect.executor != null && !sameAddress(event.account, defect.executor)) {
+        return {
+            refused: `the tracer attributes ${path} to ${event.account}, ` +
+                `but ${defect.executor} is on top of the call stack`
+        }
+    }
+
+    let frame = frameAt(root, defect.traceAddress)
+    if (frame == null) {
+        return {refused: `${frameLabel(defect.traceAddress)} is not in the call tree`}
+    }
+
+    let selfTarget = sameAddress(event.account, event.beneficiary)
+    let namesTheOpcode = sameAddress(frame.from, event.account) && sameAddress(frame.to, event.beneficiary)
+    let balance = event.preBalance ?? event.balance
+    let balanceAgrees = frame.value === balance
+    if (namesTheOpcode && (!selfTarget || balanceAgrees)) {
+        return {repair: 'confirmed'}
+    }
+
+    if (!selfTarget) {
+        return {refused: `${path} sends to ${event.beneficiary}, so its balance at the opcode is unknown`}
+    }
+
+    let mayFollowBurn = event.preBalance == null && event.balance === '0x0'
+    if (namesTheOpcode && mayFollowBurn) {
+        return {
+            refused: `${path} has no balance observation before selfdestruct; ` +
+                'a zero balance may follow a burn'
+        }
+    }
+
+    frame.from = event.account
+    frame.to = event.beneficiary
+    frame.value = balance
+    return {repair: 'applied'}
+}
+
+
+function frameAt(root: CallFrame, traceAddress: number[]): CallFrame | undefined {
+    let frame: CallFrame | undefined = root
+    for (let index of traceAddress) {
+        frame = frame?.calls?.[index]
+    }
+    return frame
+}
+
+
 function isContextPreserving(type: string): boolean {
     switch(type) {
         case 'DELEGATECALL':
@@ -1306,6 +1594,11 @@ function selfdestructFrameLabel(traceAddress: number[]): string {
 
 function isAddress(value: string): boolean {
     return /^0x[0-9a-fA-F]{40}$/.test(value)
+}
+
+
+function isZeroAddress(value: string): boolean {
+    return /^0x0{40}$/.test(value)
 }
 
 

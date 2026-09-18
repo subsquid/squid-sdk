@@ -1,0 +1,71 @@
+{
+  "network": "devnet",
+  "defect": "stale-entry",
+  "scenario": "stale-transfer-same-frame",
+  "recovery": "unavailable: anvil serves no custom tracer, and its chain differs from geth\u2019s",
+  "traceAddress": [
+    1
+  ],
+  "defectiveClient": "anvil/v1.0.0",
+  "defectiveTransactionHash": "0x7d94a69bf62f273c324bbf20d70f44e73e4e53fdb7b093d890547b6a2fb86180",
+  "completeClient": "Geth/v1.17.5-stable",
+  "completeTransactionHash": "0x5d52dd6d579970e749c8dd2d1a57e6ff0a3b783bb06b4aef4b0dc2465b215b8b",
+  "defective": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x441d8",
+    "gasUsed": "0x89fc",
+    "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "gas": "0x40d1f",
+        "gasUsed": "0x0",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "value": "0x1",
+        "type": "CALL"
+      },
+      {
+        "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "gas": "0x0",
+        "gasUsed": "0x0",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "value": "0x1",
+        "type": "SELFDESTRUCT"
+      }
+    ],
+    "value": "0x0",
+    "type": "CALL"
+  },
+  "complete": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x493e0",
+    "gasUsed": "0x90a0",
+    "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "gas": "0x40695",
+        "gasUsed": "0x0",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "value": "0x1",
+        "type": "CALL"
+      },
+      {
+        "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "gas": "0x0",
+        "gasUsed": "0x0",
+        "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "input": "0x",
+        "value": "0x8",
+        "type": "SELFDESTRUCT"
+      }
+    ],
+    "value": "0x0",
+    "type": "CALL"
+  }
+}

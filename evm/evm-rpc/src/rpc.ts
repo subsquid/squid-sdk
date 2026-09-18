@@ -32,13 +32,20 @@ import { EvmRpcClient } from './rpc-client'
 import {
     checkCallFrameTree,
     checkDebugFrameStructure,
+    DefectiveSelfdestruct,
+    findDefectiveSelfdestructs,
+    repairDefectiveSelfdestruct,
+    SelfdestructEvent,
+    selfdestructEvents,
 } from './verification'
+import { SELFDESTRUCT_TRACER } from './selfdestruct-tracer'
 import { RpcErrorInfo } from '@subsquid/rpc-client/lib/interfaces'
 
 
 export type Commitment = 'finalized' | 'latest'
 export const CALL_FRAME_VALIDATION_MODES = ['off', 'observe', 'reject'] as const
 const CALL_FRAME_VIOLATION_SAMPLE_LIMIT = 3
+const SELFDESTRUCT_TRACE_RETRY_ATTEMPTS = 2
 
 /**
  * Controls semantic call-frame consistency checks. Structural requirements needed
@@ -810,8 +817,142 @@ export class Rpc {
             } else {
                 block.debugFrames = this.matchDebugTrace('debug call frame', block, frames, utils)
             }
-            this.validateDebugFrames(block)
+            let settled = await this.recoverSelfdestructFrames(block, req)
+            this.validateDebugFrames(block, settled)
         }
+    }
+
+    /**
+     * Puts what the opcode-level tracer saw into the frames the call tracer left
+     * defective. Only a block that would otherwise be rejected pays for this, and
+     * an upstream that will not run the tracer leaves the frames as they are, for
+     * validation to reject.
+     *
+     * Returns the trace addresses an opcode trace settled, per transaction index:
+     * a frame the trace confirms is left as it stands, so validation has to be
+     * told not to suspect it again.
+     */
+    private async recoverSelfdestructFrames(block: Block, req: DataRequest): Promise<Map<number, Set<string>>> {
+        let settled = new Map<number, Set<string>>()
+        if (block._isInvalid || block.debugFrames == null) return settled
+
+        for (let i = 0; i < block.debugFrames.length; i++) {
+            let frame = block.debugFrames[i]
+            let tx = block.block.transactions[i]
+            if (frame == null || tx == null) continue
+
+            let defects = findDefectiveSelfdestructs(frame.result)
+            if (defects.length === 0) continue
+
+            let transactionHash = getTxHash(tx)
+            let started = Date.now()
+            let events: SelfdestructEvent[]
+            try {
+                events = await this.traceSelfdestructs(block, transactionHash, req)
+            } catch (err: any) {
+                this.log.warn({
+                    blockNumber: block.number,
+                    blockHash: block.hash,
+                    transactionHash,
+                    suspectFrames: defects.length,
+                    traceMs: Date.now() - started,
+                    reason: String(err?.message ?? err)
+                }, 'no opcode trace to recover selfdestruct frames from')
+                continue
+            }
+            let traceMs = Date.now() - started
+
+            let settledHere = new Set<string>()
+            settled.set(i, settledHere)
+            let recovered = 0
+            let confirmed = 0
+            let refused = 0
+
+            for (let defect of defects) {
+                let traceAddress = defect.traceAddress.join('/')
+                let outcome = repairDefectiveSelfdestruct(frame.result, defect, events)
+
+                if ('refused' in outcome) {
+                    refused += 1
+                    this.log.warn({
+                        blockNumber: block.number,
+                        transactionHash,
+                        traceAddress,
+                        reason: outcome.refused
+                    }, 'cannot recover this selfdestruct frame')
+                    continue
+                }
+
+                settledHere.add(traceAddress)
+                if (outcome.repair === 'applied') {
+                    recovered += 1
+                } else {
+                    confirmed += 1
+                }
+            }
+
+            // One line per affected transaction: how often an upstream misreports
+            // selfdestructs, and what asking the opcode tracer costs, are read from here.
+            this.log.warn({
+                rpcEndpoint: this.client.url,
+                blockNumber: block.number,
+                blockHash: block.hash,
+                transactionHash,
+                suspectFrames: defects.length,
+                recovered,
+                confirmed,
+                refused,
+                traceMs
+            }, 'selfdestruct frames from a revm-based tracer settled by an opcode trace')
+        }
+
+        return settled
+    }
+
+    /**
+     * One `debug_traceTransaction` with {@link SELFDESTRUCT_TRACER}.
+     *
+     * A transaction hash does not name a block: the same transaction can be
+     * re-included by a reorg, where its balance at the opcode differs while its
+     * call path does not. The tracer therefore reports the block and transaction
+     * it actually ran, and an answer that does not name this block is refused
+     * rather than copied into it.
+     */
+    private async traceSelfdestructs(
+        block: Block,
+        transactionHash: Bytes32,
+        req: DataRequest
+    ): Promise<SelfdestructEvent[]> {
+        let answer = await this.call(
+            'debug_traceTransaction',
+            [transactionHash, {tracer: SELFDESTRUCT_TRACER, timeout: req.debugTraceTimeout}],
+            // The client may retry without limit, and an upstream that times out on
+            // this tracer does so every time: recovery must give up and let
+            // validation reject the block.
+            {retryAttempts: SELFDESTRUCT_TRACE_RETRY_ATTEMPTS}
+        )
+
+        let tracedBlock = answer?.blockHash
+        if (typeof tracedBlock !== 'string') {
+            throw new Error('the tracer answered without a block hash')
+        }
+        if (tracedBlock.toLowerCase() !== block.hash.toLowerCase()) {
+            throw new Error(`the tracer ran the transaction in block ${tracedBlock}, not in ${block.hash}`)
+        }
+
+        let tracedTransaction = answer.txHash
+        if (typeof tracedTransaction !== 'string') {
+            throw new Error('the tracer answered without a transaction hash')
+        }
+        if (tracedTransaction.toLowerCase() !== transactionHash.toLowerCase()) {
+            throw new Error(`the tracer ran transaction ${tracedTransaction}, not ${transactionHash}`)
+        }
+
+        if (!Array.isArray(answer.evs)) {
+            throw new Error('the tracer answered without an event stream')
+        }
+
+        return selfdestructEvents(answer.evs)
     }
 
     private async getDebugFramesByTransaction(block: Block, traceConfig: unknown): Promise<DebugFrameResult[]> {
@@ -831,7 +972,7 @@ export class Rpc {
         }))
     }
 
-    private validateDebugFrames(block: Block): void {
+    private validateDebugFrames(block: Block, settled: Map<number, Set<string>>): void {
         if (block._isInvalid || block.debugFrames == null) return
 
         let violatingTransactionCount = 0
@@ -852,11 +993,21 @@ export class Rpc {
                 return
             }
 
+            // A selfdestruct frame that repeats an earlier transfer is structurally
+            // sound, so it is judged here, in every semantic-validation mode.
+            let settledHere = settled.get(i)
+            let defective = findDefectiveSelfdestructs(frame.result).filter(
+                defect => !settledHere?.has(defect.traceAddress.join('/'))
+            )
             let structuralViolation = checkDebugFrameStructure(frame.result)
-            if (structuralViolation) {
+            if (structuralViolation || defective.length > 0) {
+                this.warnDefectiveSelfdestructs(block, i, transactionHash, defective)
+
+                let violation = structuralViolation ?? 'a selfdestruct frame does not match the opcode'
                 block._isInvalid = true
                 block._errorMessage =
-                    `invalid debug call frames for transaction ${transactionHash}: ${structuralViolation}`
+                    `invalid debug call frames for transaction ${transactionHash}: ${violation}` +
+                    describeDefectiveSelfdestructs(defective)
                 return
             }
 
@@ -906,6 +1057,45 @@ export class Rpc {
                 },
                 `debug call frame consistency violations observed in ${transactionSummary}; block accepted`
             )
+        }
+    }
+
+    // An affected upstream answers the same way on every re-acquisition, so this
+    // repeats until the block is served by a tracer without the defect.
+    private warnDefectiveSelfdestructs(
+        block: Block,
+        transactionIndex: number,
+        transactionHash: Bytes32,
+        found: DefectiveSelfdestruct[]
+    ): void {
+        for (let frame of found) {
+            let context = {
+                rpcEndpoint: this.client.url,
+                blockNumber: block.number,
+                blockHash: block.hash,
+                transactionIndex,
+                transactionHash,
+                traceAddress: frame.traceAddress.join('/'),
+                executor: frame.executor ?? 'unknown'
+            }
+
+            if (frame.defect.kind === 'incomplete') {
+                this.log.warn(
+                    context,
+                    'incomplete selfdestruct frame from a revm-based tracer: ' +
+                        'beneficiary and balance are missing, block rejected'
+                )
+            } else {
+                this.log.warn(
+                    {
+                        ...context,
+                        reportedFrom: frame.defect.reportedFrom,
+                        reportedTo: frame.defect.reportedTo
+                    },
+                    'selfdestruct frame from a revm-based tracer repeats an earlier transfer: ' +
+                        'its parties and balance are unreliable, block rejected'
+                )
+            }
         }
     }
 
@@ -1077,4 +1267,21 @@ function isResponseTooBig(err: RpcErrorInfo): boolean {
     if (/response is too large/i.test(err.message)) return true
     if (/response too large/i.test(err.message)) return true
     return false
+}
+
+
+function describeDefectiveSelfdestructs(found: DefectiveSelfdestruct[]): string {
+    if (found.length === 0) return ''
+
+    let frames = found.map(frame => {
+        let path = frame.traceAddress.join('/')
+        let executor = frame.executor ?? 'an unknown account'
+        if (frame.defect.kind === 'incomplete') {
+            return `frame ${path} is incomplete, executed by ${executor}`
+        }
+        let {reportedFrom, reportedTo} = frame.defect
+        return `frame ${path} repeats the transfer ${reportedFrom} -> ${reportedTo}, executed by ${executor}`
+    })
+
+    return ` (selfdestruct from a revm-based tracer: ${frames.join('; ')})`
 }
