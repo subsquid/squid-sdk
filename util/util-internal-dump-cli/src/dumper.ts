@@ -56,13 +56,15 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         this.timestampCache.set(blockHeight, this.getBlockTimestamp(block));
     }
 
-    protected abstract getBlocks(range: Range): AsyncIterable<B[]>
+    /**
+     * @param prevHash hash of the already archived block right below the range, when there is one.
+     * It can be a short hash, compare it with `checkShorHashMatch()`.
+     */
+    protected abstract getBlocks(range: Range, prevHash?: string): AsyncIterable<B[]>
 
     protected abstract getLastFinalizedBlockNumber(): Promise<number>
 
     protected abstract getParentBlockHash(block: B): string
-    protected abstract getBlockTimestamp(block: B): number
-
     protected abstract getBlockTimestamp(block: B): number
 
     protected setUpProgram(program: Command): void {}
@@ -161,6 +163,11 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         return true
     }
 
+    /**
+     * Called before anything is dumped, so that a bad combination of options is reported right away
+     */
+    protected validateOptions(): void {}
+
     @def
     protected eventEmitter(): EventEmitter {
         return new EventEmitter()
@@ -202,7 +209,7 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
             )
         }, 5000)
 
-        for await (let blocks of this.getBlocks(range)) {
+        for await (let blocks of this.getBlocks(range, prevShortHash)) {
             if (from && prevShortHash != null && this.validateChainContinuity()) {
                 let fst = blocks[0]
                 if (
@@ -250,6 +257,8 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
     run(): void {
         runProgram(async () => {
             let {dest, chunkSize, compression, compressionLevel, metrics} = this.options()
+            this.validateOptions()
+
             let prometheus = this.prometheus()
 
             if (metrics != null) {

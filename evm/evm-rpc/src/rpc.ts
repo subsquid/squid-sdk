@@ -10,7 +10,7 @@ import {
     object,
     Validator
 } from '@subsquid/util-internal-validation'
-import { addErrorContext, assertNotNull, groupBy, last } from '@subsquid/util-internal'
+import { addErrorContext, groupBy, last } from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     GetBlock,
@@ -27,6 +27,7 @@ import {
 } from './rpc-data'
 import { Block, DataRequest, Qty, Bytes, Bytes32 } from './types'
 import { qty2Int, toQty, getTxHash } from './util'
+import { BlockCheckOptions, checkBlockHeader, checkBlockLogs, checkBlockReceipts } from './block-checks'
 import { ChainUtils } from './chain-utils'
 import { EvmRpcClient } from './rpc-client'
 import {
@@ -61,24 +62,15 @@ interface CallFrameViolationSample {
 }
 
 
-export interface RpcOptions {
+export interface RpcOptions extends BlockCheckOptions {
     client: EvmRpcClient,
     finalityConfirmation?: number
-    verifyBlockHash?: boolean
-    verifyExtDataHash?: boolean
-    verifyTxSender?: boolean
-    verifyTxRoot?: boolean
-    verifyReceiptsRoot?: boolean
-    verifyWithdrawalsRoot?: boolean
-    verifyLogsBloom?: boolean
     /**
      * `off` skips semantic checks, `observe` logs one bounded violation summary
      * per block while accepting it, and `reject` marks violations invalid.
      * `reject` requires transaction root and sender verification.
      */
     callFrameValidation?: CallFrameValidationMode
-    checkLogIndex?: boolean
-    checkCumulativeGasUsed?: boolean
     useGasUsedForReceiptsRoot?: boolean
 }
 
@@ -86,16 +78,8 @@ export interface RpcOptions {
 export class Rpc {
     private client: EvmRpcClient
     private finalityConfirmation?: number
-    private verifyBlockHash?: boolean
-    private verifyExtDataHash?: boolean
-    private verifyTxSender?: boolean
-    private verifyTxRoot?: boolean
-    private verifyReceiptsRoot?: boolean
-    private verifyWithdrawalsRoot?: boolean
-    private verifyLogsBloom?: boolean
+    private checks: BlockCheckOptions
     private callFrameValidation: CallFrameValidationMode
-    private checkLogIndex?: boolean
-    private checkCumulativeGasUsed?: boolean
     private useGasUsedForReceiptsRoot?: boolean
     private log: Logger
     private receiptsMethod?: GetReceiptsMethod
@@ -104,13 +88,17 @@ export class Rpc {
     constructor(options: RpcOptions) {
         this.client = options.client
         this.finalityConfirmation = options.finalityConfirmation
-        this.verifyBlockHash = options.verifyBlockHash
-        this.verifyExtDataHash = options.verifyExtDataHash
-        this.verifyTxSender = options.verifyTxSender
-        this.verifyTxRoot = options.verifyTxRoot
-        this.verifyReceiptsRoot = options.verifyReceiptsRoot
-        this.verifyWithdrawalsRoot = options.verifyWithdrawalsRoot
-        this.verifyLogsBloom = options.verifyLogsBloom
+        this.checks = {
+            verifyBlockHash: options.verifyBlockHash,
+            verifyExtDataHash: options.verifyExtDataHash,
+            verifyTxSender: options.verifyTxSender,
+            verifyTxRoot: options.verifyTxRoot,
+            verifyReceiptsRoot: options.verifyReceiptsRoot,
+            verifyWithdrawalsRoot: options.verifyWithdrawalsRoot,
+            verifyLogsBloom: options.verifyLogsBloom,
+            checkLogIndex: options.checkLogIndex,
+            checkCumulativeGasUsed: options.checkCumulativeGasUsed
+        }
         this.callFrameValidation = options.callFrameValidation ?? 'off'
         if (!CALL_FRAME_VALIDATION_MODES.includes(this.callFrameValidation)) {
             throw new Error(`unsupported callFrameValidation mode: ${this.callFrameValidation}`)
@@ -120,8 +108,6 @@ export class Rpc {
                 "callFrameValidation 'reject' requires verifyTxRoot and verifyTxSender"
             )
         }
-        this.checkLogIndex = options.checkLogIndex
-        this.checkCumulativeGasUsed = options.checkCumulativeGasUsed
         this.useGasUsedForReceiptsRoot = options.useGasUsedForReceiptsRoot
         this.log = createLogger('sqd:evm-rpc')
     }
@@ -241,43 +227,7 @@ export class Rpc {
     }
 
     private async mapBlock(block: GetBlock, withTransactions: boolean, utils: ChainUtils): Promise<Block> {
-
-        if (this.verifyBlockHash) {
-            let blockHash = utils.calculateBlockHash(block)
-            assert.equal(block.hash, blockHash, 'failed to verify block hash')
-        }
-
-        if (this.verifyExtDataHash && block.extDataHash != null) {
-            let extDataHash = utils.calculateExtDataHash(block)
-            assert.equal(block.extDataHash, extDataHash, 'failed to verify extData hash')
-        }
-
-        if (this.verifyTxRoot && withTransactions) {
-            let txRoot = await utils.calculateTransactionsRoot(block)
-            assert.equal(block.transactionsRoot, txRoot, 'failed to verify transactions root')
-        }
-
-        if (this.verifyTxSender && withTransactions) {
-            for (let tx of block.transactions) {
-                let transaction = tx as Transaction
-                try {
-                    let sender = utils.recoverTxSender(transaction)
-                    if (sender == null) continue
-                    assert.equal(transaction.from, sender, 'failed to verify transaction sender')
-                } catch (err: any) {
-                    throw addErrorContext(err, {
-                        transactionIndex: qty2Int(transaction.transactionIndex),
-                        transactionHash: transaction.hash
-                    })
-                }
-            }
-        }
-
-        if (this.verifyWithdrawalsRoot && block.withdrawalsRoot != null) {
-            let withdrawals = assertNotNull(block.withdrawals)
-            let withdrawalsRoot = await utils.calculateWithdrawalsRoot(withdrawals)
-            assert.equal(block.withdrawalsRoot, withdrawalsRoot, 'failed to verify withdrawals root')
-        }
+        await checkBlockHeader(block, withTransactions, utils, this.checks)
 
         return {
             number: qty2Int(block.number),
@@ -333,17 +283,7 @@ export class Rpc {
             }
 
             try {
-                if (this.checkLogIndex) {
-                    let logIndex = 0
-                    for (let log of logs) {
-                        assert.equal(qty2Int(log.logIndex), logIndex++, 'unexpected log index in eth_getLogs response')
-                    }
-                }
-
-                if (this.verifyLogsBloom) {
-                    let logsBloom = utils.calculateLogsBloom(block.block, logs)
-                    assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
-                }
+                checkBlockLogs(block.block, logs, utils, this.checks, 'unexpected log index in eth_getLogs response')
             } catch (err: any) {
                 throw addErrorContext(err, {
                     blockNumber: block.number,
@@ -445,40 +385,14 @@ export class Rpc {
             }
 
             try {
-                if (this.checkLogIndex) {
-                    let logIndex = 0
-                    for (let log of logs) {
-                        assert.equal(qty2Int(log.logIndex), logIndex++, 'unexpected log index in receipt logs')
-                    }
-                }
-
-                if (this.checkCumulativeGasUsed) {
-                    let prevCumulativeGasUsed = 0n
-                    for (let receipt of receipts) {
-                        let cumulativeGasUsed = BigInt(receipt.cumulativeGasUsed)
-                        // This assertion used to fire bare ("0n == 77629n") with no
-                        // hint of the failing data — name the receipt so it is
-                        // identifiable from a single log line.
-                        assert.equal(
-                            cumulativeGasUsed,
-                            prevCumulativeGasUsed + BigInt(receipt.gasUsed),
-                            `cumulativeGasUsed mismatch at receipt of tx ${receipt.transactionHash}`
-                        )
-                        prevCumulativeGasUsed = cumulativeGasUsed
-                    }
-                }
-
-                if (this.verifyLogsBloom) {
-                    let computed = utils.calculateLogsBloom(block.block, logs)
-                    if (computed !== block.block.logsBloom) {
-                        assert.equal(block.block.logsBloom, computed, 'failed to verify logs bloom')
-                    }
-                }
-
-                if (this.verifyReceiptsRoot) {
-                    let root = await utils.calculateReceiptsRoot(block.block, receipts)
-                    assert.equal(block.block.receiptsRoot, root, 'failed to verify receipts root')
-                }
+                await checkBlockReceipts(
+                    block.block,
+                    receipts,
+                    logs,
+                    utils,
+                    this.checks,
+                    'unexpected log index in receipt logs'
+                )
             } catch (err: any) {
                 throw addErrorContext(err, {
                     blockNumber: block.number,
@@ -542,35 +456,7 @@ export class Rpc {
             }
 
             try {
-                if (this.checkLogIndex) {
-                    let logIndex = 0
-                    for (let log of logs) {
-                        assert.equal(qty2Int(log.logIndex), logIndex++)
-                    }
-                }
-
-                if (this.checkCumulativeGasUsed) {
-                    let prevCumulativeGasUsed = 0n
-                    for (let receipt of receipts) {
-                        let cumulativeGasUsed = BigInt(receipt.cumulativeGasUsed)
-                        assert.equal(
-                            cumulativeGasUsed,
-                            prevCumulativeGasUsed + BigInt(receipt.gasUsed),
-                            `cumulativeGasUsed mismatch at receipt of tx ${receipt.transactionHash}`
-                        )
-                        prevCumulativeGasUsed = cumulativeGasUsed
-                    }
-                }
-
-                if (this.verifyLogsBloom) {
-                    let logsBloom = utils.calculateLogsBloom(block.block, logs)
-                    assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
-                }
-
-                if (this.verifyReceiptsRoot) {
-                    let root = await utils.calculateReceiptsRoot(block.block, receipts)
-                    assert.equal(block.block.receiptsRoot, root, 'failed to verify receipts root')
-                }
+                await checkBlockReceipts(block.block, receipts, logs, utils, this.checks)
             } catch (err: any) {
                 throw addErrorContext(err, {
                     blockNumber: block.number,
@@ -1200,7 +1086,7 @@ export class Rpc {
         return pack.flat()
     }
 
-    private async getChainUtils(): Promise<ChainUtils> {
+    async getChainUtils(): Promise<ChainUtils> {
         if (this.chainUtils) return this.chainUtils
         let chainId: Qty = await this.call('eth_chainId')
         return this.chainUtils = new ChainUtils(chainId, {

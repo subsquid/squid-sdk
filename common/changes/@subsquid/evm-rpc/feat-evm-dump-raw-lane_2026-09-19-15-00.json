@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "export `ChainUtils` and the block checks of `Rpc` (`checkBlockHeader()`, `checkBlockLogs()`, `checkBlockReceipts()`, `checkStoredDebugFrame()`), make `Rpc.getChainUtils()` public",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
