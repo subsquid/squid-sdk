@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "comment": "pass the hash of the last archived block to `getBlocks()`, let a dumper register its own counters and check its options through `validateOptions()` before the dump starts",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-cli"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-dump",
+      "comment": "Wait up to 10 minutes for delayed publication of a selected finalized block before falling back to RPC, including recovery probes. Add --stream-wait-timeout to configure or disable the waiting budget.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-dump"
+}

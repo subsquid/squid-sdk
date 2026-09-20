@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-dump",
+      "comment": "add `--stream-url` and `--stream-dataset` options to read block bodies from a JetStream stream of raw blocks, falling back to RPC. The stream is not trusted: a block is taken only when its header hashes to the hash known from RPC, down the parent links from the finalized head, and it passes every `--verify-*` check that is on. A chain whose header hashing is not supported gets all its blocks from RPC. Transactions, receipts and logs are tied to the header only by the matching `--verify-*` options, call traces and state diffs can not be tied to it at all, the same as with RPC. Requires Node.js 22.15 or later for its built-in zstd",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-dump"
+}

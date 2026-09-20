@@ -168,6 +168,16 @@ export class PrometheusServer {
         collectDefaultMetrics({register: this.registry})
     }
 
+    /**
+     * Registers a counter of a particular dumper next to the common metrics
+     */
+    createCounter(config: {name: string, help: string, labelNames?: string[]}): Counter {
+        return new Counter({
+            ...config,
+            registers: [this.registry]
+        })
+    }
+
     setCompression(active: string) {
         for (let compression of ['gzip', 'zstd']) {
             this.compressionGauge.set({compression}, compression == active ? 1 : 0)

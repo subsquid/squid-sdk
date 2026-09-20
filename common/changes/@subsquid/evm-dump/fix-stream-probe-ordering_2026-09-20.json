@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-dump",
+      "comment": "hand over the blocks RPC has already fetched before asking the stream for them, so the publication waiting budget no longer delays data that is in hand. Bound the memory of a stream walk with a payload budget and size later walks from the weight of the last one. Warn at startup about the parts of a streamed block that no `--verify-*` option ties to its header, and report a bad `--stream-*` combination before the dump starts",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-dump"
+}

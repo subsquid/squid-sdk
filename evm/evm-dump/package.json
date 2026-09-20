@@ -8,7 +8,7 @@
     "access": "public"
   },
   "bin": {
-    "solana-dump": "./bin/run.js"
+    "evm-dump": "./bin/run.js"
   },
   "files": [
     "bin",
@@ -16,16 +16,21 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run"
   },
   "dependencies": {
     "@subsquid/evm-rpc": "^0.2.0",
     "@subsquid/evm-normalization": "^0.1.0",
     "@subsquid/util-internal": "^3.3.1",
-    "@subsquid/util-internal-dump-cli": "^2.1.0"
+    "@subsquid/util-internal-dump-cli": "^2.1.0",
+    "@nats-io/jetstream": "^3.4.0",
+    "@nats-io/transport-node": "^3.4.0",
+    "@subsquid/logger": "^1.6.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }
