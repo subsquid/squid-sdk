@@ -61,7 +61,8 @@ export class S3Fs implements Fs {
         return new S3Fs({
             client: this.client,
             root: this.resolve(path),
-            eventEmitter: this.eventEmitter
+            eventEmitter: this.eventEmitter,
+            requestPayer: this.requestPayer
         })
     }
 
@@ -138,7 +139,8 @@ export class S3Fs implements Fs {
                 new ListObjectsV2Command({
                     Bucket,
                     Prefix: Key,
-                    ContinuationToken
+                    ContinuationToken,
+                    RequestPayer: this.requestPayer
                 })
             )
             this.eventEmitter?.emit('S3FsOperation', 'ListObjectsV2')
@@ -155,7 +157,8 @@ export class S3Fs implements Fs {
                     Bucket,
                     Delete: {
                         Objects
-                    }
+                    },
+                    RequestPayer: this.requestPayer
                 }))
                 this.eventEmitter?.emit('S3FsOperation', 'DeleteObjects')
             }
