@@ -1,5 +1,4 @@
 import * as path from "path"
-import expect from "expect"
 import {loadModel} from "../tools"
 
 function fixture(name: string): string {

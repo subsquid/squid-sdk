@@ -1,0 +1,151 @@
+import {
+    CALL_FRAME_VALIDATION_MODES,
+    type CallFrameValidationMode,
+    Rpc,
+    EvmRpcDataSource,
+    EvmRpcClient
+} from '@subsquid/evm-rpc'
+import {type RawBlock, toRawBlock} from '@subsquid/evm-normalization'
+import {def} from '@subsquid/util-internal'
+import {
+    type Command,
+    Dumper,
+    type DumperOptions,
+    Option,
+    type Range,
+    positiveInt
+} from '@subsquid/util-internal-dump-cli'
+
+
+interface Options extends DumperOptions {
+    retryInternalServerErrors?: boolean
+    finalityConfirmation?: number
+    headPollInterval?: number
+    withReceipts?: boolean
+    withTraces?: boolean
+    withStatediffs?: boolean
+    useTraceApi?: boolean
+    useDebugApiForStatediffs?: boolean
+    useDebugTraceBlockByNumber?: boolean
+    verifyBlockHash?: boolean
+    verifyExtDataHash?: boolean
+    verifyTxSender?: boolean
+    verifyTxRoot?: boolean
+    verifyReceiptsRoot?: boolean
+    verifyWithdrawalsRoot?: boolean
+    verifyLogsBloom?: boolean
+    callFrameValidation?: CallFrameValidationMode
+    skipLogIndexCheck?: boolean
+    skipCumulativeGasUsedCheck?: boolean
+    useGasUsedForReceiptsRoot?: boolean
+}
+
+
+export class EvmDumper extends Dumper<RawBlock, Options> {
+    protected setUpProgram(program: Command): void {
+        program.description('Data archiving tool for EVM-based chains')
+        program.option('--retry-internal-server-errors', 'If set, the internal server errors from the RPC endpoint will be treated as retryable')
+        program.option('--finality-confirmation <number>', 'Finality offset from the head of a chain', positiveInt)
+        program.option(
+            '--head-poll-interval <ms>',
+            'How long to wait before asking for the chain head again, once caught up with it',
+            positiveInt,
+            1000
+        )
+        program.option('--with-receipts', 'Fetch transaction receipt data')
+        program.option('--with-traces', 'Fetch EVM call traces')
+        program.option('--with-statediffs', 'Fetch EVM state updates')
+        program.option('--use-trace-api', 'Use trace_* API for statediffs and call traces')
+        program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
+        program.option('--use-debug-trace-block-by-number', 'Use debug_traceBlockByNumber instead of debug_traceBlockByHash')
+        program.option('--verify-block-hash', 'Verify block header against block hash')
+        program.option('--verify-ext-data-hash', 'Verify block extData payload against the extDataHash header commitment')
+        program.option('--verify-tx-sender', 'Check if transaction sender matches sender recovered from signature')
+        program.option('--verify-tx-root', 'Verify block transactions against transactions root')
+        program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
+        program.option('--verify-withdrawals-root', 'Verify block withdrawals against withdrawals root')
+        program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
+        program.addOption(
+            new Option(
+                '--call-frame-validation <mode>',
+                'Validate semantic call-frame consistency; reject requires --verify-tx-root and --verify-tx-sender'
+            )
+                .choices([...CALL_FRAME_VALIDATION_MODES])
+                .default('off')
+        )
+        program.option('--skip-log-index-check', 'Do not check log indices within a block are sequential')
+        program.option('--skip-cumulative-gas-used-check', 'Do not check cumulativeGasUsed consistency across transactions')
+        program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
+    }
+
+    protected getLoggingNamespace(): string {
+        return 'sqd:evm-dump'
+    }
+
+    protected getParentBlockHash(block: RawBlock): string {
+        return block.parentHash
+    }
+
+    protected getBlockTimestamp(block: RawBlock): number {
+        return Number(block.timestamp) || 0
+    }
+
+    @def
+    protected rpc(): EvmRpcClient {
+        let options = this.options()
+        return new EvmRpcClient({
+            url: options.endpoint,
+            capacity: options.endpointCapacity || 10,
+            maxBatchCallSize: options.endpointMaxBatchCallSize,
+            rateLimit: options.endpointRateLimit,
+            requestTimeout: 180_000,
+            retryAttempts: Number.MAX_SAFE_INTEGER,
+            fixUnsafeIntegers: this.fixUnsafeIntegers(),
+            retryInternalServerErrors: options.retryInternalServerErrors
+        })
+    }
+
+    @def
+    private dataSource(): EvmRpcDataSource {
+        return new EvmRpcDataSource({
+            rpc: new Rpc({
+                client: this.rpc(),
+                finalityConfirmation: this.options().finalityConfirmation,
+                verifyBlockHash: this.options().verifyBlockHash,
+                verifyExtDataHash: this.options().verifyExtDataHash,
+                verifyTxSender: this.options().verifyTxSender,
+                verifyTxRoot: this.options().verifyTxRoot,
+                verifyReceiptsRoot: this.options().verifyReceiptsRoot,
+                verifyWithdrawalsRoot: this.options().verifyWithdrawalsRoot,
+                verifyLogsBloom: this.options().verifyLogsBloom,
+                callFrameValidation: this.options().callFrameValidation,
+                checkLogIndex: !this.options().skipLogIndexCheck,
+                checkCumulativeGasUsed: !this.options().skipCumulativeGasUsedCheck,
+                useGasUsedForReceiptsRoot: this.options().useGasUsedForReceiptsRoot,
+            }),
+            headPollInterval: this.options().headPollInterval,
+            req: {
+                transactions: true,
+                logs: !this.options().withReceipts,
+                receipts: this.options().withReceipts,
+                traces: this.options().withTraces,
+                stateDiffs: this.options().withStatediffs,
+                useDebugApiForStateDiffs: this.options().useDebugApiForStatediffs,
+                useDebugTraceBlockByNumber: this.options().useDebugTraceBlockByNumber,
+                useTraceApi: this.options().useTraceApi,
+                debugTraceTimeout: '60s'
+            },
+        })
+    }
+
+    protected async getLastFinalizedBlockNumber(): Promise<number> {
+        let head = await this.dataSource().getFinalizedHead()
+        return head.number
+    }
+
+    protected async* getBlocks(range: Range): AsyncIterable<RawBlock[]> {
+        for await (let batch of this.dataSource().getFinalizedStream(range)) {
+            yield batch.blocks.map(toRawBlock)
+        }
+    }
+}

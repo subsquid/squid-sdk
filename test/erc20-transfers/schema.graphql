@@ -1,9 +1,15 @@
+type Account @entity {
+    id: ID!
+    transfersFrom: [Transfer!] @derivedFrom(field: "from")
+    transfersTo: [Transfer!] @derivedFrom(field: "to")
+}
+
 type Transfer @entity {
     id: ID!
     blockNumber: Int!
     timestamp: DateTime!
     tx: String!
-    from: String!
-    to: String!
+    from: Account @disableForeignKeyConstraint
+    to: Account @disableForeignKeyConstraint
     amount: BigInt!
 }

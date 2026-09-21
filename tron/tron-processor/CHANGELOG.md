@@ -1,6 +1,30 @@
 # Change Log - @subsquid/tron-processor
 
-This log was last generated on Thu, 06 Mar 2025 10:46:22 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 0.2.1
+Mon, 11 May 2026 05:34:26 GMT
+
+_Version update only_
+
+## 0.2.0
+Tue, 05 May 2026 07:41:38 GMT
+
+### Minor changes
+
+- allow GatewaySettings to provide an API key
+
+## 0.1.0
+Wed, 18 Mar 2026 10:55:26 GMT
+
+### Minor changes
+
+- add `setPrometheusServer()` method, deprecate `setPrometheusPort()`
+
+## 0.0.5
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
 
 ## 0.0.4
 Thu, 06 Mar 2025 10:46:22 GMT

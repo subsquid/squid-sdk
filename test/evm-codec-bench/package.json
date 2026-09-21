@@ -1,0 +1,23 @@
+{
+  "name": "evm-codec-bench",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Benchmarks comparing the JIT-compiled StructCodec / AbiEvent / AbiFunction in the local @subsquid/evm-codec + @subsquid/evm-abi against the last published loop-based baseline from npm and against viem.",
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "bench": "node lib/bench.js",
+    "bench:abi": "node lib/bench-abi.js",
+    "verify": "node lib/verify-abi.js"
+  },
+  "dependencies": {
+    "@subsquid/evm-abi": "^1.0.0",
+    "@subsquid/evm-codec": "^1.0.0",
+    "evm-abi-old": "npm:@subsquid/evm-abi@0.3.1",
+    "evm-codec-old": "npm:@subsquid/evm-codec@0.3.0",
+    "viem": "^2.56.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "typescript": "5.5.4"
+  }
+}

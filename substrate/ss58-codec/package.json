@@ -3,7 +3,7 @@
   "version": "1.2.3",
   "description": "SS58 address format encoder/decoder",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -14,14 +14,15 @@
   ],
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "test": "node lib/test.js"
+    "test": "vitest --run"
   },
   "dependencies": {
     "blake2b": "^2.1.4",
     "bs58": "^5.0.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@types/node": "^24.13.6",
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }

@@ -1,5 +1,4 @@
 import {wait} from "@subsquid/util-internal"
-import expect from "expect"
 import {databaseExecute, useDatabase, useServer} from "./setup"
 
 

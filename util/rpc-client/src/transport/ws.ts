@@ -138,6 +138,10 @@ export class WsConnection implements Connection {
         if (isNotification(res)) {
             this.onNotificationMessage?.(res)
         } else {
+            // Ignore responses without an ID. Some providers send malformed responses
+            // that lack an ID, which would otherwise cause constant failure
+            // FIXME: what if it is correct response but without id?
+            if (res.id == null) return
             let h = this.requests.get(res.id)
             if (h == null) {
                 throw new RpcProtocolError(1008, `Got response for unknown request ${res.id}`)

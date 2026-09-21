@@ -88,4 +88,12 @@ export class SubstrateIngest extends Ingest<Options> {
             yield toJSON(blocks)
         }
     }
+
+    protected getBlockHeight(block: any): number {
+        return block.header.height || 0
+    }
+
+    protected getBlockTimestamp(block: any): number {
+        return Math.floor(block.header.timestamp / 1000) || 0
+    }
 }

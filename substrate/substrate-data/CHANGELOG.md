@@ -1,6 +1,55 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Tue, 18 Mar 2025 10:45:46 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 4.5.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- report version and transaction extension values of v5 general extrinsics, extract tips from them and fetch a v16 metadata via the `Metadata_metadata_at_version` runtime call
+
+## 4.4.6
+Wed, 22 Apr 2026 07:00:43 GMT
+
+### Patches
+
+- skip events whose extrinsic index is beyond the real extrinsic range when parsing calls (generalizes the previous MultiBlockElection-only fix to cover any pallet emitting phantom-extrinsic events)
+
+## 4.4.5
+Wed, 22 Apr 2026 06:32:55 GMT
+
+### Patches
+
+- skip phantom-extrinsic events emitted by the MultiBlockElection pallet when parsing calls
+
+## 4.4.4
+Wed, 19 Nov 2025 10:21:16 GMT
+
+### Patches
+
+- change SystemOrigin defintion to externalEnum
+
+## 4.4.3
+Sat, 15 Nov 2025 05:59:11 GMT
+
+### Patches
+
+- extend `SystemOrigin` enum definition
+
+## 4.4.2
+Sat, 01 Nov 2025 20:46:33 GMT
+
+### Patches
+
+- handle missing Proxy.ProxyExecuted event
+
+## 4.4.1
+Wed, 17 Sep 2025 03:17:50 GMT
+
+### Patches
+
+- handle EIP7702 transaction
 
 ## 4.4.0
 Tue, 18 Mar 2025 10:45:46 GMT

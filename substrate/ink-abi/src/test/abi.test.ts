@@ -1,5 +1,6 @@
 import assert from 'assert'
-import {Abi} from '../abi';
+import { describe, it } from 'vitest'
+import { Abi } from '../abi'
 import metadataV3 from './metadata-v3.json'
 import metadataV5 from './metadata-v5.json'
 

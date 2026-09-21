@@ -35,6 +35,16 @@ export function runProgram(main: () => Promise<void>, log?: (err: Error) => void
         process.exit(1)
     }
 
+    // A rejection escaping via a detached promise (or a throw on an event
+    // path) bypasses the main() chain below and terminates the process as
+    // bare stderr text outside the structured logger — a crash-looping pod
+    // then shows no machine-readable cause in its last lines.
+    // Some bundled runtimes ship a `process` shim without `.on`.
+    if (typeof process.on === 'function') {
+        process.on('unhandledRejection', onerror)
+        process.on('uncaughtException', onerror)
+    }
+
     try {
         main().then(() => process.exit(0), onerror)
     } catch(e: unknown) {
@@ -257,4 +267,11 @@ export function weakMemo<T extends object, R>(f: (obj: T) => R): (obj: T) => R {
         }
         return val
     }
+}
+
+
+export function removeArrayItem<T>(arr: T[], item: T): void {
+    let index = arr.indexOf(item)
+    if (index < 0) return
+    arr.splice(index, 1)
 }

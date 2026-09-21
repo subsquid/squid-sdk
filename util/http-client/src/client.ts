@@ -64,8 +64,23 @@ export class HttpClient {
     protected headers?: Record<string, string | number | bigint>
     private baseUrl?: string
     private agent: AgentProvider
-    private retrySchedule: number[]
-    private retryAttempts: number
+    /**
+     * Backoff pauses (in milliseconds) between retries. The final entry repeats for
+     * every attempt beyond its length.
+     *
+     * Readable together with {@link retryAttempts} so that wrappers can work out how
+     * long a retry budget actually spans. Exposed for observation only, hence the
+     * readonly element type: mutating it would silently change retry behaviour.
+     */
+    readonly retrySchedule: readonly number[]
+    /**
+     * Retry budget configured for this client, `0` when none was configured.
+     *
+     * Readable so that wrappers can defer to a caller's configuration instead of
+     * overriding it. Note that the constructor maps an unset option and an explicit
+     * `0` onto the same value, so this cannot distinguish the two.
+     */
+    readonly retryAttempts: number
     private httpTimeout: number
     private requestCounter = 0
 
@@ -74,7 +89,9 @@ export class HttpClient {
         this.headers = options.headers
         this.setBaseUrl(options.baseUrl)
         this.agent = options.agent || defaultAgentProvider
-        this.retrySchedule = options.retrySchedule || [10, 100, 500, 2000, 10000, 20000]
+        // Copied, not aliased: the property is exposed readonly, so the caller must not
+        // be able to retune a live client by mutating the array it passed in.
+        this.retrySchedule = options.retrySchedule ? [...options.retrySchedule] : [10, 100, 500, 2000, 10000, 20000]
         this.retryAttempts = options.retryAttempts || 0
         this.httpTimeout = options.httpTimeout ?? 20000
     }
@@ -281,14 +298,7 @@ export class HttpClient {
             if (timer != null) {
                 clearTimeout(timer)
             }
-            if (req.signal && res?.stream) {
-                // FIXME: is `close` always emitted?
-                (res.body as NodeJS.ReadableStream).on('close', () => {
-                    req.signal!.removeEventListener('abort', abort)
-                })
-            } else {
-                req.signal?.removeEventListener('abort', abort)
-            }
+            req.signal?.removeEventListener('abort', abort)
         }
     }
 
@@ -330,10 +340,14 @@ export class HttpClient {
         }
         if (error instanceof HttpResponse) {
             switch(error.status) {
+                case 408:
                 case 429:
                 case 502:
                 case 503:
                 case 504:
+                case 521:
+                case 522:
+                case 523:
                 case 524:
                     return true
                 default:
@@ -436,8 +450,8 @@ export class HttpResponse<T=any> {
 }
 
 
-export class HttpError extends Error {
-    constructor(public readonly response: HttpResponse) {
+export class HttpError<T=any> extends Error {
+    constructor(public readonly response: HttpResponse<T>) {
         super(`Got ${response.status} from ${response.url}`)
     }
 
@@ -479,7 +493,11 @@ export function isHttpConnectionError(err: unknown): boolean {
     return nodeFetch.isLoaded
         && err instanceof nodeFetch.FetchError
         && err.type == 'system'
-        && (err.message.startsWith('request to') || err.code == 'ERR_STREAM_PREMATURE_CLOSE')
+        && (
+            err.message.startsWith('request to') ||
+            err.code == 'ERR_STREAM_PREMATURE_CLOSE' ||
+            err.code == 'ECONNRESET'
+        )
 }
 
 

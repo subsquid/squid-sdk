@@ -1,4 +1,7 @@
 export * from './data/model'
-export * from './rpc/client'
+export type * from './data/request'
 export * from './instruction'
+export * from './builder'
+export * from './query'
 export * from './source'
+export * from './portal/source'

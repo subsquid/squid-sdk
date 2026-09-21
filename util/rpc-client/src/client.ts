@@ -1,11 +1,12 @@
 import {HttpError, HttpTimeoutError, isHttpConnectionError} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
-import {addErrorContext, def, last, splitParallelWork, wait} from '@subsquid/util-internal'
+import {addErrorContext, def, last, removeArrayItem, splitParallelWork, wait} from '@subsquid/util-internal'
 import {Heap} from '@subsquid/util-internal-binary-heap'
 import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
 import {Connection, HttpHeaders, RpcCall, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
 import {RateMeter} from './rate'
+import {redactRpcUrl, redactRpcUrlsInText} from './redact'
 import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
 import {WsConnection} from './transport/ws'
@@ -62,6 +63,24 @@ export interface RpcClientOptions {
     log?: Logger | null
 }
 
+// Add interface for RPC metrics
+export interface RpcMetrics {
+    url: string
+    requestsServed: number
+    connectionErrors: number
+    notificationsReceived: number
+    avg_response_time: number
+}
+
+
+export interface RpcMetrics {
+    url: string
+    requestsServed: number
+    connectionErrors: number
+    notificationsReceived: number
+    avgResponseTime: number
+}
+
 
 export interface CallOptions<R=any> {
     priority?: number
@@ -97,6 +116,10 @@ interface Req {
 export class RpcClient {
     private counter = 0
     private queue = new Heap<Req>(byPriority)
+    /**
+     * Log- and metric-safe endpoint identifier. The transport keeps using the
+     * original URL supplied to the constructor.
+     */
     public readonly url: string
     private con: Connection
     private maxBatchCallSize: number
@@ -113,6 +136,7 @@ export class RpcClient {
     private connectionErrors = 0
     private requestsServed = 0
     private notificationsReceived = 0
+    private totalResponseTime = 0
     private backoffEpoch = 0
     private backoffTime?: number
     private notificationListeners: ((msg: RpcNotification) => void)[] = []
@@ -120,7 +144,7 @@ export class RpcClient {
     private closed = false
 
     constructor(options: RpcClientOptions) {
-        this.url = trimCredentials(options.url)
+        this.url = redactRpcUrl(options.url)
         this.con = this.createConnection(options.url, options.fixUnsafeIntegers || false, options.headers)
         this.maxBatchCallSize = options.maxBatchCallSize ?? Number.MAX_SAFE_INTEGER
         this.capacity = this.maxCapacity = options.capacity || 10
@@ -130,7 +154,7 @@ export class RpcClient {
 
         this.log = options.log === null
             ? undefined
-            : options.log || createLogger('sqd:rpc-client', {rpcUrl: this.url})
+            : (options.log || createLogger('sqd:rpc-client')).child({rpcUrl: this.url})
 
         if (options.rateLimit) {
             assert(options.rateLimit > 0)
@@ -179,12 +203,15 @@ export class RpcClient {
         return this.maxCapacity
     }
 
-    getMetrics() {
+    getMetrics(): RpcMetrics {
         return {
             url: this.url,
             requestsServed: this.requestsServed,
             connectionErrors: this.connectionErrors,
-            notificationsReceived: this.notificationsReceived
+            notificationsReceived: this.notificationsReceived,
+            // FIXME: only one of these metrics should remain; decide which to keep
+            avg_response_time: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
+            avgResponseTime: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
         }
     }
 
@@ -209,7 +236,7 @@ export class RpcClient {
     }
 
     removeNotificationListener(cb: (msg: RpcNotification) => void): void {
-        removeItem(this.notificationListeners, cb)
+        removeArrayItem(this.notificationListeners, cb)
     }
 
     addResetListener(cb: (reason: Error) => void): void {
@@ -217,7 +244,7 @@ export class RpcClient {
     }
 
     removeResetListener(cb: (reason: Error) => void): void {
-        removeItem(this.resetListeners, cb)
+        removeArrayItem(this.resetListeners, cb)
     }
 
     subscribe<T>(sub: Subscription<T>): SubscriptionHandle {
@@ -364,6 +391,7 @@ export class RpcClient {
         this.capacity -= 1
         let backoffEpoch = this.backoffEpoch
         let promise: Promise<any>
+        const startTime = Date.now()
         if (Array.isArray(req.call)) {
             let call = req.call
             this.log?.debug({rpcBatchId: [call[0].id, last(call).id]}, 'rpc send')
@@ -382,6 +410,8 @@ export class RpcClient {
             })
         }
         promise.then(result => {
+            const responseTimeSeconds = (Date.now() - startTime) / 1000
+            this.totalResponseTime += responseTimeSeconds
             this.requestsServed += 1
             if (this.backoffEpoch == backoffEpoch) {
                 this.connectionErrorsInRow = 0
@@ -451,7 +481,10 @@ export class RpcClient {
                 httpResponseBody = reason.response.body
             }
             this.log.warn({
-                reason: reason.toString(),
+                // The transport already scrubs its own errors, but `reason` can
+                // originate outside it (e.g. subscription plumbing), so redact
+                // here as well — this text quotes third-party error messages.
+                reason: redactRpcUrlsInText(reason.toString()),
                 httpResponseBody,
                 rpcCall: req?.call
             }, 'connection failure')
@@ -506,6 +539,7 @@ export class RpcClient {
         if (err instanceof HttpTimeoutError) return true
         if (err instanceof HttpError) {
             switch(err.response.status) {
+                case 408:
                 case 429:
                 case 502:
                 case 503:
@@ -559,14 +593,6 @@ function getCallPriority(req: Req): number {
 }
 
 
-function trimCredentials(url: string): string {
-    let u = new URL(url)
-    u.password = ''
-    u.username = ''
-    return u.toString()
-}
-
-
 function isRateLimitError(err: unknown): boolean {
     return err instanceof RpcError && /rate limit/i.test(err.message)
 }
@@ -576,12 +602,8 @@ function isExecutionTimeoutError(err: unknown): boolean {
     return err instanceof RpcError && /execution timeout/i.test(err.message)
 }
 
+
 function isRequestTimedOutError(err: unknown): boolean {
     return err instanceof RpcError && /request.*timed out/i.test(err.message)
 }
 
-function removeItem<T>(arr: T[], item: T): void {
-    let index = arr.indexOf(item)
-    if (index < 0) return
-    arr.splice(index, 1)
-}

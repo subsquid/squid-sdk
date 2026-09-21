@@ -1,9 +1,9 @@
 {
   "name": "@subsquid/rpc-client",
-  "version": "4.11.0",
+  "version": "4.16.1",
   "description": "Lightweight JSON-RPC client library",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -13,20 +13,22 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.6.0",
-    "@subsquid/logger": "^1.4.0",
-    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/http-client": "^1.9.0",
+    "@subsquid/logger": "^1.6.0",
+    "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-binary-heap": "^1.0.0",
     "@subsquid/util-internal-counters": "^1.3.2",
     "@subsquid/util-internal-json-fix-unsafe-integers": "^0.0.0",
-    "websocket": "^1.0.34"
+    "websocket": "^1.0.35"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
+    "@types/node": "^24.13.6",
     "@types/websocket": "^1.0.10",
-    "typescript": "~5.5.4"
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }

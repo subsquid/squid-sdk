@@ -2,6 +2,35 @@
   "name": "@subsquid/util-internal-processor-tools",
   "entries": [
     {
+      "version": "4.4.0",
+      "tag": "@subsquid/util-internal-processor-tools_v4.4.0",
+      "date": "Mon, 23 Mar 2026 13:12:51 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow constructing RunnerMetrics with a custom blocksCountInRange(range) instead of only request ranges"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.3.0",
+      "tag": "@subsquid/util-internal-processor-tools_v4.3.0",
+      "date": "Wed, 18 Mar 2026 10:55:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add support for custom metrics sink"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.4.0` to `1.5.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.2.1",
       "tag": "@subsquid/util-internal-processor-tools_v4.2.1",
       "date": "Tue, 31 Dec 2024 14:45:43 GMT",

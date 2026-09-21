@@ -327,10 +327,12 @@ export class CallParser {
             let event = this.events[this.eventPos]
             if (event.phase === 'ApplyExtrinsic') {
                 if (event.extrinsicIndex !== this.extrinsic.index) {
-                    if (event.name.includes('Migrations.')) {
-                        let index = assertNotNull(event.extrinsicIndex)
-                        // Besides `Migrations.*` events there can be more parachain-defined events,
-                        // so we skip all events related to the "phantom" extrinsic.
+                    let index = assertNotNull(event.extrinsicIndex)
+                    // Some pallets (e.g. `Migrations`, `MultiBlockElection`) emit events
+                    // at an `ApplyExtrinsic` phase with an extrinsic index beyond the real
+                    // extrinsic range. We treat any such index as a "phantom" extrinsic
+                    // and skip all its events.
+                    if (index >= this.extrinsics.length) {
                         this.skipExtrinsicEvents(index)
                         continue
                     } else {

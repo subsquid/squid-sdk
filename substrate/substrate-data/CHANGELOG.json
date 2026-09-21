@@ -2,6 +2,98 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.5.0",
+      "tag": "@subsquid/substrate-data_v4.5.0",
+      "date": "Mon, 14 Sep 2026 10:05:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "report version and transaction extension values of v5 general extrinsics, extract tips from them and fetch a v16 metadata via the `Metadata_metadata_at_version` runtime call"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^2.0.1` to `2.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^2.0.1` to `2.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.4.6",
+      "tag": "@subsquid/substrate-data_v4.4.6",
+      "date": "Wed, 22 Apr 2026 07:00:43 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "skip events whose extrinsic index is beyond the real extrinsic range when parsing calls (generalizes the previous MultiBlockElection-only fix to cover any pallet emitting phantom-extrinsic events)"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.4.5",
+      "tag": "@subsquid/substrate-data_v4.4.5",
+      "date": "Wed, 22 Apr 2026 06:32:55 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "skip phantom-extrinsic events emitted by the MultiBlockElection pallet when parsing calls"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.4.4",
+      "tag": "@subsquid/substrate-data_v4.4.4",
+      "date": "Wed, 19 Nov 2025 10:21:16 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "change SystemOrigin defintion to externalEnum"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.4.3",
+      "tag": "@subsquid/substrate-data_v4.4.3",
+      "date": "Sat, 15 Nov 2025 05:59:11 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "extend `SystemOrigin` enum definition"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.4.2",
+      "tag": "@subsquid/substrate-data_v4.4.2",
+      "date": "Sat, 01 Nov 2025 20:46:33 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "handle missing Proxy.ProxyExecuted event"
+          }
+        ]
+      }
+    },
+    {
+      "version": "4.4.1",
+      "tag": "@subsquid/substrate-data_v4.4.1",
+      "date": "Wed, 17 Sep 2025 03:17:50 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "handle EIP7702 transaction"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.4.0",
       "tag": "@subsquid/substrate-data_v4.4.0",
       "date": "Tue, 18 Mar 2025 10:45:46 GMT",

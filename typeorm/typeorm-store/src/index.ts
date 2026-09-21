@@ -1,4 +1,5 @@
 export * from './database'
+export * from './interfaces'
 export {EntityClass, FindManyOptions, FindOneOptions, Store} from './store'
 export * from './decorators'
 export * from './transformers'

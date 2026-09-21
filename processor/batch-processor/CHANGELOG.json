@@ -2,6 +2,60 @@
   "name": "@subsquid/batch-processor",
   "entries": [
     {
+      "version": "1.1.0",
+      "tag": "@subsquid/batch-processor_v1.1.0",
+      "date": "Thu, 16 Jul 2026 19:47:53 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "feat(run): auto-register a data source's own Prometheus metrics. If the source exposes an optional `getMetricsSink(): MetricsSink` (duck-typed, so the minimal DataSource interface keeps no prom-client dependency), `run()` adds it to the metrics server alongside the runner metrics — so source-provided gauges (e.g. a fallback source's `sqd_fallback_*`) appear on `/metrics` with no manual `addMetricsSink` wiring."
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.0",
+      "tag": "@subsquid/batch-processor_v1.0.0",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "use shared `DataSource` interfaces for finalized and unfinalized streams"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "add support for unfinalized data sources"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.5.0` to `1.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/batch-processor_v0.1.0",
+      "date": "Mon, 23 Mar 2026 13:12:51 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow to set optional custom PrometheusServer in run()"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^4.3.0` to `4.4.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.0",
       "tag": "@subsquid/batch-processor_v0.0.0",
       "date": "Wed, 17 Apr 2024 12:46:35 GMT",

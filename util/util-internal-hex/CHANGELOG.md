@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-hex
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 1.2.3
+Mon, 11 May 2026 05:34:26 GMT
+
+### Patches
+
+- `toHex()`: allow callers to encode a selected byte range
 
 ## 1.2.2
 Fri, 01 Dec 2023 16:55:51 GMT

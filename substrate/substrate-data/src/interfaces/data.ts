@@ -50,6 +50,14 @@ export interface Extrinsic {
     index: number
     version: number
     signature?: ExtrinsicSignature
+    /**
+     * Version of the transaction extension pipeline of a v5 general extrinsic
+     */
+    extensionVersion?: number
+    /**
+     * Transaction extension values of a v5 general extrinsic
+     */
+    extensions?: unknown
     fee?: bigint
     tip?: bigint
     error?: unknown

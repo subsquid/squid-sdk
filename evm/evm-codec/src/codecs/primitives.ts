@@ -1,201 +1,93 @@
-import { decodeHex, isHex, toHex } from '@subsquid/util-internal-hex'
-import { Codec } from '../codec'
-import { Sink } from '../sink'
-import { Src } from '../src'
-import { ArrayCodec, FixedSizeArrayCodec } from './array'
-import { StructCodec } from './struct'
-import { safeToNumber } from '../safeToNumber'
+import type {Codec, Sink, Src} from '../codec'
+
+function safeToNumber(value: number | bigint): number {
+    if (value < Number.MIN_SAFE_INTEGER || value > Number.MAX_SAFE_INTEGER) {
+        throw new Error(`${value} is not a safe integer`)
+    }
+    return Number(value)
+}
 
 type Numberish = number | bigint
+type NumberType = 'u8' | 'i8' | 'u16' | 'i16' | 'u32' | 'i32'
+type BigIntType = 'u64' | 'i64' | 'u128' | 'i128' | 'u256' | 'i256'
+
+function numberCodec(method: NumberType): Codec<Numberish, number> {
+    return {
+        encode: (sink, val) => sink[method](safeToNumber(val)),
+        decode: (src) => src[method](),
+        isDynamic: false,
+        baseType: 'int',
+    }
+}
+
+function bigintCodec(method: BigIntType): Codec<Numberish, bigint> {
+    return {
+        encode: (sink, val) => sink[method](BigInt(val)),
+        decode: (src) => src[method](),
+        isDynamic: false,
+        baseType: 'int',
+    }
+}
 
 export const bool: Codec<boolean> = {
-  encode: function (sink: Sink, val: boolean) {
-    sink.bool(val)
-  },
-  decode(src: Src): boolean {
-    return src.bool()
-  },
-  isDynamic: false,
-  baseType: 'bool',
+    encode(sink: Sink, val: boolean) {
+        sink.bool(val)
+    },
+    decode(src: Src): boolean {
+        return src.bool()
+    },
+    isDynamic: false,
+    baseType: 'bool',
 }
 
-export const uint8: Codec<Numberish, number> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.u8(safeToNumber(val))
-  },
-  decode(src: Src): number {
-    return src.u8()
-  },
-  isDynamic: false,
-  baseType: 'int',
+export const uint8 = numberCodec('u8')
+export const int8 = numberCodec('i8')
+export const uint16 = numberCodec('u16')
+export const int16 = numberCodec('i16')
+export const uint32 = numberCodec('u32')
+export const int32 = numberCodec('i32')
+export const uint64 = bigintCodec('u64')
+export const int64 = bigintCodec('i64')
+export const uint128 = bigintCodec('u128')
+export const int128 = bigintCodec('i128')
+export const uint256 = bigintCodec('u256')
+export const int256 = bigintCodec('i256')
+
+export const string: Codec<string> = {
+    encode(sink: Sink, val: string) {
+        sink.openTail()
+        sink.string(val)
+        sink.closeTail()
+    },
+    decode(src: Src): string {
+        return src.string()
+    },
+    isDynamic: true,
+    baseType: 'string',
 }
 
-export const int8: Codec<Numberish, number> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.i8(safeToNumber(val))
-  },
-  decode(src: Src): number {
-    return src.i8()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const uint16: Codec<Numberish, number> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.u16(safeToNumber(val))
-  },
-  decode(src: Src): number {
-    return src.u16()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const int16: Codec<Numberish, number> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.i16(safeToNumber(val))
-  },
-  decode(src: Src): number {
-    return src.i16()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const uint32: Codec<Numberish, number> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.u32(safeToNumber(val))
-  },
-  decode(src: Src): number {
-    return src.u32()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const int32: Codec<Numberish, number> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.i32(safeToNumber(val))
-  },
-  decode(src: Src): number {
-    return src.i32()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const uint64: Codec<Numberish, bigint> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.u64(BigInt(val))
-  },
-  decode(src: Src): bigint {
-    return src.u64()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const int64: Codec<Numberish, bigint> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.i64(BigInt(val))
-  },
-  decode(src: Src): bigint {
-    return src.i64()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const uint128: Codec<Numberish, bigint> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.u128(BigInt(val))
-  },
-  decode(src: Src): bigint {
-    return src.u128()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const int128: Codec<Numberish, bigint> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.i128(BigInt(val))
-  },
-  decode(src: Src): bigint {
-    return src.i128()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const uint256: Codec<Numberish, bigint> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.u256(BigInt(val))
-  },
-  decode(src: Src): bigint {
-    return src.u256()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const int256: Codec<Numberish, bigint> = {
-  encode(sink: Sink, val: Numberish) {
-    sink.i256(BigInt(val))
-  },
-  decode(src: Src): bigint {
-    return src.i256()
-  },
-  isDynamic: false,
-  baseType: 'int',
-}
-
-export const string = <const>{
-  encode(sink: Sink, val: string) {
-    sink.newStaticDataArea()
-    sink.string(val)
-    sink.endCurrentDataArea()
-  },
-  decode(src: Src): string {
-    return src.string()
-  },
-  isDynamic: true,
-  baseType: 'string',
-}
-
-function toBuffer(val: Uint8Array | string): Uint8Array {
-  if (val instanceof Uint8Array) {
-    return val
-  }
-  if (!isHex(val)) {
-    throw new Error(`Expected hex string or buffer, got: ${val}`)
-  }
-  return decodeHex(val)
-}
-
-export const bytes: Codec<Uint8Array | string, string>  = <const>{
-  encode(sink: Sink, val: Uint8Array | string) {
-    sink.newStaticDataArea()
-    sink.bytes(toBuffer(val))
-    sink.endCurrentDataArea()
-  },
-  decode(src: Src): string {
-    return toHex(src.bytes())
-  },
-  isDynamic: true,
-  baseType: 'bytes',
+export const bytes: Codec<Uint8Array | string, string> = {
+    encode(sink: Sink, val: Uint8Array | string) {
+        sink.openTail()
+        sink.bytes(val)
+        sink.closeTail()
+    },
+    decode(src: Src): string {
+        return src.bytesHex()
+    },
+    isDynamic: true,
+    baseType: 'bytes',
 }
 
 const bytesN = (size: number): Codec<Uint8Array | string, string> => ({
-  encode(sink: Sink, val: Uint8Array | string) {
-    sink.staticBytes(size, toBuffer(val))
-  },
-  decode(src: Src): string {
-    return toHex(src.staticBytes(size))
-  },
-  isDynamic: false,
-  baseType: 'bytes',
+    encode(sink: Sink, val: Uint8Array | string) {
+        sink.staticBytes(size, val)
+    },
+    decode(src: Src): string {
+        return src.staticBytesHex(size)
+    },
+    isDynamic: false,
+    baseType: 'bytes',
 })
 
 export const bytes0 = bytesN(0)
@@ -233,27 +125,15 @@ export const bytes31 = bytesN(31)
 export const bytes32 = bytesN(32)
 
 export const address: Codec<string> = {
-  encode(sink: Sink, val: string) {
-    sink.address(val)
-  },
-  decode(src: Src): string {
-    return src.address()
-  },
-  isDynamic: false,
-  baseType: 'address',
+    encode(sink: Sink, val: string) {
+        sink.address(val)
+    },
+    decode(src: Src): string {
+        return src.address()
+    },
+    isDynamic: false,
+    baseType: 'address',
 }
-
-export const fixedSizeArray = <TIn, TOut>(item: Codec<TIn, TOut>, size: number): Codec<TIn[], TOut[]> => new FixedSizeArrayCodec(item, size)
-
-export const array = <TIn, TOut>(item: Codec<TIn, TOut>): Codec<TIn[], TOut[]> => new ArrayCodec(item)
-
-type Struct = {
-  [key: string]: Codec<any>
-}
-
-export const struct = <const T extends Struct>(components: T) => new StructCodec<T>(components)
-
-export const tuple = struct
 
 export const uint24 = uint32
 export const int24 = int32
@@ -307,4 +187,3 @@ export const uint240 = uint256
 export const int240 = int256
 export const uint248 = uint256
 export const int248 = int256
-

@@ -1,6 +1,51 @@
 # Change Log - @subsquid/solana-ingest
 
-This log was last generated on Sun, 16 Mar 2025 07:51:27 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 1.0.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Breaking changes
+
+- use slots as block numbers
+
+### Minor changes
+
+- add `--relaxed` option to forgive log <-> instruction matching errors
+
+## 0.2.1
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
+
+## 0.2.0
+Fri, 04 Jul 2025 17:08:54 GMT
+
+### Minor changes
+
+- make compatible with new normalization process
+
+## 0.1.3
+Fri, 04 Jul 2025 16:25:30 GMT
+
+_Version update only_
+
+## 0.1.2
+Fri, 04 Jul 2025 13:20:21 GMT
+
+_Version update only_
+
+## 0.1.1
+Fri, 04 Jul 2025 09:59:08 GMT
+
+_Version update only_
+
+## 0.1.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- Add block height and timestamp extraction methods for Solana ingestion with Unix timestamp support
 
 ## 0.0.8
 Sun, 16 Mar 2025 07:51:27 GMT

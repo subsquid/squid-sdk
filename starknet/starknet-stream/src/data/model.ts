@@ -15,14 +15,6 @@ export interface FieldSelection {
     event?: Selector<Exclude<keyof data.Event, EventRequiredFields>>
 }
 
-export const DEFAULT_FIELDS = {
-    block: {
-        timestamp: true
-    },
-    transaction: {},
-    event: {}
-} as const
-
 type Item<
     Data,
     RequiredFields extends keyof Data,
@@ -30,7 +22,7 @@ type Item<
     K extends keyof FieldSelection
 > = Simplify<
     Pick<Data, RequiredFields> &
-    Select<Data, GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, K>>
+    Select<Data, GetFields<FieldSelection, F, K>>
 >
 
 export type BlockHeader<F extends FieldSelection = {}> = Item<

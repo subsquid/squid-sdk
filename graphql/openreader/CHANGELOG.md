@@ -1,6 +1,34 @@
 # Change Log - @subsquid/openreader
 
-This log was last generated on Thu, 03 Oct 2024 16:36:15 GMT and should not be manually modified.
+This log was last generated on Fri, 03 Jul 2026 14:38:56 GMT and should not be manually modified.
+
+## 5.5.1
+Fri, 03 Jul 2026 14:38:56 GMT
+
+### Patches
+
+- Truncate generated table names to the PostgreSQL identifier limit (63 bytes) so queries target the same table `@subsquid/typeorm-codegen` creates for over-long entity names. Previously OpenReader emitted the full untruncated name and relied on the server truncating it to match — which only holds when the server's NAMEDATALEN equals the default. On a build with a larger NAMEDATALEN the reference would miss the (already-pruned) table; it now works regardless of NAMEDATALEN. No effect on entity names within the limit.
+
+## 5.5.0
+Wed, 08 Apr 2026 08:23:22 GMT
+
+### Minor changes
+
+- allow to configure transaction isolation level (SERIALIZABLE, REPEATABLE READ, READ COMMITTED)
+
+## 5.4.0
+Tue, 17 Mar 2026 11:47:18 GMT
+
+### Minor changes
+
+- add @disableForeignKeyConstraint directive to suppress FK constraints and expose synthetic {field}Id fields with full filtering support
+
+## 5.3.0
+Mon, 05 May 2025 11:31:26 GMT
+
+### Minor changes
+
+- Allows to specify --validation-max-errors option to abort validation and exit with an error message "Too many validation errors, error limit reached. Validation aborted".
 
 ## 5.2.0
 Thu, 03 Oct 2024 16:36:15 GMT

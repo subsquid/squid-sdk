@@ -1,3 +1,4 @@
+/// <reference types="vitest/globals" />
 import {createConnectionOptions} from '@subsquid/typeorm-config/lib/connectionOptions'
 import {toPgClientConfig} from '@subsquid/typeorm-config/lib/pg'
 import {Client as PgClient, ClientBase} from 'pg'
@@ -48,7 +49,7 @@ export function databaseDelete(): Promise<void> {
 
 
 export function useDatabase(sql: string[]): void {
-    before(async () => {
+    beforeAll(async () => {
         await databaseDelete()
         await databaseInit(sql)
     })

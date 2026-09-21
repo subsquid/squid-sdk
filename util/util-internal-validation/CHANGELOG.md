@@ -1,6 +1,24 @@
 # Change Log - @subsquid/util-internal-validation
 
-This log was last generated on Tue, 03 Dec 2024 11:47:42 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 0.9.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Minor changes
+
+- tagged union: make the tag to be the first field, not the last
+
+### Patches
+
+- `ANY_INT`: accept signed bigint strings
+
+## 0.8.0
+Sat, 09 Aug 2025 06:10:24 GMT
+
+### Minor changes
+
+- tagged union: make the tag to be the first field, not the last
 
 ## 0.7.0
 Tue, 03 Dec 2024 11:47:42 GMT

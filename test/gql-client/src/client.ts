@@ -28,6 +28,12 @@ export class Client {
         expect(response.response.body).toEqual(errorData)
     }
 
+    async httpErrorMatch(query: string, errorData: any): Promise<void> {
+        let response: any = await this.query(query).catch(err => err)
+        expect(response).toBeInstanceOf(HttpError)
+        expect(response.response.body).toMatchObject(errorData)
+    }
+
     subscriptionTest<R>(
         q: string,
         test: (take: () => Promise<ExecutionResult<R>>) => Promise<void>

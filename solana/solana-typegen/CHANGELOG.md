@@ -1,6 +1,39 @@
 # Change Log - @subsquid/solana-typegen
 
-This log was last generated on Tue, 18 Mar 2025 11:56:44 GMT and should not be manually modified.
+This log was last generated on Mon, 26 Jan 2026 19:17:25 GMT and should not be manually modified.
+
+## 0.9.1
+Mon, 26 Jan 2026 19:17:25 GMT
+
+### Patches
+
+- export InstructionRecord interface
+
+## 0.9.0
+Mon, 08 Dec 2025 14:27:13 GMT
+
+### Minor changes
+
+- remove `@subsquid/solana-stream` dependency
+
+## 0.8.0
+Mon, 17 Nov 2025 08:42:47 GMT
+
+### Minor changes
+
+- make import paths esm compatible
+
+## 0.7.0
+Wed, 15 Oct 2025 07:01:15 GMT
+
+### Minor changes
+
+- preserve leading `_` in generated names
+
+## 0.6.1
+Fri, 04 Jul 2025 17:08:54 GMT
+
+_Version update only_
 
 ## 0.6.0
 Tue, 18 Mar 2025 11:56:44 GMT

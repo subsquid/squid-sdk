@@ -1,0 +1,9 @@
+{
+  "name": "lint",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Autoinstaller for `rush lint` (Biome).",
+  "dependencies": {
+    "@biomejs/biome": "1.9.4"
+  }
+}

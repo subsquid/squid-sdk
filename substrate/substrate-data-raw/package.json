@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "description": "Raw RPC data fetcher for substrate based chains",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -16,18 +16,18 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-ingest-tools": "^1.1.4",
+    "@subsquid/util-internal": "^3.3.1",
+    "@subsquid/util-internal-ingest-tools": "^1.2.0",
     "@subsquid/util-internal-range": "^0.3.0",
     "@subsquid/util-timeout": "^2.3.2"
   },
   "peerDependencies": {
-    "@subsquid/logger": "^1.4.0",
-    "@subsquid/rpc-client": "^4.11.0"
+    "@subsquid/logger": "^1.6.0",
+    "@subsquid/rpc-client": "^4.16.1"
   },
   "devDependencies": {
-    "@subsquid/rpc-client": "^4.11.0",
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@subsquid/rpc-client": "^4.16.1",
+    "@types/node": "^24.13.6",
+    "typescript": "5.5.4"
   }
 }

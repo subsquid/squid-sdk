@@ -150,7 +150,7 @@ export class Workspace {
     }
 
     private write(file: string, obj: unknown): void {
-        let json = JSON.stringify(obj, null, 2)
+        let json = JSON.stringify(obj, null, 2) + '\n'
         fs.writeFileSync(this.path(file), json)
     }
 

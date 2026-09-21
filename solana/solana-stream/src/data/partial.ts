@@ -2,7 +2,7 @@ import type * as data from '@subsquid/solana-normalization'
 import type {MakePartial} from './type-util'
 
 
-export type BlockRequiredFields = 'height' | 'hash' | 'parentHash'
+export type BlockRequiredFields = 'number' | 'hash' | 'parentHash'
 export type TransactionRequiredFields = 'transactionIndex'
 export type InstructionRequiredFields = 'transactionIndex' | 'instructionAddress'
 export type LogRequiredFields = 'transactionIndex' | 'logIndex' | 'instructionAddress'

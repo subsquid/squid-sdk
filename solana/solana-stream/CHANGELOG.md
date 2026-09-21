@@ -1,6 +1,106 @@
 # Change Log - @subsquid/solana-stream
 
-This log was last generated on Tue, 25 Mar 2025 14:14:33 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 1.3.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- allow selecting the new transactionConfig field of a transaction
+
+## 1.2.1
+Thu, 27 Aug 2026 13:59:40 GMT
+
+_Version update only_
+
+## 1.2.0
+Thu, 20 Aug 2026 12:45:29 GMT
+
+### Minor changes
+
+- export the data request types (DataRequest, item request/relations interfaces) from the package barrel
+
+## 1.1.2
+Wed, 08 Jul 2026 22:11:26 GMT
+
+_Version update only_
+
+## 1.1.1
+Mon, 18 May 2026 10:40:02 GMT
+
+### Patches
+
+- remove @subsquid/rpc-client and @subsquid/solana-rpc dependencies
+
+## 1.1.0
+Thu, 14 May 2026 13:44:27 GMT
+
+### Minor changes
+
+- Drop DEFAULT_FIELDS; .setFields() is now the sole source of selected fields
+
+## 1.0.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Breaking changes
+
+- rework for SQD Portal support
+
+### Minor changes
+
+- add Portal request builder and merge helpers
+
+## 0.5.0
+Tue, 05 May 2026 07:41:38 GMT
+
+### Minor changes
+
+- allow GatewaySettings to provide an API key
+
+## 0.4.0
+Mon, 08 Dec 2025 14:27:13 GMT
+
+### Minor changes
+
+- change instruction data symbol string, use `Symbol.for`
+
+## 0.3.1
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
+
+## 0.3.0
+Fri, 04 Jul 2025 17:08:54 GMT
+
+### Minor changes
+
+- make compatible with new normalization process
+
+## 0.2.7
+Fri, 04 Jul 2025 16:25:30 GMT
+
+_Version update only_
+
+## 0.2.6
+Fri, 04 Jul 2025 13:20:21 GMT
+
+_Version update only_
+
+## 0.2.5
+Fri, 04 Jul 2025 09:59:08 GMT
+
+_Version update only_
+
+## 0.2.4
+Mon, 09 Jun 2025 12:15:37 GMT
+
+_Version update only_
+
+## 0.2.3
+Wed, 14 May 2025 19:46:11 GMT
+
+_Version update only_
 
 ## 0.2.2
 Tue, 25 Mar 2025 14:14:33 GMT

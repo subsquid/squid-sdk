@@ -1,5 +1,14 @@
 name: test unit
-on: [pull_request, workflow_dispatch]
+on:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CI: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -7,9 +16,11 @@ jobs:
     if: "!contains(github.event.head_commit.message, 'test skip')"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          lfs: True
+          node-version: '24'
 
       - name: Install dependencies
         run: node common/scripts/install-run-rush.js install
@@ -19,3 +30,25 @@ jobs:
 
       - name: Run tests
         run: node common/scripts/install-run-rush.js test
+
+  test-lfs:
+    name: run LFS test suite
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: node common/scripts/install-run-rush.js install
+
+      - name: Build project
+        run: node common/scripts/install-run-rush.js build
+
+      - name: Run LFS tests
+        run: node common/scripts/install-run-rush.js test:lfs

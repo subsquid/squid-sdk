@@ -22,7 +22,7 @@ export class Typegen {
         const out = this.dest.file(`index.ts`)
 
         for (const module of this.modules) {
-            out.line(`export * as ${module} from './${module}'`)
+            out.line(`export * as ${module} from './${module}.js'`)
         }
 
         if (this.program.programId) {
@@ -100,9 +100,9 @@ export class TypeModuleOutput extends FileOutput {
 
         this.lazy(() => {
             this.printImports(this.borsh, '@subsquid/borsh')
-            this.printImports(this.support, '../abi.support')
+            this.printImports(this.support, '../abi.support.js')
             if (!isTypes) {
-                this.printImports(this.types, './types')
+                this.printImports(this.types, './types.js')
             }
         })
     }
@@ -124,7 +124,7 @@ export class TypeModuleOutput extends FileOutput {
 
         this.import('support', 'instruction')
 
-        const varName = toCamelCase(toJsName(ins.name))
+        const varName = toCamelCaseWithUnderscore(toJsName(ins.name))
         this.line()
         this.blockComment(ins.docs)
         this.line(`export const ${varName} = instruction(`)
@@ -155,7 +155,7 @@ export class TypeModuleOutput extends FileOutput {
 
         this.import('support', 'event')
 
-        const varName = toDslName(event.name)
+        const varName = toJsName(sanitize(event.name))
         this.line()
         this.line(`export const ${varName} = event(`)
         this.indentation(() => {
@@ -425,16 +425,17 @@ function sanitize(value: string) {
     return value.replace(/[:<>]/g, `_`)
 }
 
-function toDslName(value: string) {
-    return toJsName(sanitize(value))
-}
-
 function toTypeName(value: string) {
-    return toCamelCase(toDslName(value), true)
+    return toCamelCaseWithUnderscore(toJsName((sanitize(value))), true)
 }
 
 function toPropName(value: string) {
-    return toCamelCase(toJsName(value))
+    return toCamelCaseWithUnderscore(toJsName(value))
+}
+
+function toCamelCaseWithUnderscore(value: string, uppercaseFirstLetter: boolean = false) {
+    let camelCaseName = toCamelCase(value, uppercaseFirstLetter)
+    return value[0] === '_' ? `_${camelCaseName}` : camelCaseName
 }
 
 function dedupe(value: string) {

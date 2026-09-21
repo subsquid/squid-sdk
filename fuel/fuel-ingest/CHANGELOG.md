@@ -1,6 +1,13 @@
 # Change Log - @subsquid/fuel-ingest
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Mon, 09 Jun 2025 12:15:37 GMT and should not be manually modified.
+
+## 0.1.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- Add block height and timestamp extraction methods for Fuel ingestion with TAI64 timestamp support
 
 ## 0.0.4
 Thu, 25 Jul 2024 11:48:18 GMT

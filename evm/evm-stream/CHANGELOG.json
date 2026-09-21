@@ -1,0 +1,115 @@
+{
+  "name": "@subsquid/evm-stream",
+  "entries": [
+    {
+      "version": "0.1.5",
+      "tag": "@subsquid/evm-stream_v0.1.5",
+      "date": "Mon, 14 Sep 2026 10:05:38 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/portal-client\" from `^0.7.0` to `0.8.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.4",
+      "tag": "@subsquid/evm-stream_v0.1.4",
+      "date": "Thu, 27 Aug 2026 13:59:40 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.8.1` to `1.9.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/portal-client\" from `^0.6.0` to `0.7.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.3",
+      "tag": "@subsquid/evm-stream_v0.1.3",
+      "date": "Wed, 15 Jul 2026 22:15:56 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix(portal): PortalEvmDataSource now honours StreamRequest.to — a bounded getStream/getFinalizedStream call terminates at `to` instead of ignoring it and following the chain head. This matches the RPC data source, so the two DataSource implementations agree on where a bounded stream ends. The production run() path is unaffected (it bounds via request ranges and never passes `to`); direct DataSource API consumers passing `to` were."
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.2",
+      "tag": "@subsquid/evm-stream_v0.1.2",
+      "date": "Wed, 08 Jul 2026 22:11:26 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/portal-client\" from `^0.5.2` to `0.6.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.1",
+      "tag": "@subsquid/evm-stream_v0.1.1",
+      "date": "Mon, 18 May 2026 10:40:02 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "remove @subsquid/rpc-client dependency"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/evm-stream_v0.1.0",
+      "date": "Thu, 14 May 2026 13:44:27 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Drop DEFAULT_FIELDS; .setFields() is now the sole source of selected fields"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/evm-stream_v0.0.1",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "init EVM Portal stream API"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.8.0` to `1.8.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.5.0` to `1.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.14.0` to `4.15.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/portal-client\" from `^0.5.0` to `0.5.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.2.2` to `1.2.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.8.0` to `0.9.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

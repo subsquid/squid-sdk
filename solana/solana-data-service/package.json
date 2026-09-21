@@ -1,0 +1,37 @@
+{
+  "name": "@subsquid/solana-data-service",
+  "version": "0.0.7",
+  "description": "Hot block data service for Solana",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc"
+  },
+  "dependencies": {
+    "bs58": "^5.0.0",
+    "commander": "^11.1.0",
+    "@subsquid/logger": "^1.6.0",
+    "@subsquid/rpc-client": "^4.16.1",
+    "@subsquid/solana-normalization": "^1.1.0",
+    "@subsquid/solana-rpc": "^1.1.0",
+    "@subsquid/solana-rpc-data": "^1.1.0",
+    "@subsquid/util-internal": "^3.3.1",
+    "@subsquid/util-internal-commander": "^1.4.0",
+    "@subsquid/util-internal-data-service": "^0.1.1",
+    "@subsquid/util-internal-http-server": "^2.0.1",
+    "@subsquid/util-internal-json": "^1.2.4",
+    "@subsquid/util-internal-validation": "^0.9.0",
+    "@subsquid/util-internal-worker-thread": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "typescript": "5.5.4"
+  }
+}

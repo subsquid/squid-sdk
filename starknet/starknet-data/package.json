@@ -1,9 +1,9 @@
 {
   "name": "@subsquid/starknet-data",
-  "version": "0.0.1",
+  "version": "0.1.2",
   "description": "Starknet data definition and fetching",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -11,16 +11,16 @@
     "lib",
     "src"
   ],
-  "main": "lib/index.js",
+  "main": "lib/data.js",
   "scripts": {
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/logger": "^1.4.0",
-    "@subsquid/util-internal-validation": "^0.7.0"
+    "@subsquid/logger": "^1.6.0",
+    "@subsquid/util-internal-validation": "^0.9.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@types/node": "^24.13.6",
+    "typescript": "5.5.4"
   }
 }

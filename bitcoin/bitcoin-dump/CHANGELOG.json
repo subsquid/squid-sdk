@@ -1,0 +1,28 @@
+{
+  "name": "@subsquid/bitcoin-dump",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/bitcoin-dump_v0.0.1",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "init Bitcoin dump CLI"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/bitcoin-rpc\" from `^0.0.0` to `0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^1.1.1` to `2.0.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

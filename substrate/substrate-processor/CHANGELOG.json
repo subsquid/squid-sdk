@@ -2,6 +2,103 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "8.8.2",
+      "tag": "@subsquid/substrate-processor_v8.8.2",
+      "date": "Mon, 14 Sep 2026 10:49:58 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "don't expose v5 general extrinsics' transaction extension fields to squids"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.8.1",
+      "tag": "@subsquid/substrate-processor_v8.8.1",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.8.0` to `1.8.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.5.0` to `1.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.14.0` to `4.15.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-hex\" from `^1.2.2` to `1.2.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.8.0` to `0.9.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.8.0",
+      "tag": "@subsquid/substrate-processor_v8.8.0",
+      "date": "Tue, 05 May 2026 07:41:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow GatewaySettings to provide an API key"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-client\" from `^0.1.2` to `0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.4` to `1.1.5`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.7.0",
+      "tag": "@subsquid/substrate-processor_v8.7.0",
+      "date": "Wed, 18 Mar 2026 10:55:26 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `setPrometheusServer()` method, deprecate `setPrometheusPort()`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.4.0` to `1.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-processor-tools\" from `^4.2.1` to `4.3.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "8.6.1",
+      "tag": "@subsquid/substrate-processor_v8.6.1",
+      "date": "Sat, 09 Aug 2025 06:10:24 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.6.0` to `1.6.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.12.0` to `4.13.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.7.0` to `0.8.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "8.6.0",
       "tag": "@subsquid/substrate-processor_v8.6.0",
       "date": "Tue, 18 Mar 2025 10:45:46 GMT",

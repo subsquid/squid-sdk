@@ -19,7 +19,7 @@ export function decodeMetadata(data: Bytes | Uint8Array): Metadata {
     assert(magic === 0x6174656d, 'No magic number 0x6174656d at the start of data')
 
     let version = src.u8()
-    assert(9 <= version && version < 15, 'Invalid metadata version')
+    assert(9 <= version && version < 17, 'Invalid metadata version')
 
     // See https://github.com/polkadot-js/api/commit/a9211690be6b68ad6c6dad7852f1665cadcfa5b2
     // for why try-catch and version decoding stuff is here
@@ -51,8 +51,8 @@ function decode(version: Ti, src: Src): Metadata {
 
 function createScaleCodec(): {codec: Codec, versions: Ti[]} {
     let registry = new OldTypeRegistry(metadataDefinition)
-    let versions: Ti[] = new Array(6)
-    for (let i = 9; i < 15; i++) {
+    let versions: Ti[] = new Array(8)
+    for (let i = 9; i < 17; i++) {
         versions[i-9] = registry.use(`MetadataV${i}`)
     }
     return {

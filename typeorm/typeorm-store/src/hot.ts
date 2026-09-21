@@ -1,7 +1,54 @@
 import {assertNotNull} from '@subsquid/util-internal'
-import type {EntityManager, EntityMetadata} from 'typeorm'
+import type {DataSource, EntityManager, EntityMetadata} from 'typeorm'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
+import {escapeIdentifier} from './misc'
 import {Entity, EntityClass} from './store'
+
+
+interface ChildCascade {
+    meta: EntityMetadata
+    column: string
+}
+
+
+const CASCADE_MAP_CACHE = new WeakMap<DataSource, Promise<Map<string, ChildCascade[]>>>()
+
+
+async function buildCascadeMap(em: EntityManager): Promise<Map<string, ChildCascade[]>> {
+    let metasByTable = new Map<string, EntityMetadata>()
+    for (let meta of em.connection.entityMetadatas) {
+        metasByTable.set(meta.tableName, meta)
+    }
+
+    // Discover ON DELETE CASCADE FKs from the live schema. Entity decorators
+    // don't always carry onDelete (e.g. when the cascade clause lives only in
+    // the SQL migration), so introspecting pg_catalog is the source of truth.
+    let rows: {child_table: string; child_column: string; parent_table: string}[] = await em.query(
+        `SELECT
+            cl_child.relname AS child_table,
+            att_child.attname AS child_column,
+            cl_parent.relname AS parent_table
+           FROM pg_constraint c
+           JOIN pg_class cl_child ON cl_child.oid = c.conrelid
+           JOIN pg_class cl_parent ON cl_parent.oid = c.confrelid
+           JOIN pg_attribute att_child
+             ON att_child.attrelid = c.conrelid AND att_child.attnum = c.conkey[1]
+          WHERE c.contype = 'f' AND c.confdeltype = 'c'`
+    )
+
+    let map = new Map<string, ChildCascade[]>()
+    for (let r of rows) {
+        let childMeta = metasByTable.get(r.child_table)
+        if (!childMeta) continue
+        let bucket = map.get(r.parent_table)
+        if (!bucket) {
+            bucket = []
+            map.set(r.parent_table, bucket)
+        }
+        bucket.push({meta: childMeta, column: r.child_column})
+    }
+    return map
+}
 
 
 export interface RowRef {
@@ -12,18 +59,21 @@ export interface RowRef {
 
 export interface InsertRecord extends RowRef {
     kind: 'insert'
+    schema?: string
 }
 
 
 export interface DeleteRecord extends RowRef {
     kind: 'delete'
     fields: Record<string, any>
+    schema?: string
 }
 
 
 export interface UpdateRecord extends RowRef {
     kind: 'update'
     fields: Record<string, any>
+    schema?: string
 }
 
 
@@ -38,7 +88,9 @@ export interface ChangeRow {
 
 
 export class ChangeTracker {
-    private index = 0
+    // index 0 is reserved for the per-block sentinel inserted by
+    // database.ts:insertHotBlock; user-tracked changes start at 1.
+    private index = 1
 
     constructor(
         private em: EntityManager,
@@ -92,17 +144,51 @@ export class ChangeTracker {
 
     async trackDelete(type: EntityClass<Entity>, ids: string[]): Promise<void> {
         let meta = this.getEntityMetadata(type)
-        let deletedEntities = await this.fetchEntities(meta, ids)
-        return this.writeChangeRows(deletedEntities.map(e => {
-            let {id, ...fields} = e
-            return {
-                kind: 'delete',
-                table: meta.tableName,
-                id: id,
-                fields
-            }
-        }))
+        let cascadeMap = await this.getCascadeMap()
+        let changes: ChangeRecord[] = []
+        await this.collectCascadeDeletes(meta, ids, cascadeMap, changes)
+        return this.writeChangeRows(changes)
     }
+
+    private async collectCascadeDeletes(
+        meta: EntityMetadata,
+        ids: string[],
+        cascadeMap: Map<string, ChildCascade[]>,
+        out: ChangeRecord[],
+    ): Promise<void> {
+        if (ids.length === 0) return
+
+        let children = cascadeMap.get(meta.tableName) ?? []
+        for (let child of children) {
+            let childIds: string[] = (
+                await this.em.query(
+                    `SELECT id FROM ${this.escape(child.meta.tableName)} WHERE ${this.escape(child.column)} = ANY($1::text[])`,
+                    [ids]
+                )
+            ).map((r: {id: string}) => r.id)
+            if (childIds.length === 0) continue
+            // Recurse so descendants land in `out` before this child level;
+            // rollback iterates DESC, so the top-level parent is restored
+            // first and grandchildren last — matching insert-order FK rules.
+            await this.collectCascadeDeletes(child.meta, childIds, cascadeMap, out)
+        }
+
+        let parentRows = await this.fetchEntities(meta, ids)
+        for (let row of parentRows) {
+            let {id, ...fields} = row
+            out.push({kind: 'delete', table: meta.tableName, id, fields})
+        }
+    }
+
+    private async getCascadeMap(): Promise<Map<string, ChildCascade[]>> {
+        let connection = this.em.connection
+        let cached = CASCADE_MAP_CACHE.get(connection)
+        if (cached) return cached
+        let promise = buildCascadeMap(this.em)
+        CASCADE_MAP_CACHE.set(connection, promise)
+        return promise
+    }
+
 
     private async fetchEntities(meta: EntityMetadata, ids: string[]): Promise<Entity[]> {
         let entities = await this.em.query(
@@ -157,7 +243,7 @@ export class ChangeTracker {
     }
 
     private escape(name: string): string {
-        return escape(this.em, name)
+        return escapeIdentifier(this.em, name)
     }
 }
 
@@ -167,7 +253,7 @@ export async function rollbackBlock(
     em: EntityManager,
     blockHeight: number
 ): Promise<void> {
-    let schema = escape(em, statusSchema)
+    let schema = escapeIdentifier(em, statusSchema)
 
     let changes: ChangeRow[] = await em.query(
         `SELECT block_height, index, change FROM ${schema}.hot_change_log WHERE block_height = $1 ORDER BY index DESC`,
@@ -175,42 +261,48 @@ export async function rollbackBlock(
     )
 
     for (let rec of changes) {
-        let {table, id} = rec.change
-        table = escape(em, table)
-        switch(rec.change.kind) {
-            case 'insert':
-                await em.query(`DELETE FROM ${table} WHERE id = $1`, [id])
+        let ch = rec.change
+        let {id} = ch
+        switch (ch.kind) {
+            case 'insert': {
+                let fromTable = ch.schema
+                    ? `${escapeIdentifier(em, ch.schema)}.${escapeIdentifier(em, ch.table)}`
+                    : escapeIdentifier(em, ch.table)
+                await em.query(`DELETE FROM ${fromTable} WHERE id = $1`, [id])
                 break
+            }
             case 'update': {
-                let setPairs = Object.keys(rec.change.fields).map((column, idx) => {
-                    return `${escape(em, column)} = $${idx + 1}`
+                let fromTable = ch.schema
+                    ? `${escapeIdentifier(em, ch.schema)}.${escapeIdentifier(em, ch.table)}`
+                    : escapeIdentifier(em, ch.table)
+                let setPairs = Object.keys(ch.fields).map((column, idx) => {
+                    return `${escapeIdentifier(em, column)} = $${idx + 1}`
                 })
                 if (setPairs.length) {
                     await em.query(
-                        `UPDATE ${table} SET ${setPairs.join(', ')} WHERE id = $${setPairs.length + 1}`,
-                        [...Object.values(rec.change.fields), id]
+                        `UPDATE ${fromTable} SET ${setPairs.join(', ')} WHERE id = $${setPairs.length + 1}`,
+                        [...Object.values(ch.fields), id]
                     )
                 }
                 break
             }
             case 'delete': {
-                let columns = ['id', ...Object.keys(rec.change.fields)].map(col => escape(em, col))
+                let fromTable = ch.schema
+                    ? `${escapeIdentifier(em, ch.schema)}.${escapeIdentifier(em, ch.table)}`
+                    : escapeIdentifier(em, ch.table)
+                let columns = ['id', ...Object.keys(ch.fields)].map(col => escapeIdentifier(em, col))
                 let values = columns.map((col, idx) => `$${idx + 1}`)
                 await em.query(
-                    `INSERT INTO ${table} (${columns}) VALUES (${values.join(', ')})`,
-                    [id, ...Object.values(rec.change.fields)]
+                    `INSERT INTO ${fromTable} (${columns}) VALUES (${values.join(', ')})`,
+                    [id, ...Object.values(ch.fields)]
                 )
                 break
             }
         }
     }
 
+    await em.query(`DELETE FROM ${schema}.template_registry WHERE height = $1`, [blockHeight])
     await em.query(`DELETE FROM ${schema}.hot_block WHERE height = $1`, [blockHeight])
-}
-
-
-function escape(em: EntityManager, name: string): string {
-    return em.connection.driver.escape(name)
 }
 
 

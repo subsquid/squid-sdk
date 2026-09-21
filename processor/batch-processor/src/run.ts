@@ -1,36 +1,42 @@
 import {createLogger} from '@subsquid/logger'
-import {last, runProgram, Throttler} from '@subsquid/util-internal'
-import {createPrometheusServer} from '@subsquid/util-internal-prometheus-server'
-import * as prom from 'prom-client'
-import {Database, HashAndHeight} from './database'
-import {DataSource} from './datasource'
-import {Metrics} from './metrics'
+import {last, maybeLast, runProgram, Throttler} from '@subsquid/util-internal'
+import {Database, DatabaseTransactResult, FinalDatabaseState, HashAndHeight, HotDatabaseState} from './database'
+import {DataSource, isForkException, BlockRef, type BlockBatch} from '@subsquid/util-internal-data-source'
+import assert from 'assert'
+import {type MetricsSink, PrometheusServer, RunnerMetrics} from '@subsquid/util-internal-processor-tools'
 import {formatHead, getItemsCount} from './util'
 
+export {PrometheusServer}
 
 const log = createLogger('sqd:batch-processor')
 
-
 export interface DataHandlerContext<Block, Store> {
-    /**
-     * Storage interface provided by the database
-     */
     store: Store
-    /**
-     * List of blocks to map and process
-     */
     blocks: Block[]
-    /**
-     * Signals, that the processor is near the head of the chain.
-     */
     isHead: boolean
 }
 
-
-interface BlockBase {
-    header: HashAndHeight
+export interface BlockBase {
+    header: BlockRef
 }
 
+export interface RunOptions {
+    prometheus?: PrometheusServer
+}
+
+/**
+ * Optional capability: a data source that exposes its own Prometheus metrics. When present, `run()`
+ * registers the returned sink on the metrics server automatically, so a source's gauges (e.g. a
+ * fallback source's `sqd_fallback_*`) appear on `/metrics` with no manual wiring. Duck-typed here
+ * rather than added to the `DataSource` interface, which must not depend on prom-client.
+ */
+interface MetricsSource {
+    getMetricsSink(): MetricsSink
+}
+
+function hasMetricsSink(src: unknown): src is MetricsSource {
+    return src != null && typeof (src as Partial<MetricsSource>).getMetricsSink === 'function'
+}
 
 /**
  * Run data processing.
@@ -49,125 +55,231 @@ interface BlockBase {
 export function run<Block extends BlockBase, Store>(
     src: DataSource<Block>,
     db: Database<Store>,
-    dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<void>
+    dataHandler: (ctx: DataHandlerContext<Block, Store>) => Promise<DatabaseTransactResult | void>,
+    opts?: RunOptions,
 ): void {
-    runProgram(() => {
-        return new Processor(src, db, dataHandler).run()
-    }, err => {
-        log.fatal(err)
-    })
+    runProgram(
+        () => {
+            return new Processor(src, db, dataHandler, opts).run()
+        },
+        (err) => {
+            log.fatal(err)
+        },
+    )
 }
 
+interface ProcessorStateInit {
+    finalizedHead?: BlockRef
+    unfinalizedHeads?: BlockRef[]
+}
 
-class Processor<B extends BlockBase, S> {
-    private metrics = new Metrics()
-    private chainHeight: Throttler<number>
+class ProcessorState {
+    finalizedHead: BlockRef | undefined = undefined
+    unfinalizedHeads: BlockRef[] = []
+
+    get head(): BlockRef | undefined {
+        return maybeLast(this.unfinalizedHeads) ?? this.finalizedHead
+    }
+
+    init(state: ProcessorStateInit): void {
+        this.finalizedHead = state.finalizedHead
+        this.unfinalizedHeads = state.unfinalizedHeads ?? []
+    }
+
+    handleFork(previousBlocks: BlockRef[]): void {
+        let chain = this.finalizedHead ? [this.finalizedHead, ...this.unfinalizedHeads] : this.unfinalizedHeads
+        let rollbackIndex = findRollbackIndex(chain, previousBlocks)
+        if (rollbackIndex === -1) {
+            if (this.finalizedHead != null) throw new Error('Unable to process fork')
+            this.unfinalizedHeads = []
+        } else {
+            let rollbackHead = chain[rollbackIndex]
+            log.info(`navigating a fork on a common base ${formatHead(rollbackHead)}`)
+            this.unfinalizedHeads = chain.slice(this.finalizedHead ? 1 : 0, rollbackIndex + 1)
+        }
+    }
+}
+
+export class Processor<B extends BlockBase, S> {
+    private metrics: RunnerMetrics
     private statusReportTimer?: any
     private hasStatusNews = false
+    private state = new ProcessorState()
 
     constructor(
         private src: DataSource<B>,
         private db: Database<S>,
-        private handler: (ctx: DataHandlerContext<B, S>) => Promise<void>
+        private handler: (ctx: DataHandlerContext<B, S>) => Promise<DatabaseTransactResult | void>,
+        private readonly opts?: RunOptions,
     ) {
-        this.chainHeight = new Throttler(() => this.src.getFinalizedHeight(), 30_000)
+        this.metrics = new RunnerMetrics(
+            src.getBlocksCountInRange?.bind(src) ?? ((range) => Math.max(0, range.to - range.from + 1)),
+        )
     }
 
     async run(): Promise<void> {
-        let state = await this.db.connect()
-        if (state.height >= 0) {
-            log.info(`last processed final block was ${state.height}`)
+        let getHead = this.db.supportsHotBlocks
+            ? this.src.getHead.bind(this.src)
+            : this.src.getFinalizedHead.bind(this.src)
+        let chainHeight = new Throttler(() => getHead().then((r) => r.number), 10_000)
+
+        let dbState = await this.db.connect()
+        this.state.init(toProcessorStateInit(dbState))
+
+        let head = this.state.head
+        if (head != null) {
+            log.info(`last processed block was ${head.number}`)
         }
+        await this.initMetrics(head?.number ?? -1, await chainHeight.get())
 
-        await this.assertWeAreOnTheSameChain(state)
-        await this.initMetrics(state)
+        let getStream = this.db.supportsHotBlocks
+            ? this.src.getStream.bind(this.src)
+            : this.src.getFinalizedStream.bind(this.src)
 
-        for await (let blocks of this.src.getBlockStream(state.height + 1)) {
-            if (blocks.length > 0) {
-                state = await this.processBatch(state, blocks)
+        while (true) {
+            try {
+                for await (let data of getStream({
+                    from: (this.state.head?.number ?? -1) + 1,
+                    parentHash: this.state.head?.hash,
+                })) {
+                    await this.processBatch(
+                        data,
+                        await chainHeight.get(),
+                        async (store: S, sliceBlocks: B[], isOnTop: boolean) => {
+                            return this.handler({store, blocks: sliceBlocks, isHead: isOnTop})
+                        },
+                    )
+                }
+                break
+            } catch (e) {
+                if (!isForkException(e) || !this.db.supportsHotBlocks) throw e
+                this.state.handleFork(e.previousBlocks)
             }
         }
 
         this.reportFinalStatus()
     }
 
-    private async assertWeAreOnTheSameChain(state: HashAndHeight): Promise<void> {
-        if (state.height < 0) return
-        let hash = await this.src.getBlockHash(state.height)
-        if (state.hash === hash) return
-        throw new Error(
-            `already indexed block ${formatHead(state)} was not found on chain`
-        )
-    }
-
-    private async initMetrics(state: HashAndHeight): Promise<void> {
-        await this.updateProgressMetrics(await this.chainHeight.get(), state)
+    private async initMetrics(state: number, chainHeight: number): Promise<void> {
+        this.updateProgressMetrics(chainHeight, state)
         let port = process.env.PROCESSOR_PROMETHEUS_PORT || process.env.PROMETHEUS_PORT
-        if (port == null) return
-        prom.collectDefaultMetrics()
-        this.metrics.install()
-        let server = await createPrometheusServer(prom.register, port)
-        log.info(`prometheus metrics are served on port ${server.port}`)
+
+        let prometheusServer: PrometheusServer | undefined
+        if (this.opts?.prometheus != null) {
+            prometheusServer = this.opts.prometheus
+        } else if (port != null) {
+            prometheusServer = new PrometheusServer()
+            prometheusServer.setPort(port)
+        }
+        if (prometheusServer == null) return
+
+        prometheusServer.addRunnerMetrics(this.metrics)
+        // Auto-register the data source's own metrics (e.g. a fallback source's `sqd_fallback_*`).
+        if (hasMetricsSink(this.src)) {
+            prometheusServer.addMetricsSink(this.src.getMetricsSink())
+        }
+        let listening = await prometheusServer.serve()
+        log.info(`prometheus metrics are served on port ${listening.port}`)
     }
 
-    private updateProgressMetrics(chainHeight: number, state: HashAndHeight, time?: bigint): void {
+    private updateProgressMetrics(chainHeight: number, indexerHeight: number, time?: bigint): void {
         this.metrics.setChainHeight(chainHeight)
-        this.metrics.setLastProcessedBlock(state.height)
-        let left: number
-        let processed: number
-        if (this.src.getBlocksCountInRange) {
-            left = this.src.getBlocksCountInRange({
-                from: this.metrics.getLastProcessedBlock() + 1,
-                to: this.metrics.getChainHeight()
-            })
-            processed = this.src.getBlocksCountInRange({
-                from: 0,
-                to: this.metrics.getChainHeight()
-            }) - left
-        } else {
-            left = this.metrics.getChainHeight() - this.metrics.getLastProcessedBlock()
-            processed = this.metrics.getLastProcessedBlock()
-        }
-        this.metrics.updateProgress(processed, left, time)
+        this.metrics.setLastProcessedBlock(indexerHeight)
+        this.metrics.updateProgress(time)
     }
 
-    private async processBatch(prevHead: HashAndHeight, blocks: B[]): Promise<HashAndHeight> {
-        let chainHeight = await this.chainHeight.get()
+    private async processBatch(
+        data: BlockBatch<B>,
+        chainHeight: number,
+        map: (store: S, blocks: B[], isOnTop: boolean) => Promise<DatabaseTransactResult | void>,
+    ): Promise<void> {
+        let {blocks, finalizedHead: finalizedHeadData} = data
+        let hasBlocks = blocks.length > 0
 
-        let nextHead = {
-            hash: last(blocks).header.hash,
-            height: last(blocks).header.height
+        if (!hasBlocks && finalizedHeadData == null) return
+
+        let prevHead = this.state.head
+
+        if (!hasBlocks && !this.db.supportsHotBlocks) return
+
+        assertBlocksContinuity(prevHead, blocks)
+
+        if (
+            finalizedHeadData != null &&
+            this.state.finalizedHead != null &&
+            finalizedHeadData.number <= this.state.finalizedHead.number
+        ) {
+            finalizedHeadData = this.state.finalizedHead
         }
+        finalizedHeadData = maxBlockRef(finalizedHeadData, this.state.finalizedHead)
 
-        let isOnTop = nextHead.height >= chainHeight
+        let unfinalizedIndex =
+            finalizedHeadData == null ? 0 : blocks.findIndex((b) => b.header.number > finalizedHeadData.number)
+        unfinalizedIndex = unfinalizedIndex < 0 ? blocks.length : unfinalizedIndex
+
+        let nextHead = maybeLast(blocks)?.header ?? prevHead ?? finalizedHeadData
+        if (nextHead == null) return
+
+        let isOnTop = nextHead.number >= chainHeight
 
         let mappingStartTime = process.hrtime.bigint()
 
-        await this.db.transact({
-            prevHead,
-            nextHead,
-            isOnTop
-        }, store => {
-            return this.handler({
-                store,
-                blocks,
-                isHead: isOnTop
-            })
-        })
+        if (this.db.supportsHotBlocks) {
+            let finalizedHead: BlockRef | undefined
+            if (!hasBlocks || unfinalizedIndex === 0) {
+                finalizedHead = finalizedHeadData
+            } else if (unfinalizedIndex === blocks.length) {
+                finalizedHead = last(blocks).header
+            } else {
+                finalizedHead = blocks[unfinalizedIndex - 1]?.header
+            }
+            let unfinalizedSliceHeads: BlockRef[] = []
+            await this.db.transactHot2(
+                {
+                    finalizedHead: toHashAndHeight(finalizedHead),
+                    baseHead: toHashAndHeight(prevHead),
+                    newBlocks: blocks.map((b) => toHashAndHeight(b.header)),
+                },
+                async (store, start, end) => {
+                    let sliceBlocks = start === 0 && end === blocks.length ? blocks : blocks.slice(start, end)
+                    if (sliceBlocks.length === 0) return
+                    if (end > unfinalizedIndex) {
+                        unfinalizedSliceHeads.push(last(sliceBlocks).header)
+                    }
+                    return map(store, sliceBlocks, isOnTop)
+                },
+            )
+
+            let newFinalizedHead = finalizedHead ?? this.state.finalizedHead
+            let unfinalizedHeads = this.state.unfinalizedHeads
+            if (newFinalizedHead) {
+                let idx = unfinalizedHeads.findIndex((h) => h.number > newFinalizedHead.number)
+                unfinalizedHeads = idx < 0 ? [] : unfinalizedHeads.slice(idx)
+            }
+            this.state.finalizedHead = newFinalizedHead
+            this.state.unfinalizedHeads = unfinalizedHeads.concat(unfinalizedSliceHeads)
+        } else {
+            assert(unfinalizedIndex === blocks.length, 'non-hot database received unfinalized blocks')
+
+            await this.db.transact(
+                {
+                    prevHead: toHashAndHeight(prevHead),
+                    nextHead: toHashAndHeight(nextHead),
+                    isOnTop,
+                },
+                (store) => map(store, blocks, isOnTop),
+            )
+
+            this.state.finalizedHead = nextHead
+            this.state.unfinalizedHeads = []
+        }
 
         let mappingEndTime = process.hrtime.bigint()
 
-        this.updateProgressMetrics(chainHeight, nextHead, mappingEndTime)
-        this.metrics.registerBatch(
-            blocks.length,
-            getItemsCount(blocks),
-            mappingStartTime,
-            mappingEndTime
-        )
+        this.updateProgressMetrics(chainHeight, nextHead.number, mappingEndTime)
+        this.metrics.registerBatch(blocks.length, getItemsCount(blocks), mappingStartTime, mappingEndTime)
 
         this.reportStatus()
-
-        return nextHead
     }
 
     private reportStatus(): void {
@@ -179,7 +291,7 @@ class Processor<B extends BlockBase, S> {
                     this.hasStatusNews = false
                     this.reportStatus()
                 }
-            }, 5000)
+            }, 5_000)
         } else {
             this.hasStatusNews = true
         }
@@ -193,5 +305,69 @@ class Processor<B extends BlockBase, S> {
             this.hasStatusNews = false
             log.info(this.metrics.getStatusLine())
         }
+    }
+}
+
+export function findRollbackIndex(currentChain: BlockRef[], forkChain: BlockRef[]): number {
+    let currentIndex = 0
+    let forkIndex = 0
+    let lastCommonIndex = -1
+
+    while (currentIndex < currentChain.length && forkIndex < forkChain.length) {
+        const currentBlock = currentChain[currentIndex]
+        const forkBlock = forkChain[forkIndex]
+
+        if (currentBlock.number > forkBlock.number) {
+            forkIndex++
+            continue
+        }
+
+        if (currentBlock.number < forkBlock.number) {
+            currentIndex++
+            continue
+        }
+
+        if (currentBlock.hash !== forkBlock.hash) {
+            return lastCommonIndex
+        }
+
+        lastCommonIndex = currentIndex
+        currentIndex++
+        forkIndex++
+    }
+
+    return lastCommonIndex
+}
+
+function toHashAndHeight(ref: BlockRef | undefined): HashAndHeight {
+    if (ref == null) return {height: -1, hash: '0x'}
+    return {height: ref.number, hash: ref.hash}
+}
+
+function toBlockRef(hh: HashAndHeight): BlockRef {
+    return {number: hh.height, hash: hh.hash}
+}
+
+function toProcessorStateInit(dbState: FinalDatabaseState | HotDatabaseState): ProcessorStateInit {
+    let top = 'top' in dbState ? dbState.top : undefined
+    return {
+        finalizedHead: dbState.height < 0 ? undefined : toBlockRef(dbState),
+        unfinalizedHeads: top?.map((b) => toBlockRef(b)),
+    }
+}
+
+function maxBlockRef(a: BlockRef | undefined, b: BlockRef | undefined): BlockRef | undefined {
+    if (a == null) return b
+    if (b == null) return a
+    return a.number >= b.number ? a : b
+}
+
+function assertBlocksContinuity<B extends BlockBase>(prevHead: BlockRef | undefined, blocks: B[]): void {
+    let prev = prevHead
+    for (let block of blocks) {
+        if (prev && prev.number >= block.header.number) {
+            throw new Error('Data is not continuous')
+        }
+        prev = block.header
     }
 }

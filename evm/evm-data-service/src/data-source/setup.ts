@@ -1,0 +1,85 @@
+import {type CallFrameValidationMode, Rpc, EvmRpcDataSource, EvmRpcClient} from '@subsquid/evm-rpc'
+import type {Block, DataSource} from '@subsquid/util-internal-data-service'
+import {createLogger} from '@subsquid/logger'
+import {Mapping} from './mapping'
+
+
+const log = createLogger('sqd:evm-data-service/data-source')
+
+
+export interface DataSourceOptions {
+    httpRpc: string,
+    httpRpcMaxBatchCallSize?: number
+    httpRpcStrideSize?: number
+    httpRpcStrideConcurrency?: number
+    httpRpcRateLimit?: number,
+    httpRpcTimeout: number,
+    httpRetryInternalServerErrors?: boolean
+    finalityConfirmation?: number,
+    withReceipts?: boolean,
+    withTraces?: boolean,
+    withStatediffs?: boolean,
+    useTraceApi?: boolean,
+    useDebugApiForStateDiffs?: boolean
+    useDebugTraceBlockByNumber?: boolean
+    verifyBlockHash?: boolean
+    verifyExtDataHash?: boolean
+    verifyTxSender?: boolean
+    verifyTxRoot?: boolean
+    verifyReceiptsRoot?: boolean
+    verifyWithdrawalsRoot?: boolean
+    verifyLogsBloom?: boolean
+    callFrameValidation?: CallFrameValidationMode
+    skipLogIndexCheck?: boolean
+    skipCumulativeGasUsedCheck?: boolean
+    useGasUsedForReceiptsRoot?: boolean
+}
+
+
+export function createDataSource(options: DataSourceOptions): DataSource<Block> {
+    let httpRpcClient = new EvmRpcClient({
+        url: options.httpRpc,
+        maxBatchCallSize: options.httpRpcMaxBatchCallSize,
+        capacity: Number.MAX_SAFE_INTEGER,
+        rateLimit: options.httpRpcRateLimit,
+        requestTimeout: options.httpRpcTimeout,
+        retryAttempts: 5,
+        retryInternalServerErrors: options.httpRetryInternalServerErrors,
+        log
+    })
+    let httpRpc = new Rpc({
+        client: httpRpcClient,
+        finalityConfirmation: options.finalityConfirmation,
+        verifyBlockHash: options.verifyBlockHash,
+        verifyExtDataHash: options.verifyExtDataHash,
+        verifyTxRoot: options.verifyTxRoot,
+        verifyTxSender: options.verifyTxSender,
+        verifyReceiptsRoot: options.verifyReceiptsRoot,
+        verifyWithdrawalsRoot: options.verifyWithdrawalsRoot,
+        verifyLogsBloom: options.verifyLogsBloom,
+        callFrameValidation: options.callFrameValidation,
+        checkLogIndex: !options.skipLogIndexCheck,
+        checkCumulativeGasUsed: !options.skipCumulativeGasUsedCheck,
+        useGasUsedForReceiptsRoot: options.useGasUsedForReceiptsRoot
+    })
+    let rpcSource = new EvmRpcDataSource({
+        rpc: httpRpc,
+        req: {
+            transactions: true,
+            logs: !options.withReceipts,
+            receipts: options.withReceipts,
+            traces: options.withTraces,
+            stateDiffs: options.withStatediffs,
+            useTraceApi: options.useTraceApi,
+            useDebugApiForStateDiffs: options.useDebugApiForStateDiffs,
+            useDebugTraceBlockByNumber: options.useDebugTraceBlockByNumber,
+            debugTraceTimeout: '60s',
+        },
+        strideSize: options.httpRpcStrideSize,
+        strideConcurrency: options.httpRpcStrideConcurrency
+    })
+    return new Mapping(rpcSource, {
+        withTraces: options.withTraces,
+        withStateDiffs: options.withStatediffs,
+    })
+}

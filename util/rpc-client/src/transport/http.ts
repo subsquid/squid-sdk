@@ -1,8 +1,9 @@
 import {FetchRequest, FetchResponse, HttpAgent, HttpClient, HttpClientOptions} from '@subsquid/http-client'
 import {Logger} from '@subsquid/logger'
 import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
-import {RpcProtocolError} from '../errors'
+import {RpcError, RpcProtocolError} from '../errors'
 import {Connection, RpcRequest, RpcResponse} from '../interfaces'
+import {redactRpcUrlsInError} from '../redact'
 
 
 class RpcHttpClient extends HttpClient {
@@ -61,25 +62,46 @@ export class HttpConnection implements Connection {
         return Promise.resolve()
     }
 
+    private async post(json: RpcRequest | RpcRequest[], timeout?: number): Promise<any> {
+        try {
+            return await this.http.post(this.url, {
+                json,
+                httpTimeout: timeout,
+                retryAttempts: 0
+            })
+        } catch (err: any) {
+            // Fetch-level errors quote the request URL verbatim, and RPC URLs
+            // routinely carry API keys — scrub before the error escapes the
+            // transport (into logs or user-facing stack traces).
+            throw redactRpcUrlsInError(err)
+        }
+    }
+
     async call(req: RpcRequest, timeout?: number): Promise<RpcResponse> {
-        let res: RpcResponse = await this.http.post(this.url, {
-            json: req,
-            httpTimeout: timeout,
-            retryAttempts: 0
-        })
+        let res: RpcResponse = await this.post(req, timeout)
         if (req.id !== res.id) {
+            // Many endpoints/proxies return a JSON-RPC error envelope with `id: null`
+            // (per spec for parse/invalid-request errors, but also commonly for rate
+            // limiting, oversized requests, upstream gateway failures, etc.). Surface
+            // that as the real server error instead of masking it as a protocol error,
+            // so it carries the server's message/code and can be retried where applicable.
+            if (res.error) return res
             throw new RpcProtocolError(1008, `Got response for unknown request ${res.id}`)
         }
         return res
     }
 
     async batchCall(batch: RpcRequest[], timeout?: number): Promise<RpcResponse[]> {
-        let res: RpcResponse[] = await this.http.post(this.url, {
-            json: batch,
-            httpTimeout: timeout,
-            retryAttempts: 0
-        })
+        let res: RpcResponse[] = await this.post(batch, timeout)
         if (!Array.isArray(res)) {
+            // A server that rejects the whole batch (rate limit, oversized request,
+            // upstream failure, ...) often replies with a single JSON-RPC error
+            // envelope rather than an array. Surface that server error instead of
+            // the misleading "should be an array" protocol error.
+            let error = (res as unknown as RpcResponse | null)?.error
+            if (error) {
+                throw new RpcError(error)
+            }
             throw new RpcProtocolError(1008, `Response for a batch request should be an array`)
         }
         if (res.length != batch.length) {

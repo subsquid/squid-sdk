@@ -70,14 +70,14 @@ export const INT: Validator<number> = {
 
 export const ANY_INT: Validator<bigint, number | string> = {
     cast(value: unknown): bigint | ValidationFailure {
-        if (isSafeInteger(value) || isBigNat(value)) {
+        if (isSafeInteger(value) || isBigInt(value)) {
             return BigInt(value)
         } else {
             return new ValidationFailure(value, '{value} is not an integer')
         }
     },
     validate(value: unknown): ValidationFailure | undefined {
-        if (isSafeInteger(value) || isBigNat(value)) return
+        if (isSafeInteger(value) || isBigInt(value)) return
         return new ValidationFailure(value, '{value} is not an integer')
     },
     phantom(): number {
@@ -93,6 +93,11 @@ function isSafeInteger(value: unknown): value is number {
 
 function isBigNat(value: unknown): value is string {
     return typeof value == 'string' && /^\d+$/.test(value)
+}
+
+
+function isBigInt(value: unknown): value is string {
+    return typeof value == 'string' && /^-?\d+$/.test(value)
 }
 
 

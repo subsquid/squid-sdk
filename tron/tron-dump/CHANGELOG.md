@@ -1,6 +1,25 @@
 # Change Log - @subsquid/tron-dump
 
-This log was last generated on Thu, 06 Mar 2025 10:46:22 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 0.1.2
+Mon, 11 May 2026 05:34:26 GMT
+
+### Patches
+
+- base on a new `util-internal-dump-cli` package
+
+## 0.1.1
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
+
+## 0.1.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- Add block timestamp extraction method for TRON dumper with Unix timestamp support
 
 ## 0.0.4
 Thu, 06 Mar 2025 10:46:22 GMT

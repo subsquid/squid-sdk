@@ -1,6 +1,24 @@
 # Change Log - @subsquid/util-internal-archive-layout
 
-This log was last generated on Mon, 07 Oct 2024 08:48:33 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:49:58 GMT and should not be manually modified.
+
+## 2.1.0
+Mon, 14 Sep 2026 10:49:58 GMT
+
+### Minor changes
+
+- read and write zstd data chunks
+
+## 2.0.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Breaking changes
+
+- implement new raw archive data conventions
+
+### Minor changes
+
+- add block-level archive layout helpers
 
 ## 1.0.0
 Mon, 07 Oct 2024 08:48:33 GMT

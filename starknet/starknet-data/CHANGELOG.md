@@ -1,6 +1,30 @@
 # Change Log - @subsquid/starknet-data
 
-This log was last generated on Tue, 03 Dec 2024 11:47:42 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 0.1.2
+Mon, 11 May 2026 05:34:26 GMT
+
+_Version update only_
+
+## 0.1.1
+Wed, 26 Nov 2025 10:50:55 GMT
+
+### Patches
+
+- update ExecutionResources definition
+
+## 0.1.0
+Thu, 21 Aug 2025 10:51:03 GMT
+
+### Minor changes
+
+- Updated block model to represent block with receipts
+
+## 0.0.2
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
 
 ## 0.0.1
 Tue, 03 Dec 2024 11:47:42 GMT

@@ -1,3 +1,5 @@
+import type {TemplateMutation} from './templates'
+
 
 export interface HashAndHeight {
     height: number
@@ -8,8 +10,9 @@ export interface HashAndHeight {
 export interface DatabaseState {
     height: number
     hash: string
-    top: HashAndHeight[]
+    top: HotBlock[]
     nonce: number
+    templates: TemplateMutation[]
 }
 
 
@@ -23,4 +26,9 @@ export interface HotTxInfo {
     finalizedHead: HashAndHeight
     baseHead: HashAndHeight
     newBlocks: HashAndHeight[]
+}
+
+
+export interface HotBlock extends HashAndHeight {
+    templates: TemplateMutation[]
 }

@@ -1,6 +1,6 @@
 import {Logger, LogLevel} from '@subsquid/logger'
 import {addErrorContext} from '@subsquid/util-internal'
-import {UserInputError} from 'apollo-server-core'
+import {UserInputError} from '@subsquid/apollo-server-core'
 import {getOperationRootType, GraphQLError, subscribe as graphqlSubscribe} from 'graphql'
 import {ExecutionResult} from 'graphql-ws'
 import {

@@ -1,0 +1,25 @@
+{
+  "name": "@subsquid/util-internal-worker-thread",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/util-internal-worker-thread_v0.0.1",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "init worker thread RPC helpers"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.5.0` to `1.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

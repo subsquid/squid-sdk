@@ -1,0 +1,47 @@
+# Change Log - @subsquid/evm-normalization
+
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 0.1.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- expose Avalanche block header fields (blockExtraData, extDataHash, minDelayExcess, timestampMilliseconds, targetExponent, minPriceExponent, settled*) on the normalized block header
+
+## 0.0.6
+Thu, 30 Jul 2026 15:44:58 GMT
+
+### Patches
+
+- include transaction and trace-address context in debug call-frame mapping errors
+
+## 0.0.5
+Wed, 15 Jul 2026 22:15:56 GMT
+
+_Version update only_
+
+## 0.0.4
+Wed, 15 Jul 2026 01:21:06 GMT
+
+_Version update only_
+
+## 0.0.3
+Tue, 14 Jul 2026 13:09:33 GMT
+
+### Patches
+
+- Release to npm via GitHub Actions trusted publishing (OIDC)
+
+## 0.0.2
+Mon, 01 Jun 2026 19:32:22 GMT
+
+_Version update only_
+
+## 0.0.1
+Mon, 11 May 2026 05:34:26 GMT
+
+### Patches
+
+- init EVM normalization pipeline
+

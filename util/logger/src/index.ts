@@ -1,5 +1,5 @@
 import {LEVELS, LogLevel} from './level'
-import {Logger, Sink} from './logger'
+import {Logger, LogRecord, Sink} from './logger'
 import {jsonLinesStderrSink} from './sinks/json'
 import {prettyStderrSink} from './sinks/pretty'
 
@@ -45,4 +45,36 @@ const ROOT = new Logger(
 
 export function createLogger(ns: string, attributes?: object): Logger {
     return ROOT.child(ns, attributes)
+}
+
+type PinoLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+
+export interface PinoLikeLogger {
+    trace(obj: unknown, msg?: string): void
+    debug(obj: unknown, msg?: string): void
+    info(obj: unknown, msg?: string): void
+    warn(obj: unknown, msg?: string): void
+    error(obj: unknown, msg?: string): void
+    fatal(obj: unknown, msg?: string): void
+}
+
+const LEVEL_MAP: Record<LogLevel, PinoLevel> = {
+    [LogLevel.TRACE]: 'trace',
+    [LogLevel.DEBUG]: 'debug',
+    [LogLevel.INFO]: 'info',
+    [LogLevel.WARN]: 'warn',
+    [LogLevel.ERROR]: 'error',
+    [LogLevel.FATAL]: 'fatal',
+}
+
+/**
+ * Creates Pino logger sink that can be later used in setRootSink
+ */
+export function createPinoSink(pinoLogger: PinoLikeLogger): Sink {
+    return (rec: LogRecord) => {
+        const {level, msg, ...rest} = rec
+        const method: PinoLevel = LEVEL_MAP[level] ?? 'info'
+
+        pinoLogger[method](rest, msg)
+    }
 }

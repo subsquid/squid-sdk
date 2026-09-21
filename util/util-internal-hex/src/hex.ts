@@ -1,12 +1,8 @@
 import assert from "assert"
 
 
-export function toHex(data: Uint8Array): string {
-    if (Buffer.isBuffer(data)) {
-        return '0x' + data.toString('hex')
-    } else {
-        return '0x' + Buffer.from(data.buffer, data.byteOffset, data.byteLength).toString('hex')
-    }
+export function toHex(data: Uint8Array, offset = 0, size = data.length - offset): string {
+    return `0x${Buffer.from(data.buffer, data.byteOffset + offset, size).toString('hex')}`
 }
 
 

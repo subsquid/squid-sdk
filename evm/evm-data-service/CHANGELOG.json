@@ -1,0 +1,151 @@
+{
+  "name": "@subsquid/evm-data-service",
+  "entries": [
+    {
+      "version": "0.2.0",
+      "tag": "@subsquid/evm-data-service_v0.2.0",
+      "date": "Mon, 14 Sep 2026 10:05:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add --verify-ext-data-hash flag: check blockExtraData against the extDataHash header commitment"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.1.0` to `0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.6` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/evm-data-service_v0.1.0",
+      "date": "Thu, 30 Jul 2026 15:44:58 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add a call-frame validation mode option for EVM data-service ingestion"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.5` to `0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.5` to `0.0.6`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.15.1` to `4.16.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.9",
+      "tag": "@subsquid/evm-data-service_v0.0.9",
+      "date": "Wed, 15 Jul 2026 22:15:56 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.4` to `0.0.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.4` to `0.0.5`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.8",
+      "tag": "@subsquid/evm-data-service_v0.0.8",
+      "date": "Wed, 15 Jul 2026 01:21:06 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.3` to `0.0.4`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.3` to `0.0.4`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.7",
+      "tag": "@subsquid/evm-data-service_v0.0.7",
+      "date": "Tue, 14 Jul 2026 13:09:33 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.2` to `0.0.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.2` to `0.0.3`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.6",
+      "tag": "@subsquid/evm-data-service_v0.0.6",
+      "date": "Mon, 01 Jun 2026 19:32:22 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Adding support for debug_traceBlockByNumber"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.1` to `0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.1` to `0.0.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.5",
+      "tag": "@subsquid/evm-data-service_v0.0.5",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "init EVM data service"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.0` to `0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.0.0` to `0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.5.0` to `1.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.14.0` to `4.15.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-data-service\" from `^0.0.0` to `0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-worker-thread\" from `^0.0.0` to `0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.8.0` to `0.9.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

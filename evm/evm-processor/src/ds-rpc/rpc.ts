@@ -114,7 +114,8 @@ export class Rpc {
         return this.call('eth_getBlockByHash', [hash, withTransactions], {
             validateResult: getResultValidator(
                 withTransactions ? nullable(GetBlockWithTransactions) : nullable(GetBlockNoTransactions)
-            )
+            ),
+            validateError: captureNotFound
         })
     }
 
@@ -292,11 +293,7 @@ export class Rpc {
         }], {
             validateResult: getResultValidator(array(Log)),
             validateError: info => {
-                if (info.message.includes('after last accepted block')) {
-                    // Regular RVM networks simply return an empty array in case
-                    // of out of range request, but Avalanche returns an error.
-                    return []
-                }
+                if (isLogsRangeError(info.message)) throw new BlockConsistencyError({height: from})
                 throw new RpcError(info)
             }
         }).catch(async err => {
@@ -746,20 +743,39 @@ class RpcProps {
     }
 }
 
+function isLogsRangeError(message: string): boolean {
+    if (/after last accepted block/i.test(message)) return true
+    if (/block range extends beyond current head block/i.test(message)) return true
+    return false
+}
+
+
 function isLogsResponseTooBigError(err: unknown) {
     if (!(err instanceof RpcError)) return false
     if (/query returned more than/i.test(err.message)) return true
     if (/response is too big/i.test(err.message)) return true
+    if (/query exceeds max results/i.test(err.message)) return true
     return false
 }
 
 function asTryAnotherRangeError(err: unknown): FiniteRange | undefined {
     if (!(err instanceof RpcError)) return
+    
     let m = /try with this block range \[(0x[0-9a-f]+), (0x[0-9a-f]+)]/i.exec(err.message)
-    if (m == null) return
-    let from = qty2Int(m[1])
-    let to = qty2Int(m[2])
-    if (from <= to) return {from, to}
+    if (m != null) {
+        let from = qty2Int(m[1])
+        let to = qty2Int(m[2])
+        if (from <= to) return {from, to}
+    }
+    
+    m = /retry with the range (\d+)-(\d+)/i.exec(err.message)
+    if (m != null) {
+        let from = parseInt(m[1], 10)
+        let to = parseInt(m[2], 10)
+        if (from <= to) return {from, to}
+    }
+
+    return undefined
 }
 
 
@@ -777,6 +793,7 @@ function toBlock(getBlock?: GetBlock | null): Block | undefined {
 
 
 function captureNotFound(info: RpcErrorInfo): null {
-    if (info.message.includes('not found')) return null
+    if (/not found/i.test(info.message)) return null
+    if (/not currently canonical/i.test(info.message)) return null
     throw new RpcError(info)
 }

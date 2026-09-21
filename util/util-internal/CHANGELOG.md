@@ -1,6 +1,24 @@
 # Change Log - @subsquid/util-internal
 
-This log was last generated on Wed, 17 Apr 2024 12:46:35 GMT and should not be manually modified.
+This log was last generated on Tue, 23 Jun 2026 17:42:56 GMT and should not be manually modified.
+
+## 3.3.1
+Tue, 23 Jun 2026 17:42:56 GMT
+
+### Patches
+
+- More structured logs for runProgram (PR#492)
+
+## 3.3.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Minor changes
+
+- `AsyncQueue`: allow multiple concurrent puts
+- `AsyncQueue`: add `.removeCloseListener()`
+- `concurrentMap()`: accept `Iterable` as stream
+- add reusable array item removal helper
+- add maybe-last helper for optional arrays
 
 ## 3.2.0
 Wed, 17 Apr 2024 12:46:35 GMT

@@ -4,6 +4,7 @@
 /*/*/lib/
 
 # Large files not needed in docker containers
+/solana/solana-normalization/fixtures
 /test/data/chain
 /test/types/gen
 /test/borsh-bench/data
@@ -28,8 +29,17 @@
 
 # Ignore Dockerfile, so that we can work on it without full rebuild each time
 Dockerfile
+docker-bake.hcl
 docker-compose.yml
 /ops/docker-publish.sh
+/ops/docker-publish-dev.sh
+/ops/docker-merge.sh
+/ops/docker-merge-dev.sh
+/ops/pkg-name.js
+/ops/pkg-version.js
+
+# CI configs
+/.github
 
 **/.DS_Store
 

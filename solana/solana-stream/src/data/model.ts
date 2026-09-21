@@ -6,23 +6,20 @@ import type {
     LogRequiredFields,
     RewardRequiredFields,
     TokenBalanceRequiredFields,
-    TransactionRequiredFields
+    TransactionRequiredFields,
 } from './partial'
 import type {GetFields, Select, Selector, Simplify} from './type-util'
 
-
-/**
- * Hex encoded binary string
- */
+/** Hex encoded binary string. */
 export type Bytes = string
 
-
-/**
- * Base58 encoded binary string
- */
+/** Base58 encoded binary string. */
 export type Base58Bytes = string
 
-
+/**
+ * User-facing field selection. Each section is an optional `Selector`
+ * over that section's non-required fields.
+ */
 export interface FieldSelection {
     block?: Selector<Exclude<keyof data.BlockHeader, BlockRequiredFields>>
     transaction?: Selector<Exclude<keyof data.Transaction, TransactionRequiredFields>>
@@ -33,115 +30,29 @@ export interface FieldSelection {
     reward?: Selector<Exclude<keyof data.Reward, RewardRequiredFields>>
 }
 
+export type FieldKey = keyof FieldSelection
 
-export const DEFAULT_FIELDS = {
-    block: {
-        slot: true,
-        parentSlot: true,
-        timestamp: true
-    },
-    transaction: {
-        signatures: true,
-        err: true
-    },
-    instruction: {
-        programId: true,
-        accounts: true,
-        data: true,
-        isCommitted: true
-    },
-    log: {
-        programId: true,
-        kind: true,
-        message: true
-    },
-    balance: {
-        pre: true,
-        post: true
-    },
-    tokenBalance: {
-        preMint: true,
-        preDecimals: true,
-        preOwner: true,
-        preAmount: true,
-        postMint: true,
-        postDecimals: true,
-        postOwner: true,
-        postAmount: true
-    },
-    reward: {
-        lamports: true,
-        rewardType: true
-    }
-} as const
-
-
-type Item<
-    Data,
-    RequiredFields extends keyof Data,
-    F extends FieldSelection,
-    K extends keyof FieldSelection
-> = Simplify<
-    Pick<Data, RequiredFields> &
-    Select<Data, GetFields<FieldSelection, typeof DEFAULT_FIELDS, F, K>>
+/**
+ * A concrete item type derived from a raw data shape, the always-present
+ * required keys, and a per-section field selection.
+ */
+type Item<Data, Required extends keyof Data, F extends FieldSelection, K extends FieldKey> = Simplify<
+    Pick<Data, Required> & Select<Data, GetFields<F, K>>
 >
 
+export type BlockHeader<F extends FieldSelection = {}> = Item<data.BlockHeader, BlockRequiredFields, F, 'block'>
 
-export type BlockHeader<F extends FieldSelection = {}> = Item<
-    data.BlockHeader,
-    BlockRequiredFields,
-    F,
-    'block'
->
+export type Transaction<F extends FieldSelection = {}> = Item<data.Transaction, TransactionRequiredFields, F, 'transaction'>
 
+export type Instruction<F extends FieldSelection = {}> = Item<data.Instruction, InstructionRequiredFields, F, 'instruction'>
 
-export type Transaction<F extends FieldSelection = {}> = Item<
-    data.Transaction,
-    TransactionRequiredFields,
-    F,
-    'transaction'
->
+export type LogMessage<F extends FieldSelection = {}> = Item<data.LogMessage, LogRequiredFields, F, 'log'>
 
+export type Balance<F extends FieldSelection = {}> = Item<data.Balance, BalanceRequiredFields, F, 'balance'>
 
-export type Instruction<F extends FieldSelection = {}> = Item<
-    data.Instruction,
-    InstructionRequiredFields,
-    F,
-    'instruction'
->
+export type TokenBalance<F extends FieldSelection = {}> = Item<data.TokenBalance, TokenBalanceRequiredFields, F, 'tokenBalance'>
 
-
-export type LogMessage<F extends FieldSelection = {}> = Item<
-    data.LogMessage,
-    LogRequiredFields,
-    F,
-    'log'
->
-
-
-export type Balance<F extends FieldSelection = {}> = Item<
-    data.Balance,
-    BalanceRequiredFields,
-    F,
-    'balance'
->
-
-
-export type TokenBalance<F extends FieldSelection = {}> = Item<
-    data.TokenBalance,
-    TokenBalanceRequiredFields,
-    F,
-    'tokenBalance'
->
-
-
-export type Reward<F extends FieldSelection = {}> = Item<
-    data.Reward,
-    RewardRequiredFields,
-    F,
-    'reward'
->
-
+export type Reward<F extends FieldSelection = {}> = Item<data.Reward, RewardRequiredFields, F, 'reward'>
 
 export interface Block<F extends FieldSelection = {}> {
     header: BlockHeader<F>

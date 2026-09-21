@@ -1,6 +1,24 @@
 # Change Log - @subsquid/typeorm-migration
 
-This log was last generated on Sun, 24 Dec 2023 20:05:50 GMT and should not be manually modified.
+This log was last generated on Fri, 10 Jul 2026 07:08:47 GMT and should not be manually modified.
+
+## 1.4.0
+Fri, 10 Jul 2026 07:08:47 GMT
+
+### Minor changes
+
+- apply now creates the data schema (CREATE SCHEMA IF NOT EXISTS) when DB_SCHEMA is set, so migrations and the migrations ledger land in it
+
+### Patches
+
+- Double-quote the schema in apply's CREATE SCHEMA so its case matches the quoted search_path (data and state resolve to the same schema)
+
+## 1.3.1
+Wed, 15 Apr 2026 14:45:11 GMT
+
+### Patches
+
+- fix `generate` emitting `down` queries in wrong order
 
 ## 1.3.0
 Sun, 24 Dec 2023 20:05:50 GMT

@@ -1,6 +1,38 @@
 # Change Log - @subsquid/typeorm-codegen
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Thu, 02 Jul 2026 19:07:35 GMT and should not be manually modified.
+
+## 2.4.0
+Thu, 02 Jul 2026 19:07:35 GMT
+
+### Minor changes
+
+- Generate stable, readable index names of the form `idx_<entity>_<fields>_<hash>` instead of relying on TypeORM's opaque `IDX_<hash>` names. The default names are derived from the table name, so they change whenever a table name changes (e.g. when it is pruned to fit the identifier limit), forcing migrations to drop and recreate indexes. The generated names are derived from the entity/field identity and capped at the PostgreSQL identifier limit with a deterministic hash suffix that guarantees uniqueness. NOTE: upgrading an existing squid renames all of its indexes once (a one-time drop/recreate on the next migration), after which migrations stay stable.
+
+## 2.3.0
+Thu, 02 Jul 2026 17:46:26 GMT
+
+### Minor changes
+
+- Prune entity table names that exceed the PostgreSQL identifier length limit (63 bytes) instead of letting Postgres truncate them silently. A warning is emitted for every pruned name and codegen now fails if two entities collide within the limit. This keeps generated schema and TypeORM migrations consistent (previously over-long names broke `squid-typeorm-migration generate`/`apply`).
+
+### Patches
+
+- Add a Vitest test suite covering `resolveTableNames` (identifier-limit truncation, collisions, warnings) and `generateOrmModels`/`generateFtsMigrations` across every schema-file feature (scalars, arrays, indexes, relations, `@derivedFrom` lookups, `@query` interfaces, typed JSON, unions, fulltext).
+
+## 2.2.0
+Wed, 15 Apr 2026 14:45:11 GMT
+
+### Minor changes
+
+- wrap generated entity relation fields with `Relation` type
+
+## 2.1.0
+Tue, 17 Mar 2026 11:47:18 GMT
+
+### Minor changes
+
+- pass createForeignKeyConstraints: false to TypeORM relation decorators when @disableForeignKeyConstraint is set
 
 ## 2.0.2
 Thu, 25 Jul 2024 11:48:18 GMT

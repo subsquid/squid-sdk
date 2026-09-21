@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-hex",
   "entries": [
     {
+      "version": "1.2.3",
+      "tag": "@subsquid/util-internal-hex_v1.2.3",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "`toHex()`: allow callers to encode a selected byte range"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.2",
       "tag": "@subsquid/util-internal-hex_v1.2.2",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

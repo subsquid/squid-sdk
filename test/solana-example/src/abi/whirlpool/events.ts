@@ -1,5 +1,5 @@
-import {event} from '../abi.support'
-import {LiquidityDecreased as LiquidityDecreased_, LiquidityIncreased as LiquidityIncreased_, PoolInitialized as PoolInitialized_, Traded as Traded_} from './types'
+import {event} from '../abi.support.js'
+import {LiquidityDecreased as LiquidityDecreased_, LiquidityIncreased as LiquidityIncreased_, PoolInitialized as PoolInitialized_, Traded as Traded_} from './types.js'
 
 export type LiquidityDecreased = LiquidityDecreased_
 

@@ -1,6 +1,60 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Tue, 26 Nov 2024 06:42:52 GMT and should not be manually modified.
+This log was last generated on Thu, 27 Aug 2026 13:59:40 GMT and should not be manually modified.
+
+## 4.16.1
+Thu, 27 Aug 2026 13:59:40 GMT
+
+### Patches
+
+- redact RPC URLs (which routinely carry API keys) from transport error messages, stack traces and connection-failure logs
+
+## 4.16.0
+Thu, 30 Jul 2026 15:44:58 GMT
+
+### Minor changes
+
+- redact credentials from RPC endpoint metadata and expose a shared endpoint-redaction helper
+
+## 4.15.1
+Tue, 23 Jun 2026 17:42:56 GMT
+
+### Patches
+
+- Better RPC error propagation for non-matching id values
+
+## 4.15.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Minor changes
+
+- include snake_case average response time in RPC metrics
+
+### Patches
+
+- resend subscription request on connection loss
+- treat HTTP 408 responses as retryable RPC errors
+
+## 4.14.0
+Tue, 04 Nov 2025 07:29:46 GMT
+
+### Minor changes
+
+- ignore websocket responses with empty id
+
+## 4.13.0
+Sat, 09 Aug 2025 06:10:24 GMT
+
+### Minor changes
+
+- introduce `SubscriptionHandle.reset()`
+
+## 4.12.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- Extend metrics with `avgResponseTime`
 
 ## 4.11.0
 Tue, 26 Nov 2024 06:42:52 GMT

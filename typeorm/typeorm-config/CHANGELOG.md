@@ -1,6 +1,18 @@
 # Change Log - @subsquid/typeorm-config
 
-This log was last generated on Tue, 07 May 2024 07:40:43 GMT and should not be manually modified.
+This log was last generated on Fri, 10 Jul 2026 07:08:47 GMT and should not be manually modified.
+
+## 4.2.0
+Fri, 10 Jul 2026 07:08:47 GMT
+
+### Minor changes
+
+- Export getDataSchema() — the validated DB_SCHEMA name — so tooling (e.g. migrations) can ensure the data schema exists
+- Add a configurable data schema via the DB_SCHEMA env var, threaded as a connection-level search_path (with an opt-in DB_SCHEMA_INCLUDE_PUBLIC tail)
+
+### Patches
+
+- Double-quote DB_SCHEMA in the search_path so its case is preserved, matching how typeorm-store qualifies stateSchema (lets DB_SCHEMA and stateSchema be the same value)
 
 ## 4.1.1
 Tue, 07 May 2024 07:40:43 GMT

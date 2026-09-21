@@ -3,22 +3,11 @@ export type Simplify<T> = {
 } & {}
 
 
-export type ExcludeUndefined<T> = {
-    [K in keyof T as undefined extends T[K] ? never : K]: T[K]
-} & {}
-
-
 export type GetFields<
     FieldSelectionType,
-    Defaults extends FieldSelectionType,
     Selection extends FieldSelectionType,
     K extends keyof FieldSelectionType
-> = TrueFields<MergeDefault<Selection[K], Defaults[K]>>
-
-
-type MergeDefault<T, D> = Simplify<
-    undefined extends T ? D : Omit<D, keyof ExcludeUndefined<T>> & ExcludeUndefined<T>
->
+> = TrueFields<Selection[K]>
 
 
 export type TrueFields<F> = keyof {

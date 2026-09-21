@@ -1,4 +1,4 @@
-import {Codec, address, array, bool, fixedArray, i128, i32, struct, sum, u128, u16, u64, u8, unit} from '@subsquid/borsh'
+import {Codec, address, array, bool, fixedArray, i128, i32, struct, sum, u128, u16, u32, u64, u8, unit} from '@subsquid/borsh'
 
 export type LockType_Permanent = undefined
 
@@ -32,6 +32,46 @@ export const LockTypeLabel: Codec<LockTypeLabel> = sum(1, {
         discriminator: 0,
         value: LockTypeLabel_Permanent,
     },
+})
+
+export interface AdaptiveFeeConstants {
+    filterPeriod: number
+    decayPeriod: number
+    reductionFactor: number
+    adaptiveFeeControlFactor: number
+    maxVolatilityAccumulator: number
+    tickGroupSize: number
+    majorSwapThresholdTicks: number
+    reserved: Array<number>
+}
+
+export const AdaptiveFeeConstants: Codec<AdaptiveFeeConstants> = struct({
+    filterPeriod: u16,
+    decayPeriod: u16,
+    reductionFactor: u16,
+    adaptiveFeeControlFactor: u32,
+    maxVolatilityAccumulator: u32,
+    tickGroupSize: u16,
+    majorSwapThresholdTicks: u16,
+    reserved: fixedArray(u8, 16),
+})
+
+export interface AdaptiveFeeVariables {
+    lastReferenceUpdateTimestamp: bigint
+    lastMajorSwapTimestamp: bigint
+    volatilityReference: number
+    tickGroupIndexReference: number
+    volatilityAccumulator: number
+    reserved: Array<number>
+}
+
+export const AdaptiveFeeVariables: Codec<AdaptiveFeeVariables> = struct({
+    lastReferenceUpdateTimestamp: u64,
+    lastMajorSwapTimestamp: u64,
+    volatilityReference: u32,
+    tickGroupIndexReference: i32,
+    volatilityAccumulator: u32,
+    reserved: fixedArray(u8, 16),
 })
 
 export interface OpenPositionBumps {
@@ -235,6 +275,38 @@ export const RemainingAccountsInfo: Codec<RemainingAccountsInfo> = struct({
     slices: array(RemainingAccountsSlice),
 })
 
+export interface AdaptiveFeeTier {
+    whirlpoolsConfig: string
+    feeTierIndex: number
+    tickSpacing: number
+    initializePoolAuthority: string
+    delegatedFeeAuthority: string
+    defaultBaseFeeRate: number
+    filterPeriod: number
+    decayPeriod: number
+    reductionFactor: number
+    adaptiveFeeControlFactor: number
+    maxVolatilityAccumulator: number
+    tickGroupSize: number
+    majorSwapThresholdTicks: number
+}
+
+export const AdaptiveFeeTier: Codec<AdaptiveFeeTier> = struct({
+    whirlpoolsConfig: address,
+    feeTierIndex: u16,
+    tickSpacing: u16,
+    initializePoolAuthority: address,
+    delegatedFeeAuthority: address,
+    defaultBaseFeeRate: u16,
+    filterPeriod: u16,
+    decayPeriod: u16,
+    reductionFactor: u16,
+    adaptiveFeeControlFactor: u32,
+    maxVolatilityAccumulator: u32,
+    tickGroupSize: u16,
+    majorSwapThresholdTicks: u16,
+})
+
 export interface WhirlpoolsConfig {
     feeAuthority: string
     collectProtocolFeesAuthority: string
@@ -287,6 +359,22 @@ export const LockConfig: Codec<LockConfig> = struct({
     whirlpool: address,
     lockedTimestamp: u64,
     lockType: LockTypeLabel,
+})
+
+export interface Oracle {
+    whirlpool: string
+    tradeEnableTimestamp: bigint
+    adaptiveFeeConstants: AdaptiveFeeConstants
+    adaptiveFeeVariables: AdaptiveFeeVariables
+    reserved: Array<number>
+}
+
+export const Oracle: Codec<Oracle> = struct({
+    whirlpool: address,
+    tradeEnableTimestamp: u64,
+    adaptiveFeeConstants: AdaptiveFeeConstants,
+    adaptiveFeeVariables: AdaptiveFeeVariables,
+    reserved: fixedArray(u8, 128),
 })
 
 export interface Position {
@@ -351,7 +439,7 @@ export interface Whirlpool {
     whirlpoolsConfig: string
     whirlpoolBump: Array<number>
     tickSpacing: number
-    tickSpacingSeed: Array<number>
+    feeTierIndexSeed: Array<number>
     feeRate: number
     protocolFeeRate: number
     liquidity: bigint
@@ -373,7 +461,7 @@ export const Whirlpool: Codec<Whirlpool> = struct({
     whirlpoolsConfig: address,
     whirlpoolBump: fixedArray(u8, 1),
     tickSpacing: u16,
-    tickSpacingSeed: fixedArray(u8, 2),
+    feeTierIndexSeed: fixedArray(u8, 2),
     feeRate: u16,
     protocolFeeRate: u16,
     liquidity: u128,

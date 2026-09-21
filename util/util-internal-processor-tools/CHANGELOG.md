@@ -1,6 +1,20 @@
 # Change Log - @subsquid/util-internal-processor-tools
 
-This log was last generated on Tue, 31 Dec 2024 14:45:43 GMT and should not be manually modified.
+This log was last generated on Mon, 23 Mar 2026 13:12:51 GMT and should not be manually modified.
+
+## 4.4.0
+Mon, 23 Mar 2026 13:12:51 GMT
+
+### Minor changes
+
+- allow constructing RunnerMetrics with a custom blocksCountInRange(range) instead of only request ranges
+
+## 4.3.0
+Wed, 18 Mar 2026 10:55:26 GMT
+
+### Minor changes
+
+- add support for custom metrics sink
 
 ## 4.2.1
 Tue, 31 Dec 2024 14:45:43 GMT

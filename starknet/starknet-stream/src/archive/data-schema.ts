@@ -13,7 +13,7 @@ import {
     constant
 } from '@subsquid/util-internal-validation'
 import {FieldSelection} from '../data/model'
-import {Selector} from '../data/util'
+import {project} from '../data/fields'
 
 
 let FELT = BYTES
@@ -28,6 +28,23 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             newRoot: option(FELT),
             timestamp: NAT,
             sequencerAddress: option(FELT)
+        })
+    })
+
+    let ResourceBounds = object({
+        l1GasMaxAmount: BIG_NAT,
+        l1GasMaxPricePerUnit: BIG_NAT,
+        l1DataGasMaxAmount: BIG_NAT,
+        l1DataGasMaxPricePerUnit: BIG_NAT,
+        l2GasMaxAmount: BIG_NAT,
+        l2GasMaxPricePerUnit: BIG_NAT
+    })
+
+    let ActualFee = object({
+        amount: STRING,
+        unit: oneOf({
+            WEI: constant('WEI'),
+            FRI: constant('FRI')
         })
     })
 
@@ -50,11 +67,20 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             senderAddress: option(FELT),
             version: STRING,
             signature: option(array(FELT)),
-            nonce: option(NAT),
+            nonce: option(BIG_NAT),
             classHash: option(FELT),
             compiledClassHash: option(FELT),
             contractAddressSalt: option(FELT),
-            constructorCalldata: option(array(FELT))
+            constructorCalldata: option(array(FELT)),
+            resourceBounds: option(ResourceBounds),
+            tip: option(FELT),
+            paymasterData: option(array(FELT)),
+            accountDeploymentData: option(array(FELT)),
+            nonceDataAvailabilityMode: option(STRING),
+            feeDataAvailabilityMode: option(STRING),
+            messageHash: option(FELT),
+            actualFee: option(ActualFee),
+            finalityStatus: option(STRING)
         })
     })
 
@@ -80,16 +106,3 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         events: option(array(Event)),
     })
 })
-
-
-function project<T>(fields: Selector<keyof T> | undefined, obj: T): Partial<T> {
-    if (fields == null) return {}
-    let result: Partial<T> = {}
-    let key: keyof T
-    for (key in obj) {
-        if (fields[key]) {
-            result[key] = obj[key]
-        }
-    }
-    return result
-}

@@ -1,0 +1,27 @@
+{
+  "network": "mainnet",
+  "blockHash": "0x8c6cf5858267a7e4fdb10a6e271423f4c1b8185aadf296b2530d7dd32178a9ba",
+  "transactionHash": "0x833a78e6ac9466865d9c8e5311b1820b12d5c0b103466bcdbf8b3db058a849e3",
+  "transactionIndex": 131,
+  "traceAddress": [
+    0,
+    0
+  ],
+  "frame": "defective",
+  "client": "reth/v2.5.2-5a6940e/x86_64-unknown-linux-gnu",
+  "events": [
+    {
+      "t": "enter"
+    },
+    {
+      "bal": "0x1",
+      "from": "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de",
+      "preBalance": "0x1",
+      "t": "sd",
+      "to": "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de"
+    },
+    {
+      "t": "exit"
+    }
+  ]
+}

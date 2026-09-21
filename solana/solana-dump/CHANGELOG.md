@@ -1,6 +1,35 @@
 # Change Log - @subsquid/solana-dump
 
-This log was last generated on Thu, 24 Apr 2025 15:09:16 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 1.0.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Breaking changes
+
+- use slots as block numbers
+
+### Minor changes
+
+- add optional log message and chain continuity validation
+
+### Patches
+
+- base on the Solana RPC data source and shared dump CLI
+
+## 0.2.0
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Minor changes
+
+- Add block timestamp extraction method for Solana dumper with Unix timestamp support
+
+## 0.1.0
+Wed, 14 May 2025 19:46:11 GMT
+
+### Minor changes
+
+- add `--max-confirmation-attempts` cli option
 
 ## 0.0.10
 Thu, 24 Apr 2025 15:09:16 GMT

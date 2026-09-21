@@ -1,9 +1,9 @@
 {
   "name": "@subsquid/solana-rpc",
-  "version": "0.0.4",
+  "version": "1.1.0",
   "description": "Solana RPC data ingestion tools",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -13,21 +13,25 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run"
   },
   "dependencies": {
-    "@subsquid/logger": "^1.4.0",
-    "@subsquid/solana-rpc-data": "^0.0.3",
-    "@subsquid/util-internal": "^3.2.0",
+    "@subsquid/logger": "^1.6.0",
+    "@subsquid/solana-rpc-data": "^1.1.0",
+    "@subsquid/util-internal": "^3.3.1",
+    "@subsquid/util-internal-data-source": "^0.0.0",
     "@subsquid/util-internal-range": "^0.3.0",
-    "@subsquid/util-internal-validation": "^0.7.0"
+    "@subsquid/util-internal-worker-thread": "^0.0.1",
+    "@subsquid/util-internal-validation": "^0.9.0"
   },
   "peerDependencies": {
-    "@subsquid/rpc-client": "^4.11.0"
+    "@subsquid/rpc-client": "^4.16.1"
   },
   "devDependencies": {
-    "@subsquid/rpc-client": "^4.11.0",
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@subsquid/rpc-client": "^4.16.1",
+    "@types/node": "^24.13.6",
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }

@@ -1,5 +1,6 @@
 import {
     ANY,
+    ANY_INT,
     ANY_NAT,
     array,
     B58,
@@ -7,7 +8,6 @@ import {
     BIG_NAT,
     constant,
     GetSrcType,
-    INT,
     NAT,
     nullable,
     object,
@@ -39,9 +39,21 @@ export const AddressTableLookup = object({
 export type AddressTableLookup = GetSrcType<typeof AddressTableLookup>
 
 
+export const TransactionConfig = object({
+    computeUnitLimit: nullable(NAT),
+    heapSize: nullable(NAT),
+    loadedAccountsDataSizeLimit: nullable(NAT),
+    priorityFee: nullable(ANY_NAT)
+})
+
+
+export type TransactionConfig = GetSrcType<typeof TransactionConfig>
+
+
 export const TransactionMessage = object({
     accountKeys: array(B58),
     addressTableLookups: option(array(AddressTableLookup)),
+    transactionConfig: option(TransactionConfig),
     header: object({
         numReadonlySignedAccounts: NAT,
         numReadonlyUnsignedAccounts: NAT,
@@ -72,7 +84,7 @@ export type TokenBalance = GetSrcType<typeof TokenBalance>
 
 export const Reward = object({
     pubkey: B58,
-    lamports: INT,
+    lamports: ANY_INT,
     postBalance: ANY_NAT,
     rewardType: option(STRING),
     commission: option(NAT)
@@ -84,6 +96,7 @@ export type Reward = GetSrcType<typeof Reward>
 
 export const TransactionMeta = object({
     computeUnitsConsumed: option(ANY_NAT),
+    costUnits: option(ANY_NAT),
     err: ANY,
     fee: ANY_NAT,
     preBalances: array(ANY_NAT),
@@ -119,7 +132,12 @@ export const Transaction = object({
     version: oneOf({
         legacy: constant('legacy'),
         versionNumber: NAT
-    })
+    }),
+    /**
+     * Represents original transaction position in a block.
+     * Might be set, when some block transactions where filtered out
+     */
+    _index: option(NAT)
 })
 
 

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-codec
 
-This log was last generated on Wed, 29 May 2024 15:23:01 GMT and should not be manually modified.
+This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+
+## 1.0.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Breaking changes
+
+- rework ABI encoding and decoding helpers
 
 ## 0.3.0
 Wed, 29 May 2024 15:23:01 GMT

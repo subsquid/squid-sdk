@@ -1,6 +1,37 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Tue, 18 Mar 2025 10:45:46 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:49:58 GMT and should not be manually modified.
+
+## 8.8.2
+Mon, 14 Sep 2026 10:49:58 GMT
+
+### Patches
+
+- don't expose v5 general extrinsics' transaction extension fields to squids
+
+## 8.8.1
+Mon, 11 May 2026 05:34:26 GMT
+
+_Version update only_
+
+## 8.8.0
+Tue, 05 May 2026 07:41:38 GMT
+
+### Minor changes
+
+- allow GatewaySettings to provide an API key
+
+## 8.7.0
+Wed, 18 Mar 2026 10:55:26 GMT
+
+### Minor changes
+
+- add `setPrometheusServer()` method, deprecate `setPrometheusPort()`
+
+## 8.6.1
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
 
 ## 8.6.0
 Tue, 18 Mar 2025 10:45:46 GMT

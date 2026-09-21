@@ -1,0 +1,279 @@
+{
+  "name": "@subsquid/squid-sdk",
+  "version": "0.6.2",
+  "description": "Umbrella package for the Squid SDK: data sources and utilities exposed as subpaths",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": [
+    "lib",
+    "src",
+    "evm",
+    "solana",
+    "fuel",
+    "fallback",
+    "util",
+    "client",
+    "logger",
+    "processor",
+    "store"
+  ],
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js",
+      "require": "./lib/index.js"
+    },
+    "./package.json": "./package.json",
+    "./evm": {
+      "types": "./lib/evm/index.d.ts",
+      "import": "./lib/evm/index.js",
+      "require": "./lib/evm/index.js"
+    },
+    "./evm/rpc": {
+      "types": "./lib/evm/rpc/index.d.ts",
+      "import": "./lib/evm/rpc/index.js",
+      "require": "./lib/evm/rpc/index.js"
+    },
+    "./evm/fallback": {
+      "types": "./lib/evm/fallback/index.d.ts",
+      "import": "./lib/evm/fallback/index.js",
+      "require": "./lib/evm/fallback/index.js"
+    },
+    "./evm/objects": {
+      "types": "./lib/evm/objects/index.d.ts",
+      "import": "./lib/evm/objects/index.js",
+      "require": "./lib/evm/objects/index.js"
+    },
+    "./solana": {
+      "types": "./lib/solana/index.d.ts",
+      "import": "./lib/solana/index.js",
+      "require": "./lib/solana/index.js"
+    },
+    "./solana/rpc": {
+      "types": "./lib/solana/rpc/index.d.ts",
+      "import": "./lib/solana/rpc/index.js",
+      "require": "./lib/solana/rpc/index.js"
+    },
+    "./solana/fallback": {
+      "types": "./lib/solana/fallback/index.d.ts",
+      "import": "./lib/solana/fallback/index.js",
+      "require": "./lib/solana/fallback/index.js"
+    },
+    "./fuel": {
+      "types": "./lib/fuel/index.d.ts",
+      "import": "./lib/fuel/index.js",
+      "require": "./lib/fuel/index.js"
+    },
+    "./fallback": {
+      "types": "./lib/fallback/index.d.ts",
+      "import": "./lib/fallback/index.js",
+      "require": "./lib/fallback/index.js"
+    },
+    "./util": {
+      "types": "./lib/util/index.d.ts",
+      "import": "./lib/util/index.js",
+      "require": "./lib/util/index.js"
+    },
+    "./util/data-source": {
+      "types": "./lib/util/data-source/index.d.ts",
+      "import": "./lib/util/data-source/index.js",
+      "require": "./lib/util/data-source/index.js"
+    },
+    "./util/range": {
+      "types": "./lib/util/range/index.d.ts",
+      "import": "./lib/util/range/index.js",
+      "require": "./lib/util/range/index.js"
+    },
+    "./util/hex": {
+      "types": "./lib/util/hex/index.d.ts",
+      "import": "./lib/util/hex/index.js",
+      "require": "./lib/util/hex/index.js"
+    },
+    "./util/json": {
+      "types": "./lib/util/json/index.d.ts",
+      "import": "./lib/util/json/index.js",
+      "require": "./lib/util/json/index.js"
+    },
+    "./util/validation": {
+      "types": "./lib/util/validation/index.d.ts",
+      "import": "./lib/util/validation/index.js",
+      "require": "./lib/util/validation/index.js"
+    },
+    "./util/processor-tools": {
+      "types": "./lib/util/processor-tools/index.d.ts",
+      "import": "./lib/util/processor-tools/index.js",
+      "require": "./lib/util/processor-tools/index.js"
+    },
+    "./util/timeout": {
+      "types": "./lib/util/timeout/index.d.ts",
+      "import": "./lib/util/timeout/index.js",
+      "require": "./lib/util/timeout/index.js"
+    },
+    "./client/portal": {
+      "types": "./lib/client/portal/index.d.ts",
+      "import": "./lib/client/portal/index.js",
+      "require": "./lib/client/portal/index.js"
+    },
+    "./client/rpc": {
+      "types": "./lib/client/rpc/index.d.ts",
+      "import": "./lib/client/rpc/index.js",
+      "require": "./lib/client/rpc/index.js"
+    },
+    "./client/http": {
+      "types": "./lib/client/http/index.d.ts",
+      "import": "./lib/client/http/index.js",
+      "require": "./lib/client/http/index.js"
+    },
+    "./logger": {
+      "types": "./lib/logger/index.d.ts",
+      "import": "./lib/logger/index.js",
+      "require": "./lib/logger/index.js"
+    },
+    "./processor": {
+      "types": "./lib/processor/index.d.ts",
+      "import": "./lib/processor/index.js",
+      "require": "./lib/processor/index.js"
+    },
+    "./store/typeorm": {
+      "types": "./lib/store/typeorm/index.d.ts",
+      "import": "./lib/store/typeorm/index.js",
+      "require": "./lib/store/typeorm/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "evm": [
+        "./lib/evm/index.d.ts"
+      ],
+      "evm/rpc": [
+        "./lib/evm/rpc/index.d.ts"
+      ],
+      "evm/fallback": [
+        "./lib/evm/fallback/index.d.ts"
+      ],
+      "evm/objects": [
+        "./lib/evm/objects/index.d.ts"
+      ],
+      "solana": [
+        "./lib/solana/index.d.ts"
+      ],
+      "solana/rpc": [
+        "./lib/solana/rpc/index.d.ts"
+      ],
+      "solana/fallback": [
+        "./lib/solana/fallback/index.d.ts"
+      ],
+      "fuel": [
+        "./lib/fuel/index.d.ts"
+      ],
+      "fallback": [
+        "./lib/fallback/index.d.ts"
+      ],
+      "util": [
+        "./lib/util/index.d.ts"
+      ],
+      "util/data-source": [
+        "./lib/util/data-source/index.d.ts"
+      ],
+      "util/range": [
+        "./lib/util/range/index.d.ts"
+      ],
+      "util/hex": [
+        "./lib/util/hex/index.d.ts"
+      ],
+      "util/json": [
+        "./lib/util/json/index.d.ts"
+      ],
+      "util/validation": [
+        "./lib/util/validation/index.d.ts"
+      ],
+      "util/processor-tools": [
+        "./lib/util/processor-tools/index.d.ts"
+      ],
+      "util/timeout": [
+        "./lib/util/timeout/index.d.ts"
+      ],
+      "client/portal": [
+        "./lib/client/portal/index.d.ts"
+      ],
+      "client/rpc": [
+        "./lib/client/rpc/index.d.ts"
+      ],
+      "client/http": [
+        "./lib/client/http/index.d.ts"
+      ],
+      "logger": [
+        "./lib/logger/index.d.ts"
+      ],
+      "processor": [
+        "./lib/processor/index.d.ts"
+      ],
+      "store/typeorm": [
+        "./lib/store/typeorm/index.d.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "rm -rf lib && tsc && node scripts/gen-subpath-stubs.cjs",
+    "test": "vitest --run",
+    "test:lfs": "VITEST_LFS=1 vitest --run"
+  },
+  "dependencies": {
+    "@subsquid/batch-processor": "^1.1.0",
+    "@subsquid/evm-objects": "^0.0.3",
+    "@subsquid/evm-stream": "^0.1.5",
+    "@subsquid/fuel-stream": "^1.2.0",
+    "@subsquid/http-client": "^1.9.0",
+    "@subsquid/logger": "^1.6.0",
+    "@subsquid/portal-client": "^0.8.0",
+    "@subsquid/rpc-client": "^4.16.1",
+    "@subsquid/solana-stream": "^1.3.0",
+    "@subsquid/typeorm-store": "^1.9.2",
+    "@subsquid/util-internal": "^3.3.1",
+    "@subsquid/util-internal-data-source": "^0.0.0",
+    "@subsquid/util-internal-hex": "^1.2.3",
+    "@subsquid/util-internal-json": "^1.2.4",
+    "@subsquid/util-internal-processor-tools": "^4.4.0",
+    "@subsquid/util-internal-range": "^0.3.0",
+    "@subsquid/util-internal-validation": "^0.9.0",
+    "@subsquid/util-timeout": "^2.3.2",
+    "prom-client": "^14.2.0"
+  },
+  "peerDependencies": {
+    "@subsquid/evm-normalization": "^0.1.0",
+    "@subsquid/evm-rpc": "^0.2.0",
+    "@subsquid/solana-rpc": "^1.1.0",
+    "@subsquid/solana-normalization": "^1.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@subsquid/evm-normalization": {
+      "optional": true
+    },
+    "@subsquid/evm-rpc": {
+      "optional": true
+    },
+    "@subsquid/solana-rpc": {
+      "optional": true
+    },
+    "@subsquid/solana-normalization": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@subsquid/big-decimal": "^1.0.0",
+    "@subsquid/evm-normalization": "^0.1.0",
+    "@subsquid/evm-rpc": "^0.2.0",
+    "@types/node": "^24.13.6",
+    "typeorm": "^0.3.31",
+    "typescript": "5.5.4",
+    "vitest": "4.1.5",
+    "@subsquid/solana-rpc": "^1.1.0",
+    "@subsquid/solana-normalization": "^1.1.0"
+  }
+}

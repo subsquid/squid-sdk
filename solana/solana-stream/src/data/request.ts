@@ -1,10 +1,8 @@
-import {Base58Bytes} from '@subsquid/solana-rpc'
 import {LogMessage} from '@subsquid/solana-normalization'
-import {FieldSelection} from './model'
+import {Base58Bytes} from './model'
 
 
 export interface DataRequest {
-    fields?: FieldSelection
     includeAllBlocks?: boolean
     transactions?: TransactionRequest[]
     instructions?: InstructionRequest[]
@@ -52,6 +50,7 @@ export interface InstructionRequestWhere {
     d3?: Discriminator[]
     d4?: Discriminator[]
     d8?: Discriminator[]
+    discriminator?: Discriminator[]
     a0?: Base58Bytes[]
     a1?: Base58Bytes[]
     a2?: Base58Bytes[]

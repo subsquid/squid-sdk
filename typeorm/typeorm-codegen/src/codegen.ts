@@ -1,14 +1,85 @@
 import type {Entity, Enum, JsonObject, Model, Prop, Union} from '@subsquid/openreader/lib/model'
+import {createLogger} from '@subsquid/logger'
 import {unexpectedCase} from '@subsquid/util-internal'
 import {OutDir, Output} from '@subsquid/util-internal-code-printer'
-import {toCamelCase} from '@subsquid/util-naming'
+import {toCamelCase, toSnakeCase} from '@subsquid/util-naming'
 import assert from 'assert'
+import {createHash} from 'crypto'
 import * as path from 'path'
+
+
+const log = createLogger('sqd:typeorm-codegen')
+
+/**
+ * PostgreSQL silently truncates any identifier longer than `NAMEDATALEN - 1`
+ * (63 bytes with the default build) when it is stored in the catalog. That
+ * breaks TypeORM migrations: the name the ORM derives from the entity no longer
+ * matches the truncated name in the database, so `squid-typeorm-migration
+ * generate` keeps re-emitting `CREATE TABLE` for the affected entity and
+ * `apply` then fails with `relation "..." already exists`.
+ *
+ * To keep the generated schema self-consistent we prune over-long table names
+ * ourselves, deterministically and identically to Postgres' own truncation, and
+ * surface the situation to the user instead of letting it fail downstream.
+ *
+ * GraphQL type names are restricted to ASCII letters, digits and underscores,
+ * and `toSnakeCase` keeps them ASCII, so byte length equals string length here.
+ */
+const POSTGRES_MAX_IDENTIFIER_LENGTH = 63
+
+/**
+ * Length of the deterministic hash suffix appended to every generated index
+ * name. It keeps names unique even after the readable part is truncated to fit
+ * the identifier limit.
+ */
+const INDEX_NAME_HASH_LENGTH = 8
+
+
+/**
+ * Build a stable, readable index name of the form `idx_<entity>_<fields>_<hash>`,
+ * capped at the PostgreSQL identifier limit.
+ *
+ * By default TypeORM names an unnamed index `IDX_<sha1(table + columns)>`, which
+ * is opaque and — because it is derived from the *table* name — silently changes
+ * whenever the table name does (e.g. when it is pruned to fit the identifier
+ * limit), forcing migrations to drop and recreate the index. Here the name is
+ * derived from the entity and field identity instead, so it stays put across
+ * codegen runs and table-name changes, while the hash suffix guarantees
+ * uniqueness even when the readable prefix is truncated.
+ */
+export function makeIndexName(entity: string, fields: string[], unique: boolean): string {
+    const identity = `${entity}|${fields.join(',')}|${unique ? 'unique' : ''}`
+    const hash = createHash('sha1').update(identity).digest('hex').slice(0, INDEX_NAME_HASH_LENGTH)
+    const readable = ['idx', toSnakeCase(entity), ...fields.map(toSnakeCase)].join('_')
+    const budget = POSTGRES_MAX_IDENTIFIER_LENGTH - INDEX_NAME_HASH_LENGTH - 1 // room for `_<hash>`
+    const prefix = readable.length > budget ? readable.slice(0, budget) : readable
+    return `${prefix}_${hash}`
+}
 
 
 export function generateOrmModels(model: Model, dir: OutDir): void {
     const variants = collectVariants(model)
+    const tableNames = resolveTableNames(model)
     const index = dir.file('index.ts')
+
+    // Index names must be unique across the whole database schema, not just per
+    // table. Compute them once through here so a (vanishingly unlikely) hash
+    // collision fails loudly at codegen time instead of at migration time.
+    const indexNamesByName = new Map<string, string>()
+    function indexNameFor(entity: string, fields: string[], unique: boolean): string {
+        const name = makeIndexName(entity, fields, unique)
+        const identity = `${entity}(${fields.join(', ')})${unique ? ' unique' : ''}`
+        const previous = indexNamesByName.get(name)
+        if (previous != null && previous !== identity) {
+            throw new Error(
+                `Index name "${name}" is generated for two different indexes — ${previous} and ` +
+                `${identity}. This is an extremely unlikely hash collision; rename a field or ` +
+                `entity to work around it.`
+            )
+        }
+        indexNamesByName.set(name, identity)
+        return name
+    }
 
     for (const name in model) {
         const item = model[name]
@@ -39,12 +110,22 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         out.lazy(() => imports.render(model, out))
         out.line()
         printComment(entity, out)
+        const nameIndex = (fields: string[], unique: boolean) => indexNameFor(name, fields, unique)
         entity.indexes?.forEach(index => {
             if (index.fields.length < 2) return
             imports.useTypeormStore('Index')
-            out.line(`@Index_([${index.fields.map(f => `"${f.name}"`).join(', ')}], {unique: ${!!index.unique}})`)
+            const fields = index.fields.map(f => f.name)
+            const indexName = nameIndex(fields, !!index.unique)
+            out.line(`@Index_("${indexName}", [${fields.map(f => `"${f}"`).join(', ')}], {unique: ${!!index.unique}})`)
         })
-        out.line('@Entity_()')
+        const tableName = tableNames.get(name)!
+        if (tableName === toSnakeCase(name)) {
+            out.line('@Entity_()')
+        } else {
+            // Name was pruned to fit the PostgreSQL identifier limit; pin it
+            // explicitly so the ORM and the database agree on it.
+            out.line(`@Entity_("${tableName}")`)
+        }
         out.block(`export class ${name}`, () => {
             out.block(`constructor(props?: Partial<${name}>)`, () => {
                 out.line('Object.assign(this, props)')
@@ -62,12 +143,12 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             const decorator = getDecorator(prop.type.name)
                             imports.useTypeormStore(decorator)
 
-                            addIndexAnnotation(entity, key, imports, out)
+                            addIndexAnnotation(entity, key, imports, out, nameIndex)
                             out.line(`@${decorator}_({nullable: ${prop.nullable}})`)
                         }
                         break
                     case 'enum':
-                        addIndexAnnotation(entity, key, imports, out)
+                        addIndexAnnotation(entity, key, imports, out, nameIndex)
                         out.line(
                             `@Column_("varchar", {length: ${getEnumMaxLength(
                                 model,
@@ -75,25 +156,29 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             )}, nullable: ${prop.nullable}})`
                         )
                         break
-                    case 'fk':
+                    case 'fk': {
+                        const fkOptions = prop.type.disableConstraint
+                            ? ', createForeignKeyConstraints: false'
+                            : ''
                         if (getFieldIndex(entity, key)?.unique) {
                             imports.useTypeormStore('OneToOne', 'Index', 'JoinColumn')
-                            out.line(`@Index_({unique: true})`)
+                            out.line(`@Index_("${nameIndex([key], true)}", {unique: true})`)
                             out.line(
-                                `@OneToOne_(() => ${prop.type.entity}, {nullable: true})`
+                                `@OneToOne_(() => ${prop.type.entity}, {nullable: true${fkOptions}})`
                             )
                             out.line(`@JoinColumn_()`)
                         } else {
                             imports.useTypeormStore('ManyToOne', 'Index')
                             if (!entity.indexes?.some(index => index.fields[0]?.name == key && index.fields.length > 1)) {
-                                out.line(`@Index_()`)
+                                out.line(`@Index_("${nameIndex([key], false)}")`)
                             }
                             // Make foreign entity references always nullable
                             out.line(
-                                `@ManyToOne_(() => ${prop.type.entity}, {nullable: true})`
+                                `@ManyToOne_(() => ${prop.type.entity}, {nullable: true${fkOptions}})`
                             )
                         }
                         break
+                    }
                     case 'lookup':
                         imports.useTypeormStore('OneToOne')
                         out.line(
@@ -402,16 +487,27 @@ function getPropJsType(imports: ImportRegistry, owner: 'entity' | 'object', prop
             break
         case 'fk':
             if (owner === 'entity') {
-                type = prop.type.entity
+                imports.useTypeormStore('Relation')
+                type = `Relation_<${prop.type.entity}>`
             } else {
                 type = 'string'
             }
             break
         case 'lookup':
-            type = prop.type.entity
+            if (owner === 'entity') {
+                imports.useTypeormStore('Relation')
+                type = `Relation_<${prop.type.entity}>`
+            } else {
+                type = prop.type.entity
+            }
             break
         case 'list-lookup':
-            type = prop.type.entity + '[]'
+            if (owner === 'entity') {
+                imports.useTypeormStore('Relation')
+                type = `Relation_<${prop.type.entity}[]>`
+            } else {
+                type = prop.type.entity + '[]'
+            }
             break
         case 'list':
             type = getPropJsType(imports, 'object', prop.type.item)
@@ -464,6 +560,47 @@ function getEnumMaxLength(model: Model, enumName: string): number {
 }
 
 
+/**
+ * Resolve the database table name for every entity, pruning any name that would
+ * overflow PostgreSQL's identifier length limit. Emits a warning for each pruned
+ * name and throws if two entities end up mapped to the same table name — a
+ * collision Postgres could not have disambiguated either.
+ */
+export function resolveTableNames(model: Model): Map<string, string> {
+    const tableNames = new Map<string, string>()
+    const owners = new Map<string, {name: string; truncated: boolean}>()
+    for (const name in model) {
+        if (model[name].kind !== 'entity') continue
+        const fullName = toSnakeCase(name)
+        let tableName = fullName
+        const truncated = fullName.length > POSTGRES_MAX_IDENTIFIER_LENGTH
+        if (truncated) {
+            tableName = fullName.slice(0, POSTGRES_MAX_IDENTIFIER_LENGTH)
+            log.warn(
+                `Table name "${fullName}" (entity "${name}") exceeds the PostgreSQL identifier ` +
+                `length limit of ${POSTGRES_MAX_IDENTIFIER_LENGTH} bytes and will be truncated to ` +
+                `"${tableName}". Consider shortening the entity name.`
+            )
+        }
+        const owner = owners.get(tableName)
+        if (owner != null) {
+            // The clash is truncation-related if *either* entity was truncated —
+            // e.g. a long name pruned onto an existing natural 63-char name.
+            const viaTruncation = truncated || owner.truncated
+            throw new Error(
+                `Entities "${owner.name}" and "${name}" both map to table name "${tableName}"` +
+                (viaTruncation ? ` after truncation to ${POSTGRES_MAX_IDENTIFIER_LENGTH} bytes` : '') +
+                `. Table names must be unique within the PostgreSQL identifier length limit — ` +
+                `rename one of the entities.`
+            )
+        }
+        owners.set(tableName, {name, truncated})
+        tableNames.set(name, tableName)
+    }
+    return tableNames
+}
+
+
 function collectVariants(model: Model): Set<string> {
     const variants = new Set<string>()
     for (const name in model) {
@@ -476,14 +613,21 @@ function collectVariants(model: Model): Set<string> {
 }
 
 
-function addIndexAnnotation(entity: Entity, field: string, imports: ImportRegistry, out: Output): void {
+function addIndexAnnotation(
+    entity: Entity,
+    field: string,
+    imports: ImportRegistry,
+    out: Output,
+    nameIndex: (fields: string[], unique: boolean) => string
+): void {
     let index = getFieldIndex(entity, field)
     if (index == null) return
     imports.useTypeormStore('Index')
+    const indexName = nameIndex([field], !!index.unique)
     if (index.unique) {
-        out.line(`@Index_({unique: true})`)
+        out.line(`@Index_("${indexName}", {unique: true})`)
     } else {
-        out.line(`@Index_()`)
+        out.line(`@Index_("${indexName}")`)
     }
 }
 

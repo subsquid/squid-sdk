@@ -2,10 +2,10 @@ import type {Base58Bytes} from '@subsquid/solana-rpc-data'
 
 
 export interface BlockHeader {
+    number: number
     hash: Base58Bytes
     height: number
-    slot: number
-    parentSlot: number
+    parentNumber: number
     parentHash: Base58Bytes
     timestamp: number
 }
@@ -20,6 +20,7 @@ export interface Transaction {
     // transaction message
     accountKeys: Base58Bytes[]
     addressTableLookups: AddressTableLookup[]
+    transactionConfig?: TransactionConfig
     numReadonlySignedAccounts: number
     numReadonlyUnsignedAccounts: number
     numRequiredSignatures: number
@@ -28,12 +29,21 @@ export interface Transaction {
     // meta fields
     err: null | object
     computeUnitsConsumed: bigint
+    costUnits: bigint
     fee: bigint
     loadedAddresses: {
         readonly: Base58Bytes[]
         writable: Base58Bytes[]
     }
     hasDroppedLogMessages: boolean
+}
+
+
+export interface TransactionConfig {
+    computeUnitLimit: number | null
+    heapSize: number | null
+    loadedAccountsDataSizeLimit: number | null
+    priorityFee: bigint | null
 }
 
 

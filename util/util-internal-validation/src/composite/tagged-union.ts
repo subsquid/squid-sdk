@@ -30,8 +30,10 @@ export class TaggedUnion<F extends string, U extends Record<string, Validator<an
         if (variant instanceof ValidationFailure) return variant
         let result = variant.cast(value)
         if (result instanceof ValidationFailure) return result
-        result[this.tagField] = value[this.tagField]
-        return result
+        return {
+            [this.tagField]: value[this.tagField],
+            ...result
+        }
     }
 
     validate(value: unknown): ValidationFailure | undefined {

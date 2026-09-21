@@ -20,7 +20,8 @@ import {
 } from '@subsquid/util-internal-range'
 import {assertNotNull, last, Throttler, wait} from '@subsquid/util-internal'
 import assert from 'assert'
-import {BlockData, TransactionInfo} from './data'
+import {BlockData} from './data'
+import {fetchBlock, fetchTransactionsInfo, getParentHash} from './fetch'
 import {HttpApi} from './http'
 
 
@@ -139,13 +140,9 @@ export class HttpDataSource {
     }
 
     private async getBlock(num: number, detail: boolean): Promise<BlockData> {
-        let block = await this.httpApi.getBlock(num, detail)
+        let block = await fetchBlock(this.httpApi, num, detail)
         if (block == null) throw new BlockConsistencyError({height: num})
-        return {
-            block,
-            height: block.block_header.raw_data.number || 0,
-            hash: block.blockID
-        }
+        return block
     }
 
     private async getBlocks(numbers: number[], detail: boolean): Promise<BlockData[]> {
@@ -154,27 +151,11 @@ export class HttpDataSource {
     }
 
     private async addTransactionsInfo(blocks: BlockData[]) {
-        let promises = []
-        for (let block of blocks) {
-            // info isn't presented for genesis block
-            if (block.height == 0) continue
-
-            let promise = this.httpApi.getTransactionInfo(block.height)
-                .then(transactionsInfo => {
-                    let infoById: Record<string, TransactionInfo> = {}
-                    for (let info of transactionsInfo) {
-                        infoById[info.id] = info
-                    }
-                    for (let tx of block.block.transactions || []) {
-                        if (infoById[tx.txID] == null) {
-                            throw new BlockConsistencyError(block)
-                        }
-                    }
-                    block.transactionsInfo = transactionsInfo
-                })
-            promises.push(promise)
-        }
-        await Promise.all(promises)
+        await Promise.all(blocks.map(async block => {
+            if (!await fetchTransactionsInfo(this.httpApi, block)) {
+                throw new BlockConsistencyError(block)
+            }
+        }))
     }
 
     private async getSplit(req: SplitRequest<DataRequest>): Promise<BlockData[]> {
@@ -183,7 +164,7 @@ export class HttpDataSource {
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i];
             let prevBlock = blocks[i - 1]
-            if (i > 0 && prevBlock.block.blockID !== block.block.block_header.raw_data.parentHash) {
+            if (i > 0 && getParentHash(block) !== prevBlock.hash) {
                 throw new BlockConsistencyError(block)
             }
         }

@@ -1,9 +1,9 @@
 {
   "name": "@subsquid/util-internal-fs",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Unifying wrapper around local fs and S3",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -16,11 +16,11 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.462.0",
+    "@aws-sdk/client-s3": "^3.1136.0",
     "upath": "^2.0.1"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@types/node": "^24.13.6",
+    "typescript": "5.5.4"
   }
 }

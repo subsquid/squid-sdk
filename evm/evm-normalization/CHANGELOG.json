@@ -1,0 +1,115 @@
+{
+  "name": "@subsquid/evm-normalization",
+  "entries": [
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/evm-normalization_v0.1.0",
+      "date": "Mon, 14 Sep 2026 10:05:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "expose Avalanche block header fields (blockExtraData, extDataHash, minDelayExcess, timestampMilliseconds, targetExponent, minPriceExponent, settled*) on the normalized block header"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.1.0` to `0.2.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.6",
+      "tag": "@subsquid/evm-normalization_v0.0.6",
+      "date": "Thu, 30 Jul 2026 15:44:58 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "include transaction and trace-address context in debug call-frame mapping errors"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.5` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.5",
+      "tag": "@subsquid/evm-normalization_v0.0.5",
+      "date": "Wed, 15 Jul 2026 22:15:56 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.4` to `0.0.5`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.4",
+      "tag": "@subsquid/evm-normalization_v0.0.4",
+      "date": "Wed, 15 Jul 2026 01:21:06 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.3` to `0.0.4`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.3",
+      "tag": "@subsquid/evm-normalization_v0.0.3",
+      "date": "Tue, 14 Jul 2026 13:09:33 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Release to npm via GitHub Actions trusted publishing (OIDC)"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.2` to `0.0.3`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.2",
+      "tag": "@subsquid/evm-normalization_v0.0.2",
+      "date": "Mon, 01 Jun 2026 19:32:22 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.1` to `0.0.2`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/evm-normalization_v0.0.1",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "init EVM normalization pipeline"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.0.0` to `0.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.8.0` to `0.9.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

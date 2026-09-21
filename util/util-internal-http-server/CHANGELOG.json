@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-http-server",
   "entries": [
     {
+      "version": "2.0.1",
+      "tag": "@subsquid/util-internal-http-server_v2.0.1",
+      "date": "Tue, 17 Mar 2026 11:47:18 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "fix duplicate charset value in prometheus content-type header"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/util-internal-http-server_v2.0.0",
       "date": "Sun, 17 Mar 2024 23:20:20 GMT",

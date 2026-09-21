@@ -1,9 +1,9 @@
 {
   "name": "@subsquid/evm-codec",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "EVM encoder/decoder tools",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -17,13 +17,11 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@subsquid/util-internal-hex": "^1.2.2"
+    "@subsquid/util-internal-hex": "^1.2.3"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
-    "ethers": "^6.9.0",
-    "typescript": "~5.5.4",
-    "viem": "^2.8.14",
-    "vitest": "^1.4.0"
+    "@types/node": "^24.13.6",
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }

@@ -21,6 +21,12 @@ export function toJSON(val: unknown): any {
                 } else {
                     json.stack = val.toString()
                 }
+                // `cause` is non-enumerable on V8, so the property walk below
+                // misses it — a wrapped error would reach the log without its
+                // root cause (e.g. the ECONNREFUSED inside a batch failure).
+                if ((val as any).cause != null) {
+                    json.cause = toJSON((val as any).cause)
+                }
                 json = toJsonObject(val, json)
                 return json
             } else if (val instanceof Map) {

@@ -1,0 +1,92 @@
+# Change Log - @subsquid/portal-client
+
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 0.8.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- accept the transactionConfig field of Solana v1 transactions in portal query results
+
+## 0.7.0
+Thu, 27 Aug 2026 13:59:40 GMT
+
+### Minor changes
+
+- a configured `retryAttempts` (including `Infinity`) is no longer overridden by the client's own default, and that default goes from 6 retries to 20, so portal requests now keep retrying for about five minutes (was about 33 seconds) before failing
+
+## 0.6.0
+Wed, 08 Jul 2026 22:11:26 GMT
+
+### Minor changes
+
+- `getHead` / `getFinalizedHead` now retry a transient JSON-`null` head with a short, finite backoff (configurable via `headRetrySchedule`), preventing spurious "portal has no finalized head" failures while a dataset's head is being (re)established after a portal store cold-start.
+
+## 0.5.2
+Mon, 01 Jun 2026 19:32:22 GMT
+
+### Patches
+
+- Portal client now makes six retry attempts by default
+
+## 0.5.1
+Mon, 11 May 2026 05:34:26 GMT
+
+_Version update only_
+
+## 0.5.0
+Sun, 05 Apr 2026 22:03:07 GMT
+
+### Minor changes
+
+- ignore finalized head regression on portal stream
+
+## 0.4.0
+Fri, 12 Dec 2025 12:00:23 GMT
+
+### Minor changes
+
+- refactor query schemas and types
+- refactor data ingestion process and stream buffer
+
+## 0.3.2
+Tue, 14 Oct 2025 06:41:02 GMT
+
+### Patches
+
+- validate PrePostTokenBalance shape first to avoid fields truncation
+
+## 0.3.1
+Fri, 10 Oct 2025 11:50:29 GMT
+
+### Patches
+
+- fix memory leak due to infinite promise chaining
+
+## 0.3.0
+Mon, 22 Sep 2025 13:20:40 GMT
+
+### Minor changes
+
+- use `previousBlocks` field instead of `lastBlocks` in fork exception
+
+## 0.2.0
+Fri, 19 Sep 2025 18:02:14 GMT
+
+### Minor changes
+
+- add `discriminator` field to solana query
+
+## 0.1.0
+Thu, 14 Aug 2025 15:16:33 GMT
+
+### Minor changes
+
+- implement validation and casting, improve types
+
+## 0.0.0
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Initial release_
+

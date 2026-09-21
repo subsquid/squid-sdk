@@ -1,3 +1,4 @@
+export type {Relation} from 'typeorm'
 export * from './Entity'
 export * from './Index_'
 export * from './columns'

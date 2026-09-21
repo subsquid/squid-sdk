@@ -4,7 +4,7 @@ import assert from "assert"
 import {DbType} from "../db"
 import {Entity, JsonObject, Model, ObjectPropType, Prop, UnionPropType} from "../model"
 import {getEntity, getFtsQuery, getObject, getUnionProps} from "../model.tools"
-import {toColumn, toFkColumn, toTable} from "../util/util"
+import {getFkPropByIdField, toColumn, toFkColumn, toTable} from "../util/util"
 import {AliasSet, escapeIdentifier, JoinSet} from "./util"
 
 
@@ -62,7 +62,13 @@ export class EntityCursor implements Cursor {
     }
 
     prop(field: string): Prop {
-        return assertNotNull(this.entity.properties[field], `property ${field} is missing`)
+        let p = this.entity.properties[field]
+        if (p) return p
+        let fkProp = getFkPropByIdField(field, this.entity.properties)
+        if (fkProp) {
+            return {type: {kind: 'scalar', name: 'String'}, nullable: fkProp.nullable}
+        }
+        return assertNotNull(p, `property ${field} is missing`)
     }
 
     output(field: string): string {

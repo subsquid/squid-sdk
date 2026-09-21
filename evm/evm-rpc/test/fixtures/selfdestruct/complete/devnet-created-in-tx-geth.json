@@ -1,0 +1,37 @@
+{
+  "network": "devnet",
+  "scenario": "created-in-tx",
+  "client": "Geth/v1.17.5-stable-9621c6ad/linux-arm64/go1.26.5",
+  "transactionHash": "0xd9253b240bee84e26e5476c187c6530e056e649d9b75fdba96ac36f475716aec",
+  "trace": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x493e0",
+    "gasUsed": "0x90a1",
+    "to": "0xa513e6e4b8f2a923d98304ec87f64353c4d5c853",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0xa513e6e4b8f2a923d98304ec87f64353c4d5c853",
+        "gas": "0x4066e",
+        "gasUsed": "0x138a",
+        "to": "0x9bd03768a7dcc129555de410ff8e85528a4f88b5",
+        "input": "0x30ff",
+        "calls": [
+          {
+            "from": "0x9bd03768a7dcc129555de410ff8e85528a4f88b5",
+            "gas": "0x0",
+            "gasUsed": "0x0",
+            "to": "0x9bd03768a7dcc129555de410ff8e85528a4f88b5",
+            "input": "0x",
+            "value": "0x0",
+            "type": "SELFDESTRUCT"
+          }
+        ],
+        "value": "0x0",
+        "type": "CREATE"
+      }
+    ],
+    "value": "0xde0b6b3a7640000",
+    "type": "CALL"
+  }
+}

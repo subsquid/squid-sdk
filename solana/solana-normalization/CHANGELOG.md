@@ -1,6 +1,86 @@
 # Change Log - @subsquid/solana-normalization
 
-This log was last generated on Sun, 16 Mar 2025 07:51:27 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 1.1.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- expose the transactionConfig field (v1 message compute budget: computeUnitLimit, heapSize, loadedAccountsDataSizeLimit, priorityFee) on the normalized transaction
+
+## 1.0.0
+Mon, 11 May 2026 05:34:26 GMT
+
+### Breaking changes
+
+- rename `slot` to `number`
+- simplify instruction parsing procedure
+
+### Minor changes
+
+- allow to forgive log <-> instruction matching errors
+
+## 0.1.4
+Wed, 21 Jan 2026 13:21:57 GMT
+
+### Patches
+
+- extend set of tx types that could fail before invoke message
+
+## 0.1.3
+Tue, 21 Oct 2025 12:23:37 GMT
+
+### Patches
+
+- extend set of programs missing invoke log
+
+## 0.1.2
+Mon, 29 Sep 2025 07:23:51 GMT
+
+### Patches
+
+- extend set of programs missing invoke log
+
+## 0.1.1
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
+
+## 0.1.0
+Fri, 04 Jul 2025 17:08:54 GMT
+
+### Minor changes
+
+- rework block normalization process
+
+## 0.0.9
+Fri, 04 Jul 2025 16:25:30 GMT
+
+### Patches
+
+- Another whitelisted program ID added
+
+## 0.0.8
+Fri, 04 Jul 2025 13:20:21 GMT
+
+### Patches
+
+- adding an extra program ID to the whitelist for the invoke message check
+
+## 0.0.7
+Fri, 04 Jul 2025 09:59:08 GMT
+
+### Patches
+
+- extend PROGRAMS_MISSING_INVOKE_LOG with one more system program
+
+## 0.0.6
+Mon, 09 Jun 2025 12:15:37 GMT
+
+### Patches
+
+- extend PROGRAMS_MISSING_INVOKE_LOG set
 
 ## 0.0.5
 Sun, 16 Mar 2025 07:51:27 GMT

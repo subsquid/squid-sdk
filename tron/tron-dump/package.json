@@ -1,9 +1,9 @@
 {
   "name": "@subsquid/tron-dump",
-  "version": "0.0.4",
+  "version": "0.1.2",
   "description": "Raw data archiving tool for tron based chains",
   "license": "GPL-3.0-or-later",
-  "repository": "git@github.com:subsquid/squid.git",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
   "publishConfig": {
     "access": "public"
   },
@@ -18,12 +18,12 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/tron-data": "^0.0.3",
-    "@subsquid/util-internal": "^3.2.0",
-    "@subsquid/util-internal-dump-cli": "^1.0.0"
+    "@subsquid/tron-data": "^0.0.5",
+    "@subsquid/util-internal": "^3.3.1",
+    "@subsquid/util-internal-dump-cli": "^2.1.0"
   },
   "devDependencies": {
-    "@types/node": "^18.18.14",
-    "typescript": "~5.5.4"
+    "@types/node": "^24.13.6",
+    "typescript": "5.5.4"
   }
 }

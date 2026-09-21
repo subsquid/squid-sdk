@@ -16,7 +16,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.149.0",
+  "rushVersion": "5.170.1",
 
   /**
    * The next field selects which package manager should be installed and determines its version.
@@ -26,7 +26,7 @@
    * Specify one of: "pnpmVersion", "npmVersion", or "yarnVersion".  See the Rush documentation
    * for details about these alternatives.
    */
-  "pnpmVersion": "8.8.0",
+  "pnpmVersion": "9.15.4",
 
   // "npmVersion": "6.14.15",
   // "yarnVersion": "1.9.4",
@@ -51,7 +51,6 @@
      * The default value is "local".
      */
     // "pnpmStore": "local",
-
     /**
      * If true, then Rush will add the "--strict-peer-dependencies" option when invoking PNPM.
      * This causes "rush install" to fail if there are unsatisfied peer dependencies, which is
@@ -62,8 +61,7 @@
      * The default value is false to avoid legacy compatibility issues.
      * It is strongly recommended to set strictPeerDependencies=true.
      */
-    // "strictPeerDependencies": true,
-
+    "strictPeerDependencies": true,
     /**
      * Configures the strategy used to select versions during installation.
      *
@@ -77,7 +75,6 @@
      * will recalculate all version selections.
      */
     // "resolutionStrategy": "fast",
-
     /**
      * If true, then `rush install` will report an error if manual modifications
      * were made to the PNPM shrinkwrap file without running "rush update" afterwards.
@@ -94,8 +91,7 @@
      *
      * The default value is false.
      */
-    // "preventManualShrinkwrapChanges": true,
-
+    "preventManualShrinkwrapChanges": true,
     /**
      * If true, then `rush install` will use the PNPM workspaces feature to perform the
      * install.
@@ -124,7 +120,7 @@
    * LTS schedule: https://nodejs.org/en/about/releases/
    * LTS versions: https://nodejs.org/en/download/releases/
    */
-  "nodeSupportedVersionRange": ">=18.13.1 <23.11.0",
+  "nodeSupportedVersionRange": ">=18.13.1",
 
   /**
    * Odd-numbered major versions of Node.js are experimental.  Even-numbered releases
@@ -150,7 +146,7 @@
    * version. In those cases, you will need to add an entry to the "allowedAlternativeVersions"
    * section of the common-versions.json.
    */
-  // "ensureConsistentVersions": true,
+  "ensureConsistentVersions": true,
 
   /**
    * Large monorepos can become intimidating for newcomers if project folder paths don't follow
@@ -247,14 +243,12 @@
     //   "[^@]+@users\\.noreply\\.github\\.com",
     //   "travis@example\\.org"
     // ],
-
     /**
      * When Rush reports that the address is malformed, the notice can include an example
      * of a recommended email.  Make sure it conforms to one of the allowedEmailRegExps
      * expressions.
      */
     // "sampleEmail": "mrexample@users.noreply.github.com",
-
     /**
      * The commit message to use when committing changes during 'rush publish'.
      *
@@ -263,7 +257,6 @@
      * in the commit message, and then customize Rush's message to contain that string.
      */
     // "versionBumpCommitMessage": "Bump versions [skip ci]",
-
     /**
      * The commit message to use when committing changes during 'rush version'.
      *
@@ -290,7 +283,7 @@
      * your PR branch, and in this situation "rush change" will also automatically invoke "git fetch"
      * to retrieve the latest activity for the remote master branch.
      */
-     "url": "https://github.com/subsquid/squid"
+    "url": "https://github.com/subsquid/squid-sdk"
 
     /**
      * The default branch name. This tells "rush change" which remote branch to compare against.
@@ -323,7 +316,15 @@
       // This is needed to remove node_gyp_bins which contains symlinks outside the root
       // @see https://github.com/nodejs/node-gyp/issues/2713
       // @see https://github.com/nodejs/node-gyp/pull/2721
-      "find ./common -name node_gyp_bins -type d -exec rm -r '{}' \\;"
+      "find ./common -name node_gyp_bins -type d -exec rm -r '{}' \\;",
+      // Install the Biome autoinstaller used by `rush lint` / `rush format` / `rush biome`.
+      // The `install-lint` command is flagged `safeForSimultaneousRushProcesses: true`
+      // so it can run from inside this hook while `rush install` still holds its lock.
+      "node common/scripts/install-run-rush.js install-lint",
+      // Install the Vitest autoinstaller and link it into the root node_modules so that
+      // the shared `vitest.config.ts` at the repo root can resolve `vitest/config`.
+      // `install-vitest` is also flagged `safeForSimultaneousRushProcesses: true`.
+      "node common/scripts/install-run-rush.js install-vitest"
     ],
 
     /**
@@ -420,8 +421,80 @@
     //   // "versionPolicyName": ""
     // },
     {
+      "packageName": "@subsquid/bitcoin-dump",
+      "projectFolder": "bitcoin/bitcoin-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-ingest",
+      "projectFolder": "bitcoin/bitcoin-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-rpc",
+      "projectFolder": "bitcoin/bitcoin-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-normalization",
+      "projectFolder": "bitcoin/bitcoin-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/bitcoin-data-service",
+      "projectFolder": "bitcoin/bitcoin-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/evm-dump",
+      "projectFolder": "evm/evm-dump",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/evm-ingest",
+      "projectFolder": "evm/evm-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "projectFolder": "evm/evm-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-normalization",
+      "projectFolder": "evm/evm-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/evm-processor",
       "projectFolder": "evm/evm-processor",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-stream",
+      "projectFolder": "evm/evm-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "projectFolder": "meta/squid-sdk",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-objects",
+      "projectFolder": "evm/evm-objects",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -442,6 +515,12 @@
       "projectFolder": "evm/evm-typegen",
       "shouldPublish": true,
       "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/evm-data-service",
+      "projectFolder": "evm/evm-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/graphql-server",
@@ -490,16 +569,22 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/solana-data-service",
+      "projectFolder": "solana/solana-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
       "packageName": "@subsquid/solana-dump",
       "projectFolder": "solana/solana-dump",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/solana-ingest",
       "projectFolder": "solana/solana-ingest",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/solana-normalization",
@@ -517,11 +602,17 @@
       "packageName": "@subsquid/solana-rpc",
       "projectFolder": "solana/solana-rpc",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/solana-rpc-data",
       "projectFolder": "solana/solana-rpc-data",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/solana-spray",
+      "projectFolder": "solana/solana-spray",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
@@ -583,13 +674,13 @@
       "packageName": "@subsquid/substrate-dump",
       "projectFolder": "substrate/substrate-dump",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/substrate-ingest",
       "projectFolder": "substrate/substrate-ingest",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/substrate-runtime",
@@ -628,16 +719,22 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/tron-data-service",
+      "projectFolder": "tron/tron-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
       "packageName": "@subsquid/tron-dump",
       "projectFolder": "tron/tron-dump",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/tron-ingest",
       "projectFolder": "tron/tron-ingest",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/tron-normalization",
@@ -673,13 +770,13 @@
       "packageName": "@subsquid/fuel-dump",
       "projectFolder": "fuel/fuel-dump",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/fuel-ingest",
       "projectFolder": "fuel/fuel-ingest",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/fuel-stream",
@@ -698,6 +795,54 @@
       "projectFolder": "hyperliquid/hyperliquid-ingest-fills",
       "shouldPublish": true,
       "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-data",
+      "projectFolder": "hyperliquid/hyperliquid-fills-data",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-data-service",
+      "projectFolder": "hyperliquid/hyperliquid-fills-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-ingest",
+      "projectFolder": "hyperliquid/hyperliquid-fills-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-fills-normalization",
+      "projectFolder": "hyperliquid/hyperliquid-fills-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-data",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-data",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-data-service",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-ingest",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-normalization",
+      "projectFolder": "hyperliquid/hyperliquid-replica-cmds-normalization",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/typeorm-codegen",
@@ -742,15 +887,16 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "@subsquid/logger",
-      "projectFolder": "util/logger",
+      "packageName": "@subsquid/portal-client",
+      "projectFolder": "util/portal-client",
       "shouldPublish": true,
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "raw-archive-validator",
-      "projectFolder": "util/raw-archive-validator",
-      "shouldPublish": false
+      "packageName": "@subsquid/logger",
+      "projectFolder": "util/logger",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
     },
     {
       "packageName": "@subsquid/rpc-client",
@@ -774,7 +920,13 @@
       "packageName": "@subsquid/util-internal-archive-layout",
       "projectFolder": "util/util-internal-archive-layout",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/raw-archive-recompress",
+      "projectFolder": "util/raw-archive-recompress",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/util-internal-binary-heap",
@@ -807,10 +959,22 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-data-service",
+      "projectFolder": "util/util-internal-data-service",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
+      "packageName": "@subsquid/util-internal-data-source",
+      "projectFolder": "util/util-internal-data-source",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/util-internal-dump-cli",
       "projectFolder": "util/util-internal-dump-cli",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/util-internal-fs",
@@ -834,13 +998,18 @@
       "packageName": "@subsquid/util-internal-ingest-cli",
       "projectFolder": "util/util-internal-ingest-cli",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/util-internal-ingest-tools",
       "projectFolder": "util/util-internal-ingest-tools",
       "shouldPublish": true,
       "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/util-internal-testing",
+      "projectFolder": "util/util-internal-testing",
+      "shouldPublish": false
     },
     {
       "packageName": "@subsquid/util-internal-ts-node",
@@ -897,6 +1066,12 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/util-internal-worker-thread",
+      "projectFolder": "util/util-internal-worker-thread",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
       "packageName": "@subsquid/util-naming",
       "projectFolder": "util/util-naming",
       "shouldPublish": true,
@@ -935,6 +1110,11 @@
       "shouldPublish": false
     },
     {
+      "packageName": "evm-codec-bench",
+      "projectFolder": "test/evm-codec-bench",
+      "shouldPublish": false
+    },
+    {
       "packageName": "gql-test-client",
       "projectFolder": "test/gql-client",
       "shouldPublish": false
@@ -959,11 +1139,11 @@
       "projectFolder": "test/solana-example",
       "shouldPublish": false
     },
-    {
-      "packageName": "fuel-indexer",
-      "projectFolder": "test/fuel-indexer",
-      "shouldPublish": false
-    },
+//    {
+//      "packageName": "fuel-indexer",
+//      "projectFolder": "test/fuel-indexer",
+//      "shouldPublish": false
+//    },
 //    {
 //      "packageName": "karura-erc20",
 //      "projectFolder": "test/karura-erc20",
@@ -1014,9 +1194,15 @@
       "versionPolicyName": "npm"
     },
     {
-      "packageName": "starknet-indexer",
-      "projectFolder": "test/starknet-indexer",
-      "shouldPublish": false
+      "packageName": "@subsquid/starknet-rpc",
+      "projectFolder": "starknet/starknet-rpc",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
     }
+//    {
+//      "packageName": "starknet-indexer",
+//      "projectFolder": "test/starknet-indexer",
+//      "shouldPublish": false
+//    }
   ]
 }

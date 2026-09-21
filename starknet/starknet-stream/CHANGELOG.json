@@ -2,6 +2,115 @@
   "name": "@subsquid/starknet-stream",
   "entries": [
     {
+      "version": "1.2.0",
+      "tag": "@subsquid/starknet-stream_v1.2.0",
+      "date": "Thu, 14 May 2026 13:44:27 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Drop DEFAULT_FIELDS; .setFields() is now the sole source of selected fields"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.1",
+      "tag": "@subsquid/starknet-stream_v1.1.1",
+      "date": "Mon, 11 May 2026 05:34:26 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.8.0` to `1.8.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.14.0` to `4.15.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/logger\" from `^1.5.0` to `1.6.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-normalization\" from `^0.1.0` to `0.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-data\" from `^0.1.1` to `0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-rpc\" from `^0.0.1` to `0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal\" from `^3.2.0` to `3.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.8.0` to `0.9.0`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.0",
+      "tag": "@subsquid/starknet-stream_v1.1.0",
+      "date": "Tue, 05 May 2026 07:41:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "allow GatewaySettings to provide an API key"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-client\" from `^0.1.2` to `0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-tools\" from `^1.1.4` to `1.1.5`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.0",
+      "tag": "@subsquid/starknet-stream_v1.0.0",
+      "date": "Thu, 21 Aug 2025 10:51:03 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "Add RPC interface support, update transaction fields"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-normalization\" from `^0.0.2` to `0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-data\" from `^0.0.2` to `0.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-rpc\" from `^0.0.0` to `0.0.1`"
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.0.2",
+      "tag": "@subsquid/starknet-stream_v0.0.2",
+      "date": "Sat, 09 Aug 2025 06:10:24 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.6.0` to `1.6.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-normalization\" from `^0.0.1` to `0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/starknet-data\" from `^0.0.1` to `0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-validation\" from `^0.7.0` to `0.8.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/starknet-stream_v0.0.1",
       "date": "Tue, 03 Dec 2024 11:47:42 GMT",

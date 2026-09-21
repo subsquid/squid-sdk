@@ -2,6 +2,23 @@
   "name": "@subsquid/fuel-ingest",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/fuel-ingest_v0.1.0",
+      "date": "Mon, 09 Jun 2025 12:15:37 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add block height and timestamp extraction methods for Fuel ingestion with TAI64 timestamp support"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-ingest-cli\" from `^0.1.1` to `0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.4",
       "tag": "@subsquid/fuel-ingest_v0.0.4",
       "date": "Thu, 25 Jul 2024 11:48:18 GMT",

@@ -1,5 +1,6 @@
 import {GraphQLSchema} from 'graphql'
 import {buildSchema, ContainerType, ResolverData} from 'type-graphql'
+import {validateSync} from 'class-validator'
 import type {EntityManager} from 'typeorm'
 import {BigDecimalScalar, BigInteger, Bytes, DateTime} from './scalars'
 import {TypeormOpenreaderContext} from './typeorm'
@@ -23,9 +24,14 @@ export async function loadCustomResolvers(mod: string): Promise<GraphQLSchema> {
         resolvers: [mod],
         scalarsMap,
         container: resolverData => new CustomResolversContainer(resolverData),
-        validate: {
-            forbidUnknownValues: false
-        }
+        validate: ((argValue) => {
+            const errors = validateSync(argValue!, {
+                forbidUnknownValues: false
+            });
+            if (errors.length) {
+                throw errors[0];
+            }
+        })
     })
 }
 

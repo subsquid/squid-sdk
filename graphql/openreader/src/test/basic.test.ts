@@ -314,6 +314,7 @@ describe('basic tests', function() {
                     fields: [
                         {description: 'Unique identifier'},
                         {description: 'Related account'},
+                        {description: 'Related account'},
                         {description: 'Balance'},
                     ]
                 }

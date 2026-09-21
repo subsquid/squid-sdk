@@ -4,20 +4,27 @@
  */
 export type Database<S> = FinalDatabase<S> | HotDatabase<S>
 
-
 export interface FinalTxInfo {
     prevHead: HashAndHeight
     nextHead: HashAndHeight
     isOnTop: boolean
 }
 
-
 export interface FinalDatabase<S> {
     supportsHotBlocks?: false
-    connect(): Promise<HashAndHeight>
-    transact(info: FinalTxInfo, cb: (store: S) => Promise<void>): Promise<void>
+    connect(): Promise<FinalDatabaseState>
+    transact(info: FinalTxInfo, cb: (store: S) => Promise<DatabaseTransactResult | void>): Promise<void>
 }
 
+export interface DatabaseTransactResult {
+    templates?: TemplateMutation[]
+}
+
+export interface FinalDatabaseState {
+    height: number
+    hash: string
+    templates?: TemplateMutation[]
+}
 
 export interface HotTxInfo {
     finalizedHead: HashAndHeight
@@ -25,29 +32,38 @@ export interface HotTxInfo {
     newBlocks: HashAndHeight[]
 }
 
-
 export interface HotDatabase<S> {
     supportsHotBlocks: true
     connect(): Promise<HotDatabaseState>
-    transact(info: FinalTxInfo, cb: (store: S) => Promise<void>): Promise<void>
-    /**
-     * @deprecated
-     */
-    transactHot(info: HotTxInfo, cb: (store: S, block: HashAndHeight) => Promise<void>): Promise<void>
+    transact(info: FinalTxInfo, cb: (store: S) => Promise<DatabaseTransactResult | void>): Promise<void>
 
-    transactHot2?(
+    transactHot2(
         info: HotTxInfo,
-        cb: (store: S, blockSliceStart: number, blockSliceEnd: number) => Promise<void>
+        cb: (store: S, blockSliceStart: number, blockSliceEnd: number) => Promise<DatabaseTransactResult | void>,
     ): Promise<void>
 }
 
-
-export interface HotDatabaseState extends HashAndHeight {
-    top: HashAndHeight[]
+export interface HotBlock extends HashAndHeight {
+    templates?: TemplateMutation[]
 }
 
+export interface HotDatabaseState extends HashAndHeight {
+    top: HotBlock[]
+    templates?: TemplateMutation[]
+}
+
+export interface FinalDatabaseState extends HashAndHeight {
+    templates?: TemplateMutation[]
+}
+
+export interface TemplateMutation {
+    type: 'add' | 'delete'
+    key: string
+    value: string
+    blockNumber: number
+}
 
 export interface HashAndHeight {
-    height: number
     hash: string
+    height: number
 }

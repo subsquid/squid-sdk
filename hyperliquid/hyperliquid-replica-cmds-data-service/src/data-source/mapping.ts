@@ -1,0 +1,66 @@
+import {Block as RawBlock} from '@subsquid/hyperliquid-replica-cmds-data'
+import {mapRawBlock} from '@subsquid/hyperliquid-replica-cmds-normalization'
+import {withErrorContext} from '@subsquid/util-internal'
+import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
+import {toJSON} from '@subsquid/util-internal-json'
+import {promisify} from 'node:util'
+import * as zlib from 'node:zlib'
+
+
+const zstdCompress = promisify(zlib.zstdCompress)
+
+
+export class Mapping implements DataSource<Block> {
+    constructor(private inner: DataSource<RawBlock>) {}
+
+    getHead(): Promise<BlockRef> {
+        return this.inner.getHead()
+    }
+
+    getFinalizedHead(): Promise<BlockRef> {
+        return this.inner.getFinalizedHead()
+    }
+
+    getFinalizedStream(req: StreamRequest): BlockStream<Block> {
+        return this.mapRpcStream(this.inner.getFinalizedStream(req))
+    }
+
+    getStream(req: StreamRequest): BlockStream<Block> {
+        return this.mapRpcStream(this.inner.getStream(req))
+    }
+
+    private async *mapRpcStream(stream: BlockStream<RawBlock>): BlockStream<Block> {
+        for await (let batch of stream) {
+            let {blocks, ...props} = batch
+            yield {
+                blocks: await this.mapRpcBatch(blocks),
+                ...props
+            }
+        }
+    }
+
+    private mapRpcBatch(blocks: RawBlock[]): Promise<Block[]> {
+        return Promise.all(blocks.map(block => {
+            return this.mapRpcBlock(block).catch(withErrorContext({
+                blockNumber: block.height,
+            }))
+        }))
+    }
+
+    private async mapRpcBlock(block: RawBlock): Promise<Block> {
+        let normalized = mapRawBlock(block)
+        let jsonLine = JSON.stringify(toJSON(normalized)) + '\n'
+        let jsonLineZstd = await zstdCompress(Buffer.from(jsonLine), {
+            params: {[zlib.constants.ZSTD_c_compressionLevel]: 1}
+        })
+
+        return {
+            number: block.height,
+            hash: normalized.header.hash,
+            parentNumber: block.height - 1,
+            parentHash: normalized.header.parentHash,
+            timestamp: Date.parse(block.block.abci_block.time),
+            jsonLineZstd
+        }
+    }
+}

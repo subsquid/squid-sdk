@@ -29,4 +29,15 @@ export class FuelIngest extends Ingest<IngestOptions> {
             })
         }
     }
+
+    protected getBlockHeight(block: any): number {
+        return Number(block.header.height) || 0
+    }
+
+    protected getBlockTimestamp(block: any): number {
+        const TAI64_UNIX_OFFSET = BigInt("4611686018427387914");
+        const taiTimestamp = BigInt(block.header.time);
+        const unixTimeMs = taiTimestamp - TAI64_UNIX_OFFSET;
+        return Number(unixTimeMs);
+    }
 }

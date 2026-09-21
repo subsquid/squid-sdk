@@ -23,3 +23,6 @@ common/autoinstallers/*/.npmrc
 
 # Built js libs
 /*/*/lib
+
+# local npm auth for manual publishing — never commit
+.npmrc

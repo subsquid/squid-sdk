@@ -1,5 +1,4 @@
 import {assertNotNull} from '@subsquid/util-internal'
-import expect from 'expect'
 import {Equal} from 'typeorm'
 import {Store} from '../store'
 import {Item, Order} from './lib/model'

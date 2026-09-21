@@ -1,6 +1,30 @@
 # Change Log - @subsquid/fuel-stream
 
-This log was last generated on Tue, 03 Dec 2024 11:47:42 GMT and should not be manually modified.
+This log was last generated on Thu, 14 May 2026 13:44:27 GMT and should not be manually modified.
+
+## 1.2.0
+Thu, 14 May 2026 13:44:27 GMT
+
+### Minor changes
+
+- Drop DEFAULT_FIELDS; .setFields() is now the sole source of selected fields
+
+## 1.1.1
+Mon, 11 May 2026 05:34:26 GMT
+
+_Version update only_
+
+## 1.1.0
+Tue, 05 May 2026 07:41:38 GMT
+
+### Minor changes
+
+- allow GatewaySettings to provide an API key
+
+## 1.0.4
+Sat, 09 Aug 2025 06:10:24 GMT
+
+_Version update only_
 
 ## 1.0.3
 Tue, 03 Dec 2024 11:47:42 GMT

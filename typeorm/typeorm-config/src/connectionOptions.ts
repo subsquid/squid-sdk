@@ -14,6 +14,7 @@ export type ConnectionOptions = UrlConnection | ParamConnection
 interface UrlConnection {
     url: string
     ssl?: SslOptions | false
+    extra?: ExtraOptions
 }
 
 
@@ -25,6 +26,16 @@ interface ParamConnection {
     username: string
     password: string
     ssl?: SslOptions | false
+    extra?: ExtraOptions
+}
+
+
+/**
+ * TypeORM passes `extra` straight through to the underlying pg pool. We use it
+ * to carry the `-c search_path=...` connection option that pins the data schema.
+ */
+interface ExtraOptions {
+    options: string
 }
 
 
@@ -200,11 +211,86 @@ export function createConnectionOptions(): ConnectionOptions {
         }
     }
 
+    let searchPathOptions = getDataSchemaSearchPath()
+    if (searchPathOptions) {
+        con.extra = {options: searchPathOptions}
+    }
+
     if (log.isDebug()) {
         log.debug(getDebugProps(con), 'gathered connection parameters')
     }
 
     return con
+}
+
+
+const SCHEMA_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/
+
+
+/**
+ * The validated name of the data schema, from the `DB_SCHEMA` env var, or
+ * `undefined` when it is not set. Callers that need to ensure the schema exists
+ * (e.g. the migration tool) use this to run `CREATE SCHEMA IF NOT EXISTS`.
+ */
+export function getDataSchema(): string | undefined {
+    let schema = process.env.DB_SCHEMA
+    if (!schema) return undefined
+
+    if (!SCHEMA_IDENTIFIER.test(schema)) {
+        throw new Error(
+            `Invalid DB_SCHEMA "${schema}": a schema name must match ${SCHEMA_IDENTIFIER}`
+        )
+    }
+
+    return schema
+}
+
+
+/**
+ * Computes the pg connection `options` string that pins the data schema via
+ * `search_path`, derived from `DB_SCHEMA` (and the optional
+ * `DB_SCHEMA_INCLUDE_PUBLIC`). Returns `undefined` when `DB_SCHEMA` is not set,
+ * in which case the connection keeps the server's default `search_path` (which
+ * usually includes `public`).
+ *
+ * The schema name is double-quoted so Postgres preserves its case exactly —
+ * matching how `@subsquid/typeorm-store` qualifies its `stateSchema` (via the
+ * driver's identifier escaping). This keeps the data schema and the state
+ * schema resolving identically, so `DB_SCHEMA` and `stateSchema` may be set to
+ * the same value.
+ *
+ * The schema defaults to being the sole entry in `search_path`. Set
+ * `DB_SCHEMA_INCLUDE_PUBLIC=true` to append `,public` — needed only when the
+ * squid references objects (e.g. extensions) that live in `public`.
+ */
+export function getDataSchemaSearchPath(): string | undefined {
+    let schema = getDataSchema()
+    if (!schema) return undefined
+
+    let searchPath = `"${schema}"`
+    if (getIncludePublicInSearchPath()) {
+        searchPath += ',public'
+    }
+
+    return `-c search_path=${searchPath}`
+}
+
+
+function getIncludePublicInSearchPath(): boolean {
+    switch (process.env.DB_SCHEMA_INCLUDE_PUBLIC) {
+        case undefined:
+        case '':
+        case 'false':
+            return false
+        case 'true':
+            return true
+        default:
+            log.warn(
+                `ignoring DB_SCHEMA_INCLUDE_PUBLIC env var as it has unrecognized value ` +
+                `"${process.env.DB_SCHEMA_INCLUDE_PUBLIC}". Only allowed values are "true" and "false"`
+            )
+            return false
+    }
 }
 
 
