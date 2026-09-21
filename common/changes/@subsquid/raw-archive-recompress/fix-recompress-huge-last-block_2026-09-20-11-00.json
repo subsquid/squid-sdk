@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/raw-archive-recompress",
+      "comment": "read the last block of a chunk without holding its line as a string, so blocks past the maximum string length convert",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/raw-archive-recompress"
+}
