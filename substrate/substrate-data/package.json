@@ -33,7 +33,7 @@
   "devDependencies": {
     "@subsquid/rpc-client": "^4.16.1",
     "@subsquid/substrate-runtime": "^2.1.0",
-    "@types/node": "^24.0.0",
+    "@types/node": "^24.13.6",
     "typescript": "5.5.4"
   }
 }

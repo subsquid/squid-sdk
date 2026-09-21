@@ -785,6 +785,18 @@
       "versionPolicyName": "npm"
     },
     {
+      "packageName": "@subsquid/hyperliquid-ingest",
+      "projectFolder": "hyperliquid/hyperliquid-ingest",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
+      "packageName": "@subsquid/hyperliquid-ingest-fills",
+      "projectFolder": "hyperliquid/hyperliquid-ingest-fills",
+      "shouldPublish": true,
+      "versionPolicyName": "npm"
+    },
+    {
       "packageName": "@subsquid/hyperliquid-fills-data",
       "projectFolder": "hyperliquid/hyperliquid-fills-data",
       "shouldPublish": true,

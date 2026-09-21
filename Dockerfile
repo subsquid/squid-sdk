@@ -177,6 +177,24 @@ COPY --from=fuel-ingest-builder /squid/common/deploy /squid
 ENTRYPOINT ["node", "/squid/fuel/fuel-ingest/bin/run.js"]
 
 
+FROM deps AS hyperliquid-ingest-builder
+RUN node common/scripts/install-run-rush.js build --to @subsquid/hyperliquid-ingest
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/hyperliquid-ingest
+
+FROM node AS hyperliquid-ingest
+COPY --from=hyperliquid-ingest-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/hyperliquid/hyperliquid-ingest/bin/run.js"]
+
+
+FROM deps AS hyperliquid-ingest-fills-builder
+RUN node common/scripts/install-run-rush.js build --to @subsquid/hyperliquid-ingest-fills
+RUN node common/scripts/install-run-rush.js deploy --project @subsquid/hyperliquid-ingest-fills
+
+FROM node AS hyperliquid-ingest-fills
+COPY --from=hyperliquid-ingest-fills-builder /squid/common/deploy /squid
+ENTRYPOINT ["node", "/squid/hyperliquid/hyperliquid-ingest-fills/bin/run.js"]
+
+
 FROM deps AS hyperliquid-fills-data-service-builder
 RUN node common/scripts/install-run-rush.js build --to @subsquid/hyperliquid-fills-data-service
 RUN node common/scripts/install-run-rush.js deploy --project @subsquid/hyperliquid-fills-data-service
