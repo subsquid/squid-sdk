@@ -810,6 +810,8 @@ class RpcProps {
 function isLogsRangeError(message: string): boolean {
     if (/after last accepted block/i.test(message)) return true
     if (/block range extends beyond current head block/i.test(message)) return true
+    // Avalanche since Helicon: the block is accepted, but its logs are not stored yet
+    if (/failed to get logs for block/i.test(message)) return true
     return false
 }
 

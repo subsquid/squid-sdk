@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-processor",
-      "comment": "for block headers with `settledHeight` (Avalanche C-Chain Helicon, mainnet and Fuji), where `logsBloom` commits to settled blocks rather than the block's own logs, confirm an empty `eth_getLogs` result with tx receipts instead of the logs bloom check",
+      "comment": "for block headers with `settledHeight` (Avalanche C-Chain Helicon, mainnet and Fuji), where `logsBloom` commits to settled blocks rather than the block's own logs, confirm an empty `eth_getLogs` result with tx receipts instead of the logs bloom check, and retry the `failed to get logs for block` error of `eth_getLogs` for accepted, but not yet executed blocks",
       "type": "patch"
     }
   ],

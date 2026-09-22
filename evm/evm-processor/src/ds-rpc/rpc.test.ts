@@ -116,6 +116,13 @@ describe('getLogs', () => {
         await assert.rejects(rpc.getLogs(100, 100), BlockConsistencyError)
     })
 
+    it('throws BlockConsistencyError for "failed to get logs for block" error (Avalanche Helicon)', async () => {
+        let rpc = new Rpc(mockClient({
+            eth_getLogs: {error: {code: -32000, message: 'failed to get logs for block #95925621 (0xc5f20f..100338)'}}
+        }))
+        await assert.rejects(rpc.getLogs(100, 100), BlockConsistencyError)
+    })
+
     it('throws for other RPC errors', async () => {
         let rpc = new Rpc(mockClient({
             eth_getLogs: {error: {code: -32000, message: 'internal server error'}}
