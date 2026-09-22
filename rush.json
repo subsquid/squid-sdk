@@ -788,13 +788,13 @@
       "packageName": "@subsquid/hyperliquid-ingest",
       "projectFolder": "hyperliquid/hyperliquid-ingest",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/hyperliquid-ingest-fills",
       "projectFolder": "hyperliquid/hyperliquid-ingest-fills",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/hyperliquid-fills-data",

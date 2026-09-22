@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/starknet-stream",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/starknet-stream"
+}

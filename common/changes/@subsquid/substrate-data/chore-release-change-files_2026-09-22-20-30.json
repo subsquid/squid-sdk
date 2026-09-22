@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-data",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/substrate-data"
+}

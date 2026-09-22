@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-data-service",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/tron-data-service"
+}

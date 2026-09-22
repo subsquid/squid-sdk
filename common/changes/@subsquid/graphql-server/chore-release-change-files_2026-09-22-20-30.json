@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/graphql-server",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/graphql-server"
+}

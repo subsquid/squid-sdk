@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/hyperliquid-fills-data",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/hyperliquid-fills-data"
+}
