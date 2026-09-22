@@ -328,7 +328,7 @@ export class Rpc {
             for (let j = 0; j < block.block.transactions.length; j++, i++) {
                 let receipt = receipts[i]
                 if (block._isInvalid) continue
-                if (receipt == null || receipt.blockHash !== block.hash) {
+if (receipt == null || receipt.blockHash !== block.hash || receipt.transactionHash !== getTxHash(block.block.transactions[j])) {
                     block._isInvalid = true
                     block._errorMessage = 'got 0 log records from eth_getLogs, but tx receipts are not available yet'
                 } else if (receipt.logs.length > 0) {
