@@ -289,15 +289,13 @@ describe('Rpc Class Integration', () => {
         it('flags an Avalanche block served without its Helicon header fields', async () => {
             // Seen from a provider backend after the Helicon upgrade: the
             // response keeps the correct `hash` but omits the new fields.
-            const {
-                targetExponent,
-                minPriceExponent,
-                settledHeight,
-                settledGasUnix,
-                settledGasNumerator,
-                settledExcess,
-                ...stripped
-            } = loadBlock('avalanche-testnet', 58119344)
+            const stripped = loadBlock('avalanche-testnet', 58119344)
+            delete stripped.targetExponent
+            delete stripped.minPriceExponent
+            delete stripped.settledHeight
+            delete stripped.settledGasUnix
+            delete stripped.settledGasNumerator
+            delete stripped.settledExcess
 
             const mockClient = new MockRpcClient()
             mockClient.setFixture('eth_chainId', undefined, '0xa869')
