@@ -46,7 +46,8 @@ class Finalizer {
             }
 
             let info = infos[i]
-            if (info == null) continue
+            // A block that failed verification proves nothing; probe it again later.
+            if (info == null || info._isInvalid) continue
 
             if (info.hash === ref.hash) {
                 this.unshift(probes.slice(i + 1))
