@@ -193,7 +193,9 @@ export class Rpc {
             chain.push(block)
         }
 
-        await this.addRequestedData(chain, req)
+        // A block flagged while mapping is fetched again by the caller; its data would
+        // be thrown away, and checks against its bad header could throw instead.
+        await this.addRequestedData(chain.filter(b => !b._isInvalid), req)
 
         if (!transactionsRequested && withTransactions) {
             for (let block of chain) {

@@ -174,6 +174,31 @@ describe('Rpc Class Integration', () => {
             expect(blocks[0]._isInvalid).toBe(true)
             expect(blocks[0]._errorMessage).toEqual('failed to verify block hash')
         })
+
+        it('skips requested data for a block with an invalid hash', async () => {
+            // A header field that disagrees with `hash` would also fail any later
+            // check that reads it; the block must reach the caller flagged instead.
+            const fixtureBlock = loadBlock('ethereum', 18000000)
+            const fixtureReceipts = loadReceipts('ethereum', 18000000)
+            const badHeader = { ...fixtureBlock, logsBloom: '0x' + '00'.repeat(256) }
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0x1')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(18000000), true], badHeader)
+            mockClient.setFixture('eth_getBlockReceipts', ['latest'], fixtureReceipts)
+            mockClient.setFixture('eth_getBlockReceipts', [toQty(18000000)], fixtureReceipts)
+
+            const rpc = new Rpc({
+                client: mockClient as any,
+                verifyBlockHash: true,
+                verifyLogsBloom: true
+            })
+
+            const blocks = await rpc.getBlockBatch([18000000], { receipts: true, transactions: true })
+            expect(blocks.length).toEqual(1)
+            expect(blocks[0]._errorMessage).toEqual('failed to verify block hash')
+            expect(blocks[0].receipts).toBeUndefined()
+        })
     })
 
     describe('Chain-specific behavior', () => {
