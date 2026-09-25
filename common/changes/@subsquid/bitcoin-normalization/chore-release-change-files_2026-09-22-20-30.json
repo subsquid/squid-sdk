@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/bitcoin-normalization",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/bitcoin-normalization"
+}

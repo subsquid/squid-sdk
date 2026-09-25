@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-ingest",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/tron-ingest"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-ingest",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/solana-ingest"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-codec",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/scale-codec"
+}

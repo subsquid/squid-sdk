@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ss58-codec",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/ss58-codec"
+}
