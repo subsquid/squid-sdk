@@ -65,4 +65,36 @@ describe('getBlocks', () => {
         expect(result).toHaveLength(5)
         expect(result.map(b => b.number)).toEqual([100, 101, 102, 103, 104])
     })
+
+    it('fetches a block with an invalid hash again and keeps the good copy', async () => {
+        let callCount = 0
+        const rpc = mkRpc(async (numbers: number[]) => {
+            callCount++
+            return numbers.map(n => {
+                let block = mkBlock(n)
+                if (callCount === 1 && n === 101) {
+                    block._isInvalid = true
+                    block._errorMessage = 'failed to verify block hash'
+                }
+                return block
+            })
+        })
+
+        const result = await getBlocks(rpc, REQ, {from: 100, to: 102})
+        expect(result.map(b => b.number)).toEqual([100, 101, 102])
+        expect(result[1]._isInvalid).toBeUndefined()
+        expect(rpc.getBlockBatch).toHaveBeenLastCalledWith([101], REQ)
+    })
+
+    it('reports the hash failure once retries run out', async () => {
+        const rpc = mkRpc(async (numbers: number[]) => numbers.map(n => ({
+            ...mkBlock(n),
+            _isInvalid: true,
+            _errorMessage: 'failed to verify block hash'
+        })))
+
+        await expect(
+            getBlocks(rpc, REQ, {from: 100, to: 100})
+        ).rejects.toThrow('failed to verify block hash')
+    })
 })
