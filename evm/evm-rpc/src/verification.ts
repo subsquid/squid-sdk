@@ -1136,6 +1136,7 @@ export interface CallFrame {
     value?: Qty | null
     input?: string | null
     output?: string | null
+    error?: string | null
     gasUsed?: string | null
     calls?: CallFrame[] | null
 }
@@ -1432,6 +1433,12 @@ function repeatsMovement(frame: CallFrame, moved: Movement[]): boolean {
 }
 
 
+// Movements live as long as the frame that made them: a frame that fails is
+// undone on exit, its own transfer and every entry made under it, so what its
+// children could repeat, nothing after it can. revm drops the journal entries of
+// a reverted checkpoint the same way. The usual shape is a plain value call to a
+// receiver that rejects it, followed by a selfdestruct to the same receiver that
+// forces the value in: genuine, because the call moved nothing.
 function collectDefectiveSelfdestructs(
     parent: CallFrame,
     traceAddress: number[],
@@ -1447,6 +1454,7 @@ function collectDefectiveSelfdestructs(
     for (let i = 0; i < calls.length; i++) {
         let child = calls[i]
         let at = [...traceAddress, i]
+        let checkpoint = moved.length
 
         if (SELFDESTRUCT_FRAME_TYPES.has(child.type)) {
             // The frame's own payload is not evidence about itself, so it joins
@@ -1463,6 +1471,10 @@ function collectDefectiveSelfdestructs(
         } else {
             recordMovement(child, moved)
             collectDefectiveSelfdestructs(child, at, moved, found)
+        }
+
+        if (child.error != null) {
+            moved.length = checkpoint
         }
     }
 }
