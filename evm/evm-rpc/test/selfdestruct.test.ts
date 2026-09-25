@@ -143,12 +143,15 @@ describe('findDefectiveSelfdestructs', () => {
         }
     })
 
-    // A selfdestruct-to-self of a contract created in the same transaction, and
-    // selfdestructs that fail under STATICCALL or for gas, traced by both a
-    // revm-based node and geth. A failed selfdestruct gets no frame of its own.
+    // A selfdestruct-to-self of a contract created in the same transaction,
+    // selfdestructs that fail under STATICCALL or for gas, and a BSC selfdestruct
+    // that repeats a value call which reverted (binance-mainnet 123911217,
+    // 2026-09-25), traced by both a revm-based node and geth. A failed
+    // selfdestruct gets no frame of its own.
     it('matches nothing in complete or failed selfdestructs', () => {
         let names = fixtureFiles('complete').filter(name => !name.includes('legitimate-repeat'))
         expect(names).toEqual([
+            'bsc-reverted-call-then-selfdestruct-geth.json',
             'devnet-created-in-tx-anvil.json',
             'devnet-created-in-tx-geth.json',
             'devnet-out-of-gas-anvil.json',
@@ -162,6 +165,81 @@ describe('findDefectiveSelfdestructs', () => {
             expect(findDefectiveSelfdestructs(trace), name).toEqual([])
             expect(checkDebugFrameStructure(trace), name).toBeUndefined()
         }
+    })
+
+    // A value call that reverted moved nothing, so a selfdestruct that sends the
+    // same amount to the same receiver afterwards is the account's genuine
+    // balance, not a stale journal entry. The same holds for a call that
+    // succeeded inside a frame that later reverted. But a selfdestruct inside
+    // that frame runs before the revert and can still read those entries.
+    it('forgets transfers when the frame that made them fails', () => {
+        const receiver = '0x0000000000be226afde21672a5e4adc45692e69d'
+        const account = '0xf5f902e1bb971b4e5bc695101aa9a59e0ea1d739'
+        const sender = '0x0000000000322e7acef3e4f81e36f3c2224bb597'
+        const value = '0x7709d21aa6396'
+        const frame = (type: string, from: string, to: string, value: string, extra: Partial<CallFrame> = {}): CallFrame =>
+            ({type, from, to, value, input: '0x', ...extra})
+
+        let revertedCall: CallFrame = {
+            type: 'CALL', from: sender, to: account, value: '0x0', input: '0x',
+            calls: [
+                frame('CALL', account, receiver, value, {error: 'execution reverted'}),
+                frame('SELFDESTRUCT', account, receiver, value),
+            ]
+        }
+        expect(findDefectiveSelfdestructs(revertedCall)).toEqual([])
+
+        let revertedParent: CallFrame = {
+            type: 'CALL', from: sender, to: account, value: '0x0', input: '0x',
+            calls: [
+                frame('CALL', account, account, '0x0', {
+                    error: 'execution reverted',
+                    calls: [frame('CALL', account, receiver, value)]
+                }),
+                frame('SELFDESTRUCT', account, receiver, value),
+            ]
+        }
+        expect(findDefectiveSelfdestructs(revertedParent)).toEqual([])
+
+        let completed: CallFrame = {
+            type: 'CALL', from: sender, to: account, value: '0x0', input: '0x',
+            calls: [
+                frame('CALL', account, receiver, value),
+                frame('SELFDESTRUCT', account, receiver, value),
+            ]
+        }
+        expect(findDefectiveSelfdestructs(completed)).toHaveLength(1)
+
+        // Inside a frame that reverts later: the transfer's entry is still in
+        // the journal when the selfdestruct runs, so a repeat stays suspect.
+        let repeatInsideReverted: CallFrame = {
+            type: 'CALL', from: sender, to: account, value: '0x0', input: '0x',
+            calls: [
+                frame('CALL', account, account, '0x0', {
+                    error: 'execution reverted',
+                    calls: [
+                        frame('CALL', account, receiver, '0x1'),
+                        frame('SELFDESTRUCT', account, receiver, '0x1'),
+                    ]
+                }),
+            ]
+        }
+        let defects = findDefectiveSelfdestructs(repeatInsideReverted)
+        expect(defects).toHaveLength(1)
+        expect(defects[0].traceAddress).toEqual([0, 1])
+
+        // The failed call's own transfer is visible to its children until it
+        // exits: a stale frame under it carries the call's parties.
+        let repeatOfFailedCall: CallFrame = {
+            type: 'CALL', from: sender, to: account, value: '0x0', input: '0x',
+            calls: [
+                frame('CALL', account, receiver, '0x1', {
+                    error: 'execution reverted',
+                    calls: [frame('SELFDESTRUCT', account, receiver, '0x1')]
+                }),
+            ]
+        }
+        expect(findDefectiveSelfdestructs(repeatOfFailedCall)).toHaveLength(1)
     })
 
     // A contract created and destroyed inside one transaction records its entry
