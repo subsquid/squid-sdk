@@ -513,6 +513,10 @@ export class RpcClient {
                 } else {
                     throw new RpcError(res.error)
                 }
+            } else if (isRateLimitResult(res.result)) {
+                // Some providers signal rate limiting with an HTTP 200 whose `result` is a
+                // plain error string; retry it like a 429 instead of crashing on validation.
+                throw new RetryError(res.result as string)
             } else if (validateResult) {
                 return validateResult(res.result, call)
             } else {
@@ -595,6 +599,13 @@ function getCallPriority(req: Req): number {
 
 function isRateLimitError(err: unknown): boolean {
     return err instanceof RpcError && /rate limit/i.test(err.message)
+}
+
+
+// Some providers (e.g. via an erpc proxy) signal rate limiting with an HTTP 200 whose
+// `result` is a plain error string instead of a 429 or a JSON-RPC error object.
+export function isRateLimitResult(result: unknown): boolean {
+    return typeof result === 'string' && /rate limit/i.test(result)
 }
 
 
