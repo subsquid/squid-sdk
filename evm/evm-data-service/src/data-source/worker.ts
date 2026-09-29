@@ -3,7 +3,7 @@ import {getServer, getServerArguments} from '@subsquid/util-internal-worker-thre
 import {createDataSource} from './setup'
 
 
-const source = createDataSource(getServerArguments())
+const {source, getRpcMetrics} = createDataSource(getServerArguments())
 
 
 getServer()
@@ -15,4 +15,5 @@ getServer()
     .def('getStream', (req: StreamRequest) => {
         return source.getStream(req)
     })
+    .def('getRpcMetrics', () => getRpcMetrics())
     .start()

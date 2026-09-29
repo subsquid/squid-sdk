@@ -1,6 +1,7 @@
 import {type CallFrameValidationMode, Rpc, EvmRpcDataSource, EvmRpcClient} from '@subsquid/evm-rpc'
 import type {Block, DataSource} from '@subsquid/util-internal-data-service'
 import {createLogger} from '@subsquid/logger'
+import type {RpcMetrics} from '@subsquid/rpc-client'
 import {Mapping} from './mapping'
 
 
@@ -36,7 +37,13 @@ export interface DataSourceOptions {
 }
 
 
-export function createDataSource(options: DataSourceOptions): DataSource<Block> {
+export interface DataSourceSetup {
+    source: DataSource<Block>
+    getRpcMetrics(): RpcMetrics
+}
+
+
+export function createDataSource(options: DataSourceOptions): DataSourceSetup {
     let httpRpcClient = new EvmRpcClient({
         url: options.httpRpc,
         maxBatchCallSize: options.httpRpcMaxBatchCallSize,
@@ -78,8 +85,12 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         strideSize: options.httpRpcStrideSize,
         strideConcurrency: options.httpRpcStrideConcurrency
     })
-    return new Mapping(rpcSource, {
+    let source = new Mapping(rpcSource, {
         withTraces: options.withTraces,
         withStateDiffs: options.withStatediffs,
     })
+    return {
+        source,
+        getRpcMetrics: () => httpRpcClient.getMetrics()
+    }
 }

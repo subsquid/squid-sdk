@@ -79,6 +79,10 @@ export interface RpcMetrics {
     connectionErrors: number
     notificationsReceived: number
     avgResponseTime: number
+    /**
+     * Retried errors by {@link RpcClient.getRetryKind}
+     */
+    retriedErrors: Record<string, number>
 }
 
 
@@ -134,6 +138,7 @@ export class RpcClient {
     private schedulingScheduled = false
     private connectionErrorsInRow = 0
     private connectionErrors = 0
+    private retriedErrors: Record<string, number> = {}
     private requestsServed = 0
     private notificationsReceived = 0
     private totalResponseTime = 0
@@ -212,6 +217,7 @@ export class RpcClient {
             // FIXME: only one of these metrics should remain; decide which to keep
             avg_response_time: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
             avgResponseTime: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
+            retriedErrors: {...this.retriedErrors},
         }
     }
 
@@ -422,6 +428,7 @@ export class RpcClient {
             if (this.isConnectionError(err)) {
                 if (req.retryAttempts > 0) {
                     req.retryAttempts -= 1
+                    this.countRetriedError(err)
                     this.enqueue(req)
                 } else {
                     req.reject(err)
@@ -453,6 +460,7 @@ export class RpcClient {
             } catch(err: any) {
                 if (this.closed) return
                 if (err instanceof RpcConnectionError) {
+                    this.countRetriedError(err)
                     this.backoff(err)
                 } else {
                     throw err
@@ -556,6 +564,35 @@ export class RpcClient {
             }
         }
         return false
+    }
+
+    /**
+     * Coarse class of an error {@link isConnectionError} accepted, for metrics.
+     */
+    getRetryKind(err: Error): string {
+        if (err instanceof HttpError) {
+            switch(err.response.status) {
+                case 429:
+                    return 'rate_limit'
+                case 408:
+                case 504:
+                case 524:
+                    return 'timeout'
+                default:
+                    return 'http'
+            }
+        }
+        if (isRateLimitError(err)) return 'rate_limit'
+        if (err instanceof HttpTimeoutError) return 'timeout'
+        if (isExecutionTimeoutError(err) || isRequestTimedOutError(err)) return 'timeout'
+        if (err instanceof RpcConnectionError || isHttpConnectionError(err)) return 'connection'
+        if (err instanceof RetryError) return 'retry'
+        return 'other'
+    }
+
+    private countRetriedError(err: Error): void {
+        let kind = this.getRetryKind(err)
+        this.retriedErrors[kind] = (this.retriedErrors[kind] ?? 0) + 1
     }
 
     reset(reason?: RpcConnectionError): void {

@@ -206,6 +206,7 @@ export class DataService {
                 let forkBase = this.chain.getForkBase(err.previousBlocks)
                 if (forkBase) {
                     base = forkBase
+                    this.metrics.incIngestionRestarts('fork')
                     this.log.info({forkBase: base, upstreamBlocks: err.previousBlocks}, 'fork encountered')
                 } else {
                     throw addErrorContext(new Error('rollback behind finalized head'), {
@@ -229,6 +230,7 @@ export class DataService {
                 base = head
 
                 let pause = stacked > 1 ? 30 : 0
+                this.metrics.incIngestionRestarts(err?.name ?? 'ended')
                 this.log.error(err, `data ingestion terminated, will restart in ${pause} seconds`)
                 await wait(pause * 1000)
             }

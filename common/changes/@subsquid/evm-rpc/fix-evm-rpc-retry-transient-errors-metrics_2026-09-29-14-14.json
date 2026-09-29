@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "Classify retried errors as rate_limit, transient, internal or no_result for metrics",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}

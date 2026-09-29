@@ -6,6 +6,7 @@ import {
     type Block,
     type BlockStream,
     type DataSource,
+    RpcMetricsCollector,
     runDataService,
     type StreamRequest
 } from '@subsquid/util-internal-data-service'
@@ -122,7 +123,9 @@ runProgram(async () => {
         useGasUsedForReceiptsRoot: args.useGasUsedForReceiptsRoot
     }
 
+    let rpcMetrics = new RpcMetricsCollector()
     let mainWorker = new WorkerClient(dataSourceOptions)
+    rpcMetrics.add(mainWorker)
     let service: Awaited<ReturnType<typeof runDataService>> | undefined
     let dataSource: DataSource<Block> = {
         getHead() {
@@ -133,11 +136,13 @@ runProgram(async () => {
         },
         async *getFinalizedStream(req: StreamRequest): BlockStream<Block> {
             let worker = new WorkerClient(dataSourceOptions)
+            rpcMetrics.add(worker)
             service?.metrics.incActiveWorkers()
             try {
                 yield* worker.getFinalizedStream(req)
             } finally {
                 service?.metrics.decActiveWorkers()
+                await rpcMetrics.remove(worker)
                 worker.close()
             }
         },
@@ -152,6 +157,7 @@ runProgram(async () => {
         port: args.port,
         autoAdjustFinalizedHead: args.autoAdjustFinalizedHead
     })
+    service.metrics.setRpcMetricsSource(() => rpcMetrics.collect())
 
     log.info(`listening on port ${service.port}`)
     return waitForInterruption(service)
