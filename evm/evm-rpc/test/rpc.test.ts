@@ -156,7 +156,7 @@ describe('Rpc Class Integration', () => {
             expect(blocks.length).toEqual(1)
         })
 
-        it('detects invalid block hash', async () => {
+        it('flags a block with an invalid hash for another fetch', async () => {
             const fixtureBlock = loadBlock('ethereum', 18000000)
             const tamperedBlock = { ...fixtureBlock, hash: '0x0000000000000000000000000000000000000000000000000000000000000000' }
 
@@ -169,9 +169,35 @@ describe('Rpc Class Integration', () => {
                 verifyBlockHash: true
             })
 
-            await expect(
-                rpc.getBlockBatch([18000000], { transactions: true })
-            ).rejects.toThrow()
+            const blocks = await rpc.getBlockBatch([18000000], { transactions: true })
+            expect(blocks.length).toEqual(1)
+            expect(blocks[0]._isInvalid).toBe(true)
+            expect(blocks[0]._errorMessage).toEqual('failed to verify block hash')
+        })
+
+        it('skips requested data for a block with an invalid hash', async () => {
+            // A header field that disagrees with `hash` would also fail any later
+            // check that reads it; the block must reach the caller flagged instead.
+            const fixtureBlock = loadBlock('ethereum', 18000000)
+            const fixtureReceipts = loadReceipts('ethereum', 18000000)
+            const badHeader = { ...fixtureBlock, logsBloom: '0x' + '00'.repeat(256) }
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0x1')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(18000000), true], badHeader)
+            mockClient.setFixture('eth_getBlockReceipts', ['latest'], fixtureReceipts)
+            mockClient.setFixture('eth_getBlockReceipts', [toQty(18000000)], fixtureReceipts)
+
+            const rpc = new Rpc({
+                client: mockClient as any,
+                verifyBlockHash: true,
+                verifyLogsBloom: true
+            })
+
+            const blocks = await rpc.getBlockBatch([18000000], { receipts: true, transactions: true })
+            expect(blocks.length).toEqual(1)
+            expect(blocks[0]._errorMessage).toEqual('failed to verify block hash')
+            expect(blocks[0].receipts).toBeUndefined()
         })
     })
 
@@ -269,6 +295,43 @@ describe('Rpc Class Integration', () => {
             expect(block.timestampMilliseconds).toEqual('0x1a05e240f88')
             expect(block.blockGasCost).toEqual('0x0')
             expect(block.extDataGasUsed).toEqual('0x0')
+        })
+
+        it('verifies the hash of an Avalanche Helicon block', async () => {
+            const fixtureBlock = loadBlock('avalanche-testnet', 58119344)
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0xa869')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(58119344), true], fixtureBlock)
+
+            const rpc = new Rpc({client: mockClient as any, verifyBlockHash: true})
+
+            const blocks = await rpc.getBlockBatch([58119344], {transactions: true})
+            expect(blocks.length).toEqual(1)
+            expect(blocks[0]._isInvalid).toBeUndefined()
+        })
+
+        it('flags an Avalanche block served without its Helicon header fields', async () => {
+            // Seen from a provider backend after the Helicon upgrade: the
+            // response keeps the correct `hash` but omits the new fields.
+            const stripped = loadBlock('avalanche-testnet', 58119344)
+            delete stripped.targetExponent
+            delete stripped.minPriceExponent
+            delete stripped.settledHeight
+            delete stripped.settledGasUnix
+            delete stripped.settledGasNumerator
+            delete stripped.settledExcess
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0xa869')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(58119344), true], stripped)
+
+            const rpc = new Rpc({client: mockClient as any, verifyBlockHash: true})
+
+            const blocks = await rpc.getBlockBatch([58119344], {transactions: true})
+            expect(blocks.length).toEqual(1)
+            expect(blocks[0]._isInvalid).toBe(true)
+            expect(blocks[0]._errorMessage).toEqual('failed to verify block hash')
         })
 
         it('verifies extData hash for Avalanche blocks', async () => {

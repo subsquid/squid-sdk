@@ -193,7 +193,9 @@ export class Rpc {
             chain.push(block)
         }
 
-        await this.addRequestedData(chain, req)
+        // A block flagged while mapping is fetched again by the caller; its data would
+        // be thrown away, and checks against its bad header could throw instead.
+        await this.addRequestedData(chain.filter(b => !b._isInvalid), req)
 
         if (!transactionsRequested && withTransactions) {
             for (let block of chain) {
@@ -244,7 +246,24 @@ export class Rpc {
 
         if (this.verifyBlockHash) {
             let blockHash = utils.calculateBlockHash(block)
-            assert.equal(block.hash, blockHash, 'failed to verify block hash')
+            if (block.hash !== blockHash) {
+                // A provider can serve a header that does not hash to its own `hash`,
+                // e.g. a backend that drops fields added by a network upgrade while
+                // others behind the same endpoint return them. Flag the block so the
+                // caller fetches it again instead of crashing on one bad response.
+                this.log.warn({
+                    blockNumber: qty2Int(block.number),
+                    blockHash: block.hash,
+                    calculatedHash: blockHash
+                }, 'failed to verify block hash, will fetch the block again')
+                return {
+                    number: qty2Int(block.number),
+                    hash: block.hash,
+                    block,
+                    _isInvalid: true,
+                    _errorMessage: 'failed to verify block hash'
+                }
+            }
         }
 
         if (this.verifyExtDataHash && block.extDataHash != null) {
