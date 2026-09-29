@@ -182,6 +182,30 @@ describe('EvmRpcClient.isConnectionError', () => {
     })
 })
 
+describe('EvmRpcClient.getRetryKind', () => {
+    let client = new EvmRpcClient({url: 'http://localhost:1', log: null})
+    let clientRetrying500 = new EvmRpcClient({url: 'http://localhost:1', log: null, retryInternalServerErrors: true})
+
+    it.each([
+        [new RpcError({code: -32429, message: 'Throughput limit 1000 CUs/sec exceeded'}), 'rate_limit'],
+        [
+            new RpcError({code: -32603, message: 'gave up retrying on network-level after 1s: 1 upstream not synced'}),
+            'transient',
+        ],
+        [new RpcError({code: -32000, message: 'execution timeout'}), 'timeout'],
+        [new RetryError('server returned unexpected result: null is not an object'), 'no_result'],
+        [httpError(500, {error: {code: 19, message: 'Temporary internal error. Please retry'}}), 'transient'],
+        [httpError(503, ''), 'http'],
+    ])('classifies %s as %s', (err, kind) => {
+        expect(client.getRetryKind(err)).toBe(kind)
+    })
+
+    it('classifies internal errors retried by retryInternalServerErrors as internal', () => {
+        expect(clientRetrying500.getRetryKind(new RpcError({code: -32603, message: 'Internal error'}))).toBe('internal')
+        expect(clientRetrying500.getRetryKind(httpError(500, 'Internal Server Error\n'))).toBe('internal')
+    })
+})
+
 const BLOCK = loadBlock('ethereum', 18000000)
 
 describe('Rpc result validation', () => {
@@ -211,9 +235,12 @@ describe('Rpc result validation', () => {
         await new Promise<void>((resolve) => server.close(() => resolve()))
     })
 
+    function client(retryAttempts: number): EvmRpcClient {
+        return new EvmRpcClient({url, log: null, retryAttempts, retrySchedule: [0]})
+    }
+
     function rpc(retryAttempts: number): Rpc {
-        let client = new EvmRpcClient({url, log: null, retryAttempts, retrySchedule: [0]})
-        return new Rpc({client})
+        return new Rpc({client: client(retryAttempts)})
     }
 
     it.each([
@@ -233,11 +260,13 @@ describe('Rpc result validation', () => {
         await expect(rpc(0).getLatestBlockhash('latest')).rejects.toBeInstanceOf(DataValidationError)
     })
 
-    it('gets the block once the endpoint recovers', async () => {
+    it('gets the block once the endpoint recovers and counts the retry', async () => {
         responses = ["You've been rate limited, please upgrade your plan.\n", BLOCK]
-        await expect(rpc(1).getLatestBlockhash('latest')).resolves.toEqual({
+        let rpcClient = client(1)
+        await expect(new Rpc({client: rpcClient}).getLatestBlockhash('latest')).resolves.toEqual({
             number: qty2Int(BLOCK.number),
             hash: BLOCK.hash,
         })
+        expect(rpcClient.getMetrics().retriedErrors).toEqual({no_result: 1})
     })
 })

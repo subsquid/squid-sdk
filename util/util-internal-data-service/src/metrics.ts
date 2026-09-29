@@ -1,6 +1,13 @@
 import {collectDefaultMetrics, Counter, Gauge, Histogram, register, Registry} from 'prom-client'
 import { Block } from './types';
 
+
+export interface RpcRetriedErrors {
+    url: string
+    retriedErrors: Record<string, number>
+}
+
+
 export class Metrics {
     readonly registry = new Registry()
 
@@ -13,6 +20,9 @@ export class Metrics {
     private blockProcessingTimeHistogram: Histogram
     private queriesCounter: Counter
     private activeWorkersGauge: Gauge
+    private ingestionRestartsCounter: Counter
+    private rpcRetriedErrorsCounter: Counter
+    private rpcMetricsSource?: () => Promise<RpcRetriedErrors[]>
 
     constructor() {
         this.hotBlocksLastBlockGauge = new Gauge({
@@ -72,6 +82,40 @@ export class Metrics {
             registers: [this.registry],
         })
 
+        this.ingestionRestartsCounter = new Counter({
+            name: 'sqd_hotblocks_ingestion_restarts_total',
+            help: 'Restarts of data ingestion by reason: the name of the error that stopped it, `fork` or `ended`',
+            labelNames: ['reason'],
+            registers: [this.registry],
+        })
+
+        let getRpcMetricsSource = () => this.rpcMetricsSource
+        this.rpcRetriedErrorsCounter = new Counter({
+            name: 'sqd_chain_rpc_retried_errors_total',
+            help: 'Total number of retried RPC errors by kind',
+            labelNames: ['url', 'kind'],
+            registers: [this.registry],
+            async collect() {
+                let source = getRpcMetricsSource()
+                if (source == null) return
+
+                let clients: RpcRetriedErrors[]
+                try {
+                    clients = await source()
+                } catch {
+                    // keep the last values rather than fail the whole scrape
+                    return
+                }
+
+                this.reset()
+                for (let {url, retriedErrors} of clients) {
+                    for (let [kind, count] of Object.entries(retriedErrors)) {
+                        this.inc({url, kind}, count)
+                    }
+                }
+            }
+        })
+
         // Initialize so metrics appear on /metrics immediately
         this.queriesCounter.inc({type: 'cache'}, 0)
         this.queriesCounter.inc({type: 'backfill'}, 0)
@@ -127,6 +171,17 @@ export class Metrics {
 
     decActiveWorkers() {
         this.activeWorkersGauge.dec()
+    }
+
+    incIngestionRestarts(reason: string) {
+        this.ingestionRestartsCounter.inc({reason})
+    }
+
+    /**
+     * RPC clients may live in worker threads, so their counters are read on each scrape.
+     */
+    setRpcMetricsSource(source: () => Promise<RpcRetriedErrors[]>) {
+        this.rpcMetricsSource = source
     }
 }
 

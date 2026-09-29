@@ -1,3 +1,4 @@
+import type {RpcMetrics} from '@subsquid/rpc-client'
 import {Block, BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
 import {Client, createWorker} from '@subsquid/util-internal-worker-thread'
 import {DataSourceOptions} from './setup'
@@ -31,6 +32,10 @@ export class WorkerClient implements DataSource<Block> {
 
     getStream(req: StreamRequest): BlockStream<Block> {
         return this.stream('getStream', req)
+    }
+
+    getRpcMetrics(): Promise<RpcMetrics> {
+        return this.worker.call('getRpcMetrics', [])
     }
 
     private async *stream(method: string, req: StreamRequest): BlockStream<Block> {

@@ -133,3 +133,28 @@ describe('DataService below query resource management', () => {
         expect(counters).toEqual({opened: 1, closed: 1})
     })
 })
+
+
+describe('DataService ingestion restarts', () => {
+    it('counts a restart by the name of the error that stopped ingestion', async () => {
+        let sessions = 0
+        let service: DataService | undefined
+        let source: DataSource<Block> = {
+            ...mkSource({opened: 0, closed: 0}),
+            async *getStream(req) {
+                sessions += 1
+                if (sessions == 1) {
+                    yield {blocks: [mkBlock(req.from)]}
+                    throw new TypeError('upstream hiccup')
+                }
+                service?.stop()
+            }
+        }
+        service = new DataService(source, 10)
+        await service.init()
+        await service.run()
+
+        let text = await service.metrics.registry.metrics()
+        expect(text).toContain('sqd_hotblocks_ingestion_restarts_total{reason="TypeError"} 1')
+    })
+})

@@ -13,6 +13,7 @@ export class PrometheusServer {
     private rpcRequestsServedTotal: Counter
     private rpcAvgResponseTimeSeconds: Gauge
     private rpcConnectionErrorsTotal: Counter
+    private rpcRetriedErrorsTotal: Counter
     private s3RequestsCounter: Counter
     private latestReceivedBlockNumberGauge: Gauge
     private latestReceivedBlockTimestampGauge: Gauge
@@ -157,6 +158,20 @@ export class PrometheusServer {
                 }, metrics.connectionErrors)
             }
         });
+
+        this.rpcRetriedErrorsTotal = new Counter({
+            name: 'sqd_chain_rpc_retried_errors_total',
+            help: 'Total number of retried RPC errors by kind',
+            labelNames: ['url', 'kind'],
+            registers: [this.registry],
+            collect() {
+                const metrics = rpc.getMetrics()
+                this.reset()
+                for (let [kind, count] of Object.entries(metrics.retriedErrors)) {
+                    this.inc({url: metrics.url, kind}, count)
+                }
+            }
+        })
 
         this.s3RequestsCounter = new Counter({
             name: 'sqd_s3_request_count',

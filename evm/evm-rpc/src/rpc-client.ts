@@ -1,4 +1,4 @@
-import { RpcClient, RpcError, RpcClientOptions } from '@subsquid/rpc-client'
+import { RetryError, RpcClient, RpcError, RpcClientOptions } from '@subsquid/rpc-client'
 import { HttpError } from '@subsquid/http-client'
 
 export interface EvmRpcClientOptions extends RpcClientOptions {
@@ -46,6 +46,23 @@ export class EvmRpcClient extends RpcClient {
             return errors.length > 0 && errors.every(e => isTransientError(e.code, e.message, e.data))
         }
         return false
+    }
+
+    getRetryKind(err: Error): string {
+        if (err instanceof RpcError) {
+            if (this.isRpcRateLimitError(err)) return 'rate_limit'
+            if (this.isRpcTransientError(err)) return 'transient'
+            let kind = super.getRetryKind(err)
+            if (kind != 'other') return kind
+            if (this.isRpcInternalError(err)) return 'internal'
+        }
+        if (err instanceof HttpError && err.response.status === 500) {
+            return this.retryInternalServerErrors ? 'internal' : 'transient'
+        }
+        // Thrown here when the endpoint had no usable answer yet: a null or an
+        // error text in place of a result, or a block height it does not serve yet.
+        if (err instanceof RetryError) return 'no_result'
+        return super.getRetryKind(err)
     }
 
     isRpcInternalError(err: RpcError): boolean {

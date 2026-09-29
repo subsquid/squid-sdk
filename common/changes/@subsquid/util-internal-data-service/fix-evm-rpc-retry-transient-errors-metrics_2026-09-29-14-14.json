@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-data-service",
+      "comment": "Export `sqd_hotblocks_ingestion_restarts_total` and `sqd_chain_rpc_retried_errors_total`, with `RpcMetricsCollector` to read RPC clients in worker threads",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-data-service"
+}
