@@ -1240,11 +1240,21 @@ type GetReceiptsMethod = 'eth_getTransactionReceipt' | 'eth_getBlockReceipts'
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
     return function (result: unknown) {
         let err = validator.validate(result)
-        if (err) {
-            throw new DataValidationError(`server returned unexpected result: ${err.toString()}`)
-        } else {
-            return result as any
+        if (err == null) return result as any
+
+        let message = `server returned unexpected result: ${err.toString()}`
+
+        // Not malformed data but no data: a null from a backend that lags the head,
+        // or a proxy's error text put into `result` (no EVM value is a non-hex string).
+        let noData = result === null || (typeof result == 'string' && !result.startsWith('0x'))
+        if (noData) {
+            // TODO: this draws on the client's shared retry budget, unbounded in evm-dump, so a node
+            // that never has the data (pruned history) stalls instead of failing. Fine for now;
+            // cap no-data retries per request if it bites.
+            throw new RetryError(message)
         }
+
+        throw new DataValidationError(message)
     }
 }
 
