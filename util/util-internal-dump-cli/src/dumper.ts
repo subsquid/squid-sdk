@@ -168,12 +168,7 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
 
     @def
     protected prometheus() {
-        let server = new PrometheusServer(
-            this.options().metrics ?? 0,
-            () => this.getLastFinalizedBlockNumber(),
-            this.rpc(),
-            this.log().child('prometheus')
-        )
+        let server = new PrometheusServer(this.options().metrics ?? 0, this.rpc())
         this.eventEmitter().on('S3FsOperation', (op: string) => server.incS3Requests(op))
         return server
     }
@@ -185,7 +180,11 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         }
         assertRange(range)
 
-        let head = new Throttler(() => this.getLastFinalizedBlockNumber(), 60_000)
+        let head = new Throttler(async () => {
+            let height = await this.getLastFinalizedBlockNumber()
+            this.prometheus().setChainHeight(height)
+            return height
+        }, 60_000)
         let headNumber = await head.get()
 
         let progress = new Progress({
