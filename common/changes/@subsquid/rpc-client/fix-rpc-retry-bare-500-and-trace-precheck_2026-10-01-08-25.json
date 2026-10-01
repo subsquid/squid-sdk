@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "Retry HTTP 500 whose body is not a JSON-RPC response, which comes from a proxy in front of the node rather than from the node. A failed response labeled as JSON whose body does not parse now surfaces as an HTTP error with the status, not as a parse error",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}

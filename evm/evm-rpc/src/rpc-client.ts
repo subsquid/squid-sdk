@@ -6,7 +6,7 @@ export interface EvmRpcClientOptions extends RpcClientOptions {
      * Whether internal server errors should be treated as retryable.
      * 
      * This includes:
-     * - HTTP 500 (internal server error)
+     * - HTTP 500 carrying a JSON-RPC error (a 500 with any other body is always retried)
      * - RPC -32000 (catch-all)
      * - RPC -32603 (internal error)
      */
@@ -27,6 +27,9 @@ export class EvmRpcClient extends RpcClient {
         }
         if (err instanceof RpcError) {
             if (this.isRpcRateLimitError(err)) {
+                return true
+            }
+            if (this.isTraceStateError(err)) {
                 return true
             }
             if (this.isRpcTransientError(err)) {
@@ -51,12 +54,15 @@ export class EvmRpcClient extends RpcClient {
     getRetryKind(err: Error): string {
         if (err instanceof RpcError) {
             if (this.isRpcRateLimitError(err)) return 'rate_limit'
+            if (this.isTraceStateError(err)) return 'wrong_state'
             if (this.isRpcTransientError(err)) return 'transient'
             let kind = super.getRetryKind(err)
             if (kind != 'other') return kind
             if (this.isRpcInternalError(err)) return 'internal'
         }
         if (err instanceof HttpError && err.response.status === 500) {
+            // a 500 without a JSON-RPC answer, retried by RpcClient as a proxy failure
+            if (super.isConnectionError(err)) return super.getRetryKind(err)
             return this.retryInternalServerErrors ? 'internal' : 'transient'
         }
         // Thrown here when the endpoint had no usable answer yet: a null or an
@@ -91,7 +97,39 @@ export class EvmRpcClient extends RpcClient {
     isRpcTransientError(err: RpcError): boolean {
         return isTransientError(err.code, err.message, err.data)
     }
+
+    /**
+     * A transaction of a mined block failed its pre-checks while being traced.
+     * It passed them when it was mined, so the node that served the trace has
+     * wrong state for the block. A proxy reports this as an execution exception,
+     * which is final for a call that runs a new transaction, but not here.
+     */
+    isTraceStateError(err: RpcError): boolean {
+        // attached by RpcClient to an error received in answer to a call
+        let method = (err as {rpcMethod?: unknown}).rpcMethod
+        let tracesMinedTx = typeof method == 'string' && MINED_TX_TRACES.has(method)
+        if (!tracesMinedTx) return false
+
+        let messages = [err.message, ...getErrorCauses(err.data).map(cause => cause.message)]
+        return messages.some(message => message != null && TX_PRECHECK_FAILURE.test(message))
+    }
 }
+
+
+// Calls that re-execute transactions already in a block. `debug_traceCall`,
+// `trace_call` and the like run a new transaction, whose pre-check failure is final.
+const MINED_TX_TRACES = new Set([
+    'debug_traceBlockByHash',
+    'debug_traceBlockByNumber',
+    'debug_traceTransaction',
+    'trace_block',
+    'trace_replayBlockTransactions',
+    'trace_replayTransaction',
+    'trace_transaction',
+])
+
+
+const TX_PRECHECK_FAILURE = /insufficient funds for gas|nonce too (low|high)|intrinsic gas too low/i
 
 
 const TRANSIENT_ERRORS = [
