@@ -175,8 +175,20 @@ describe('EvmRpcClient.isConnectionError', () => {
         expect(client.isConnectionError(httpError(500, [transient, {...transient, id: 3}]))).toBe(true)
     })
 
-    it('leaves a bare HTTP 500 to retryInternalServerErrors', () => {
-        let err = httpError(500, 'Internal Server Error\n')
+    it('retries HTTP 500 whose body is not a JSON-RPC answer', () => {
+        let err = httpError(500, 'Uncaught exception')
+        expect(client.isConnectionError(err)).toBe(true)
+        expect(clientRetrying500.isConnectionError(err)).toBe(true)
+    })
+
+    it('retries HTTP 500 with a proxy error object, which is not a JSON-RPC answer', () => {
+        let err = httpError(500, {error: {message: 'Internal Server Error'}})
+        expect(client.isConnectionError(err)).toBe(true)
+        expect(client.getRetryKind(err)).toBe('http')
+    })
+
+    it('leaves HTTP 500 with a permanent JSON-RPC error to retryInternalServerErrors', () => {
+        let err = httpError(500, {jsonrpc: '2.0', id: 1, error: {code: -32000, message: 'execution reverted'}})
         expect(client.isConnectionError(err)).toBe(false)
         expect(clientRetrying500.isConnectionError(err)).toBe(true)
     })
@@ -194,15 +206,302 @@ describe('EvmRpcClient.getRetryKind', () => {
         ],
         [new RpcError({code: -32000, message: 'execution timeout'}), 'timeout'],
         [new RetryError('server returned unexpected result: null is not an object'), 'no_result'],
-        [httpError(500, {error: {code: 19, message: 'Temporary internal error. Please retry'}}), 'transient'],
+        [
+            httpError(500, {
+                jsonrpc: '2.0',
+                id: 1,
+                error: {code: 19, message: 'Temporary internal error. Please retry'},
+            }),
+            'transient',
+        ],
+        [httpError(500, {error: {code: 19, message: 'Temporary internal error. Please retry'}}), 'http'],
+        [httpError(500, 'Uncaught exception'), 'http'],
         [httpError(503, ''), 'http'],
+        [traceError('debug_traceBlockByHash', -32000, 'insufficient funds for gas * price + value'), 'wrong_state'],
     ])('classifies %s as %s', (err, kind) => {
         expect(client.getRetryKind(err)).toBe(kind)
     })
 
     it('classifies internal errors retried by retryInternalServerErrors as internal', () => {
         expect(clientRetrying500.getRetryKind(new RpcError({code: -32603, message: 'Internal error'}))).toBe('internal')
-        expect(clientRetrying500.getRetryKind(httpError(500, 'Internal Server Error\n'))).toBe('internal')
+        expect(
+            clientRetrying500.getRetryKind(
+                httpError(500, {jsonrpc: '2.0', id: 1, error: {code: -32000, message: 'execution reverted'}}),
+            ),
+        ).toBe('internal')
+        expect(clientRetrying500.getRetryKind(httpError(500, 'Uncaught exception'))).toBe('http')
+    })
+})
+
+const PRECHECK_FAILURE = 'tracing failed: insufficient funds for gas * price + value: address 0x01 have 0 want 100'
+
+// An error in answer to a call, as RpcClient hands it over.
+function traceError(method: string, code: number, message: string, data?: unknown): RpcError {
+    return Object.assign(new RpcError({code, message, data}), {rpcMethod: method})
+}
+
+// As a proxy passes on the node's -32000.
+function proxiedTraceError(method: string, message = PRECHECK_FAILURE): RpcError {
+    return traceError(method, -32003, message, {
+        code: 'ErrEndpointExecutionException',
+        message,
+        details: {originalCode: -32000},
+    })
+}
+
+describe('EvmRpcClient on a pre-check failure while tracing a mined block', () => {
+    let client = new EvmRpcClient({url: 'http://localhost:1', log: null})
+
+    it.each([
+        'debug_traceBlockByHash',
+        'debug_traceBlockByNumber',
+        'debug_traceTransaction',
+        'trace_block',
+        'trace_replayBlockTransactions',
+        'trace_replayTransaction',
+        'trace_transaction',
+    ])('retries %s', (method) => {
+        expect(client.isConnectionError(proxiedTraceError(method))).toBe(true)
+    })
+
+    it.each([
+        [-32000, 'insufficient funds for gas * price + value: address 0x01 have 0 want 100'],
+        [-32000, 'nonce too low: address 0x01, tx: 5 state: 6'],
+        [-32000, 'nonce too high: address 0x01, tx: 7 state: 6'],
+        [-32000, 'intrinsic gas too low: have 0, want 21000'],
+        [-32603, 'insufficient funds for gas * price + value'],
+        [-32000, 'err: insufficient funds for gas * price + value: address 0x01 have 0 want 100 (supplied gas 21000)'],
+        [-32000, 'Insufficient funds for gas * price + value'],
+        [1, 'nonce too low'],
+    ])('retries %i %s straight from the node', (code, message) => {
+        expect(client.isConnectionError(traceError('debug_traceBlockByHash', code, message))).toBe(true)
+    })
+
+    it('finds the failure in a cause under a generic proxy message', () => {
+        let err = traceError('debug_traceBlockByHash', -32603, 'all upstream attempts failed', {
+            code: 'ErrUpstreamsExhausted',
+            cause: [{code: 'ErrEndpointExecutionException', message: PRECHECK_FAILURE}],
+        })
+        expect(client.isConnectionError(err)).toBe(true)
+    })
+
+    it('finds the failure in a cause whose own message is generic', () => {
+        let err = traceError('trace_block', -32603, 'gave up retrying on network-level after 1s', {
+            code: 'ErrFailsafeRetryExceeded',
+            cause: {
+                code: 'ErrUpstreamsExhausted',
+                cause: [
+                    {
+                        code: 'ErrUpstreamRequest',
+                        cause: {code: 'ErrEndpointExecutionException', message: 'nonce too high'},
+                    },
+                ],
+            },
+        })
+        expect(client.isConnectionError(err)).toBe(true)
+    })
+
+    it.each([
+        'eth_call',
+        'eth_estimateGas',
+        'eth_sendRawTransaction',
+        'debug_traceCall',
+        'trace_call',
+        'trace_callMany',
+    ])('does not retry it for %s, which runs a new transaction', (method) => {
+        expect(client.isConnectionError(proxiedTraceError(method))).toBe(false)
+    })
+
+    it('does not retry it when the method is unknown', () => {
+        let err = new RpcError({code: -32003, message: PRECHECK_FAILURE, data: {code: 'ErrEndpointExecutionException'}})
+        expect(client.isConnectionError(err)).toBe(false)
+    })
+
+    it.each([
+        'execution reverted',
+        'insufficient funds for transfer',
+        'out of gas',
+        'tracing failed: max fee per gas less than block base fee',
+    ])('does not retry other execution errors of a trace: %s', (message) => {
+        expect(client.isConnectionError(proxiedTraceError('debug_traceBlockByHash', message))).toBe(false)
+    })
+})
+
+type Call = {id: number; method: string}
+type Reply = {status: number; contentType: string; body: unknown}
+
+const PRECHECK_ERROR = {
+    code: -32003,
+    message: PRECHECK_FAILURE,
+    data: {code: 'ErrEndpointExecutionException', message: PRECHECK_FAILURE},
+}
+
+function json(body: unknown, status = 200): Reply {
+    return {status, contentType: 'application/json', body}
+}
+
+// an error for each call, as the node answers
+function perCallErrors(calls: Call | Call[]): Reply {
+    let answer = (call: Call) => ({jsonrpc: '2.0', id: call.id, error: PRECHECK_ERROR})
+    return json(Array.isArray(calls) ? calls.map(answer) : answer(calls))
+}
+
+// one error for the whole batch, as a proxy may answer
+function wholeBatchError(): Reply {
+    return json({jsonrpc: '2.0', id: null, error: PRECHECK_ERROR})
+}
+
+describe('EvmRpcClient through the transport', () => {
+    let server: http.Server
+    let url: string
+    let replies: ((calls: Call | Call[]) => Reply)[]
+
+    beforeEach(async () => {
+        replies = []
+        server = http.createServer((req, res) => {
+            let body = ''
+            req.on('data', (chunk) => {
+                body += chunk
+            })
+            req.on('end', () => {
+                let calls = JSON.parse(body)
+                let answer = (call: Call) => ({jsonrpc: '2.0', id: call.id, result: []})
+                let reply = replies.shift()?.(calls) ?? json(Array.isArray(calls) ? calls.map(answer) : answer(calls))
+                res.writeHead(reply.status, {'content-type': reply.contentType})
+                res.end(typeof reply.body == 'string' ? reply.body : JSON.stringify(reply.body))
+            })
+        })
+        await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+        url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+    })
+
+    afterEach(async () => {
+        // a test that fails before closing its client leaves a keep-alive socket open
+        server.closeAllConnections()
+        await new Promise<void>((resolve) => server.close(() => resolve()))
+    })
+
+    function client(retryAttempts = 1): EvmRpcClient {
+        return new EvmRpcClient({url, log: null, retryAttempts, retrySchedule: [0]})
+    }
+
+    function traceBatch(...methods: string[]) {
+        return methods.map((method, i) => ({method, params: [`0x0${i + 1}`, {tracer: 'callTracer'}]}))
+    }
+
+    describe('on a pre-check failure', () => {
+        it('retries a trace call', async () => {
+            replies = [perCallErrors]
+            let rpc = client()
+
+            await expect(rpc.call('debug_traceBlockByHash', ['0x01', {tracer: 'callTracer'}])).resolves.toEqual([])
+            expect(rpc.getMetrics().retriedErrors).toEqual({wrong_state: 1})
+            rpc.close()
+        })
+
+        it('retries a batch of trace calls that fail one by one', async () => {
+            replies = [perCallErrors]
+            let rpc = client()
+
+            await expect(rpc.batchCall(traceBatch('trace_block', 'trace_block'))).resolves.toEqual([[], []])
+            expect(rpc.getMetrics().retriedErrors).toEqual({wrong_state: 1})
+            rpc.close()
+        })
+
+        it('retries a batch of trace calls that fails as a whole', async () => {
+            replies = [wholeBatchError]
+            let rpc = client()
+
+            let batch = traceBatch('debug_traceBlockByHash', 'debug_traceBlockByHash')
+            await expect(rpc.batchCall(batch)).resolves.toEqual([[], []])
+            expect(rpc.getMetrics().retriedErrors).toEqual({wrong_state: 1})
+            rpc.close()
+        })
+
+        it('keeps retrying while the node serves wrong state', async () => {
+            replies = [perCallErrors, perCallErrors, perCallErrors]
+            let rpc = client(3)
+
+            await expect(rpc.call('debug_traceTransaction', ['0x01'])).resolves.toEqual([])
+            expect(rpc.getMetrics().retriedErrors).toEqual({wrong_state: 3})
+            rpc.close()
+        })
+
+        it('fails once the retries are spent', async () => {
+            replies = [perCallErrors, perCallErrors]
+            let rpc = client(1)
+
+            await expect(rpc.call('debug_traceTransaction', ['0x01'])).rejects.toBeInstanceOf(RpcError)
+            rpc.close()
+        })
+
+        it('fails a batch of several methods that fails as a whole', async () => {
+            replies = [wholeBatchError]
+            let rpc = client()
+
+            let batch = traceBatch('debug_traceBlockByHash', 'eth_getBlockByHash')
+            await expect(rpc.batchCall(batch)).rejects.toBeInstanceOf(RpcError)
+            expect(rpc.getMetrics().retriedErrors).toEqual({})
+            rpc.close()
+        })
+
+        it('fails eth_call at once', async () => {
+            replies = [perCallErrors]
+            let rpc = client()
+
+            await expect(rpc.call('eth_call', [{to: '0x01'}, 'latest'])).rejects.toBeInstanceOf(RpcError)
+            expect(rpc.getMetrics().retriedErrors).toEqual({})
+            rpc.close()
+        })
+
+        it('fails a batch of eth_call that fails as a whole at once', async () => {
+            replies = [wholeBatchError]
+            let rpc = client()
+
+            await expect(rpc.batchCall(traceBatch('eth_call', 'eth_call'))).rejects.toBeInstanceOf(RpcError)
+            expect(rpc.getMetrics().retriedErrors).toEqual({})
+            rpc.close()
+        })
+    })
+
+    describe('on HTTP 500', () => {
+        it('retries the bare 500 of a proxy', async () => {
+            replies = [() => ({status: 500, contentType: 'text/plain;charset=UTF-8', body: 'Uncaught exception'})]
+            let rpc = client()
+
+            await expect(rpc.call('eth_blockNumber')).resolves.toEqual([])
+            expect(rpc.getMetrics().retriedErrors).toEqual({http: 1})
+            rpc.close()
+        })
+
+        it('retries a 500 with a proxy error object', async () => {
+            replies = [() => json({error: {message: 'Internal Server Error'}}, 500)]
+            let rpc = client()
+
+            await expect(rpc.call('eth_blockNumber')).resolves.toEqual([])
+            expect(rpc.getMetrics().retriedErrors).toEqual({http: 1})
+            rpc.close()
+        })
+
+        it('retries a 500 whose JSON-RPC error is transient', async () => {
+            let error = {code: 19, message: 'Temporary internal error. Please retry'}
+            replies = [(call) => json({jsonrpc: '2.0', id: (call as Call).id, error}, 500)]
+            let rpc = client()
+
+            await expect(rpc.call('eth_blockNumber')).resolves.toEqual([])
+            expect(rpc.getMetrics().retriedErrors).toEqual({transient: 1})
+            rpc.close()
+        })
+
+        it('fails on a 500 whose JSON-RPC error is permanent', async () => {
+            let error = {code: -32601, message: 'The method x does not exist/is not available'}
+            replies = [(call) => json({jsonrpc: '2.0', id: (call as Call).id, error}, 500)]
+            let rpc = client()
+
+            await expect(rpc.call('x')).rejects.toBeInstanceOf(HttpError)
+            expect(rpc.getMetrics().retriedErrors).toEqual({})
+            rpc.close()
+        })
     })
 })
 

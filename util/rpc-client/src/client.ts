@@ -559,6 +559,10 @@ export class RpcClient {
                 case 523:
                 case 524:
                     return true
+                // Bitcoin Core and others answer ordinary JSON-RPC errors with a 500.
+                // Any other body comes from a proxy in front of the node failing.
+                case 500:
+                    return !isJsonRpcResponseBody(err.response.body)
                 default:
                     return false
             }
@@ -648,5 +652,34 @@ function isExecutionTimeoutError(err: unknown): boolean {
 
 function isRequestTimedOutError(err: unknown): boolean {
     return err instanceof RpcError && /request.*timed out/i.test(err.message)
+}
+
+
+function isJsonRpcResponseBody(body: unknown): boolean {
+    let json = parseJson(body)
+    let responses = Array.isArray(json) ? json : [json]
+    return responses.some(isJsonRpcResponse)
+}
+
+
+// JSON-RPC 1.0 responses, Bitcoin Core's among them, have no `jsonrpc` member,
+// only `id`. A bare `error` object, with neither, comes from a proxy.
+function isJsonRpcResponse(value: unknown): boolean {
+    if (value == null || typeof value != 'object') return false
+
+    let hasEnvelope = 'jsonrpc' in value || 'id' in value
+    let hasOutcome = 'result' in value || 'error' in value
+    return hasEnvelope && hasOutcome
+}
+
+
+// JSON sent under a non-JSON content type arrives as text or bytes.
+function parseJson(body: unknown): unknown {
+    if (typeof body != 'string' && !Buffer.isBuffer(body)) return body
+    try {
+        return JSON.parse(body.toString())
+    } catch {
+        return undefined
+    }
 }
 

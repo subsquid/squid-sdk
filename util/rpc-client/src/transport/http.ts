@@ -1,8 +1,9 @@
 import {FetchRequest, FetchResponse, HttpAgent, HttpClient, HttpClientOptions} from '@subsquid/http-client'
 import {Logger} from '@subsquid/logger'
+import {addErrorContext} from '@subsquid/util-internal'
 import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
 import {RpcError, RpcProtocolError} from '../errors'
-import {Connection, RpcRequest, RpcResponse} from '../interfaces'
+import {Connection, RpcErrorInfo, RpcRequest, RpcResponse} from '../interfaces'
 import {redactRpcUrlsInError} from '../redact'
 
 
@@ -10,7 +11,7 @@ class RpcHttpClient extends HttpClient {
     fixUnsafeIntegers = false
 
     protected async handleResponseBody(req: FetchRequest, res: FetchResponse): Promise<any> {
-        if (!res.ok) return super.handleResponseBody(req, res)
+        if (!res.ok) return this.handleErrorResponseBody(req, res)
         let json = await res.text()
         try {
             if (this.fixUnsafeIntegers) {
@@ -19,6 +20,20 @@ class RpcHttpClient extends HttpClient {
             return JSON.parse(json)
         } catch(err: any) {
             throw new RpcProtocolError(1008, `server returned invalid JSON: ${err.message}`)
+        }
+    }
+
+    // A proxy's error page can come labeled as JSON. Kept as text when it does not
+    // parse, so that the status decides whether to retry, not a parse error.
+    private async handleErrorResponseBody(req: FetchRequest, res: FetchResponse): Promise<any> {
+        let contentType = (res.headers.get('content-type') || '').split(';')[0]
+        if (contentType != 'application/json') return super.handleResponseBody(req, res)
+
+        let text = await res.text()
+        try {
+            return JSON.parse(text)
+        } catch {
+            return text
         }
     }
 }
@@ -100,7 +115,7 @@ export class HttpConnection implements Connection {
             // the misleading "should be an array" protocol error.
             let error = (res as unknown as RpcResponse | null)?.error
             if (error) {
-                throw new RpcError(error)
+                throw wholeBatchError(batch, error)
             }
             throw new RpcProtocolError(1008, `Response for a batch request should be an array`)
         }
@@ -130,4 +145,15 @@ export class HttpConnection implements Connection {
         }
         return res
     }
+}
+
+
+// Carries the method, as an error in answer to a single call does, when the
+// batch has only one: whether to retry can depend on it.
+function wholeBatchError(batch: RpcRequest[], info: RpcErrorInfo): RpcError {
+    let err = new RpcError(info)
+
+    let method = batch[0].method
+    let sameMethod = batch.every(call => call.method == method)
+    return sameMethod ? addErrorContext(err, {rpcMethod: method}) : err
 }

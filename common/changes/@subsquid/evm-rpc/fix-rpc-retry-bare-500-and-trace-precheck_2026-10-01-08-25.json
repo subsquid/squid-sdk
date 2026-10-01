@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "Retry transaction pre-check failures (insufficient funds, nonce too low or high, intrinsic gas too low) returned while tracing a mined block, under any code or proxy cause",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
