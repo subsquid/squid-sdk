@@ -1,4 +1,3 @@
-import {Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
 import {collectDefaultMetrics, Gauge, Counter, Registry} from 'prom-client'
@@ -24,24 +23,13 @@ export class PrometheusServer {
 
     constructor(
         private port: number,
-        getFinalizedHeight: () => Promise<number>,
-        rpc: RpcClient,
-        log: Logger
+        rpc: RpcClient
     ) {
-        let chainHeight = 0
-        
+        // Set by the ingest loop: a collect() that calls the RPC hangs the scrape while the endpoint fails.
         this.chainHeightGauge = new Gauge({
             name: 'sqd_dump_chain_height',
             help: 'Finalized head of a chain',
-            registers: [this.registry],
-            async collect() {
-                try {
-                    chainHeight = await getFinalizedHeight()
-                } catch(err: any) {
-                    log.error(err, 'failed to acquire chain height')
-                }
-                this.set(chainHeight)
-            }
+            registers: [this.registry]
         })
 
         this.compressionGauge = new Gauge({
@@ -187,6 +175,10 @@ export class PrometheusServer {
         for (let compression of ['gzip', 'zstd']) {
             this.compressionGauge.set({compression}, compression == active ? 1 : 0)
         }
+    }
+
+    setChainHeight(height: number) {
+        this.chainHeightGauge.set(height)
     }
 
     setLastWrittenBlock(block: number) {

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "comment": "Report `sqd_dump_chain_height` from the head the ingest loop polls, so `/metrics` no longer waits on the RPC endpoint",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-cli"
+}
