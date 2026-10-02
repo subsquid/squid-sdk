@@ -90,6 +90,44 @@ function blockWithFrame(frame: rpc.DebugFrame): rpc.Block {
 }
 
 
+describe('PascalCase debug frame', () => {
+    // zkSync-era nodes (e.g. zklink-nova) serialize call kinds in PascalCase.
+    it('maps a `Call` frame', () => {
+        let block = blockWithFrame({
+            type: 'Call',
+            from: '0xb31fb3fd1b61e571a9709bc59413950e1abc9926',
+            to: CONTRACT,
+            value: '0x0',
+            gas: '0x0',
+            gasUsed: '0x0',
+            input: '0x'
+        } as unknown as rpc.DebugFrame)
+
+        expect(mapRpcBlock(block, {withTraces: true}).traces).toEqual([
+            {
+                transactionIndex: 0,
+                traceAddress: [],
+                subtraces: 0,
+                error: undefined,
+                revertReason: undefined,
+                type: 'call',
+                action: {
+                    callType: 'call',
+                    from: '0xb31fb3fd1b61e571a9709bc59413950e1abc9926',
+                    to: CONTRACT,
+                    value: '0x0',
+                    gas: '0x0',
+                    input: '0x'
+                },
+                result: {
+                    gasUsed: '0x0'
+                }
+            }
+        ])
+    })
+})
+
+
 describe('SELFDESTRUCT debug frame', () => {
     it('maps an intact frame', () => {
         let block = blockWithFrame({
