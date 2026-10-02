@@ -179,6 +179,12 @@ export class DataService {
         }
     }
 
+    /**
+     * Resolves once the first block is ingested.
+     *
+     * Rejects when ingestion fails before that. It is not restarted then,
+     * so the process has to exit, otherwise it serves a frozen head.
+     */
     started(): Promise<void> {
         return this.firstBlockIngestedFuture.promise()
     }

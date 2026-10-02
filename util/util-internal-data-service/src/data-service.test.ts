@@ -157,4 +157,22 @@ describe('DataService ingestion restarts', () => {
         let text = await service.metrics.registry.metrics()
         expect(text).toContain('sqd_hotblocks_ingestion_restarts_total{reason="TypeError"} 1')
     })
+
+    it('stops and rejects started() when ingestion fails before the first block', async () => {
+        // the services' mains exit on this rejection to get restarted
+        let sessions = 0
+        let source: DataSource<Block> = {
+            ...mkSource({opened: 0, closed: 0}),
+            getStream() {
+                sessions += 1
+                throw new TypeError('rate limited')
+            }
+        }
+        let service = new DataService(source, 10)
+        await service.init()
+        await service.run()
+
+        await expect(service.started()).rejects.toThrow('rate limited')
+        expect(sessions).toBe(1)
+    })
 })

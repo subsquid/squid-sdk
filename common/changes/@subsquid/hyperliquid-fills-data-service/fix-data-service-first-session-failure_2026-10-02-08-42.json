@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/hyperliquid-fills-data-service",
+      "comment": "Exit when data ingestion fails before the first block, instead of serving the initial block without ever restarting ingestion",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/hyperliquid-fills-data-service"
+}
