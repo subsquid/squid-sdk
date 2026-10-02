@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-data-service",
+      "comment": "Document that started() rejects when ingestion fails before the first block",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-data-service"
+}
