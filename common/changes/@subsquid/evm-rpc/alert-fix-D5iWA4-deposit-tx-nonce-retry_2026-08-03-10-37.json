@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "Retry transient malformed eth_getBlockByNumber results instead of crashing on DataValidationError",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
