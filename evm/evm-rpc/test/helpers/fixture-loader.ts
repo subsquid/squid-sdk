@@ -22,6 +22,7 @@ const CHAIN_IDS: Record<string, string> = {
     'avalanche-testnet': '0xa869',
     'geth-dev': '0x539',
     anvil: '0x7a69',
+    prom: '0xe3',
 }
 
 
@@ -85,6 +86,18 @@ export function loadAllReceipts(chain: string, blockNumber: number): Receipt[] {
 export function loadDebugFrames(chain: string, blockNumber: number, variant?: string): any[] {
     const name = variant ? `debug-frames.${variant}.json` : 'debug-frames.json'
     const path = Path.join(FIXTURES_DIR, chain, blockNumber.toString(), name)
+    if (!fs.existsSync(path)) {
+        throw new Error(`Fixture not found: ${path}`)
+    }
+    return JSON.parse(fs.readFileSync(path, 'utf-8'))
+}
+
+
+/**
+ * Loads a captured `debug_traceBlockByHash` response with the `prestateTracer` in diff mode.
+ */
+export function loadDebugStateDiffs(chain: string, blockNumber: number): any[] {
+    const path = Path.join(FIXTURES_DIR, chain, blockNumber.toString(), 'debug-state-diffs.json')
     if (!fs.existsSync(path)) {
         throw new Error(`Fixture not found: ${path}`)
     }

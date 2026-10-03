@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "Store a prestate tracer's pre-transaction nonce of 2^64 - 1, a wrapped zero, as 0 instead of failing the block",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
