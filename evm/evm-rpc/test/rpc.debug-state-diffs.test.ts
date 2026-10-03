@@ -6,9 +6,9 @@ import {getChainId, loadBlock, loadDebugStateDiffs} from './helpers/fixture-load
 import {MockRpcClient} from './helpers/mock-rpc-client'
 
 // Prom mainnet block 9821755 holds one transaction: a contract deployment by
-// 0x6516…a137, the first transaction of that account. cdk-erigon/v2.0.12-rc1
-// returns the account's nonce before it as 18446744073709551615 (2^64 - 1) and
-// after it as 1, while trace_replayTransaction on the same node reports 0x0 -> 0x1.
+// 0x6516…a137, the first transaction of that account (its own nonce is 0).
+// cdk-erigon returns the account's nonce before it as 18446744073709551615
+// (2^64 - 1) and after it as 1.
 const CHAIN = 'prom'
 const BLOCK = 9821755
 const SENDER = '0x6516418519f32ef281a621d37309bc823924a137'
