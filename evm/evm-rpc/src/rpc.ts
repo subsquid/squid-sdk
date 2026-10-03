@@ -23,7 +23,8 @@ import {
     TraceReplayTraces,
     getTraceTransactionReplayValidator,
     Transaction,
-    Log
+    Log,
+    UNDERFLOWED_NONCE
 } from './rpc-data'
 import { Block, DataRequest, Qty, Bytes, Bytes32 } from './types'
 import { qty2Int, toQty, getTxHash } from './util'
@@ -719,10 +720,34 @@ export class Rpc {
             if (diffs == null) {
                 block._isInvalid = true
                 block._errorMessage = "failed to get debug state diffs for a block"
-            } else if (block.block.transactions.length === diffs.length) {
+                continue
+            }
+
+            this.resetUnderflowedNonces(block, diffs)
+
+            if (block.block.transactions.length === diffs.length) {
                 block.debugStateDiffs = diffs
             } else {
                 block.debugStateDiffs = this.matchDebugTrace('debug state diff', block, diffs, utils)
+            }
+        }
+    }
+
+    // No account can reach the maximum nonce before a transaction, so it is the
+    // tracer's wrapped zero (see UNDERFLOWED_NONCE)
+    private resetUnderflowedNonces(block: Block, diffs: DebugStateDiffResult[]): void {
+        for (let i = 0; i < diffs.length; i++) {
+            let pre = diffs[i].result.pre
+            for (let address in pre) {
+                if (pre[address].nonce !== UNDERFLOWED_NONCE) continue
+                this.log.warn({
+                    blockNumber: block.number,
+                    blockHash: block.hash,
+                    traceIndex: i,
+                    transactionHash: diffs[i].txHash,
+                    address
+                }, 'prestate tracer returned an underflowed nonce, storing it as 0')
+                pre[address].nonce = 0
             }
         }
     }

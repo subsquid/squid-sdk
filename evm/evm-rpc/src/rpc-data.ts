@@ -563,8 +563,36 @@ export const DebugStateMap = object({
 export type DebugStateMap = GetSrcType<typeof DebugStateMap>
 
 
+// A prestate tracer can rebuild an account's nonce before the transaction as
+// its current nonce minus one even when the transaction has not incremented it,
+// which wraps a zero nonce to 2^64 - 1 (cdk-erigon on a contract deployment by
+// a fresh account). JSON.parse() rounds that to 2^64.
+export const UNDERFLOWED_NONCE = 2 ** 64
+
+
+const PRE_STATE_NONCE: Validator<number> = {
+    cast(value: unknown) {
+        return value === UNDERFLOWED_NONCE ? value : NAT.cast(value)
+    },
+    validate(value: unknown) {
+        return value === UNDERFLOWED_NONCE ? undefined : NAT.validate(value)
+    },
+    phantom() {
+        return 0
+    }
+}
+
+
+export const DebugPreStateMap = object({
+    balance: option(QTY),
+    code: option(BYTES),
+    nonce: option(PRE_STATE_NONCE),
+    storage: option(record(BYTES, BYTES))
+})
+
+
 export const DebugStateDiff = object({
-    pre: record(BYTES, DebugStateMap),
+    pre: record(BYTES, DebugPreStateMap),
     post: record(BYTES, DebugStateMap)
 })
 
