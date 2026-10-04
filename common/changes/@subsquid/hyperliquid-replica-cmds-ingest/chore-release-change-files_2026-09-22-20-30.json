@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-ingest",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/hyperliquid-replica-cmds-ingest"
+}

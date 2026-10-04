@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}

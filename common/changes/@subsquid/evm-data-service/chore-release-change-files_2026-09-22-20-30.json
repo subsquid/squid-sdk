@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-data-service",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/evm-data-service"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-dump",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/evm-dump"
+}

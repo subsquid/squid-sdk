@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-codegen",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen"
+}

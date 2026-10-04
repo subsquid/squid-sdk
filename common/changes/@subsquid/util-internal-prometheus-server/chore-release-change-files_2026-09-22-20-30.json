@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-prometheus-server",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-prometheus-server"
+}

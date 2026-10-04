@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-data-source",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-data-source"
+}
