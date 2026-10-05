@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "Add an optional `pk` argument to @entity, declaring a composite primary key over `id` plus additional non-nullable scalar or enum columns. Absent or [\"id\"] keeps the existing single-column key",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/openreader",
+      "comment": "Generate a `<entity>ByPks` query taking one argument per primary key column. `<entity>ById` remains available and unchanged for entities with a single-column key; entities with a composite key expose ByPks only, since `id` alone does not identify a row there",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/openreader"
+}

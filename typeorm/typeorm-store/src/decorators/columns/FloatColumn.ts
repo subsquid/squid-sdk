@@ -2,7 +2,7 @@ import {floatTransformer} from '../../transformers'
 import {Column} from './Column'
 import {ColumnCommonOptions} from './common'
 
-export type FloatColumnOptions = Pick<ColumnCommonOptions, 'name' | 'unique' | 'nullable' | 'default' | 'comment'>
+export type FloatColumnOptions = Pick<ColumnCommonOptions, 'name' | 'unique' | 'nullable' | 'default' | 'comment' | 'primary'>
 
 /**
  * FloatColumn decorator is used to mark a specific class property as a `numeric` table column.

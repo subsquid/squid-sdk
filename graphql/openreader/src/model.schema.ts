@@ -2,6 +2,7 @@ import {assertNotNull, unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     buildASTSchema,
+    DirectiveNode,
     DocumentNode,
     extendSchema,
     GraphQLEnumType,
@@ -24,7 +25,7 @@ import {customScalars} from './scalars'
 
 
 const baseSchema = buildASTSchema(parse(`
-    directive @entity(queryName: String listQueryName: String) on OBJECT
+    directive @entity(queryName: String listQueryName: String pk: [String!]) on OBJECT
     directive @query on INTERFACE
     directive @derivedFrom(field: String!) on FIELD_DEFINITION
     directive @unique on FIELD_DEFINITION
@@ -587,7 +588,82 @@ function handleEntityDirective(model: Model, type: GraphQLObjectType | GraphQLIn
     return {
         queryName,
         listQueryName,
+        pk: checkEntityPrimaryKey(type, directive),
     }
+}
+
+
+/**
+ * Parses and validates `@entity(pk: [...])`.
+ *
+ * Returns `undefined` for the default single-column key, so that entities which
+ * don't opt in are indistinguishable from entities declared before this
+ * directive argument existed.
+ */
+function checkEntityPrimaryKey(
+    type: GraphQLObjectType | GraphQLInterfaceType,
+    directive: DirectiveNode
+): string[] | undefined {
+    let pkArg = directive.arguments?.find(arg => arg.name.value == 'pk')
+    if (pkArg == null) return undefined
+
+    assert(pkArg.value.kind == 'ListValue')
+    let fields = pkArg.value.values.map(v => {
+        assert(v.kind == 'StringValue')
+        return v.value
+    })
+
+    if (fields.length == 0) throw new SchemaError(
+        `pk was specified for ${type.name}, but no fields were listed`
+    )
+
+    if (fields[0] != 'id') throw new SchemaError(
+        `pk of ${type.name} must start with 'id', but starts with '${fields[0]}'`
+    )
+
+    let seen = new Set<string>()
+    for (let name of fields) {
+        if (seen.has(name)) throw new SchemaError(
+            `Field '${name}' is listed twice in the pk of ${type.name}`
+        )
+        seen.add(name)
+        // `id` is implicit — entities that don't declare it get one synthesized.
+        if (name == 'id') continue
+        let f = type.getFields()[name]
+        if (f == null) throw new SchemaError(
+            `Entity ${type.name} doesn't have a field '${name}', but it is a part of its pk`
+        )
+        assertCanBePrimaryKey(type, f)
+    }
+
+    // Equivalent to not opting in at all.
+    if (fields.length == 1) return undefined
+
+    return fields
+}
+
+
+function assertCanBePrimaryKey(type: GraphQLNamedType, f: GraphQLField<any, any>): void {
+    if (!(f.type instanceof GraphQLNonNull)) throw new SchemaError(
+        `${type.name}.${f.name} can't be a part of a primary key, it must be non-nullable`
+    )
+    let inner = f.type.ofType
+    if (inner instanceof GraphQLList) throw new SchemaError(
+        `${type.name}.${f.name} can't be a part of a primary key, it is a list`
+    )
+    if (inner instanceof GraphQLScalarType) {
+        // JSON has no useful equality; Bytes round-trips through the hot-block
+        // change log in a different representation than it has on the entity,
+        // so the two would not compare equal during rollback.
+        if (inner.name == 'JSON' || inner.name == 'Bytes') throw new SchemaError(
+            `${type.name}.${f.name} can't be a part of a primary key, ${inner.name} is not supported there`
+        )
+        return
+    }
+    if (inner instanceof GraphQLEnumType) return
+    throw new SchemaError(
+        `${type.name}.${f.name} can't be a part of a primary key, it is not a scalar or enum`
+    )
 }
 
 
