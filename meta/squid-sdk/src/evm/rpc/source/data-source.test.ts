@@ -129,3 +129,24 @@ describe('keptByPosition', () => {
         expect(keptByPosition(projected, pre, [])).toEqual([])
     })
 })
+
+describe('EvmRpcStreamDataSource — head polls', () => {
+    it('forwards getHeight to the inner source (eth_blockNumber, not a block lookup)', async () => {
+        // Regression: this adapter is what the fallback holds, and it enumerates the DataSource
+        // contract method by method — an optional method it omits is invisible, silently
+        // downgrading every freshness poll to the full eth_getBlockByNumber lookup.
+        const {EvmRpcStreamDataSource} = await import('./data-source')
+        let calls: string[] = []
+        let rpc = {
+            getHeight: async () => {
+                calls.push('eth_blockNumber')
+                return 100
+            },
+            getConcurrency: () => 10,
+        }
+        let src = new EvmRpcStreamDataSource({rpc: rpc as never, fields: {}, requests: []})
+
+        expect(await src.getHeight()).toBe(100)
+        expect(calls).toEqual(['eth_blockNumber'])
+    })
+})

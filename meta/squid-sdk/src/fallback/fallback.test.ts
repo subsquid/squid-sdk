@@ -762,6 +762,38 @@ describe('FallbackDataSource — freshness (M1)', () => {
     })
 })
 
+describe('FallbackDataSource — freshness head polls', () => {
+    it("prefers a source's cheap getHeight over getHead for the poll", async () => {
+        // On an EVM RPC source `getHeight` is `eth_blockNumber` while `getHead` is a block
+        // lookup; the freshness machinery consumes only the number, so the cheap call must win
+        // whenever the source offers it.
+        let heights = 0
+        let heads = 0
+        let s0 = new MockSource(async function* () {
+            for (let n = 1; n <= 3; n++) yield batch([blk(n)])
+        })
+        let standby: DataSource<TestBlock> = {
+            getStream: async function* () {},
+            getFinalizedStream: async function* () {},
+            getHead: async () => {
+                heads++
+                return {number: 1000, hash: '0x1000'}
+            },
+            getHeight: async () => {
+                heights++
+                return 1000
+            },
+            getFinalizedHead: async () => ({number: 1000, hash: '0x1000'}),
+        }
+        let fb = fallback([s0, standby], {headTtlMs: 0})
+
+        await collect(fb.getStream({from: 1, to: 3}))
+
+        expect(heights).toBeGreaterThan(0)
+        expect(heads).toBe(0)
+    })
+})
+
 describe('FallbackDataSource — getHead delegation', () => {
     it('delegates to the active source and fails over on error', async () => {
         let noop: StreamFn = async function* () {}
