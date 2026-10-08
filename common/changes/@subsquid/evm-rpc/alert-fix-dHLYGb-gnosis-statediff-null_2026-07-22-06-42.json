@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "tolerate per-tx null trace/stateDiff from trace_replayBlockTransactions and flag the block for retry instead of crashing ingestion",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
