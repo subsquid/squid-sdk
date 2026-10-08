@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-normalization",
+      "comment": "Map PascalCase debug call-frame types (zkSync-era nodes) instead of throwing",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-normalization"
+}
