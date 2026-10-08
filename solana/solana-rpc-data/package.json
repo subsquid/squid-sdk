@@ -13,7 +13,8 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run"
   },
   "peerDependencies": {
     "@subsquid/util-internal-validation": "^0.9.0"
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@subsquid/util-internal-validation": "^0.9.0",
     "@types/node": "^24.13.6",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }
