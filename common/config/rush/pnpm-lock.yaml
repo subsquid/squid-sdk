@@ -249,7 +249,7 @@ importers:
         version: file:projects/solana-rpc.tgz(esbuild@0.28.2)(tsx@4.23.15)
       '@rush-temp/solana-rpc-data':
         specifier: file:./projects/solana-rpc-data.tgz
-        version: file:projects/solana-rpc-data.tgz
+        version: file:projects/solana-rpc-data.tgz(esbuild@0.28.2)(tsx@4.23.15)
       '@rush-temp/solana-spray':
         specifier: file:./projects/solana-spray.tgz
         version: file:projects/solana-spray.tgz
@@ -1538,7 +1538,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/solana-rpc-data@file:projects/solana-rpc-data.tgz':
-    resolution: {integrity: sha512-TzrKANljzdzJZCkIQu+qgWidDMCt6+aRtX1qRGSkFzd0u/fV7YZsAbgnP19Ipms6T59L4pI5rRVtkLHyHtBnMw==, tarball: file:projects/solana-rpc-data.tgz}
+    resolution: {integrity: sha512-YXbdYxALsK8yV0uVzrsb+PST5oINWDeA16676Wy2+TfNmoiIR+txlriMUJEDafumchkQNyZpzwOgeQAY5w10MQ==, tarball: file:projects/solana-rpc-data.tgz}
     version: 0.0.0
 
   '@rush-temp/solana-rpc@file:projects/solana-rpc.tgz':
@@ -6183,10 +6183,34 @@ snapshots:
       '@types/node': 24.13.6
       typescript: 5.5.4
 
-  '@rush-temp/solana-rpc-data@file:projects/solana-rpc-data.tgz':
+  '@rush-temp/solana-rpc-data@file:projects/solana-rpc-data.tgz(esbuild@0.28.2)(tsx@4.23.15)':
     dependencies:
       '@types/node': 24.13.6
       typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.13.6)(esbuild@0.28.2)(tsx@4.23.15)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
 
   '@rush-temp/solana-rpc@file:projects/solana-rpc.tgz(esbuild@0.28.2)(tsx@4.23.15)':
     dependencies:
