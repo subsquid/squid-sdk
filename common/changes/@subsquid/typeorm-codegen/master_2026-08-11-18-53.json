@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Avoid unused Column imports in generated models",
+      "type": "patch",
+      "packageName": "@subsquid/typeorm-codegen"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen",
+  "email": "zln1905391059@163.com"
+}
