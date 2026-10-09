@@ -64,4 +64,45 @@ describe('ingest', () => {
         const polls = await countIdleHeadPolls(20, 300)
         expect(polls).toBeGreaterThan(4)
     })
+
+    it('fails on a head block whose hash never verifies once the chain moves past it', async () => {
+        // The head path waits for a flagged block without limit, but as soon as the
+        // finalized head is more than `strideSize` blocks ahead, the catch-up path
+        // takes over and gives up after its retries.
+        let finalizedCalls = 0
+        const rpc = {
+            endpoint: 'mock://rpc',
+            getConcurrency: () => 1,
+            getLatestBlockhash: async () => {
+                finalizedCalls += 1
+                let number = finalizedCalls == 1 ? HEAD : HEAD + 10
+                return {number, hash: `0x${number}`}
+            },
+            getBlockBatch: async (numbers: number[]): Promise<Block[]> =>
+                numbers.map(number => ({
+                    number,
+                    hash: `0x${number}`,
+                    block: {hash: `0x${number}`, parentHash: `0x${number - 1}`} as Block['block'],
+                    ...(number == HEAD ? {_isInvalid: true, _errorMessage: 'failed to verify block hash'} : {}),
+                })),
+        } as unknown as Rpc
+
+        const stream = ingest({
+            rpc,
+            commitment: 'finalized',
+            req: {},
+            range: {from: HEAD},
+            strideSize: 5,
+            strideConcurrency: 1,
+            headPollInterval: 10,
+        })
+
+        const drain = async () => {
+            for await (let batch of stream) {
+                await batch
+            }
+        }
+
+        await expect(drain()).rejects.toThrow('failed to verify block hash')
+    }, 30_000)
 })
