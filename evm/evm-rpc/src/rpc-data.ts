@@ -651,6 +651,8 @@ export const GetBlock = object({
     withdrawals: option(array(Withdrawal)),
     withdrawalsRoot: option(BYTES),
     requestsHash: option(BYTES),
+    blockAccessListHash: option(BYTES),
+    slotNumber: option(QTY),
     l1BlockNumber: option(SMALL_QTY),
     // Tempo-specific block header fields
     // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/header.rs
