@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Generate closed structs, so that a version's `is()` no longer matches a runtime where the struct has gained fields",
+      "type": "minor",
+      "packageName": "@subsquid/substrate-typegen"
+    }
+  ],
+  "packageName": "@subsquid/substrate-typegen"
+}

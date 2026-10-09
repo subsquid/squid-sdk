@@ -17,13 +17,18 @@ export type GetStructType<F> = Simplify<UseOptionForUndefinedProps<{
 
 
 export class StructType<F extends Record<string, Type>> extends BaseType<GetStructType<F>> {
-    constructor(private fields: () => F) {
+    /**
+     * @param closed - when set, the scale struct must not have fields beyond the listed ones
+     */
+    constructor(private fields: () => F, private closed: boolean = false) {
         super()
     }
 
     match(typeChecker: TypeChecker, ty: ScaleType): boolean {
         if (ty.kind != TypeKind.Composite) return false
         if (ty.fields.length == 0 || ty.fields[0].name == null) return false
+
+        if (this.closed && ty.fields.length != this.getFields().length) return false
 
         let fields = new Map(ty.fields.map(f => [f.name, f.type]))
 
