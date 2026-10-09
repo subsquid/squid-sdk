@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Include the Glamsterdam header fields blockAccessListHash (EIP-7928) and slotNumber (EIP-7843) in the block hash check",
+      "type": "patch",
+      "packageName": "@subsquid/evm-rpc"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}

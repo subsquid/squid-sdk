@@ -193,6 +193,16 @@ function ethereumHeaderFields(block: GetBlock) {
         fields.push(decodeHex(block.requestsHash))
     }
 
+    // https://eips.ethereum.org/EIPS/eip-7928
+    if (block.blockAccessListHash) {
+        fields.push(decodeHex(block.blockAccessListHash))
+    }
+
+    // https://eips.ethereum.org/EIPS/eip-7843
+    if (block.slotNumber) {
+        fields.push(BigInt(block.slotNumber))
+    }
+
     return fields
 }
 
