@@ -117,6 +117,11 @@ export function struct<T extends Record<string, Type>>(def: Get<T>): Type<GetStr
 }
 
 
+export function closedStruct<T extends Record<string, Type>>(def: Get<T>): Type<GetStructType<T>> {
+    return new StructType(getter(def), true)
+}
+
+
 export function option<T extends Type>(type: Get<T>): Type<GetType<T> | undefined> {
     return new OptionType(getter(type))
 }
@@ -134,6 +139,11 @@ export function closedEnum<Variants extends EnumDefinition>(variants: Get<Varian
 
 export function enumStruct<T extends Record<string, Type>>(def: T): EnumStruct<GetStructType<T>> {
     return new EnumStruct(struct(def))
+}
+
+
+export function closedEnumStruct<T extends Record<string, Type>>(def: T): EnumStruct<GetStructType<T>> {
+    return new EnumStruct(closedStruct(def))
 }
 
 
