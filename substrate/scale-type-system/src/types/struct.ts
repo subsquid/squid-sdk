@@ -20,7 +20,7 @@ export class StructType<F extends Record<string, Type>> extends BaseType<GetStru
     /**
      * @param closed - when set, the scale struct must not have fields beyond the listed ones
      */
-    constructor(private fields: () => F, private closed: boolean = false) {
+    constructor(private fields: () => F, private closed = false) {
         super()
     }
 
