@@ -324,7 +324,7 @@ export class Sts {
         this.generatedNames.add(name)
         this.sink.push(out => {
             out.line()
-            out.line(`export const ${name}: sts.Type<${this.ifs.use(ti)}> = sts.struct(() => {`)
+            out.line(`export const ${name}: sts.Type<${this.ifs.use(ti)}> = sts.closedStruct(() => {`)
             out.indentation(() => {
                 out.block('return ', () => this.printStructFields(out, ty.fields))
             })
@@ -359,7 +359,7 @@ export class Sts {
                                 out.line(`${v.name}: ${this.renderTuple(v.fields.map(f => f.type))},`)
                             }
                         } else {
-                            out.line(`${v.name}: sts.enumStruct({`)
+                            out.line(`${v.name}: sts.closedEnumStruct({`)
                             out.indentation(() => this.printStructFields(out, v.fields))
                             out.line('}),')
                         }
