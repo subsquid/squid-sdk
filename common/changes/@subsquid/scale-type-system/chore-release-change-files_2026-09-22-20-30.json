@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/scale-type-system",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/scale-type-system"
+}

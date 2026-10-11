@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/big-decimal",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/big-decimal"
+}

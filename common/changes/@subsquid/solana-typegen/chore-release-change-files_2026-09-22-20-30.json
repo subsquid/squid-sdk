@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-typegen",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/solana-typegen"
+}

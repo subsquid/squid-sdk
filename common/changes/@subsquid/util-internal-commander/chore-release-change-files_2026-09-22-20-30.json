@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-commander",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-commander"
+}

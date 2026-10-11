@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-fs",
+      "comment": "propagate `requestPayer` in `S3Fs.cd()` and `delete()`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-fs"
+}
