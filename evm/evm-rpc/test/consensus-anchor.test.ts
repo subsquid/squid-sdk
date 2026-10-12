@@ -158,6 +158,27 @@ describe('consensus anchors on damaged data', () => {
         expect(stop.map((v) => [v.rule, v.actual])).toEqual([['status', 'root STOP frame']])
     })
 
+    it('reports a missing call frame only under a rule that applies', () => {
+        let c = caseAt(120000000, 5)
+        // system-fee does not apply without a state diff, system-gas not to a regular transaction
+        let noDiff = {...input(c, 'replay'), root: undefined, systemBalanceDelta: undefined}
+        expect(checkConsensusAnchors(noDiff, new Set(['system-fee', 'system-gas']))).toEqual([])
+        expect(checkConsensusAnchors(noDiff, new Set(['system-gas', 'gas'])).map((v) => v.rule)).toEqual(['gas'])
+        let s = caseAt(363, 2)
+        expect(
+            checkConsensusAnchors({...input(s, 'replay'), root: undefined}, new Set(['gas', 'system-gas'])).map(
+                (v) => v.rule,
+            ),
+        ).toEqual(['system-gas'])
+    })
+
+    it('flags a requested state diff that is missing', () => {
+        let c = caseAt(120000000, 5)
+        expect(checkConsensusAnchors({...input(c, 'replay'), systemBalanceDelta: null}, ALL_RULES)).toEqual([
+            {rule: 'system-fee', expected: 'a state diff for the transaction', actual: 'no state diff'},
+        ])
+    })
+
     it('flags a root frame without gasUsed', () => {
         let c = caseAt(120000000, 5)
         c.callFrame.gasUsed = undefined

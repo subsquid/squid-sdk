@@ -186,9 +186,22 @@ export class Rpc {
             }
         }
         this.consensusAnchorRules = new Set(rules)
-        // A receipt is only an anchor once it has been checked against the receipts root.
-        if (this.consensusAnchorValidation === 'reject' && !options.verifyReceiptsRoot) {
-            throw new Error("consensusAnchorValidation 'reject' requires verifyReceiptsRoot")
+        // Receipts and transactions are only anchors once checked against what the block
+        // commits to: the receipts root (gasUsed through cumulativeGasUsed, unless gasUsed
+        // is what the root encodes), the transactions root and the senders.
+        if (
+            this.consensusAnchorValidation === 'reject' &&
+            !(
+                options.verifyReceiptsRoot &&
+                (options.checkCumulativeGasUsed || options.useGasUsedForReceiptsRoot) &&
+                options.verifyTxRoot &&
+                options.verifyTxSender
+            )
+        ) {
+            throw new Error(
+                "consensusAnchorValidation 'reject' requires verifyReceiptsRoot, checkCumulativeGasUsed " +
+                    '(or useGasUsedForReceiptsRoot), verifyTxRoot and verifyTxSender'
+            )
         }
         this.checkLogIndex = options.checkLogIndex
         this.checkCumulativeGasUsed = options.checkCumulativeGasUsed
@@ -1193,10 +1206,11 @@ export class Rpc {
                 return
             }
 
-            let systemBalanceDelta: bigint | undefined
+            // `null`: state diffs were requested, but there is none for this transaction.
+            let systemBalanceDelta: bigint | null | undefined = req.stateDiffs ? null : undefined
             if (replayDiffs != null) {
                 let replay = replayDiffs.get(transactionHash.toLowerCase())
-                if (replay != null) systemBalanceDelta = systemBalanceDeltaFromReplay(replay.stateDiff)
+                if (replay?.stateDiff != null) systemBalanceDelta = systemBalanceDeltaFromReplay(replay.stateDiff)
             } else if (debugDiffs != null) {
                 let diff = debugDiffs[i]
                 if (diff != null) systemBalanceDelta = systemBalanceDeltaFromPrestate(diff.result)

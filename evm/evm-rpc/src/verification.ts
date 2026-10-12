@@ -1300,9 +1300,6 @@ export interface ConsensusAnchorViolation {
 }
 
 
-// Rules that read the call frame, in the order a missing frame is reported under.
-const TRACE_RULES: readonly ConsensusAnchorRule[] = ['status', 'gas', 'system-gas', 'system-fee']
-
 
 export interface ConsensusAnchorInput {
     /** Block miner (coinbase). */
@@ -1318,11 +1315,12 @@ export interface ConsensusAnchorInput {
     /** Root call frame; `undefined` when the trace has none for the transaction. */
     root: CallFrame | undefined
     /**
-     * Balance change of {@link SYSTEM_ADDRESS} in the transaction's state diff, or
-     * `undefined` when no state diff was fetched. An account the diff leaves out
-     * changed by zero.
+     * Balance change of {@link SYSTEM_ADDRESS} in the transaction's state diff. An account
+     * the diff leaves out changed by zero. `undefined` when state diffs were not fetched
+     * (the `system-fee` rule does not apply), `null` when they were but the transaction
+     * has none (a `system-fee` violation).
      */
-    systemBalanceDelta?: bigint
+    systemBalanceDelta?: bigint | null
 }
 
 
@@ -1337,11 +1335,22 @@ export function checkConsensusAnchors(
     let {miner, transaction, receipt, root} = input
     let violations: ConsensusAnchorViolation[] = []
 
+    // An absent gas price is not a zero one.
+    let isSystem =
+        sameAddress(transaction.from, miner) &&
+        transaction.gasPrice != null &&
+        toBigInt(transaction.gasPrice) === 0n
+
     // A missing call frame, or a root STOP, carries no execution to compare. Accepting it
-    // would let any trace pass by being replaced with one, so a selected trace rule
-    // reports it.
+    // would let any trace pass by being replaced with one, so the first selected rule
+    // that applies to this transaction reports it.
     if (root == null || root.type === 'STOP') {
-        let rule = TRACE_RULES.find(r => rules.has(r))
+        let applicable: ConsensusAnchorRule[] = [
+            ...(receipt.status != null ? ['status' as const] : []),
+            isSystem ? 'system-gas' : 'gas',
+            ...(input.systemBalanceDelta !== undefined ? ['system-fee' as const] : [])
+        ]
+        let rule = applicable.find(r => rules.has(r))
         if (rule) {
             violations.push({
                 rule,
@@ -1354,11 +1363,6 @@ export function checkConsensusAnchors(
 
     let receiptGasUsed = BigInt(receipt.gasUsed)
     let rootGasUsed = root.gasUsed != null ? toBigInt(root.gasUsed) : undefined
-    // An absent gas price is not a zero one.
-    let isSystem =
-        sameAddress(transaction.from, miner) &&
-        transaction.gasPrice != null &&
-        toBigInt(transaction.gasPrice) === 0n
 
     if ((rules.has('gas') && !isSystem) || (rules.has('system-gas') && isSystem)) {
         if (rootGasUsed == null) {
@@ -1402,7 +1406,13 @@ export function checkConsensusAnchors(
         }
     }
 
-    if (rules.has('system-fee') && input.systemBalanceDelta !== undefined) {
+    if (rules.has('system-fee') && input.systemBalanceDelta === null) {
+        violations.push({
+            rule: 'system-fee',
+            expected: 'a state diff for the transaction',
+            actual: 'no state diff'
+        })
+    } else if (rules.has('system-fee') && input.systemBalanceDelta !== undefined) {
         let price = toBigInt(receipt.effectiveGasPrice ?? transaction.gasPrice)
         let fee = receiptGasUsed * price + toBigInt(receipt.blobGasUsed) * toBigInt(receipt.blobGasPrice)
         let expected = fee + systemValueFlow(root)

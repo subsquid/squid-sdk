@@ -25,6 +25,9 @@ const PRESTATE_TRACER = {
 
 const ALL_RULES: ConsensusAnchorRule[] = ['status', 'gas', 'system-gas', 'system-fee']
 
+// What reject mode requires: receipts and transactions checked against the block.
+const VERIFIED = {verifyReceiptsRoot: true, checkCumulativeGasUsed: true, verifyTxRoot: true, verifyTxSender: true}
+
 type Damage = 'none' | 'reverted-root' | 'missing-fee-credit'
 
 function mockClient(damage: Damage = 'none'): MockRpcClient {
@@ -59,7 +62,7 @@ function mockClient(damage: Damage = 'none'): MockRpcClient {
 function rpc(client: MockRpcClient, mode: ConsensusAnchorValidationMode, rules = ALL_RULES): Rpc {
     return new Rpc({
         client: client as any,
-        verifyReceiptsRoot: true,
+        ...VERIFIED,
         consensusAnchorValidation: mode,
         consensusAnchorRules: rules,
     })
@@ -135,10 +138,7 @@ describe('consensus anchor validation', () => {
 
     it('is off by default', async () => {
         let client = mockClient('reverted-root')
-        let [block] = await new Rpc({client: client as any, verifyReceiptsRoot: true}).getBlockBatch(
-            [BLOCK_NUMBER],
-            request(),
-        )
+        let [block] = await new Rpc({client: client as any, ...VERIFIED}).getBlockBatch([BLOCK_NUMBER], request())
         expect(block._isInvalid).toBeFalsy()
     })
 
@@ -172,6 +172,17 @@ describe('consensus anchor validation', () => {
         expect(block._errorMessage).toMatch(/\(status\).*expected a call or create root frame, got root STOP frame/)
     })
 
+    it('rejects a transaction whose requested state diff is missing', async () => {
+        let client = mockClient()
+        let f = structuredClone(FIXTURE)
+        client.setFixture('trace_replayBlockTransactions', [f.block.hash, ['stateDiff']], f.replays.slice(1))
+        let [block] = await rpc(client, 'reject').getBlockBatch([BLOCK_NUMBER], request())
+        expect(block._isInvalid).toBe(true)
+        expect(block._errorMessage).toMatch(
+            /\(system-fee\).*expected a state diff for the transaction, got no state diff/,
+        )
+    })
+
     it('refuses to reject without the inputs it checks', async () => {
         await expect(
             rpc(mockClient(), 'reject').getBlockBatch([BLOCK_NUMBER], {...request(), receipts: false}),
@@ -193,6 +204,20 @@ describe('consensus anchor validation', () => {
     it('rejects invalid configuration', () => {
         let client = mockClient() as any
         expect(() => new Rpc({client, consensusAnchorValidation: 'reject'})).toThrow(/requires verifyReceiptsRoot/)
+        for (let missing of Object.keys(VERIFIED)) {
+            let options = {client, ...VERIFIED, [missing]: false, consensusAnchorValidation: 'reject' as const}
+            expect(() => new Rpc(options)).toThrow(/requires verifyReceiptsRoot/)
+        }
+        expect(
+            () =>
+                new Rpc({
+                    client,
+                    ...VERIFIED,
+                    checkCumulativeGasUsed: false,
+                    useGasUsedForReceiptsRoot: true,
+                    consensusAnchorValidation: 'reject',
+                }),
+        ).not.toThrow()
         expect(() => new Rpc({client, consensusAnchorValidation: 'strict' as any})).toThrow(/unsupported/)
         expect(() => new Rpc({client, consensusAnchorRules: ['balance' as any]})).toThrow(
             /unknown consensus anchor rule/,
