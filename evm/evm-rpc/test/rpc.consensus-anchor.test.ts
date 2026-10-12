@@ -183,6 +183,16 @@ describe('consensus anchor validation', () => {
         )
     })
 
+    it('does not use a prestate diff labelled with another transaction', async () => {
+        let client = mockClient()
+        let f = structuredClone(FIXTURE)
+        f.prestateDiffs[0].txHash = f.prestateDiffs[1].txHash
+        client.setFixture('debug_traceBlockByHash', [f.block.hash, PRESTATE_TRACER], f.prestateDiffs)
+        let [block] = await rpc(client, 'reject').getBlockBatch([BLOCK_NUMBER], request('prestate'))
+        expect(block._isInvalid).toBe(true)
+        expect(block._errorMessage).toMatch(/\(system-fee\).*got no state diff/)
+    })
+
     it('refuses to reject without the inputs it checks', async () => {
         await expect(
             rpc(mockClient(), 'reject').getBlockBatch([BLOCK_NUMBER], {...request(), receipts: false}),
@@ -222,6 +232,7 @@ describe('consensus anchor validation', () => {
         expect(() => new Rpc({client, consensusAnchorRules: ['balance' as any]})).toThrow(
             /unknown consensus anchor rule/,
         )
+        expect(() => new Rpc({client, consensusAnchorRules: []})).toThrow(/consensusAnchorRules is empty/)
     })
 })
 

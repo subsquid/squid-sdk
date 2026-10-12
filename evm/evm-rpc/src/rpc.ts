@@ -180,6 +180,10 @@ export class Rpc {
             throw new Error(`unsupported consensusAnchorValidation mode: ${this.consensusAnchorValidation}`)
         }
         let rules = options.consensusAnchorRules ?? DEFAULT_CONSENSUS_ANCHOR_RULES
+        if (rules.length === 0) {
+            // An empty rule set would let enabled validation accept every block.
+            throw new Error('consensusAnchorRules is empty')
+        }
         for (let rule of rules) {
             if (!CONSENSUS_ANCHOR_RULES.includes(rule)) {
                 throw new Error(`unknown consensus anchor rule: ${rule}`)
@@ -1213,7 +1217,10 @@ export class Rpc {
                 if (replay?.stateDiff != null) systemBalanceDelta = systemBalanceDeltaFromReplay(replay.stateDiff)
             } else if (debugDiffs != null) {
                 let diff = debugDiffs[i]
-                if (diff != null) systemBalanceDelta = systemBalanceDeltaFromPrestate(diff.result)
+                // A diff labelled with another transaction is not this transaction's diff.
+                if (diff != null && (diff.txHash == null || diff.txHash.toLowerCase() === transactionHash.toLowerCase())) {
+                    systemBalanceDelta = systemBalanceDeltaFromPrestate(diff.result)
+                }
             }
 
             let violations = checkConsensusAnchors(
