@@ -147,6 +147,33 @@ describe('consensus anchors on damaged data', () => {
         expect(checkConsensusAnchors(input(c, 'replay'), new Set(['gas'])).map((v) => v.rule)).toEqual(['gas'])
     })
 
+    it('flags a missing call frame or a root STOP under the first selected trace rule', () => {
+        let c = caseAt(120000000, 5)
+        let missing = checkConsensusAnchors({...input(c, 'replay'), root: undefined}, new Set(['gas']))
+        expect(missing).toEqual([{rule: 'gas', expected: 'a call or create root frame', actual: 'no call frame'}])
+        let stop = checkConsensusAnchors(
+            {...input(c, 'replay'), root: {type: 'STOP', from: c.transaction.from}},
+            ALL_RULES,
+        )
+        expect(stop.map((v) => [v.rule, v.actual])).toEqual([['status', 'root STOP frame']])
+    })
+
+    it('flags a root frame without gasUsed', () => {
+        let c = caseAt(120000000, 5)
+        c.callFrame.gasUsed = undefined
+        expect(rulesViolated(input(c, 'replay'))).toEqual(['gas'])
+        let s = caseAt(363, 2)
+        s.callFrame.gasUsed = undefined
+        expect(rulesViolated(input(s, 'replay'))).toEqual(['system-gas'])
+    })
+
+    it('does not take a transaction without a gas price for a system transaction', () => {
+        let c = caseAt(4532502, 41)
+        c.transaction.gasPrice = undefined
+        // compared exactly as a regular transaction: the slash() receipt exceeds its execution gas
+        expect(rulesViolated(input(c, 'replay'))).toEqual(['gas'])
+    })
+
     it('skips the fee rule without a state diff', () => {
         let c = caseAt(120000000, 5)
         expect(checkConsensusAnchors({...input(c, 'replay'), systemBalanceDelta: undefined}, ALL_RULES)).toEqual([])

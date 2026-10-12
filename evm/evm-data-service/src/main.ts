@@ -65,7 +65,7 @@ runProgram(async () => {
         new Option(
             '--consensus-anchor-validation <mode>',
             'Check debug call frames and state diffs against receipt status, gasUsed and fees; ' +
-                'reject marks a failing block invalid so it is fetched again'
+                'reject marks a failing block invalid so it is fetched again and requires --verify-receipts-root'
         )
             .choices([...CONSENSUS_ANCHOR_VALIDATION_MODES])
             .default('off')
@@ -121,6 +121,9 @@ runProgram(async () => {
     // misconfiguration is a CLI error rather than a worker crash.
     if (args.callFrameValidation === 'reject' && !(args.verifyTxRoot && args.verifyTxSender)) {
         program.error('--call-frame-validation reject requires --verify-tx-root and --verify-tx-sender')
+    }
+    if (args.consensusAnchorValidation === 'reject' && !args.verifyReceiptsRoot) {
+        program.error('--consensus-anchor-validation reject requires --verify-receipts-root')
     }
 
     let dataSourceOptions: DataSourceOptions = {

@@ -59,6 +59,7 @@ function mockClient(damage: Damage = 'none'): MockRpcClient {
 function rpc(client: MockRpcClient, mode: ConsensusAnchorValidationMode, rules = ALL_RULES): Rpc {
     return new Rpc({
         client: client as any,
+        verifyReceiptsRoot: true,
         consensusAnchorValidation: mode,
         consensusAnchorRules: rules,
     })
@@ -134,7 +135,10 @@ describe('consensus anchor validation', () => {
 
     it('is off by default', async () => {
         let client = mockClient('reverted-root')
-        let [block] = await new Rpc({client: client as any}).getBlockBatch([BLOCK_NUMBER], request())
+        let [block] = await new Rpc({client: client as any, verifyReceiptsRoot: true}).getBlockBatch(
+            [BLOCK_NUMBER],
+            request(),
+        )
         expect(block._isInvalid).toBeFalsy()
     })
 
@@ -158,8 +162,37 @@ describe('consensus anchor validation', () => {
         expect(block.block.transactions.every((tx) => typeof tx === 'string')).toBe(true)
     })
 
+    it('rejects a transaction without a call frame', async () => {
+        let client = mockClient()
+        let f = structuredClone(FIXTURE)
+        f.callFrames[0].result = {...f.callFrames[0].result, type: 'STOP', calls: undefined}
+        client.setFixture('debug_traceBlockByHash', [f.block.hash, CALL_TRACER], f.callFrames)
+        let [block] = await rpc(client, 'reject').getBlockBatch([BLOCK_NUMBER], request())
+        expect(block._isInvalid).toBe(true)
+        expect(block._errorMessage).toMatch(/\(status\).*expected a call or create root frame, got root STOP frame/)
+    })
+
+    it('refuses to reject without the inputs it checks', async () => {
+        await expect(
+            rpc(mockClient(), 'reject').getBlockBatch([BLOCK_NUMBER], {...request(), receipts: false}),
+        ).rejects.toThrow(/needs receipts and debug call frames/)
+    })
+
+    it('only skips missing inputs with a warning in observe mode', async () => {
+        let [block] = await rpc(mockClient(), 'observe').getBlockBatch([BLOCK_NUMBER], {
+            ...request(),
+            receipts: false,
+        })
+        expect(block._isInvalid).toBeFalsy()
+        expect(logWarn).toHaveBeenCalledWith(
+            expect.anything(),
+            'consensus anchor validation needs receipts and debug call frames; checks skipped',
+        )
+    })
+
     it('rejects invalid configuration', () => {
         let client = mockClient() as any
+        expect(() => new Rpc({client, consensusAnchorValidation: 'reject'})).toThrow(/requires verifyReceiptsRoot/)
         expect(() => new Rpc({client, consensusAnchorValidation: 'strict' as any})).toThrow(/unsupported/)
         expect(() => new Rpc({client, consensusAnchorRules: ['balance' as any]})).toThrow(
             /unknown consensus anchor rule/,

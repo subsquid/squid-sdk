@@ -186,6 +186,10 @@ export class Rpc {
             }
         }
         this.consensusAnchorRules = new Set(rules)
+        // A receipt is only an anchor once it has been checked against the receipts root.
+        if (this.consensusAnchorValidation === 'reject' && !options.verifyReceiptsRoot) {
+            throw new Error("consensusAnchorValidation 'reject' requires verifyReceiptsRoot")
+        }
         this.checkLogIndex = options.checkLogIndex
         this.checkCumulativeGasUsed = options.checkCumulativeGasUsed
         this.useGasUsedForReceiptsRoot = options.useGasUsedForReceiptsRoot
@@ -1142,6 +1146,10 @@ export class Rpc {
         if (block._isInvalid || block.number === 0) return
         if (!req.traces || req.useTraceApi) return
         if (block.debugFrames == null || block.receipts == null) {
+            if (this.consensusAnchorValidation === 'reject') {
+                // A configuration that cannot be checked must not pass blocks as checked.
+                throw new Error('consensus anchor validation needs receipts and debug call frames in the data request')
+            }
             if (!this.consensusAnchorInputsMissingLogged) {
                 this.consensusAnchorInputsMissingLogged = true
                 this.log.warn(
@@ -1171,11 +1179,19 @@ export class Rpc {
 
         for (let i = 0; i < block.block.transactions.length; i++) {
             let tx = block.block.transactions[i]
+            if (typeof tx === 'string') {
+                throw new Error('consensus anchor validation needs full transaction objects')
+            }
             let frame = block.debugFrames[i]
-            if (frame == null || typeof tx === 'string') continue
             let transactionHash = tx.hash
             let receipt = receipts.get(transactionHash.toLowerCase())
-            if (receipt == null) continue
+            if (receipt == null) {
+                // The receipts checks reject a block whose receipts do not cover every
+                // transaction, so this is not expected; never let it pass silently.
+                block._isInvalid = true
+                block._errorMessage = `consensus anchor validation found no receipt for transaction ${transactionHash}`
+                return
+            }
 
             let systemBalanceDelta: bigint | undefined
             if (replayDiffs != null) {
@@ -1197,7 +1213,7 @@ export class Rpc {
                         blobGasUsed: receipt.blobGasUsed,
                         blobGasPrice: receipt.blobGasPrice
                     },
-                    root: frame.result,
+                    root: frame?.result,
                     systemBalanceDelta
                 },
                 this.consensusAnchorRules

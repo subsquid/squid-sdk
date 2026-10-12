@@ -1300,6 +1300,10 @@ export interface ConsensusAnchorViolation {
 }
 
 
+// Rules that read the call frame, in the order a missing frame is reported under.
+const TRACE_RULES: readonly ConsensusAnchorRule[] = ['status', 'gas', 'system-gas', 'system-fee']
+
+
 export interface ConsensusAnchorInput {
     /** Block miner (coinbase). */
     miner: Bytes20
@@ -1311,7 +1315,8 @@ export interface ConsensusAnchorInput {
         blobGasUsed?: Qty | null
         blobGasPrice?: Qty | null
     }
-    root: CallFrame
+    /** Root call frame; `undefined` when the trace has none for the transaction. */
+    root: CallFrame | undefined
     /**
      * Balance change of {@link SYSTEM_ADDRESS} in the transaction's state diff, or
      * `undefined` when no state diff was fetched. An account the diff leaves out
@@ -1331,12 +1336,39 @@ export function checkConsensusAnchors(
 ): ConsensusAnchorViolation[] {
     let {miner, transaction, receipt, root} = input
     let violations: ConsensusAnchorViolation[] = []
-    // A root STOP carries no execution to compare. The structural check owns this shape.
-    if (root.type === 'STOP') return violations
+
+    // A missing call frame, or a root STOP, carries no execution to compare. Accepting it
+    // would let any trace pass by being replaced with one, so a selected trace rule
+    // reports it.
+    if (root == null || root.type === 'STOP') {
+        let rule = TRACE_RULES.find(r => rules.has(r))
+        if (rule) {
+            violations.push({
+                rule,
+                expected: 'a call or create root frame',
+                actual: root == null ? 'no call frame' : 'root STOP frame'
+            })
+        }
+        return violations
+    }
 
     let receiptGasUsed = BigInt(receipt.gasUsed)
     let rootGasUsed = root.gasUsed != null ? toBigInt(root.gasUsed) : undefined
-    let isSystem = sameAddress(transaction.from, miner) && toBigInt(transaction.gasPrice) === 0n
+    // An absent gas price is not a zero one.
+    let isSystem =
+        sameAddress(transaction.from, miner) &&
+        transaction.gasPrice != null &&
+        toBigInt(transaction.gasPrice) === 0n
+
+    if ((rules.has('gas') && !isSystem) || (rules.has('system-gas') && isSystem)) {
+        if (rootGasUsed == null) {
+            violations.push({
+                rule: isSystem ? 'system-gas' : 'gas',
+                expected: 'root gasUsed',
+                actual: 'root frame without gasUsed'
+            })
+        }
+    }
 
     if (rules.has('status') && receipt.status != null) {
         let failed = !!root.error

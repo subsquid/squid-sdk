@@ -84,7 +84,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
             new Option(
                 '--consensus-anchor-validation <mode>',
                 'Check debug call frames and state diffs against receipt status, gasUsed and fees; ' +
-                    'reject marks a failing block invalid so it is fetched again'
+                    'reject marks a failing block invalid so it is fetched again and requires --verify-receipts-root'
             )
                 .choices([...CONSENSUS_ANCHOR_VALIDATION_MODES])
                 .default('off')
