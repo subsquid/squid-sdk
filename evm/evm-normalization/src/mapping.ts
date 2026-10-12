@@ -55,7 +55,7 @@ function* mapDebugFrame(
     transactionIndex: number,
     debugFrameResult: {result: rpc.DebugFrame}
 ): Iterable<Trace> {
-    if (debugFrameResult.result.type == 'STOP') {
+    if (debugFrameResult.result.type.toUpperCase() == 'STOP') {
         assert(!debugFrameResult.result.calls?.length)
         return
     }
@@ -109,9 +109,10 @@ function buildDebugFrameTrace(
     }
     let trace: Trace
 
-    switch(frame.type) {
+    // Node implementations serialize call kinds with inconsistent casing
+    // (geth `CALL`, some tracers `call`, zkSync-era `Call`), so match uppercased.
+    switch(frame.type.toUpperCase()) {
         case 'CREATE':
-        case 'create':
         case 'CREATE2': {
             trace = {
                 ...base,
@@ -141,10 +142,8 @@ function buildDebugFrameTrace(
             break
         }
         case 'CALL':
-        case 'call':
         case 'CALLCODE':
         case 'DELEGATECALL':
-        case 'delegateCall':
         case 'STATICCALL':
         case 'INVALID': {
             trace = {
