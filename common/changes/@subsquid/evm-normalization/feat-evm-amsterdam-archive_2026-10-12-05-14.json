@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Carry the EIP-7928 block access list in raw blocks as `blockAccessList_`",
+      "type": "minor",
+      "packageName": "@subsquid/evm-normalization"
+    }
+  ],
+  "packageName": "@subsquid/evm-normalization",
+  "email": "abernatskiy@toha.li"
+}
