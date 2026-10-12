@@ -329,14 +329,24 @@ export class Rpc {
             params: [block.hash]
         }))
 
-        let results = await this.reduceBatchOnRetry(call, {
-            validateResult: getResultValidator(BlockAccessList)
+        // A null (pruned, or an upstream that does not have the block yet)
+        // marks the block invalid rather than retrying the call: the shared
+        // client may retry without bound, while an invalid block is retried
+        // a bounded number of times and then fails with this reason.
+        let validateAccessList = getResultValidator(BlockAccessList)
+        let results = await this.reduceBatchOnRetry<BlockAccessList | null>(call, {
+            validateResult: result => result === null ? null : validateAccessList(result)
         })
 
         let utils = await this.getChainUtils()
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let accessList = results[i]
+            if (accessList == null) {
+                block._isInvalid = true
+                block._errorMessage = 'block access list is not available (pruned or not yet served by the provider)'
+                continue
+            }
             if (this.verifyBlockAccessListHash) {
                 let hash = utils.calculateBlockAccessListHash(accessList)
                 if (hash !== block.block.blockAccessListHash) {

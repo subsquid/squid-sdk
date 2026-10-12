@@ -2,6 +2,7 @@ import {describe, expect, it, vi} from 'vitest'
 import {loadBlock, loadBlockAccessList} from './helpers/fixture-loader'
 import {MockRpcClient} from './helpers/mock-rpc-client'
 import {Rpc} from '../src/rpc'
+import {getBlocks} from '../src/data-source/get-blocks'
 import {toQty} from '../src/util'
 
 
@@ -68,6 +69,32 @@ describe('Block access lists (EIP-7928)', () => {
 
         expect(blocks[0]._isInvalid).toBeUndefined()
         expect(blocks[0].blockAccessList).toEqual(accessList)
+    })
+
+    it('marks the block invalid when the provider has no access list', async () => {
+        const {client} = sepoliaClient(null)
+        const rpc = new Rpc({client: client as any, verifyBlockAccessListHash: true})
+
+        const blocks = await rpc.getBlockBatch([SEPOLIA_AMSTERDAM_BLOCK], {
+            transactions: true,
+            blockAccessLists: true
+        })
+
+        expect(blocks[0]._isInvalid).toBe(true)
+        expect(blocks[0]._errorMessage).toMatch(/not available/)
+        expect(blocks[0].blockAccessList).toBeUndefined()
+    })
+
+    it('fails a finalized range whose access list stays unavailable', async () => {
+        const {client} = sepoliaClient(null)
+        const rpc = new Rpc({client: client as any})
+
+        await expect(
+            getBlocks(rpc, {transactions: true, blockAccessLists: true}, {
+                from: SEPOLIA_AMSTERDAM_BLOCK,
+                to: SEPOLIA_AMSTERDAM_BLOCK
+            })
+        ).rejects.toThrow(/block access list is not available/)
     })
 
     it('does not request access lists of pre-Amsterdam blocks', async () => {
