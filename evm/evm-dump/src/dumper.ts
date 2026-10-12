@@ -1,6 +1,11 @@
 import {
     CALL_FRAME_VALIDATION_MODES,
     type CallFrameValidationMode,
+    CONSENSUS_ANCHOR_VALIDATION_MODES,
+    type ConsensusAnchorRule,
+    type ConsensusAnchorValidationMode,
+    DEFAULT_CONSENSUS_ANCHOR_RULES,
+    parseConsensusAnchorRules,
     Rpc,
     EvmRpcDataSource,
     EvmRpcClient
@@ -35,6 +40,8 @@ interface Options extends DumperOptions {
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
     callFrameValidation?: CallFrameValidationMode
+    consensusAnchorValidation?: ConsensusAnchorValidationMode
+    consensusAnchorRules?: ConsensusAnchorRule[]
     skipLogIndexCheck?: boolean
     skipCumulativeGasUsedCheck?: boolean
     useGasUsedForReceiptsRoot?: boolean
@@ -72,6 +79,23 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
             )
                 .choices([...CALL_FRAME_VALIDATION_MODES])
                 .default('off')
+        )
+        program.addOption(
+            new Option(
+                '--consensus-anchor-validation <mode>',
+                'Check debug call frames and state diffs against receipt status, gasUsed and fees; ' +
+                    'reject marks a failing block invalid so it is fetched again'
+            )
+                .choices([...CONSENSUS_ANCHOR_VALIDATION_MODES])
+                .default('off')
+        )
+        program.addOption(
+            new Option(
+                '--consensus-anchor-rules <list>',
+                'Comma-separated consensus anchor rules: status, gas, system-gas, system-fee'
+            )
+                .argParser(parseConsensusAnchorRules)
+                .default([...DEFAULT_CONSENSUS_ANCHOR_RULES], DEFAULT_CONSENSUS_ANCHOR_RULES.join(','))
         )
         program.option('--skip-log-index-check', 'Do not check log indices within a block are sequential')
         program.option('--skip-cumulative-gas-used-check', 'Do not check cumulativeGasUsed consistency across transactions')
@@ -119,6 +143,8 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 verifyWithdrawalsRoot: this.options().verifyWithdrawalsRoot,
                 verifyLogsBloom: this.options().verifyLogsBloom,
                 callFrameValidation: this.options().callFrameValidation,
+                consensusAnchorValidation: this.options().consensusAnchorValidation,
+                consensusAnchorRules: this.options().consensusAnchorRules,
                 checkLogIndex: !this.options().skipLogIndexCheck,
                 checkCumulativeGasUsed: !this.options().skipCumulativeGasUsedCheck,
                 useGasUsedForReceiptsRoot: this.options().useGasUsedForReceiptsRoot,

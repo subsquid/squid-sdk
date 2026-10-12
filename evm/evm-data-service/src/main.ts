@@ -1,5 +1,13 @@
 import {createLogger} from '@subsquid/logger'
-import {CALL_FRAME_VALIDATION_MODES, type CallFrameValidationMode} from '@subsquid/evm-rpc'
+import {
+    CALL_FRAME_VALIDATION_MODES,
+    type CallFrameValidationMode,
+    CONSENSUS_ANCHOR_VALIDATION_MODES,
+    type ConsensusAnchorRule,
+    type ConsensusAnchorValidationMode,
+    DEFAULT_CONSENSUS_ANCHOR_RULES,
+    parseConsensusAnchorRules
+} from '@subsquid/evm-rpc'
 import {runProgram} from '@subsquid/util-internal'
 import {nat, positiveInt, positiveReal, Url} from '@subsquid/util-internal-commander'
 import {
@@ -53,6 +61,23 @@ runProgram(async () => {
             .choices([...CALL_FRAME_VALIDATION_MODES])
             .default('off')
     )
+    program.addOption(
+        new Option(
+            '--consensus-anchor-validation <mode>',
+            'Check debug call frames and state diffs against receipt status, gasUsed and fees; ' +
+                'reject marks a failing block invalid so it is fetched again'
+        )
+            .choices([...CONSENSUS_ANCHOR_VALIDATION_MODES])
+            .default('off')
+    )
+    program.addOption(
+        new Option(
+            '--consensus-anchor-rules <list>',
+            'Comma-separated consensus anchor rules: status, gas, system-gas, system-fee'
+        )
+            .argParser(parseConsensusAnchorRules)
+            .default([...DEFAULT_CONSENSUS_ANCHOR_RULES], DEFAULT_CONSENSUS_ANCHOR_RULES.join(','))
+    )
     program.option('--skip-log-index-check', 'Do not check log indices within a block are sequential')
     program.option('--skip-cumulative-gas-used-check', 'Do not check cumulativeGasUsed consistency across transactions')
     program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
@@ -84,6 +109,8 @@ runProgram(async () => {
         verifyWithdrawalsRoot?: boolean
         verifyLogsBloom?: boolean
         callFrameValidation: CallFrameValidationMode
+        consensusAnchorValidation: ConsensusAnchorValidationMode
+        consensusAnchorRules: ConsensusAnchorRule[]
         skipLogIndexCheck?: boolean
         skipCumulativeGasUsedCheck?: boolean
         useGasUsedForReceiptsRoot?: boolean
@@ -118,6 +145,8 @@ runProgram(async () => {
         verifyWithdrawalsRoot: args.verifyWithdrawalsRoot,
         verifyLogsBloom: args.verifyLogsBloom,
         callFrameValidation: args.callFrameValidation,
+        consensusAnchorValidation: args.consensusAnchorValidation,
+        consensusAnchorRules: args.consensusAnchorRules,
         skipLogIndexCheck: args.skipLogIndexCheck,
         skipCumulativeGasUsedCheck: args.skipCumulativeGasUsedCheck,
         useGasUsedForReceiptsRoot: args.useGasUsedForReceiptsRoot
