@@ -258,7 +258,9 @@ export const Transaction = object({
     input: option(BYTES),
     maxFeePerGas: option(QTY),
     maxPriorityFeePerGas: option(QTY),
-    nonce: SMALL_QTY,
+    // Tempo 0x76 transactions carry a full uint64 nonce (paired with nonceKey for AA)
+    // that can exceed the JS safe-integer range, so validate it as a wide QTY.
+    nonce: QTY,
     v: option(QTY),
     r: option(BYTES),
     s: option(BYTES),
