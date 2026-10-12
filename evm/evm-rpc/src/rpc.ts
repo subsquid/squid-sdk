@@ -22,6 +22,7 @@ import {
     DebugFrameResult,
     TraceReplayTraces,
     getTraceTransactionReplayValidator,
+    BlockAccessList,
     Transaction,
     Log
 } from './rpc-data'
@@ -72,6 +73,12 @@ export interface RpcOptions {
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
     /**
+     * Check fetched block access lists against the `blockAccessListHash`
+     * header field. Proves the list belongs to the block only together with
+     * `verifyBlockHash`.
+     */
+    verifyBlockAccessListHash?: boolean
+    /**
      * `off` skips semantic checks, `observe` logs one bounded violation summary
      * per block while accepting it, and `reject` marks violations invalid.
      * `reject` requires transaction root and sender verification.
@@ -93,6 +100,7 @@ export class Rpc {
     private verifyReceiptsRoot?: boolean
     private verifyWithdrawalsRoot?: boolean
     private verifyLogsBloom?: boolean
+    private verifyBlockAccessListHash?: boolean
     private callFrameValidation: CallFrameValidationMode
     private checkLogIndex?: boolean
     private checkCumulativeGasUsed?: boolean
@@ -111,6 +119,7 @@ export class Rpc {
         this.verifyReceiptsRoot = options.verifyReceiptsRoot
         this.verifyWithdrawalsRoot = options.verifyWithdrawalsRoot
         this.verifyLogsBloom = options.verifyLogsBloom
+        this.verifyBlockAccessListHash = options.verifyBlockAccessListHash
         this.callFrameValidation = options.callFrameValidation ?? 'off'
         if (!CALL_FRAME_VALIDATION_MODES.includes(this.callFrameValidation)) {
             throw new Error(`unsupported callFrameValidation mode: ${this.callFrameValidation}`)
@@ -301,7 +310,43 @@ export class Rpc {
             subtasks.push(this.addTraces(blocks, req))
         }
 
+        if (req?.blockAccessLists) {
+            subtasks.push(this.addBlockAccessLists(blocks))
+        }
+
         await Promise.all(subtasks)
+    }
+
+    private async addBlockAccessLists(blocks: Block[]) {
+        // Only blocks from Amsterdam on commit to an access list. Asking reth
+        // for an earlier block makes it re-execute the block, which fails
+        // outside its state history, so pre-fork blocks are never requested.
+        blocks = blocks.filter(block => block.block.blockAccessListHash != null)
+        if (blocks.length == 0) return
+
+        let call = blocks.map(block => ({
+            method: 'eth_getBlockAccessListByBlockHash',
+            params: [block.hash]
+        }))
+
+        let results = await this.reduceBatchOnRetry(call, {
+            validateResult: getResultValidator(BlockAccessList)
+        })
+
+        let utils = await this.getChainUtils()
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let accessList = results[i]
+            if (this.verifyBlockAccessListHash) {
+                let hash = utils.calculateBlockAccessListHash(accessList)
+                if (hash !== block.block.blockAccessListHash) {
+                    block._isInvalid = true
+                    block._errorMessage = 'block access list does not match blockAccessListHash'
+                    continue
+                }
+            }
+            block.blockAccessList = accessList
+        }
     }
 
     private async addLogs(blocks: Block[]) {
