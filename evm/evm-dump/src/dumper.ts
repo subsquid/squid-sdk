@@ -132,6 +132,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
 
     @def
     private dataSource(): EvmRpcDataSource {
+        assertConsensusAnchorInputs(this.options())
         return new EvmRpcDataSource({
             rpc: new Rpc({
                 client: this.rpc(),
@@ -174,5 +175,19 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         for await (let batch of this.dataSource().getFinalizedStream(range)) {
             yield batch.blocks.map(toRawBlock)
         }
+    }
+}
+
+
+/**
+ * Consensus anchor validation checks debug call frames against receipts, so a dump that
+ * fetches neither, or uses the trace API, would pass every block unchecked.
+ */
+function assertConsensusAnchorInputs(options: Options): void {
+    if ((options.consensusAnchorValidation ?? 'off') === 'off') return
+    if (!options.withTraces || !options.withReceipts || options.useTraceApi) {
+        throw new Error(
+            '--consensus-anchor-validation requires --with-traces and --with-receipts, and does not support --use-trace-api'
+        )
     }
 }

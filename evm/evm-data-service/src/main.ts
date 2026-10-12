@@ -138,6 +138,15 @@ runProgram(async () => {
         )
     }
 
+    if (
+        args.consensusAnchorValidation !== 'off' &&
+        (!args.withTraces || !args.withReceipts || args.useTraceApi)
+    ) {
+        program.error(
+            '--consensus-anchor-validation requires --with-traces and --with-receipts, and does not support --use-trace-api'
+        )
+    }
+
     let dataSourceOptions: DataSourceOptions = {
         httpRpc: args.httpRpc,
         httpRpcMaxBatchCallSize: args.httpRpcMaxBatchCallSize,

@@ -199,6 +199,24 @@ describe('consensus anchor validation', () => {
         ).rejects.toThrow(/needs receipts and debug call frames/)
     })
 
+    it('refuses to reject when traces were not requested', async () => {
+        await expect(
+            rpc(mockClient(), 'reject').getBlockBatch([BLOCK_NUMBER], {...request('none'), traces: false}),
+        ).rejects.toThrow(/needs receipts and debug call frames/)
+    })
+
+    it('warns in observe mode when traces were not requested', async () => {
+        let [block] = await rpc(mockClient(), 'observe').getBlockBatch([BLOCK_NUMBER], {
+            ...request('none'),
+            traces: false,
+        })
+        expect(block._isInvalid).toBeFalsy()
+        expect(logWarn).toHaveBeenCalledWith(
+            expect.anything(),
+            'consensus anchor validation needs receipts and debug call frames; checks skipped',
+        )
+    })
+
     it('only skips missing inputs with a warning in observe mode', async () => {
         let [block] = await rpc(mockClient(), 'observe').getBlockBatch([BLOCK_NUMBER], {
             ...request(),

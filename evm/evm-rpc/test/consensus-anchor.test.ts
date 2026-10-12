@@ -6,6 +6,7 @@ import {
     checkConsensusAnchors,
     CONSENSUS_ANCHOR_RULES,
     type ConsensusAnchorInput,
+    intrinsicGasOfCall,
     type ConsensusAnchorRule,
     SYSTEM_ADDRESS,
     systemBalanceDeltaFromPrestate,
@@ -21,7 +22,7 @@ interface Case {
     block: number
     transactionIndex: number
     miner: string
-    transaction: {hash: string; from: string; gasPrice?: string | null; input: string}
+    transaction: {hash: string; from: string; to: string | null; gasPrice?: string | null; input: string}
     receipt: {
         status: string
         gasUsed: string
@@ -94,11 +95,30 @@ describe('consensus anchors on damaged data', () => {
 
     it('flags a system transaction whose calls are missing', () => {
         let c = caseAt(40502146, 57)
-        let calldata = (c.transaction.input.length - 2) / 2
         expect(c.callFrame.calls?.length).toBeGreaterThan(0)
         c.callFrame.calls = []
-        c.callFrame.gasUsed = `0x${(21000 + 16 * calldata).toString(16)}`
+        c.callFrame.gasUsed = `0x${intrinsicGasOfCall(c.transaction).toString(16)}`
         expect(rulesViolated(input(c, 'replay'))).toContain('system-gas')
+    })
+
+    it('measures executed gas against the exact intrinsic gas, zero calldata bytes at 4', () => {
+        // deposit(address) calldata has zero bytes: charging them at 16 would take a short
+        // execution for none.
+        let c = caseAt(40502146, 57)
+        let intrinsic = intrinsicGasOfCall(c.transaction)
+        let calldata = BigInt((c.transaction.input.length - 2) / 2)
+        expect(intrinsic).toBeLessThan(21000n + 16n * calldata)
+        c.callFrame.calls = []
+        c.callFrame.gasUsed = `0x${(intrinsic + 1n).toString(16)}`
+        expect(rulesViolated(input(c, 'replay'))).not.toContain('system-gas')
+    })
+
+    it('does not apply system-gas to a contract creation', () => {
+        let c = caseAt(40502146, 57)
+        c.transaction.to = null
+        c.callFrame.calls = []
+        c.callFrame.gasUsed = `0x${intrinsicGasOfCall(c.transaction).toString(16)}`
+        expect(rulesViolated(input(c, 'replay'))).not.toContain('system-gas')
     })
 
     it('does not compare system transactions exactly', () => {
@@ -266,5 +286,23 @@ describe('system address balance delta', () => {
     it('matches the address case-insensitively', () => {
         let upper = `0x${SYSTEM_ADDRESS.slice(2).toUpperCase()}`
         expect(systemBalanceDeltaFromReplay({[upper]: {balance: {'+': '0x7'}}})).toBe(7n)
+    })
+})
+
+
+describe('intrinsicGasOfCall', () => {
+    it('charges 4 gas per zero calldata byte and 16 per other byte', () => {
+        expect(intrinsicGasOfCall({input: '0x'})).toBe(21000n)
+        expect(intrinsicGasOfCall({input: '0x0001ff00'})).toBe(21000n + 4n + 16n + 16n + 4n)
+    })
+
+    it('charges access lists and authorizations', () => {
+        let accessList = [
+            {address: '0x0000000000000000000000000000000000001000', storageKeys: [`0x${'00'.repeat(32)}`]},
+            {address: '0x0000000000000000000000000000000000001001', storageKeys: []},
+        ]
+        expect(intrinsicGasOfCall({input: '0x', accessList})).toBe(21000n + 2400n * 2n + 1900n)
+        let authorizationList = [{} as any, {} as any]
+        expect(intrinsicGasOfCall({input: '0x', authorizationList})).toBe(21000n + 50000n)
     })
 })

@@ -1304,7 +1304,14 @@ export interface ConsensusAnchorViolation {
 export interface ConsensusAnchorInput {
     /** Block miner (coinbase). */
     miner: Bytes20
-    transaction: {from: Bytes20; gasPrice?: Qty | null; input?: string | null}
+    transaction: {
+        from: Bytes20
+        to?: Bytes20 | null
+        gasPrice?: Qty | null
+        input?: string | null
+        accessList?: AccessListItem[] | null
+        authorizationList?: EIP7702AuthorizationItem[] | null
+    }
     receipt: {
         status?: number | null
         gasUsed: Qty
@@ -1393,11 +1400,13 @@ export function checkConsensusAnchors(
         })
     }
 
-    if (rules.has('system-gas') && isSystem && rootGasUsed != null) {
+    // Contract creations are left out: their intrinsic gas depends on fork rules for initcode,
+    // and system transactions are calls.
+    if (rules.has('system-gas') && isSystem && rootGasUsed != null && transaction.to != null) {
         // The receipt of a system transaction is not an exact anchor for the execution
         // gas, so only a root frame that executed nothing at all is suspect.
-        let intrinsicCeiling = 21000n + 16n * BigInt(calldataLength(transaction.input))
-        if (rootGasUsed <= intrinsicCeiling && receiptGasUsed > intrinsicCeiling) {
+        let intrinsic = intrinsicGasOfCall(transaction)
+        if (rootGasUsed <= intrinsic && receiptGasUsed > intrinsic) {
             violations.push({
                 rule: 'system-gas',
                 expected: `execution beyond intrinsic gas (receipt gasUsed ${receiptGasUsed})`,
@@ -1504,9 +1513,28 @@ function findAccount<T>(accounts: Record<string, T> | null | undefined, address:
 }
 
 
-function calldataLength(input: string | null | undefined): number {
-    if (input == null || input.length <= 2) return 0
-    return (input.length - 2) >> 1
+/**
+ * Intrinsic gas of a message call: the base cost, calldata at 4 gas per zero byte and 16 per
+ * other byte (EIP-2028), access lists (EIP-2930) and authorizations (EIP-7702).
+ */
+export function intrinsicGasOfCall(transaction: {
+    input?: string | null
+    accessList?: AccessListItem[] | null
+    authorizationList?: EIP7702AuthorizationItem[] | null
+}): bigint {
+    let gas = 21000n
+    let input = transaction.input
+    if (input != null && input.length > 2) {
+        for (let i = 2; i + 1 < input.length; i += 2) {
+            gas += input[i] === '0' && input[i + 1] === '0' ? 4n : 16n
+        }
+    }
+    for (let item of transaction.accessList ?? []) {
+        let storageKeys = 'storageKeys' in item ? item.storageKeys : item.storage_keys
+        gas += 2400n + 1900n * BigInt(storageKeys.length)
+    }
+    gas += 25000n * BigInt((transaction.authorizationList ?? []).length)
+    return gas
 }
 
 

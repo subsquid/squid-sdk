@@ -1161,8 +1161,11 @@ export class Rpc {
      */
     private validateConsensusAnchors(block: Block, req: DataRequest): void {
         if (block._isInvalid || block.number === 0) return
-        if (!req.traces || req.useTraceApi) return
-        if (block.debugFrames == null || block.receipts == null) {
+        // The trace-API path has no debug call frames to check; the CLIs refuse to combine it
+        // with consensus anchor validation. A request without traces falls through to the
+        // missing-input handling below, so it is never accepted as checked.
+        if (req.useTraceApi) return
+        if (!req.traces || block.debugFrames == null || block.receipts == null) {
             if (this.consensusAnchorValidation === 'reject') {
                 // A configuration that cannot be checked must not pass blocks as checked.
                 throw new Error('consensus anchor validation needs receipts and debug call frames in the data request')
