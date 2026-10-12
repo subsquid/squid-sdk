@@ -1,4 +1,11 @@
-import {type CallFrameValidationMode, Rpc, EvmRpcDataSource, EvmRpcClient} from '@subsquid/evm-rpc'
+import {
+    type CallFrameValidationMode,
+    type ConsensusAnchorRule,
+    type ConsensusAnchorValidationMode,
+    Rpc,
+    EvmRpcDataSource,
+    EvmRpcClient
+} from '@subsquid/evm-rpc'
 import type {Block, DataSource} from '@subsquid/util-internal-data-service'
 import {createLogger} from '@subsquid/logger'
 import type {RpcMetrics} from '@subsquid/rpc-client'
@@ -31,6 +38,8 @@ export interface DataSourceOptions {
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
     callFrameValidation?: CallFrameValidationMode
+    consensusAnchorValidation?: ConsensusAnchorValidationMode
+    consensusAnchorRules?: ConsensusAnchorRule[]
     skipLogIndexCheck?: boolean
     skipCumulativeGasUsedCheck?: boolean
     useGasUsedForReceiptsRoot?: boolean
@@ -65,6 +74,8 @@ export function createDataSource(options: DataSourceOptions): DataSourceSetup {
         verifyWithdrawalsRoot: options.verifyWithdrawalsRoot,
         verifyLogsBloom: options.verifyLogsBloom,
         callFrameValidation: options.callFrameValidation,
+        consensusAnchorValidation: options.consensusAnchorValidation,
+        consensusAnchorRules: options.consensusAnchorRules,
         checkLogIndex: !options.skipLogIndexCheck,
         checkCumulativeGasUsed: !options.skipCumulativeGasUsedCheck,
         useGasUsedForReceiptsRoot: options.useGasUsedForReceiptsRoot

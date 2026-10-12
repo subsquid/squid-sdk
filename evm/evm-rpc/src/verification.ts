@@ -1273,6 +1273,278 @@ function checkSubcalls(parent: CallFrame, traceAddress: number[]): string | unde
 
 
 /**
+ * Rules that check a debug trace or a state diff against data the block commits to:
+ *
+ * - `status`: the receipt status agrees with the root frame's error.
+ * - `gas`: the root frame's gasUsed equals the receipt's (regular transactions).
+ * - `system-gas`: a system transaction (sent by the block miner at zero gas price)
+ *   whose root frame executed nothing while the receipt says gas was used.
+ * - `system-fee`: the balance change of the system address in the state diff equals
+ *   the transaction fee plus the value frames moved to or from it. This holds on
+ *   chains that credit fees to the system address during each transaction (BSC).
+ *
+ * A transaction that executed differently from the chain leaves a different footprint
+ * in these values, so a trace or state diff from such an execution fails them.
+ */
+export const CONSENSUS_ANCHOR_RULES = ['status', 'gas', 'system-gas', 'system-fee'] as const
+
+export type ConsensusAnchorRule = (typeof CONSENSUS_ANCHOR_RULES)[number]
+
+export const SYSTEM_ADDRESS = '0xfffffffffffffffffffffffffffffffffffffffe'
+
+
+export interface ConsensusAnchorViolation {
+    rule: ConsensusAnchorRule
+    expected: string
+    actual: string
+}
+
+
+
+export interface ConsensusAnchorInput {
+    /** Block miner (coinbase). */
+    miner: Bytes20
+    transaction: {
+        from: Bytes20
+        to?: Bytes20 | null
+        gasPrice?: Qty | null
+        input?: string | null
+        accessList?: AccessListItem[] | null
+        authorizationList?: EIP7702AuthorizationItem[] | null
+    }
+    receipt: {
+        status?: number | null
+        gasUsed: Qty
+        effectiveGasPrice?: Qty | null
+        blobGasUsed?: Qty | null
+        blobGasPrice?: Qty | null
+    }
+    /** Root call frame; `undefined` when the trace has none for the transaction. */
+    root: CallFrame | undefined
+    /**
+     * Balance change of {@link SYSTEM_ADDRESS} in the transaction's state diff. An account
+     * the diff leaves out changed by zero. `undefined` when state diffs were not fetched
+     * (the `system-fee` rule does not apply), `null` when they were but the transaction
+     * has none (a `system-fee` violation).
+     */
+    systemBalanceDelta?: bigint | null
+}
+
+
+/**
+ * Checks one transaction's root call frame (and state diff, when given) against its
+ * receipt. Returns every violated rule among `rules`.
+ */
+export function checkConsensusAnchors(
+    input: ConsensusAnchorInput,
+    rules: ReadonlySet<ConsensusAnchorRule>
+): ConsensusAnchorViolation[] {
+    let {miner, transaction, receipt, root} = input
+    let violations: ConsensusAnchorViolation[] = []
+
+    // An absent gas price is not a zero one.
+    let isSystem =
+        sameAddress(transaction.from, miner) &&
+        transaction.gasPrice != null &&
+        toBigInt(transaction.gasPrice) === 0n
+
+    // A missing call frame, or a root STOP, carries no execution to compare. Accepting it
+    // would let any trace pass by being replaced with one, so the first selected rule
+    // that applies to this transaction reports it.
+    if (root == null || root.type === 'STOP') {
+        let applicable: ConsensusAnchorRule[] = [
+            ...(receipt.status != null ? ['status' as const] : []),
+            isSystem ? 'system-gas' : 'gas',
+            ...(input.systemBalanceDelta !== undefined ? ['system-fee' as const] : [])
+        ]
+        let rule = applicable.find(r => rules.has(r))
+        if (rule) {
+            violations.push({
+                rule,
+                expected: 'a call or create root frame',
+                actual: root == null ? 'no call frame' : 'root STOP frame'
+            })
+        }
+        return violations
+    }
+
+    let receiptGasUsed = BigInt(receipt.gasUsed)
+    let rootGasUsed = root.gasUsed != null ? toBigInt(root.gasUsed) : undefined
+
+    if ((rules.has('gas') && !isSystem) || (rules.has('system-gas') && isSystem)) {
+        if (rootGasUsed == null) {
+            violations.push({
+                rule: isSystem ? 'system-gas' : 'gas',
+                expected: 'root gasUsed',
+                actual: 'root frame without gasUsed'
+            })
+        }
+    }
+
+    if (rules.has('status') && receipt.status != null) {
+        let failed = !!root.error
+        if (failed === (receipt.status === 1)) {
+            violations.push({
+                rule: 'status',
+                expected: receipt.status === 1 ? 'root frame without error' : 'root frame with error',
+                actual: failed ? `root frame error "${root.error}"` : 'root frame without error'
+            })
+        }
+    }
+
+    if (rules.has('gas') && !isSystem && rootGasUsed != null && rootGasUsed !== receiptGasUsed) {
+        violations.push({
+            rule: 'gas',
+            expected: `root gasUsed ${receiptGasUsed}`,
+            actual: `root gasUsed ${rootGasUsed}`
+        })
+    }
+
+    // Contract creations are left out: their intrinsic gas depends on fork rules for initcode,
+    // and system transactions are calls.
+    if (rules.has('system-gas') && isSystem && rootGasUsed != null && transaction.to != null) {
+        // The receipt of a system transaction is not an exact anchor for the execution
+        // gas, so only a root frame that executed nothing at all is suspect.
+        let intrinsic = intrinsicGasOfCall(transaction)
+        if (rootGasUsed <= intrinsic && receiptGasUsed > intrinsic) {
+            violations.push({
+                rule: 'system-gas',
+                expected: `execution beyond intrinsic gas (receipt gasUsed ${receiptGasUsed})`,
+                actual: `root gasUsed ${rootGasUsed}`
+            })
+        }
+    }
+
+    if (rules.has('system-fee') && input.systemBalanceDelta === null) {
+        violations.push({
+            rule: 'system-fee',
+            expected: 'a state diff for the transaction',
+            actual: 'no state diff'
+        })
+    } else if (rules.has('system-fee') && input.systemBalanceDelta !== undefined) {
+        let price = toBigInt(receipt.effectiveGasPrice ?? transaction.gasPrice)
+        let fee = receiptGasUsed * price + toBigInt(receipt.blobGasUsed) * toBigInt(receipt.blobGasPrice)
+        let expected = fee + systemValueFlow(root)
+        if (expected !== input.systemBalanceDelta) {
+            violations.push({
+                rule: 'system-fee',
+                expected: `system address balance change ${expected}`,
+                actual: `system address balance change ${input.systemBalanceDelta}`
+            })
+        }
+    }
+
+    return violations
+}
+
+
+/**
+ * Net value the frames of a call tree move to {@link SYSTEM_ADDRESS}. A frame that
+ * failed, or has a failed ancestor, moves nothing.
+ */
+export function systemValueFlow(root: CallFrame): bigint {
+    let flow = 0n
+    let visit = (frame: CallFrame, parentFailed: boolean) => {
+        let failed = parentFailed || !!frame.error
+        if (!failed) {
+            let value = toBigInt(frame.value)
+            if (value !== 0n) {
+                if (SELFDESTRUCT_FRAME_TYPES.has(frame.type)) {
+                    if (sameAddress(frame.to, SYSTEM_ADDRESS)) flow += value
+                } else if (VALUE_TRANSFER_FRAME_TYPES.has(frame.type)) {
+                    if (sameAddress(frame.to, SYSTEM_ADDRESS)) flow += value
+                    if (sameAddress(frame.from, SYSTEM_ADDRESS)) flow -= value
+                }
+            }
+        }
+        for (let call of frame.calls || []) {
+            visit(call, failed)
+        }
+    }
+    visit(root, false)
+    return flow
+}
+
+
+// Frames whose value leaves the caller. DELEGATECALL, STATICCALL and CALLCODE
+// move no value to their target.
+const VALUE_TRANSFER_FRAME_TYPES = new Set(['CALL', 'call', ...CREATE_FRAME_TYPES])
+
+
+/** Balance change of {@link SYSTEM_ADDRESS} in a `trace_replayBlockTransactions` state diff. */
+export function systemBalanceDeltaFromReplay(
+    stateDiff: Record<string, {balance?: unknown}> | null | undefined
+): bigint {
+    let diff = findAccount(stateDiff, SYSTEM_ADDRESS)?.balance
+    if (diff == null || typeof diff !== 'object') return 0n // absent or '=' (unchanged)
+    if ('*' in diff) {
+        let change = (diff as {'*': {from: Qty; to: Qty}})['*']
+        return toBigInt(change.to) - toBigInt(change.from)
+    }
+    if ('+' in diff) return toBigInt((diff as {'+': Qty})['+'])
+    if ('-' in diff) return -toBigInt((diff as {'-': Qty})['-'])
+    return 0n
+}
+
+
+/**
+ * Balance change of {@link SYSTEM_ADDRESS} in a `prestateTracer` diff-mode result.
+ * A balance the post state leaves out did not change; an account the pre state
+ * leaves out started from zero.
+ */
+export function systemBalanceDeltaFromPrestate(diff: {
+    pre: Record<string, {balance?: Qty | null}>
+    post: Record<string, {balance?: Qty | null}>
+}): bigint {
+    let post = findAccount(diff.post, SYSTEM_ADDRESS)
+    if (post?.balance == null) return 0n
+    let pre = findAccount(diff.pre, SYSTEM_ADDRESS)
+    return toBigInt(post.balance) - toBigInt(pre?.balance)
+}
+
+
+function findAccount<T>(accounts: Record<string, T> | null | undefined, address: string): T | undefined {
+    if (accounts == null) return undefined
+    if (address in accounts) return accounts[address]
+    for (let key in accounts) {
+        if (key.toLowerCase() === address) return accounts[key]
+    }
+    return undefined
+}
+
+
+/**
+ * Intrinsic gas of a message call: the base cost, calldata at 4 gas per zero byte and 16 per
+ * other byte (EIP-2028), access lists (EIP-2930) and authorizations (EIP-7702).
+ */
+export function intrinsicGasOfCall(transaction: {
+    input?: string | null
+    accessList?: AccessListItem[] | null
+    authorizationList?: EIP7702AuthorizationItem[] | null
+}): bigint {
+    let gas = 21000n
+    let input = transaction.input
+    if (input != null && input.length > 2) {
+        for (let i = 2; i + 1 < input.length; i += 2) {
+            gas += input[i] === '0' && input[i + 1] === '0' ? 4n : 16n
+        }
+    }
+    for (let item of transaction.accessList ?? []) {
+        let storageKeys = 'storageKeys' in item ? item.storageKeys : item.storage_keys
+        gas += 2400n + 1900n * BigInt(storageKeys.length)
+    }
+    gas += 25000n * BigInt((transaction.authorizationList ?? []).length)
+    return gas
+}
+
+
+function toBigInt(value: string | null | undefined): bigint {
+    if (value == null || value === '' || value === '0x') return 0n
+    return BigInt(value)
+}
+
+
+/**
  * One `SELFDESTRUCT` as an opcode-level tracer saw it, bound to the call path
  * its frame occupies.
  */

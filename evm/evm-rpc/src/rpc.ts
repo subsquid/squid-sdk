@@ -21,6 +21,7 @@ import {
     DebugStateDiffResult,
     DebugFrameResult,
     TraceReplayTraces,
+    TraceTransactionReplay,
     getTraceTransactionReplayValidator,
     Transaction,
     Log
@@ -31,12 +32,18 @@ import { ChainUtils } from './chain-utils'
 import { EvmRpcClient } from './rpc-client'
 import {
     checkCallFrameTree,
+    checkConsensusAnchors,
     checkDebugFrameStructure,
+    CONSENSUS_ANCHOR_RULES,
+    type ConsensusAnchorRule,
+    type ConsensusAnchorViolation,
     DefectiveSelfdestruct,
     findDefectiveSelfdestructs,
     repairDefectiveSelfdestruct,
     SelfdestructEvent,
     selfdestructEvents,
+    systemBalanceDeltaFromPrestate,
+    systemBalanceDeltaFromReplay,
 } from './verification'
 import { SELFDESTRUCT_TRACER } from './selfdestruct-tracer'
 import { RpcErrorInfo } from '@subsquid/rpc-client/lib/interfaces'
@@ -52,6 +59,43 @@ const SELFDESTRUCT_TRACE_RETRY_ATTEMPTS = 2
  * by normalization are enforced independently in every mode.
  */
 export type CallFrameValidationMode = (typeof CALL_FRAME_VALIDATION_MODES)[number]
+
+
+export const CONSENSUS_ANCHOR_VALIDATION_MODES = ['off', 'observe', 'reject'] as const
+
+/**
+ * Controls the checks of debug call frames and state diffs against receipt status,
+ * receipt gasUsed and transaction fees: `off` skips them, `observe` logs one bounded
+ * violation summary per block and accepts it, `reject` marks the block invalid so it
+ * is fetched again.
+ */
+export type ConsensusAnchorValidationMode = (typeof CONSENSUS_ANCHOR_VALIDATION_MODES)[number]
+
+export { CONSENSUS_ANCHOR_RULES, type ConsensusAnchorRule }
+
+export const DEFAULT_CONSENSUS_ANCHOR_RULES: readonly ConsensusAnchorRule[] = ['status', 'gas']
+
+/** Parses a comma-separated rule list such as `status,gas,system-gas,system-fee`. */
+export function parseConsensusAnchorRules(list: string): ConsensusAnchorRule[] {
+    let rules = list.split(',').map(r => r.trim()).filter(r => r.length > 0)
+    for (let rule of rules) {
+        if (!(CONSENSUS_ANCHOR_RULES as readonly string[]).includes(rule)) {
+            throw new Error(
+                `unknown consensus anchor rule "${rule}", expected one of: ${CONSENSUS_ANCHOR_RULES.join(', ')}`
+            )
+        }
+    }
+    if (rules.length === 0) throw new Error('consensus anchor rule list is empty')
+    return rules as ConsensusAnchorRule[]
+}
+
+const CONSENSUS_ANCHOR_VIOLATION_SAMPLE_LIMIT = 3
+
+
+interface ConsensusAnchorViolationSample extends ConsensusAnchorViolation {
+    transactionIndex: number
+    transactionHash: Bytes32
+}
 
 
 interface CallFrameViolationSample {
@@ -77,6 +121,14 @@ export interface RpcOptions {
      * `reject` requires transaction root and sender verification.
      */
     callFrameValidation?: CallFrameValidationMode
+    /**
+     * Checks debug call frames and state diffs against receipts, see
+     * {@link ConsensusAnchorValidationMode}. Needs receipts and debug call frames
+     * in the data request; the `system-fee` rule also needs state diffs.
+     */
+    consensusAnchorValidation?: ConsensusAnchorValidationMode
+    /** Rules to apply, {@link DEFAULT_CONSENSUS_ANCHOR_RULES} by default. */
+    consensusAnchorRules?: readonly ConsensusAnchorRule[]
     checkLogIndex?: boolean
     checkCumulativeGasUsed?: boolean
     useGasUsedForReceiptsRoot?: boolean
@@ -94,6 +146,9 @@ export class Rpc {
     private verifyWithdrawalsRoot?: boolean
     private verifyLogsBloom?: boolean
     private callFrameValidation: CallFrameValidationMode
+    private consensusAnchorValidation: ConsensusAnchorValidationMode
+    private consensusAnchorRules: ReadonlySet<ConsensusAnchorRule>
+    private consensusAnchorInputsMissingLogged = false
     private checkLogIndex?: boolean
     private checkCumulativeGasUsed?: boolean
     private useGasUsedForReceiptsRoot?: boolean
@@ -118,6 +173,38 @@ export class Rpc {
         if (this.callFrameValidation === 'reject' && (!options.verifyTxRoot || !options.verifyTxSender)) {
             throw new Error(
                 "callFrameValidation 'reject' requires verifyTxRoot and verifyTxSender"
+            )
+        }
+        this.consensusAnchorValidation = options.consensusAnchorValidation ?? 'off'
+        if (!CONSENSUS_ANCHOR_VALIDATION_MODES.includes(this.consensusAnchorValidation)) {
+            throw new Error(`unsupported consensusAnchorValidation mode: ${this.consensusAnchorValidation}`)
+        }
+        let rules = options.consensusAnchorRules ?? DEFAULT_CONSENSUS_ANCHOR_RULES
+        if (rules.length === 0) {
+            // An empty rule set would let enabled validation accept every block.
+            throw new Error('consensusAnchorRules is empty')
+        }
+        for (let rule of rules) {
+            if (!CONSENSUS_ANCHOR_RULES.includes(rule)) {
+                throw new Error(`unknown consensus anchor rule: ${rule}`)
+            }
+        }
+        this.consensusAnchorRules = new Set(rules)
+        // Receipts and transactions are only anchors once checked against what the block
+        // commits to: the receipts root (gasUsed through cumulativeGasUsed, unless gasUsed
+        // is what the root encodes), the transactions root and the senders.
+        if (
+            this.consensusAnchorValidation === 'reject' &&
+            !(
+                options.verifyReceiptsRoot &&
+                (options.checkCumulativeGasUsed || options.useGasUsedForReceiptsRoot) &&
+                options.verifyTxRoot &&
+                options.verifyTxSender
+            )
+        ) {
+            throw new Error(
+                "consensusAnchorValidation 'reject' requires verifyReceiptsRoot, checkCumulativeGasUsed " +
+                    '(or useGasUsedForReceiptsRoot), verifyTxRoot and verifyTxSender'
             )
         }
         this.checkLogIndex = options.checkLogIndex
@@ -180,7 +267,7 @@ export class Rpc {
         let needsTransactionsForCallFrameValidation =
             !!req?.traces &&
             !req.useTraceApi &&
-            this.callFrameValidation !== 'off'
+            (this.callFrameValidation !== 'off' || this.consensusAnchorValidation !== 'off')
         let withTransactions = transactionsRequested || needsTransactionsForCallFrameValidation
         let blocks = await this.getBlocks(numbers, withTransactions)
 
@@ -194,6 +281,14 @@ export class Rpc {
         }
 
         await this.addRequestedData(chain, req)
+
+        // Receipts, call frames and state diffs arrive from separate requests, so the
+        // checks that compare them run once all of them are attached.
+        if (req != null && this.consensusAnchorValidation !== 'off') {
+            for (let block of chain) {
+                this.validateConsensusAnchors(block, req)
+            }
+        }
 
         if (!transactionsRequested && withTransactions) {
             for (let block of chain) {
@@ -1056,6 +1151,139 @@ export class Rpc {
                     omittedViolationCount: violatingTransactionCount - violationSamples.length
                 },
                 `debug call frame consistency violations observed in ${transactionSummary}; block accepted`
+            )
+        }
+    }
+
+    /**
+     * Checks each transaction's debug call frames, and its state diff when one was
+     * fetched, against the receipt (see {@link ConsensusAnchorValidationMode}).
+     */
+    private validateConsensusAnchors(block: Block, req: DataRequest): void {
+        if (block._isInvalid || block.number === 0) return
+        // The trace-API path has no debug call frames to check; the CLIs refuse to combine it
+        // with consensus anchor validation. A request without traces falls through to the
+        // missing-input handling below, so it is never accepted as checked.
+        if (req.useTraceApi) return
+        if (!req.traces || block.debugFrames == null || block.receipts == null) {
+            if (this.consensusAnchorValidation === 'reject') {
+                // A configuration that cannot be checked must not pass blocks as checked.
+                throw new Error('consensus anchor validation needs receipts and debug call frames in the data request')
+            }
+            if (!this.consensusAnchorInputsMissingLogged) {
+                this.consensusAnchorInputsMissingLogged = true
+                this.log.warn(
+                    {blockNumber: block.number},
+                    'consensus anchor validation needs receipts and debug call frames; checks skipped'
+                )
+            }
+            return
+        }
+
+        let receipts = new Map<string, Receipt>()
+        for (let receipt of block.receipts) {
+            receipts.set(receipt.transactionHash.toLowerCase(), receipt)
+        }
+
+        let replayDiffs: Map<string, TraceTransactionReplay> | undefined
+        if (block.traceReplays != null && req.stateDiffs && !req.useDebugApiForStateDiffs) {
+            replayDiffs = new Map()
+            for (let replay of block.traceReplays) {
+                if (replay.transactionHash) replayDiffs.set(replay.transactionHash.toLowerCase(), replay)
+            }
+        }
+        let debugDiffs = req.stateDiffs && req.useDebugApiForStateDiffs ? block.debugStateDiffs : undefined
+
+        let violatingTransactionCount = 0
+        let samples: ConsensusAnchorViolationSample[] = []
+
+        for (let i = 0; i < block.block.transactions.length; i++) {
+            let tx = block.block.transactions[i]
+            if (typeof tx === 'string') {
+                throw new Error('consensus anchor validation needs full transaction objects')
+            }
+            let frame = block.debugFrames[i]
+            let transactionHash = tx.hash
+            let receipt = receipts.get(transactionHash.toLowerCase())
+            if (receipt == null) {
+                // The receipts checks reject a block whose receipts do not cover every
+                // transaction, so this is not expected; never let it pass silently.
+                block._isInvalid = true
+                block._errorMessage = `consensus anchor validation found no receipt for transaction ${transactionHash}`
+                return
+            }
+
+            // `null`: state diffs were requested, but there is none for this transaction.
+            let systemBalanceDelta: bigint | null | undefined = req.stateDiffs ? null : undefined
+            if (replayDiffs != null) {
+                let replay = replayDiffs.get(transactionHash.toLowerCase())
+                if (replay?.stateDiff != null) systemBalanceDelta = systemBalanceDeltaFromReplay(replay.stateDiff)
+            } else if (debugDiffs != null) {
+                let diff = debugDiffs[i]
+                // A diff labelled with another transaction is not this transaction's diff.
+                if (diff != null && (diff.txHash == null || diff.txHash.toLowerCase() === transactionHash.toLowerCase())) {
+                    systemBalanceDelta = systemBalanceDeltaFromPrestate(diff.result)
+                }
+            }
+
+            let violations = checkConsensusAnchors(
+                {
+                    miner: block.block.miner,
+                    transaction: tx,
+                    receipt: {
+                        status: receipt.status != null ? qty2Int(receipt.status) : undefined,
+                        gasUsed: receipt.gasUsed,
+                        effectiveGasPrice: receipt.effectiveGasPrice,
+                        blobGasUsed: receipt.blobGasUsed,
+                        blobGasPrice: receipt.blobGasPrice
+                    },
+                    root: frame?.result,
+                    systemBalanceDelta
+                },
+                this.consensusAnchorRules
+            )
+            if (violations.length === 0) continue
+
+            if (this.consensusAnchorValidation === 'reject') {
+                let v = violations[0]
+                this.log.warn(
+                    {
+                        rpcEndpoint: this.client.url,
+                        blockNumber: block.number,
+                        blockHash: block.hash,
+                        transactionIndex: i,
+                        transactionHash,
+                        violations
+                    },
+                    'consensus anchor violation; block rejected'
+                )
+                block._isInvalid = true
+                block._errorMessage =
+                    `consensus anchor violation (${v.rule}) for transaction ${transactionHash}: ` +
+                    `expected ${v.expected}, got ${v.actual}`
+                return
+            }
+
+            violatingTransactionCount += 1
+            for (let v of violations) {
+                if (samples.length < CONSENSUS_ANCHOR_VIOLATION_SAMPLE_LIMIT) {
+                    samples.push({transactionIndex: i, transactionHash, ...v})
+                }
+            }
+        }
+
+        if (violatingTransactionCount > 0) {
+            let label = violatingTransactionCount === 1 ? 'transaction' : 'transactions'
+            this.log.warn(
+                {
+                    rpcEndpoint: this.client.url,
+                    blockNumber: block.number,
+                    blockHash: block.hash,
+                    consensusAnchorValidation: this.consensusAnchorValidation,
+                    violatingTransactionCount,
+                    violationSamples: samples
+                },
+                `consensus anchor violations observed in ${violatingTransactionCount} ${label}; block accepted`
             )
         }
     }
