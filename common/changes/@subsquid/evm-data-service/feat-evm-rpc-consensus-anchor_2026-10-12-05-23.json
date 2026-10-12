@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Validate debug call frames and state diffs against receipt status, gasUsed and transaction fees (--consensus-anchor-validation, --consensus-anchor-rules)",
+      "type": "minor",
+      "packageName": "@subsquid/evm-data-service"
+    }
+  ],
+  "packageName": "@subsquid/evm-data-service"
+}
