@@ -2,6 +2,7 @@ import {
     type CallFrameValidationMode,
     type ConsensusAnchorRule,
     type ConsensusAnchorValidationMode,
+    type TraceReplayCompletenessMode,
     Rpc,
     EvmRpcDataSource,
     EvmRpcClient
@@ -40,6 +41,7 @@ export interface DataSourceOptions {
     callFrameValidation?: CallFrameValidationMode
     consensusAnchorValidation?: ConsensusAnchorValidationMode
     consensusAnchorRules?: ConsensusAnchorRule[]
+    traceReplayCompleteness?: TraceReplayCompletenessMode
     skipLogIndexCheck?: boolean
     skipCumulativeGasUsedCheck?: boolean
     useGasUsedForReceiptsRoot?: boolean
@@ -76,6 +78,7 @@ export function createDataSource(options: DataSourceOptions): DataSourceSetup {
         callFrameValidation: options.callFrameValidation,
         consensusAnchorValidation: options.consensusAnchorValidation,
         consensusAnchorRules: options.consensusAnchorRules,
+        traceReplayCompleteness: options.traceReplayCompleteness,
         checkLogIndex: !options.skipLogIndexCheck,
         checkCumulativeGasUsed: !options.skipCumulativeGasUsedCheck,
         useGasUsedForReceiptsRoot: options.useGasUsedForReceiptsRoot

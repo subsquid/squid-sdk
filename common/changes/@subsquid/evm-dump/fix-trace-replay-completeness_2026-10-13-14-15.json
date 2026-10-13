@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Reject blocks whose trace_replayBlockTransactions answer misses transactions (--trace-replay-completeness, default reject)",
+      "type": "minor",
+      "packageName": "@subsquid/evm-dump"
+    }
+  ],
+  "packageName": "@subsquid/evm-dump"
+}
