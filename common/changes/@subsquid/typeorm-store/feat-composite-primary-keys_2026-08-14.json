@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "Support entities with a composite primary key: upserts take their ON CONFLICT target from the entity's key rather than assuming `id`, and hot-block change records carry the full key so a rollback addresses one row instead of every row sharing an `id`",
+      "type": "minor"
+    },
+    {
+      "packageName": "@subsquid/typeorm-store",
+      "comment": "Add a `primary` option to the typed column decorators, marking a column as part of a composite primary key",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-store"
+}

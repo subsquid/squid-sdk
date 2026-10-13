@@ -3,7 +3,7 @@ import {ColumnCommonOptions, ColumnOptions} from './common'
 
 export type IntColumnOptions = Pick<
     ColumnCommonOptions,
-    'name' | 'unique' | 'nullable' | 'default' | 'comment' | 'array'
+    'name' | 'unique' | 'nullable' | 'default' | 'comment' | 'array' | 'primary'
 >
 
 /**

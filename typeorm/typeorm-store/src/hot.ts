@@ -1,6 +1,7 @@
 import {assertNotNull} from '@subsquid/util-internal'
 import type {DataSource, EntityManager, EntityMetadata} from 'typeorm'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
+import {ApplyValueTransformers} from 'typeorm/util/ApplyValueTransformers'
 import {escapeIdentifier} from './misc'
 import {Entity, EntityClass} from './store'
 
@@ -54,6 +55,15 @@ async function buildCascadeMap(em: EntityManager): Promise<Map<string, ChildCasc
 export interface RowRef {
     table: string
     id: string
+    /**
+     * Values of the primary key columns other than `id`, keyed by database
+     * column name — see `@entity(pk: [...])`.
+     *
+     * Omitted entirely for single-column keys, so records written for ordinary
+     * entities serialize exactly as they did before composite keys existed and
+     * stay readable across a processor upgrade with a non-empty hot window.
+     */
+    key?: Record<string, any>
 }
 
 
@@ -106,7 +116,8 @@ export class ChangeTracker {
             return {
                 kind: 'insert',
                 table: meta.tableName,
-                id: e.id
+                id: e.id,
+                key: entityKey(meta, e)
             }
         }))
     }
@@ -114,22 +125,30 @@ export class ChangeTracker {
     async trackUpsert(type: EntityClass<Entity>, entities: Entity[]): Promise<void> {
         let meta = this.getEntityMetadata(type)
 
+        // Rows are fetched by id — a superset of the affected rows when the key
+        // is composite — then matched on the full key, so that upserting one
+        // version of an id is not mistaken for an update of a different one.
         let touchedRows = await this.fetchEntities(
             meta,
             entities.map(e => e.id)
         ).then(
-            entities => new Map(
-                entities.map(({id, ...fields}) => [id, fields])
+            rows => new Map(
+                rows.map(row => {
+                    let {id, ...fields} = row
+                    return [lookupKey(id, rowKey(meta, row)), fields]
+                })
             )
         )
 
         return this.writeChangeRows(entities.map(e => {
-            let fields = touchedRows.get(e.id)
+            let key = entityKey(meta, e)
+            let fields = touchedRows.get(lookupKey(e.id, key))
             if (fields) {
                 return {
                     kind: 'update',
                     table: meta.tableName,
                     id: e.id,
+                    key,
                     fields
                 }
             } else {
@@ -137,6 +156,7 @@ export class ChangeTracker {
                     kind: 'insert',
                     table: meta.tableName,
                     id: e.id,
+                    key,
                 }
             }
         }))
@@ -176,7 +196,9 @@ export class ChangeTracker {
         let parentRows = await this.fetchEntities(meta, ids)
         for (let row of parentRows) {
             let {id, ...fields} = row
-            out.push({kind: 'delete', table: meta.tableName, id, fields})
+            // The extra key columns stay inside `fields` as well, so the
+            // rollback INSERT restores them along with the rest of the row.
+            out.push({kind: 'delete', table: meta.tableName, id, key: rowKey(meta, row), fields})
         }
     }
 
@@ -265,31 +287,27 @@ export async function rollbackBlock(
         let {id} = ch
         switch (ch.kind) {
             case 'insert': {
-                let fromTable = ch.schema
-                    ? `${escapeIdentifier(em, ch.schema)}.${escapeIdentifier(em, ch.table)}`
-                    : escapeIdentifier(em, ch.table)
-                await em.query(`DELETE FROM ${fromTable} WHERE id = $1`, [id])
+                let fromTable = qualify(em, ch)
+                let where = keyPredicate(em, ch, 1)
+                await em.query(`DELETE FROM ${fromTable} WHERE ${where.sql}`, where.values)
                 break
             }
             case 'update': {
-                let fromTable = ch.schema
-                    ? `${escapeIdentifier(em, ch.schema)}.${escapeIdentifier(em, ch.table)}`
-                    : escapeIdentifier(em, ch.table)
+                let fromTable = qualify(em, ch)
                 let setPairs = Object.keys(ch.fields).map((column, idx) => {
                     return `${escapeIdentifier(em, column)} = $${idx + 1}`
                 })
                 if (setPairs.length) {
+                    let where = keyPredicate(em, ch, setPairs.length + 1)
                     await em.query(
-                        `UPDATE ${fromTable} SET ${setPairs.join(', ')} WHERE id = $${setPairs.length + 1}`,
-                        [...Object.values(ch.fields), id]
+                        `UPDATE ${fromTable} SET ${setPairs.join(', ')} WHERE ${where.sql}`,
+                        [...Object.values(ch.fields), ...where.values]
                     )
                 }
                 break
             }
             case 'delete': {
-                let fromTable = ch.schema
-                    ? `${escapeIdentifier(em, ch.schema)}.${escapeIdentifier(em, ch.table)}`
-                    : escapeIdentifier(em, ch.table)
+                let fromTable = qualify(em, ch)
                 let columns = ['id', ...Object.keys(ch.fields)].map(col => escapeIdentifier(em, col))
                 let values = columns.map((col, idx) => `$${idx + 1}`)
                 await em.query(
@@ -303,6 +321,87 @@ export async function rollbackBlock(
 
     await em.query(`DELETE FROM ${schema}.template_registry WHERE height = $1`, [blockHeight])
     await em.query(`DELETE FROM ${schema}.hot_block WHERE height = $1`, [blockHeight])
+}
+
+
+function qualify(em: EntityManager, ch: ChangeRecord): string {
+    return ch.schema
+        ? `${escapeIdentifier(em, ch.schema)}.${escapeIdentifier(em, ch.table)}`
+        : escapeIdentifier(em, ch.table)
+}
+
+
+/**
+ * `WHERE` clause addressing the single row a change record refers to, with
+ * placeholders numbered from `firstParam`.
+ */
+function keyPredicate(em: EntityManager, ch: ChangeRecord, firstParam: number): {sql: string; values: any[]} {
+    let sql = `id = $${firstParam}`
+    let values: any[] = [ch.id]
+    for (let column in ch.key) {
+        values.push(ch.key[column])
+        sql += ` AND ${escapeIdentifier(em, column)} = $${firstParam + values.length - 1}`
+    }
+    return {sql, values}
+}
+
+
+const EXTRA_PK_COLUMNS = new WeakMap<EntityMetadata, ColumnMetadata[]>()
+
+
+/**
+ * Primary key columns beyond `id`. Empty for all entities that don't opt into
+ * a composite key.
+ */
+function extraPkColumns(meta: EntityMetadata): ColumnMetadata[] {
+    let columns = EXTRA_PK_COLUMNS.get(meta)
+    if (columns == null) {
+        columns = meta.primaryColumns.filter(c => c.databaseName !== 'id')
+        EXTRA_PK_COLUMNS.set(meta, columns)
+    }
+    return columns
+}
+
+
+/**
+ * Key of a change record, read off a live entity instance. Column transformers
+ * are applied so the recorded values match what the driver would send.
+ */
+function entityKey(meta: EntityMetadata, e: Entity): Record<string, any> | undefined {
+    let columns = extraPkColumns(meta)
+    if (columns.length == 0) return undefined
+    let key: Record<string, any> = {}
+    for (let col of columns) {
+        let value = col.getEntityValue(e)
+        key[col.databaseName] = col.transformer
+            ? ApplyValueTransformers.transformTo(col.transformer, value)
+            : value
+    }
+    return key
+}
+
+
+/**
+ * Key of a change record, read off a raw driver row.
+ */
+function rowKey(meta: EntityMetadata, row: Record<string, any>): Record<string, any> | undefined {
+    let columns = extraPkColumns(meta)
+    if (columns.length == 0) return undefined
+    let key: Record<string, any> = {}
+    for (let col of columns) {
+        key[col.databaseName] = row[col.databaseName]
+    }
+    return key
+}
+
+
+/**
+ * In-memory map key identifying a row within one `trackUpsert` call. Both sides
+ * are serialized the same way the change log is, so an entity-derived key and a
+ * row-derived key for the same row compare equal.
+ */
+function lookupKey(id: string, key: Record<string, any> | undefined): string {
+    return key == null ? id : JSON.stringify([id, ...Object.values(key)])
 }
 
 

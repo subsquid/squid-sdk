@@ -134,6 +134,7 @@ export function validateModel(model: Model) {
     validateLookups(model)
     validateIndexes(model)
     validateQueryableInterfaces(model)
+    validatePrimaryKeys(model)
 }
 
 
@@ -250,6 +251,44 @@ export function validateIndexes(model: Model): void {
                 }
             })
         })
+    }
+}
+
+
+export function validatePrimaryKeys(model: Model): void {
+    for (let name in model) {
+        const item = model[name]
+        if (item.kind != 'entity' || item.pk == null) continue
+        if (item.pk.length == 0) throw new Error(`Entity ${name} has an empty pk`)
+        if (item.pk[0] != 'id') throw new Error(
+            `pk of entity ${name} must start with 'id', but starts with '${item.pk[0]}'`
+        )
+        let seen = new Set<string>()
+        for (let field of item.pk) {
+            if (seen.has(field)) throw new Error(
+                `Field ${field} is listed twice in the pk of entity ${name}`
+            )
+            seen.add(field)
+            let prop = item.properties[field]
+            if (prop == null) throw new Error(
+                `Entity ${name} doesn't have a property ${field}, but it is a part of its pk`
+            )
+            if (prop.nullable) throw new Error(
+                `Property ${name}.${field} can't be a part of a pk, it is nullable`
+            )
+            switch (prop.type.kind) {
+                case 'scalar':
+                    if (prop.type.name == 'JSON' || prop.type.name == 'Bytes') throw new Error(
+                        `Property ${name}.${field} can't be a part of a pk, ` +
+                        `${prop.type.name} is not supported there`
+                    )
+                    break
+                case 'enum':
+                    break
+                default:
+                    throw new Error(`Property ${name}.${field} can't be a part of a pk`)
+            }
+        }
     }
 }
 

@@ -12,6 +12,16 @@ export interface Entity extends TypeMeta {
     cardinality?: number
     queryName?: string
     listQueryName?: string
+    /**
+     * Primary key columns, in declaration order.
+     *
+     * Absent for the overwhelmingly common single-column case, which is
+     * equivalent to `['id']`. When present it always starts with `'id'`, so
+     * that the leading column of the primary key index stays the same and
+     * every id-keyed code path (relations, hot-block change log, `store.get`)
+     * keeps working unchanged.
+     */
+    pk?: Name[]
 }
 
 

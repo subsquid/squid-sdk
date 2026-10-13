@@ -3,7 +3,7 @@ import {ColumnCommonOptions} from './common'
 
 export type DateTimeColumnOptions = Pick<
     ColumnCommonOptions,
-    'name' | 'unique' | 'nullable' | 'default' | 'comment' | 'array'
+    'name' | 'unique' | 'nullable' | 'default' | 'comment' | 'array' | 'primary'
 >
 
 /**
