@@ -6,7 +6,9 @@ import {
     type ConsensusAnchorRule,
     type ConsensusAnchorValidationMode,
     DEFAULT_CONSENSUS_ANCHOR_RULES,
-    parseConsensusAnchorRules
+    parseConsensusAnchorRules,
+    TRACE_REPLAY_COMPLETENESS_MODES,
+    type TraceReplayCompletenessMode
 } from '@subsquid/evm-rpc'
 import {runProgram} from '@subsquid/util-internal'
 import {nat, positiveInt, positiveReal, Url} from '@subsquid/util-internal-commander'
@@ -79,6 +81,15 @@ runProgram(async () => {
             .argParser(parseConsensusAnchorRules)
             .default([...DEFAULT_CONSENSUS_ANCHOR_RULES], DEFAULT_CONSENSUS_ANCHOR_RULES.join(','))
     )
+    program.addOption(
+        new Option(
+            '--trace-replay-completeness <mode>',
+            'Check that trace_replayBlockTransactions returned a replay for every transaction; ' +
+                'observe logs a block with missing replays and accepts it, reject marks it invalid so it is fetched again'
+        )
+            .choices([...TRACE_REPLAY_COMPLETENESS_MODES])
+            .default('observe')
+    )
     program.option('--skip-log-index-check', 'Do not check log indices within a block are sequential')
     program.option('--skip-cumulative-gas-used-check', 'Do not check cumulativeGasUsed consistency across transactions')
     program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
@@ -112,6 +123,7 @@ runProgram(async () => {
         callFrameValidation: CallFrameValidationMode
         consensusAnchorValidation: ConsensusAnchorValidationMode
         consensusAnchorRules: ConsensusAnchorRule[]
+        traceReplayCompleteness: TraceReplayCompletenessMode
         skipLogIndexCheck?: boolean
         skipCumulativeGasUsedCheck?: boolean
         useGasUsedForReceiptsRoot?: boolean
@@ -171,6 +183,7 @@ runProgram(async () => {
         callFrameValidation: args.callFrameValidation,
         consensusAnchorValidation: args.consensusAnchorValidation,
         consensusAnchorRules: args.consensusAnchorRules,
+        traceReplayCompleteness: args.traceReplayCompleteness,
         skipLogIndexCheck: args.skipLogIndexCheck,
         skipCumulativeGasUsedCheck: args.skipCumulativeGasUsedCheck,
         useGasUsedForReceiptsRoot: args.useGasUsedForReceiptsRoot
