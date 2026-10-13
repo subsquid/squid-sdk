@@ -620,6 +620,56 @@ export const DebugFrameResult = object({
 export type DebugFrameResult = GetSrcType<typeof DebugFrameResult>
 
 
+// Block access list (EIP-7928) as returned by `eth_getBlockAccessListByBlockHash`.
+// `index` is the block access index: 0 for pre-execution system calls,
+// 1..n for transactions, n+1 for post-execution system operations.
+// https://eips.ethereum.org/EIPS/eip-7928
+export const BlockAccessListChange = object({
+    index: SMALL_QTY,
+    value: QTY
+})
+
+
+export type BlockAccessListChange = GetSrcType<typeof BlockAccessListChange>
+
+
+export const BlockAccessListCodeChange = object({
+    index: SMALL_QTY,
+    code: BYTES
+})
+
+
+export type BlockAccessListCodeChange = GetSrcType<typeof BlockAccessListCodeChange>
+
+
+export const BlockAccessListSlotChanges = object({
+    key: QTY,
+    changes: array(BlockAccessListChange)
+})
+
+
+export type BlockAccessListSlotChanges = GetSrcType<typeof BlockAccessListSlotChanges>
+
+
+export const BlockAccessListAccount = object({
+    address: BYTES,
+    storageChanges: array(BlockAccessListSlotChanges),
+    storageReads: array(QTY),
+    balanceChanges: array(BlockAccessListChange),
+    nonceChanges: array(BlockAccessListChange),
+    codeChanges: array(BlockAccessListCodeChange)
+})
+
+
+export type BlockAccessListAccount = GetSrcType<typeof BlockAccessListAccount>
+
+
+export const BlockAccessList = array(BlockAccessListAccount)
+
+
+export type BlockAccessList = GetSrcType<typeof BlockAccessList>
+
+
 export const GetBlock = object({
     number: SMALL_QTY,
     hash: BYTES,
@@ -651,6 +701,10 @@ export const GetBlock = object({
     withdrawals: option(array(Withdrawal)),
     withdrawalsRoot: option(BYTES),
     requestsHash: option(BYTES),
+    // https://eips.ethereum.org/EIPS/eip-7928
+    blockAccessListHash: option(BYTES),
+    // https://eips.ethereum.org/EIPS/eip-7843
+    slotNumber: option(QTY),
     l1BlockNumber: option(SMALL_QTY),
     // Tempo-specific block header fields
     // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/header.rs

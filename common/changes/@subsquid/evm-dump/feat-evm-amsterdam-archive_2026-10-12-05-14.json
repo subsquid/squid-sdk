@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add `--with-block-access-lists` and `--verify-block-access-list-hash`; Amsterdam blocks pass block-hash verification",
+      "type": "minor",
+      "packageName": "@subsquid/evm-dump"
+    }
+  ],
+  "packageName": "@subsquid/evm-dump",
+  "email": "abernatskiy@toha.li"
+}

@@ -23,6 +23,8 @@ import {
     Log,
     Receipt,
     Withdrawal,
+    BlockAccessList,
+    BlockAccessListChange,
 } from './rpc-data'
 import {qty2Int} from './util'
 import {Bytes20, Bytes32, Qty} from './types'
@@ -191,6 +193,16 @@ function ethereumHeaderFields(block: GetBlock) {
     // https://eips.ethereum.org/EIPS/eip-7685
     if (block.requestsHash) {
         fields.push(decodeHex(block.requestsHash))
+    }
+
+    // https://eips.ethereum.org/EIPS/eip-7928
+    if (block.blockAccessListHash) {
+        fields.push(decodeHex(block.blockAccessListHash))
+    }
+
+    // https://eips.ethereum.org/EIPS/eip-7843
+    if (block.slotNumber) {
+        fields.push(BigInt(block.slotNumber))
     }
 
     return fields
@@ -1103,6 +1115,34 @@ export async function withdrawalsRoot(withdrawals: Withdrawal[]) {
     }
 
     return toHex(trie.root())
+}
+
+
+function encodeBlockAccessListChanges(changes: BlockAccessListChange[]) {
+    return changes.map(change => [BigInt(change.index), BigInt(change.value)])
+}
+
+
+/**
+ * `keccak256(rlp(block_access_list))`, the value committed to by the
+ * `blockAccessListHash` header field. Storage keys and values are encoded
+ * as integers, accounts and changes keep the order the RPC returns them in.
+ *
+ * https://eips.ethereum.org/EIPS/eip-7928
+ */
+export function blockAccessListHash(accessList: BlockAccessList): Bytes32 {
+    let accounts = accessList.map(account => [
+        decodeHex(account.address),
+        account.storageChanges.map(slot => [
+            BigInt(slot.key),
+            encodeBlockAccessListChanges(slot.changes)
+        ]),
+        account.storageReads.map(key => BigInt(key)),
+        encodeBlockAccessListChanges(account.balanceChanges),
+        encodeBlockAccessListChanges(account.nonceChanges),
+        account.codeChanges.map(change => [BigInt(change.index), decodeHex(change.code)])
+    ])
+    return toHex(keccak256(RLP.encode(accounts)))
 }
 
 

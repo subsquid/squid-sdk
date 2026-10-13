@@ -29,6 +29,7 @@ interface Options extends DumperOptions {
     withReceipts?: boolean
     withTraces?: boolean
     withStatediffs?: boolean
+    withBlockAccessLists?: boolean
     useTraceApi?: boolean
     useDebugApiForStatediffs?: boolean
     useDebugTraceBlockByNumber?: boolean
@@ -39,6 +40,7 @@ interface Options extends DumperOptions {
     verifyReceiptsRoot?: boolean
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
+    verifyBlockAccessListHash?: boolean
     callFrameValidation?: CallFrameValidationMode
     consensusAnchorValidation?: ConsensusAnchorValidationMode
     consensusAnchorRules?: ConsensusAnchorRule[]
@@ -62,6 +64,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.option('--with-receipts', 'Fetch transaction receipt data')
         program.option('--with-traces', 'Fetch EVM call traces')
         program.option('--with-statediffs', 'Fetch EVM state updates')
+        program.option('--with-block-access-lists', 'Fetch EIP-7928 block access lists of blocks that commit to one')
         program.option('--use-trace-api', 'Use trace_* API for statediffs and call traces')
         program.option('--use-debug-api-for-statediffs', 'Use debug prestateTracer to fetch statediffs (by default will use trace_* api)')
         program.option('--use-debug-trace-block-by-number', 'Use debug_traceBlockByNumber instead of debug_traceBlockByHash')
@@ -72,6 +75,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.option('--verify-receipts-root', 'Verify block receipts against receipts root')
         program.option('--verify-withdrawals-root', 'Verify block withdrawals against withdrawals root')
         program.option('--verify-logs-bloom', 'Verify block logs against logs bloom')
+        program.option('--verify-block-access-list-hash', 'Verify block access lists against the blockAccessListHash header commitment')
         program.addOption(
             new Option(
                 '--call-frame-validation <mode>',
@@ -144,6 +148,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 verifyReceiptsRoot: this.options().verifyReceiptsRoot,
                 verifyWithdrawalsRoot: this.options().verifyWithdrawalsRoot,
                 verifyLogsBloom: this.options().verifyLogsBloom,
+                verifyBlockAccessListHash: this.options().verifyBlockAccessListHash,
                 callFrameValidation: this.options().callFrameValidation,
                 consensusAnchorValidation: this.options().consensusAnchorValidation,
                 consensusAnchorRules: this.options().consensusAnchorRules,
@@ -158,6 +163,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 receipts: this.options().withReceipts,
                 traces: this.options().withTraces,
                 stateDiffs: this.options().withStatediffs,
+                blockAccessLists: this.options().withBlockAccessLists,
                 useDebugApiForStateDiffs: this.options().useDebugApiForStatediffs,
                 useDebugTraceBlockByNumber: this.options().useDebugTraceBlockByNumber,
                 useTraceApi: this.options().useTraceApi,
