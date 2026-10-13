@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "EvmRpcDataSource implements the new optional getHeight() with eth_blockNumber, so freshness head polls no longer cost a full eth_getBlockByNumber lookup",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
