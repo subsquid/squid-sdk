@@ -30,6 +30,7 @@ export function createOrmConfig(options?: OrmOptions): OrmConfig {
     return  {
         type: 'postgres',
         namingStrategy: new SnakeNamingStrategy(),
+        synchronize: process.env.DB_SYNCHRONIZE === 'true',
         ...locations,
         ...createConnectionOptions()
     }
