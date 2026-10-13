@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Check that trace_replayBlockTransactions returned a replay for every transaction (traceReplayCompleteness: off|observe|reject, off by default)",
+      "type": "minor",
+      "packageName": "@subsquid/evm-rpc"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
