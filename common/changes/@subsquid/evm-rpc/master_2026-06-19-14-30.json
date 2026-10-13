@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "getBlocks: back off exponentially and extend the retry budget for transiently missing/invalid blocks so an intermittent provider response (e.g. a flaky eth_getBlockReceipts returning null for a block that genuinely has data) is ridden out instead of crash-looping the dumper",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
