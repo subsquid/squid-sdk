@@ -18,6 +18,12 @@ export class HyperliquidIngest extends Ingest<HyperliquidIngestOptions> {
         return 'sqd:hyperliquid-ingest'
     }
 
+    // Fills chunks can be large and bursty (hundreds of MB, thousands of events/block),
+    // so the default 120s socket timeout is too short to download and stream one.
+    protected getSocketTimeout() {
+        return 600_000
+    }
+
     protected setUpProgram(program: Command) {
         program.description('Data ingestion tool for Hyperliquid')
             .requiredOption('--hl-archive <url>', 'Hyperliquid archive url', FileOrUrl(['s3:']))

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/hyperliquid-fills-ingest",
+      "comment": "Raise the data-service socket timeout to 600s so large bursty fills chunks can be downloaded and streamed without timing out",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/hyperliquid-fills-ingest"
+}
