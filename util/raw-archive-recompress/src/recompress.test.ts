@@ -1,13 +1,14 @@
 import {ArchiveLayout, Compression, getBlocksFileName} from '@subsquid/util-internal-archive-layout'
 import {LocalFs} from '@subsquid/util-internal-fs'
 import {createHash} from 'crypto'
+import {once} from 'events'
 import {mkdtemp, readdir, readFile, rename, rm, writeFile} from 'fs/promises'
 import {tmpdir} from 'os'
 import path from 'path'
 import {setTimeout as sleep} from 'timers/promises'
-import {gunzipSync, zstdCompressSync} from 'zlib'
+import {createGzip, gunzipSync, zstdCompressSync} from 'zlib'
 import {afterEach, beforeEach, describe, expect, it} from 'vitest'
-import {convert, forEachDescending, getStatus} from './recompress'
+import {BlockRefScanner, convert, forEachDescending, getStatus} from './recompress'
 
 
 function makeBlock(n: number) {
@@ -226,6 +227,142 @@ describe('raw-archive-recompress', () => {
         await expect(convert(layout(), {concurrency: 4})).rejects.toThrow(/does not match/)
         expect(await countFiles(root, 'gzip')).toBeGreaterThan(gzipChunks / 2)
     })
+})
+
+
+describe('BlockRefScanner', () => {
+    function scan(...parts: string[]) {
+        let scanner = new BlockRefScanner()
+        for (let part of parts) {
+            let buf = Buffer.from(part)
+            scanner.write(buf, 0, buf.length)
+        }
+        return scanner.ref()
+    }
+
+    it('reads hash and number from the top level', () => {
+        expect(scan('{"hash":"0xabc","number":42,"rest":[1,2]}')).toEqual({hash: '0xabc', number: 42})
+    })
+
+    it('reads a hex number', () => {
+        expect(scan('{"hash":"0xabc","number":"0x2a"}')).toEqual({hash: '0xabc', number: 42})
+    })
+
+    it('falls back to height', () => {
+        expect(scan('{"hash":"0xabc","height":7}')).toEqual({hash: '0xabc', number: 7})
+    })
+
+    it('ignores hash and number nested in other fields', () => {
+        let line = '{"parent":{"hash":"0xdeep","number":1},"txs":[{"hash":"0xtx"}],"hash":"0xreal","number":9}'
+        expect(scan(line)).toEqual({hash: '0xreal', number: 9})
+    })
+
+    it('is not confused by braces and quotes inside strings', () => {
+        expect(scan('{"note":"{\\"hash\\":\\"0xfake\\"}","hash":"0xreal","number":3}'))
+            .toEqual({hash: '0xreal', number: 3})
+    })
+
+    it('reads fields split across writes', () => {
+        expect(scan('{"ha', 'sh":"0xab', 'c","numb', 'er":1', '23}')).toEqual({hash: '0xabc', number: 123})
+    })
+
+    it('reports a field it never saw', () => {
+        expect(scan('{"number":5}')).toEqual({hash: undefined, number: 5})
+    })
+
+    it('stops reading once hash and number are known', () => {
+        let scanner = new BlockRefScanner()
+        let head = Buffer.from('{"hash":"0xabc","number":1,"fat":"')
+        scanner.write(head, 0, head.length)
+        expect(scanner.done).toBe(true)
+
+        // whatever follows cannot change the answer, so the rest of a 562 MB block is skipped
+        let tail = Buffer.from('","hash":"0xlater"}')
+        scanner.write(tail, 0, tail.length)
+        expect(scanner.ref()).toEqual({hash: '0xabc', number: 1})
+    })
+})
+
+
+describe('a block larger than the maximum string', () => {
+    let root: string
+    let layout: () => ArchiveLayout
+
+    // Node cannot hold 0x1fffffe8 characters in one string, and one base-sepolia block
+    // is 562 MB. Reading the last block by parsing its line left those chunks
+    // unconvertible, so the payload here is built past that limit on purpose.
+    const MAX_STRING_LENGTH = 0x1fffffe8
+    const PAD = MAX_STRING_LENGTH + 16 * 1024 * 1024
+
+    beforeEach(async () => {
+        root = await mkdtemp(path.join(tmpdir(), 'raw-archive-recompress-'))
+        layout = () => new ArchiveLayout(new LocalFs(root))
+    })
+
+    afterEach(async () => {
+        await rm(root, {recursive: true, force: true})
+    })
+
+    /** One block whose padding runs past the string limit, gzipped without ever being a string. */
+    async function fatBlock(number: number, hash: string): Promise<{gzip: Buffer; rawBytes: number}> {
+        let gzip = createGzip()
+        let parts: Buffer[] = []
+        let rawBytes = 0
+        gzip.on('data', (d: Buffer) => parts.push(d))
+        let done = once(gzip, 'end')
+
+        let write = async (part: Buffer) => {
+            rawBytes += part.length
+            if (!gzip.write(part)) await once(gzip, 'drain')
+        }
+
+        await write(Buffer.from(`{"hash":"${hash}","number":${number},"fat":"`))
+        let pad = Buffer.alloc(1024 * 1024, 0x78)
+        for (let written = 0; written < PAD; written += pad.length) {
+            await write(pad)
+        }
+        rawBytes += 3
+        gzip.end(Buffer.from('"}\n'))
+
+        await done
+        return {gzip: Buffer.concat(parts), rawBytes}
+    }
+
+    async function makeFatChunk(): Promise<string> {
+        let dir = (await listChunkDirs(root))[0]
+        let [, to, short] = path.basename(dir).split('-')
+        // checkShorHashMatch accepts a full hash ending with the chunk's short one
+        let hash = '0x' + 'a'.repeat(56) + short
+        let {gzip, rawBytes} = await fatBlock(Number(to), hash)
+
+        // guards the point of these tests: a shorter line would pass on the old code too
+        expect(rawBytes).toBeGreaterThan(MAX_STRING_LENGTH)
+
+        await writeFile(path.join(dir, getBlocksFileName('gzip')), gzip)
+        return dir
+    }
+
+    it('converts it', async () => {
+        await writeBlocks(root, 99, 'gzip')
+        await writeBlocks(root, 199, 'zstd')
+        let dir = await makeFatChunk()
+
+        let gzipChunks = (await getStatus(layout())).gzipChunks!
+        expect((await convert(layout())).chunks).toBe(gzipChunks)
+        expect(await readdir(dir)).toEqual([getBlocksFileName('zstd')])
+        expect(await countFiles(root, 'gzip')).toBe(0)
+    }, 600_000)
+
+    it('still refuses it when the last block does not match the chunk name', async () => {
+        await writeBlocks(root, 99, 'gzip')
+        await writeBlocks(root, 199, 'zstd')
+        let dir = await makeFatChunk()
+        let renamed = dir.replace(/-[0-9a-z]+$/, '-deadbeef')
+        await rename(dir, renamed)
+
+        await expect(convert(layout())).rejects.toThrow(/does not match/)
+        expect(await readdir(renamed)).toEqual([getBlocksFileName('gzip')])
+    }, 600_000)
 })
 
 

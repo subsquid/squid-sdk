@@ -7,10 +7,8 @@ import {
     createCompressor,
     createDecompressor,
     DataChunk,
-    getBlockNumber,
     getBlocksFileName,
-    getChunkPath,
-    RawBlock
+    getChunkPath
 } from '@subsquid/util-internal-archive-layout'
 import {createHash} from 'crypto'
 import {Readable, Transform, TransformCallback, Writable} from 'stream'
@@ -198,7 +196,7 @@ export async function convertChunk(
     if (roundTrip.digest() !== source.digest()) {
         throw new Error(`${getChunkPath(chunk)}: zstd payload differs from gzip payload`)
     }
-    checkLastBlock(chunk, source.lastLine())
+    checkLastBlock(chunk, source.lastBlockRef())
 
     // .zst goes in before .gz goes away, so a reader always finds one of them
     await fs.write(ZSTD_FILE, zstd)
@@ -312,60 +310,216 @@ export async function getChunkCompression(layout: ArchiveLayout, chunk: DataChun
 }
 
 
-function checkLastBlock(chunk: DataChunk, line: Buffer | undefined): void {
-    if (line == null) {
+function checkLastBlock(chunk: DataChunk, ref: BlockRef | undefined): void {
+    if (ref == null) {
         throw new Error(`${getChunkPath(chunk)}: no blocks`)
     }
+    if (ref.hash == null || ref.number == null) {
+        throw new Error(`${getChunkPath(chunk)}: last block has no hash or number`)
+    }
 
-    let block: RawBlock = JSON.parse(line.toString('utf-8'))
-    let number = getBlockNumber(block)
-    let matches = number === chunk.to && checkShorHashMatch(block.hash, chunk.hash)
+    let matches = ref.number === chunk.to && checkShorHashMatch(ref.hash, chunk.hash)
 
     if (!matches) {
         throw new Error(
-            `${getChunkPath(chunk)}: last block ${number}#${block.hash} does not match the chunk name`
+            `${getChunkPath(chunk)}: last block ${ref.number}#${ref.hash} does not match the chunk name`
         )
     }
 }
 
 
+interface BlockRef {
+    hash?: string
+    number?: number
+}
+
+
+/**
+ * Reads `hash` and the block number out of a JSON block as its bytes stream past.
+ *
+ * `JSON.parse` needs the line as one string, and a base-sepolia block runs to 562 MB —
+ * past Node's maximum string length, which left those chunks unconvertible. Smaller
+ * blocks cost their own size in memory just to read two fields.
+ *
+ * Only the top level is inspected, so a nested `hash` cannot be mistaken for the
+ * block's own, and scanning stops as soon as both fields are in hand — the megabytes
+ * of transactions and traces that follow are never looked at.
+ */
+export class BlockRefScanner {
+    // A hash is 66 characters and a block number under 20, so nothing longer is what we
+    // are after. The cap is what keeps memory flat whatever the field order: a value
+    // that runs past it is dropped, and the chunk then fails the check rather than
+    // being converted on a truncated hash.
+    private static readonly MAX_FIELD = 4096
+
+    private depth = 0
+    private closed = false
+    private inString = false
+    private escaped = false
+    private expectKey = true
+    private capture = false
+    private overflow = false
+    private buf: number[] = []
+    private key = ''
+    private hash?: string
+    private number?: number
+    private height?: number
+
+    /** True once nothing left in this line can change the answer. */
+    get done(): boolean {
+        // `height` alone does not stop the scan: getBlockNumber prefers `number`,
+        // which may still be ahead.
+        return this.closed || (this.hash != null && this.number != null)
+    }
+
+    write(data: Buffer, from: number, to: number): void {
+        for (let i = from; i < to && !this.done; i++) {
+            let b = data[i]
+
+            if (this.inString) {
+                if (this.escaped) {
+                    this.escaped = false
+                    this.push(b)
+                } else if (b === 0x5c) { // backslash
+                    this.escaped = true
+                    this.push(b)
+                } else if (b === 0x22) { // "
+                    this.inString = false
+                    this.end()
+                } else {
+                    this.push(b)
+                }
+                continue
+            }
+
+            switch (b) {
+                case 0x22: // "
+                    this.inString = true
+                    this.startValue()
+                    break
+                case 0x7b: // {
+                case 0x5b: // [
+                    this.depth += 1
+                    break
+                case 0x7d: // }
+                case 0x5d: // ]
+                    this.end()
+                    this.depth -= 1
+                    if (this.depth === 0) this.closed = true
+                    break
+                case 0x3a: // :
+                    if (this.depth === 1) this.expectKey = false
+                    break
+                case 0x2c: // ,
+                    this.end()
+                    if (this.depth === 1) this.expectKey = true
+                    break
+                default:
+                    // the first byte of a bare number, true, false or null
+                    if (this.buf.length === 0 && !this.capture) this.startValue()
+                    this.push(b)
+            }
+        }
+    }
+
+    /** Decide whether the value about to be read is one of the two we need. */
+    private startValue(): void {
+        this.capture = this.depth === 1 && (this.expectKey || isWantedKey(this.key))
+        this.buf = []
+        this.overflow = false
+    }
+
+    private push(b: number): void {
+        if (!this.capture) return
+        if (this.buf.length < BlockRefScanner.MAX_FIELD) {
+            this.buf.push(b)
+        } else {
+            this.overflow = true
+        }
+    }
+
+    private end(): void {
+        if (!this.capture) return
+        this.capture = false
+
+        let text = Buffer.from(this.buf).toString('utf-8').trim()
+        this.buf = []
+        if (this.overflow || !text) return
+
+        if (this.expectKey) {
+            this.key = text
+        } else if (this.key === 'hash') {
+            this.hash = text
+        } else if (this.key === 'number') {
+            this.number = toNumber(text)
+        } else if (this.key === 'height') {
+            this.height = toNumber(text)
+        }
+    }
+
+    ref(): BlockRef {
+        return {
+            hash: this.hash,
+            number: this.number ?? this.height
+        }
+    }
+}
+
+
+function isWantedKey(key: string): boolean {
+    return key === 'hash' || key === 'number' || key === 'height'
+}
+
+
+function toNumber(text: string): number | undefined {
+    let value = Number(text)
+    return Number.isSafeInteger(value) ? value : undefined
+}
+
+
 class PayloadDigest extends Transform {
     private hash = createHash('sha256')
-    private tail: Buffer[] = []
-    private last?: Buffer[]
+    private current = new BlockRefScanner()
+    private started = false
+    private last?: BlockRef
 
     _transform(data: Buffer, _: BufferEncoding, cb: TransformCallback): void {
         this.hash.update(data)
 
+        // A newline cannot occur inside a JSON string, so it always ends a block.
         let start = 0
         let pos: number
         while ((pos = data.indexOf(10, start)) >= 0) {
-            this.tail.push(data.subarray(start, pos))
-            this.last = this.tail
-            this.tail = []
+            this.current.write(data, start, pos)
+            this.endLine()
             start = pos + 1
         }
         if (start < data.length) {
-            this.tail.push(data.subarray(start))
+            this.current.write(data, start, data.length)
+            this.started = true
         }
 
         cb(null, data)
     }
 
     _flush(cb: TransformCallback): void {
-        if (this.tail.length > 0) {
-            this.last = this.tail
-            this.tail = []
-        }
+        // a payload whose last line has no trailing newline still ends on a block
+        if (this.started) this.endLine()
         cb()
+    }
+
+    private endLine(): void {
+        this.last = this.current.ref()
+        this.current = new BlockRefScanner()
+        this.started = false
     }
 
     digest(): string {
         return this.hash.copy().digest('hex')
     }
 
-    lastLine(): Buffer | undefined {
-        return this.last && Buffer.concat(this.last)
+    lastBlockRef(): BlockRef | undefined {
+        return this.last
     }
 }
 
