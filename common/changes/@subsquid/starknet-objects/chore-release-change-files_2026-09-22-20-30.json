@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/starknet-objects",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/starknet-objects"
+}
