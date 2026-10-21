@@ -39,7 +39,9 @@ describe('Verification Functions', () => {
 
             it.skipIf(
                 // Cosmos/Tendermint EVM chains use a different algorithm for the transactions root
-                fixture.chain === 'cronos'
+                fixture.chain === 'cronos' ||
+                // Scroll L1 messages (type 0x7e) are not OP deposits; their encoding is not implemented
+                fixture.chain === 'scroll'
             )('transactionsRoot verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 if (!block.transactions || block.transactions.length === 0) return

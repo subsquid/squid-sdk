@@ -22,6 +22,7 @@ const CHAIN_IDS: Record<string, string> = {
     'avalanche-testnet': '0xa869',
     'geth-dev': '0x539',
     anvil: '0x7a69',
+    scroll: '0x82750',
 }
 
 

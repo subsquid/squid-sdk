@@ -8,6 +8,7 @@ import {
     NAT,
     nullable,
     object,
+    option,
     Validator
 } from '@subsquid/util-internal-validation'
 import { addErrorContext, assertNotNull, groupBy, last } from '@subsquid/util-internal'
@@ -924,15 +925,18 @@ export class Rpc {
             }
         })
 
-        let validateFrameResult = getResultValidator(array(DebugFrameResult))
+        let validateFrameResult = getResultValidator(array(MaybeEmptyDebugFrameResult))
 
-        let results = await this.reduceBatchOnRetry<DebugFrameResult[] | null | typeof RESPONSE_TOO_BIG>(call, {
+        let results = await this.reduceBatchOnRetry<MaybeEmptyDebugFrameResult[] | null | typeof RESPONSE_TOO_BIG>(call, {
             validateResult: result => {
                 if (Array.isArray(result)) {
                     // Moonbeam quirk
                     for (let i = 0; i < result.length; i++) {
                         if (!('result' in result[i])) {
                             result[i] = { result: result[i] }
+                        }
+                        if (isEmptyFrame(result[i].result)) {
+                            result[i].result = null
                         }
                     }
                 }
@@ -963,9 +967,10 @@ export class Rpc {
                 block._isInvalid = true
                 block._errorMessage = "failed to get debug call frames for a block"
             } else if (block.block.transactions.length === frames.length) {
-                block.debugFrames = frames
+                block.debugFrames = this.dropEmptyDebugFrames(block, frames, utils)
             } else {
-                block.debugFrames = this.matchDebugTrace('debug call frame', block, frames, utils)
+                let matched = this.matchDebugTrace('debug call frame', block, frames, utils)
+                block.debugFrames = this.dropEmptyDebugFrames(block, matched, utils)
             }
             let settled = await this.recoverSelfdestructFrames(block, req)
             this.validateDebugFrames(block, settled)
@@ -1105,21 +1110,52 @@ export class Rpc {
         return selfdestructEvents(answer.evs)
     }
 
-    private async getDebugFramesByTransaction(block: Block, traceConfig: unknown): Promise<DebugFrameResult[]> {
+    private async getDebugFramesByTransaction(
+        block: Block,
+        traceConfig: unknown
+    ): Promise<MaybeEmptyDebugFrameResult[]> {
         let txHashes = block.block.transactions.map(getTxHash)
         let call = txHashes.map(txHash => ({
             method: 'debug_traceTransaction',
             params: [txHash, traceConfig]
         }))
 
+        let validateFrame = getResultValidator(DebugFrame)
+
         let results = await this.reduceBatchOnRetry(call, {
-            validateResult: getResultValidator(DebugFrame)
+            validateResult: result => (isEmptyFrame(result) ? null : validateFrame(result))
         })
 
         return results.map((result, i) => ({
             result,
             txHash: txHashes[i]
         }))
+    }
+
+    /**
+     * Turns the empty call frames of a block into missing ones where the chain is known to
+     * answer `{}` for the transaction, and rejects the block on any other empty frame.
+     */
+    private dropEmptyDebugFrames(
+        block: Block,
+        frames: (MaybeEmptyDebugFrameResult | undefined)[],
+        utils: ChainUtils
+    ): (DebugFrameResult | undefined)[] | undefined {
+        let out: (DebugFrameResult | undefined)[] = new Array(frames.length)
+        for (let i = 0; i < frames.length; i++) {
+            let frame = frames[i]
+            if (frame == null) continue
+            if (frame.result != null) {
+                out[i] = frame as DebugFrameResult
+                continue
+            }
+            let tx = block.block.transactions[i]
+            if (tx != null && utils.allowsEmptyCallFrame(tx)) continue
+            block._isInvalid = true
+            block._errorMessage = `empty debug call frame for transaction ${tx == null ? i : getTxHash(tx)}`
+            return undefined
+        }
+        return out
     }
 
     private validateDebugFrames(block: Block, settled: Map<number, Set<string>>): void {
@@ -1540,6 +1576,22 @@ function getResultValidator<V extends Validator>(validator: V): (result: unknown
         throw new DataValidationError(message)
     }
 }
+
+
+// A call frame with no fields at all, `{}`, as opposed to a malformed one.
+function isEmptyFrame(value: unknown): boolean {
+    return value != null && typeof value == 'object' && !Array.isArray(value) && isEmpty(value)
+}
+
+
+const MaybeEmptyDebugFrameResult = object({
+    // `null` stands for an empty call frame, see isEmptyFrame()
+    result: nullable(DebugFrame),
+    txHash: option(BYTES)
+})
+
+
+type MaybeEmptyDebugFrameResult = GetSrcType<typeof MaybeEmptyDebugFrameResult>
 
 
 function isEmpty(obj: object): boolean {
