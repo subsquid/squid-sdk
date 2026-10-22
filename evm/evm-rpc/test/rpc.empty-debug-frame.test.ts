@@ -26,8 +26,22 @@ const TRACE_CONFIG = {
     timeout: undefined,
 }
 
-function mockClient(chain: string, blockNumber: number, frames: any[]): MockRpcClient {
-    let client = new MockRpcClient()
+// Unlike MockRpcClient, lets a validation error out, as the real client does.
+class StrictMockRpcClient extends MockRpcClient {
+    async batchCall(
+        batch: {method: string; params?: any[]}[],
+        options?: {validateResult?: (result: any, req: any) => any},
+    ) {
+        let results = []
+        for (let req of batch) {
+            let result = await this.call(req.method, req.params)
+            results.push(options?.validateResult ? options.validateResult(result, req) : result)
+        }
+        return results
+    }
+}
+
+function mockClient(chain: string, blockNumber: number, frames: any[], client = new MockRpcClient()): MockRpcClient {
     client.setFixture('eth_chainId', undefined, getChainId(chain))
     client.setFixture('eth_getBlockByNumber', [toQty(blockNumber), true], loadBlock(chain, blockNumber))
     client.setFixture('debug_traceBlockByNumber', [toQty(blockNumber), TRACE_CONFIG], frames)
@@ -82,6 +96,26 @@ describe('empty debug call frames', () => {
 
         expect(blocks[0]._isInvalid).toBeFalsy()
         expect(blocks[0].block.transactions).toEqual([SCROLL_L1_MESSAGE])
+    })
+
+    it('rejects an empty call frame for a 0x7e transaction that is not shaped as a Scroll L1 message', async () => {
+        let block = loadBlock('scroll', SCROLL_BLOCK)
+        delete (block.transactions[0] as any).queueIndex
+        let client = mockClient('scroll', SCROLL_BLOCK, loadDebugFrames('scroll', SCROLL_BLOCK))
+        client.setFixture('eth_getBlockByNumber', [toQty(SCROLL_BLOCK), true], block)
+
+        let blocks = await fetchBlock(client, SCROLL_BLOCK)
+
+        expect(blocks[0]._isInvalid).toBe(true)
+        expect(blocks[0]._errorMessage).toEqual(`empty debug call frame for transaction ${SCROLL_L1_MESSAGE}`)
+    })
+
+    it('keeps a JSON null call frame a validation error', async () => {
+        let frames = [{txHash: SCROLL_L1_MESSAGE, result: null}]
+
+        let client = mockClient('scroll', SCROLL_BLOCK, frames, new StrictMockRpcClient())
+
+        await expect(fetchBlock(client, SCROLL_BLOCK)).rejects.toThrow(/invalid value at \/0\/result/)
     })
 
     it('rejects an empty call frame labelled with another transaction', async () => {

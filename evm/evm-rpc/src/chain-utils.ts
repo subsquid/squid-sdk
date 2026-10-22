@@ -92,7 +92,7 @@ export class ChainUtils {
     allowsEmptyCallFrame(tx: Transaction | Bytes32): boolean {
         // A bare hash says nothing about the transaction; Rpc fetches full objects on such chains
         if (typeof tx == 'string') return false
-        return this.isScroll && tx.type == '0x7e'
+        return this.isScroll && tx.type == '0x7e' && tx.queueIndex != null
     }
 
     calculateBlockHash(block: GetBlock) {

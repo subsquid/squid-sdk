@@ -929,8 +929,6 @@ export class Rpc {
             }
         })
 
-        let validateFrameResult = getResultValidator(array(MaybeEmptyDebugFrameResult))
-
         let results = await this.reduceBatchOnRetry<MaybeEmptyDebugFrameResult[] | null | typeof RESPONSE_TOO_BIG>(call, {
             validateResult: result => {
                 if (Array.isArray(result)) {
@@ -939,12 +937,9 @@ export class Rpc {
                         if (!('result' in result[i])) {
                             result[i] = { result: result[i] }
                         }
-                        if (isEmptyFrame(result[i].result)) {
-                            result[i].result = null
-                        }
                     }
                 }
-                return validateFrameResult(result)
+                return validateMaybeEmptyFrameResults(result)
             },
             validateError: info => {
                 if (info.message.includes('not found')) return null
@@ -1601,14 +1596,34 @@ function isEmptyFrame(value: unknown): boolean {
 }
 
 
-const MaybeEmptyDebugFrameResult = object({
-    // `null` stands for an empty call frame, see isEmptyFrame()
-    result: nullable(DebugFrame),
-    txHash: option(BYTES)
-})
+// `result: null` stands for an empty call frame, see isEmptyFrame()
+interface MaybeEmptyDebugFrameResult {
+    result: DebugFrame | null
+    txHash?: Bytes | null
+}
 
 
-type MaybeEmptyDebugFrameResult = GetSrcType<typeof MaybeEmptyDebugFrameResult>
+const validateDebugFrameResults = getResultValidator(array(DebugFrameResult))
+const validateEmptyDebugFrameLabels = getResultValidator(array(object({txHash: option(BYTES)})))
+
+
+/**
+ * Validates a block's call frames, keeping an empty one (`{}`) as `result: null`
+ * for dropEmptyDebugFrames() to judge. Anything else, a JSON `null` included,
+ * must pass the full frame schema.
+ */
+function validateMaybeEmptyFrameResults(result: unknown): MaybeEmptyDebugFrameResult[] {
+    if (!Array.isArray(result) || !result.some(isEmptyFrameResult)) return validateDebugFrameResults(result)
+    let frames = validateDebugFrameResults(result.filter(f => !isEmptyFrameResult(f)))
+    validateEmptyDebugFrameLabels(result.filter(isEmptyFrameResult))
+    let next = 0
+    return result.map(f => (isEmptyFrameResult(f) ? {result: null, txHash: f.txHash} : frames[next++]))
+}
+
+
+function isEmptyFrameResult(item: any): boolean {
+    return item != null && isEmptyFrame(item.result)
+}
 
 
 function isEmpty(obj: object): boolean {
