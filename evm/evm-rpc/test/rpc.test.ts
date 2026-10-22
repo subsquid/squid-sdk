@@ -173,6 +173,40 @@ describe('Rpc Class Integration', () => {
                 rpc.getBlockBatch([18000000], { transactions: true })
             ).rejects.toThrow()
         })
+
+        // Cronos (and other providers) return a withdrawalsRoot but omit the
+        // empty `withdrawals` array - must verify as [], not crash the dumper.
+        it('tolerates an omitted empty withdrawals array', async () => {
+            const EMPTY_WITHDRAWALS_ROOT =
+                '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421'
+            const { withdrawals, ...rest } = loadBlock('ethereum', 18000000)
+            const emptyBlock = { ...rest, withdrawalsRoot: EMPTY_WITHDRAWALS_ROOT }
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0x1')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(18000000), true], emptyBlock)
+
+            const rpc = new Rpc({ client: mockClient as any, verifyWithdrawalsRoot: true })
+
+            const blocks = await rpc.getBlockBatch([18000000], { transactions: true })
+            expect(blocks).toHaveLength(1)
+        })
+
+        // Guard: a genuinely missing non-empty withdrawals set must still fail
+        // verification (not be silently accepted as empty).
+        it('still rejects a missing non-empty withdrawals set', async () => {
+            const { withdrawals, ...rest } = loadBlock('ethereum', 18000000)
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0x1')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(18000000), true], rest)
+
+            const rpc = new Rpc({ client: mockClient as any, verifyWithdrawalsRoot: true })
+
+            await expect(
+                rpc.getBlockBatch([18000000], { transactions: true })
+            ).rejects.toThrow('failed to verify withdrawals root')
+        })
     })
 
     describe('Chain-specific behavior', () => {

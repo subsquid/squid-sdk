@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "treat an omitted withdrawals array as empty when verifying withdrawalsRoot instead of crashing",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
