@@ -34,6 +34,18 @@ function mockClient(chain: string, blockNumber: number, frames: any[]): MockRpcC
     return client
 }
 
+// A block-level answer over the provider's size limit, which makes Rpc trace transaction by transaction.
+function mockOversizedClient(chain: string, blockNumber: number, perTransaction: (txHash: string) => any) {
+    let client = mockClient(chain, blockNumber, [])
+    client.setFixture('debug_traceBlockByNumber', [toQty(blockNumber), TRACE_CONFIG], {
+        error: {code: -32008, message: 'Response is too big'},
+    })
+    for (let tx of loadBlock(chain, blockNumber).transactions as any[]) {
+        client.setFixture('debug_traceTransaction', [tx.hash, TRACE_CONFIG], perTransaction(tx.hash))
+    }
+    return client
+}
+
 function fetchBlock(client: MockRpcClient, blockNumber: number, transactions = true) {
     // Empty frames are judged in every call-frame-validation mode, so the default is enough.
     let rpc = new Rpc({client: client as any})
@@ -98,6 +110,36 @@ describe('empty debug call frames', () => {
         let blocks = await fetchBlock(mockClient('ethereum-sepolia', SEPOLIA_BLOCK, frames), SEPOLIA_BLOCK)
 
         let txHash = (block.transactions[0] as any).hash
+        expect(blocks[0]._isInvalid).toBe(true)
+        expect(blocks[0]._errorMessage).toEqual(`empty debug call frame for transaction ${txHash}`)
+    })
+
+    it('accepts a Scroll L1 message without a call frame when tracing per transaction', async () => {
+        let blocks = await fetchBlock(
+            mockOversizedClient('scroll', SCROLL_BLOCK, () => ({})),
+            SCROLL_BLOCK,
+        )
+
+        expect(blocks[0]._isInvalid).toBeFalsy()
+        expect(blocks[0].debugFrames).toHaveLength(1)
+        expect(blocks[0].debugFrames?.[0]).toBeUndefined()
+    })
+
+    it('rejects an empty call frame on other chains when tracing per transaction', async () => {
+        let block = loadBlock('ethereum-sepolia', SEPOLIA_BLOCK)
+        let frames = new Map(
+            loadDebugFrames('ethereum-sepolia', SEPOLIA_BLOCK).map((f: any, i) => [
+                (block.transactions[i] as any).hash,
+                f.result,
+            ]),
+        )
+        let txHash = (block.transactions[0] as any).hash
+        let client = mockOversizedClient('ethereum-sepolia', SEPOLIA_BLOCK, (hash) =>
+            hash === txHash ? {} : frames.get(hash),
+        )
+
+        let blocks = await fetchBlock(client, SEPOLIA_BLOCK)
+
         expect(blocks[0]._isInvalid).toBe(true)
         expect(blocks[0]._errorMessage).toEqual(`empty debug call frame for transaction ${txHash}`)
     })

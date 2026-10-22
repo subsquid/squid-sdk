@@ -14,6 +14,11 @@ import {ChainUtils} from '../src/chain-utils'
 import {BlockAccessList, GetBlock, Transaction} from '../src/rpc-data'
 
 
+function hasTransactionType(chain: string, blockNumber: number, type: string): boolean {
+    return loadBlock(chain, blockNumber).transactions.some(tx => typeof tx != 'string' && tx.type == type)
+}
+
+
 describe('Verification Functions', () => {
     for (const fixture of listFixtures()) {
         describe(`${fixture.chain} block ${fixture.blockNumber}`, () => {
@@ -41,7 +46,7 @@ describe('Verification Functions', () => {
                 // Cosmos/Tendermint EVM chains use a different algorithm for the transactions root
                 fixture.chain === 'cronos' ||
                 // Scroll L1 messages (type 0x7e) are not OP deposits; their encoding is not implemented
-                fixture.chain === 'scroll'
+                (fixture.chain === 'scroll' && hasTransactionType(fixture.chain, fixture.blockNumber, '0x7e'))
             )('transactionsRoot verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 if (!block.transactions || block.transactions.length === 0) return
