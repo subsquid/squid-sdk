@@ -34,11 +34,11 @@ function mockClient(chain: string, blockNumber: number, frames: any[]): MockRpcC
     return client
 }
 
-function fetchBlock(client: MockRpcClient, blockNumber: number) {
+function fetchBlock(client: MockRpcClient, blockNumber: number, transactions = true) {
     // Empty frames are judged in every call-frame-validation mode, so the default is enough.
     let rpc = new Rpc({client: client as any})
     return rpc.getBlockBatch([blockNumber], {
-        transactions: true,
+        transactions,
         traces: true,
         useDebugTraceBlockByNumber: true,
     })
@@ -52,6 +52,29 @@ describe('empty debug call frames', () => {
         expect(blocks[0]._isInvalid).toBeFalsy()
         expect(blocks[0].debugFrames).toHaveLength(1)
         expect(blocks[0].debugFrames?.[0]).toBeUndefined()
+    })
+
+    it('accepts a Scroll L1 message when the caller requests transaction hashes', async () => {
+        let frames = loadDebugFrames('scroll', SCROLL_BLOCK)
+        let blocks = await fetchBlock(mockClient('scroll', SCROLL_BLOCK, frames), SCROLL_BLOCK, false)
+
+        expect(blocks[0]._isInvalid).toBeFalsy()
+        expect(blocks[0].block.transactions).toEqual([SCROLL_L1_MESSAGE])
+        expect(blocks[0].debugFrames).toHaveLength(1)
+        expect(blocks[0].debugFrames?.[0]).toBeUndefined()
+    })
+
+    it('rejects an empty call frame labelled with another transaction', async () => {
+        let otherTx = `0x${'11'.repeat(32)}`
+        let frames = loadDebugFrames('scroll', SCROLL_BLOCK)
+        frames[0].txHash = otherTx
+
+        let blocks = await fetchBlock(mockClient('scroll', SCROLL_BLOCK, frames), SCROLL_BLOCK)
+
+        expect(blocks[0]._isInvalid).toBe(true)
+        expect(blocks[0]._errorMessage).toEqual(
+            `invalid debug call frames for transaction ${SCROLL_L1_MESSAGE}: response is labelled with transaction ${otherTx}`,
+        )
     })
 
     it('rejects an empty call frame for a transaction that is not a Scroll L1 message', async () => {

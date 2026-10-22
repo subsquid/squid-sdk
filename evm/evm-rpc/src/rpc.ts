@@ -278,7 +278,11 @@ export class Rpc {
             !!req?.traces &&
             !req.useTraceApi &&
             (this.callFrameValidation !== 'off' || this.consensusAnchorValidation !== 'off')
-        let withTransactions = transactionsRequested || needsTransactionsForCallFrameValidation
+        // Whether an empty call frame is legitimate depends on the transaction type.
+        let needsTransactionsForEmptyCallFrames =
+            !!req?.traces && !req.useTraceApi && (await this.getChainUtils()).mayAnswerEmptyCallFrames
+        let withTransactions =
+            transactionsRequested || needsTransactionsForCallFrameValidation || needsTransactionsForEmptyCallFrames
         let blocks = await this.getBlocks(numbers, withTransactions)
 
         let chain: Block[] = []
@@ -1150,9 +1154,22 @@ export class Rpc {
                 continue
             }
             let tx = block.block.transactions[i]
+            let transactionHash = tx == null ? undefined : getTxHash(tx)
+            // A frame labelled with another transaction must not vanish before validateDebugFrames() sees the label.
+            if (
+                transactionHash != null &&
+                frame.txHash != null &&
+                frame.txHash.toLowerCase() !== transactionHash.toLowerCase()
+            ) {
+                block._isInvalid = true
+                block._errorMessage =
+                    `invalid debug call frames for transaction ${transactionHash}: ` +
+                    `response is labelled with transaction ${frame.txHash}`
+                return undefined
+            }
             if (tx != null && utils.allowsEmptyCallFrame(tx)) continue
             block._isInvalid = true
-            block._errorMessage = `empty debug call frame for transaction ${tx == null ? i : getTxHash(tx)}`
+            block._errorMessage = `empty debug call frame for transaction ${transactionHash ?? i}`
             return undefined
         }
         return out
