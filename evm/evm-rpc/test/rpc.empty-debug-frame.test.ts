@@ -46,9 +46,9 @@ function mockOversizedClient(chain: string, blockNumber: number, perTransaction:
     return client
 }
 
-function fetchBlock(client: MockRpcClient, blockNumber: number, transactions = true) {
+function fetchBlock(client: MockRpcClient, blockNumber: number, transactions = true, verifyTxRoot = false) {
     // Empty frames are judged in every call-frame-validation mode, so the default is enough.
-    let rpc = new Rpc({client: client as any})
+    let rpc = new Rpc({client: client as any, verifyTxRoot})
     return rpc.getBlockBatch([blockNumber], {
         transactions,
         traces: true,
@@ -74,6 +74,14 @@ describe('empty debug call frames', () => {
         expect(blocks[0].block.transactions).toEqual([SCROLL_L1_MESSAGE])
         expect(blocks[0].debugFrames).toHaveLength(1)
         expect(blocks[0].debugFrames?.[0]).toBeUndefined()
+    })
+
+    it('verifies the transactions root of a Scroll L1 message fetched for a hash-only request', async () => {
+        let frames = loadDebugFrames('scroll', SCROLL_BLOCK)
+        let blocks = await fetchBlock(mockClient('scroll', SCROLL_BLOCK, frames), SCROLL_BLOCK, false, true)
+
+        expect(blocks[0]._isInvalid).toBeFalsy()
+        expect(blocks[0].block.transactions).toEqual([SCROLL_L1_MESSAGE])
     })
 
     it('rejects an empty call frame labelled with another transaction', async () => {

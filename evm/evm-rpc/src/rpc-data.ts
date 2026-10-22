@@ -290,6 +290,9 @@ export const Transaction = object({
     retryData: option(BYTES),
     sourceHash: option(BYTES),
     mint: option(QTY),
+    // Scroll L1 message (type 0x7e)
+    queueIndex: option(QTY),
+    sender: option(BYTES),
     // Stable 0x3f transaction field
     timeoutTimestamp: option(QTY),
     // Tempo 0x76 transaction fields

@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-rpc",
-      "comment": "accept the empty call frame Scroll returns for an L1 message that fails before execution; reject empty frames everywhere else with a clear error",
+      "comment": "accept the empty call frame Scroll returns for an L1 message that fails before execution, rejecting empty frames everywhere else with a clear error; verify the transactions root of blocks with Scroll L1 messages",
       "type": "patch"
     }
   ],

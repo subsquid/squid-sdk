@@ -433,6 +433,18 @@ function encodeTransaction(tx: Transaction): Buffer {
         // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
         let payload = RLP.encode(encodeTempoTransactionFields(tx))
         return Buffer.concat([Buffer.from([0x76]), Buffer.from(payload)])
+    } else if (tx.type == '0x7e' && tx.queueIndex != null) {
+        // Scroll L1 message, which shares the type byte with OP deposits
+        // https://github.com/scroll-tech/go-ethereum/blob/develop/core/types/l1_message_tx.go
+        let payload = RLP.encode([
+            BigInt(tx.queueIndex),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
+            decodeHex(assertNotNull(tx.sender, 'tx.sender is missing'))
+        ])
+        return Buffer.concat([Buffer.from([0x7e]), Buffer.from(payload)])
     } else if (tx.type == '0x7e') {
         // https://github.com/ethereum-optimism/optimism/blob/9ff3ebb3983be52c3ca189423ae7b4aec94e0fde/specs/deposits.md#the-deposited-transaction-type
         let payload = RLP.encode([
