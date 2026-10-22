@@ -10,7 +10,7 @@ import {
     object,
     Validator
 } from '@subsquid/util-internal-validation'
-import { addErrorContext, assertNotNull, groupBy, last } from '@subsquid/util-internal'
+import { addErrorContext, groupBy, last } from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     GetBlock,
@@ -378,7 +378,10 @@ export class Rpc {
         }
 
         if (this.verifyWithdrawalsRoot && block.withdrawalsRoot != null) {
-            let withdrawals = assertNotNull(block.withdrawals)
+            // Some providers omit the `withdrawals` array for blocks with no
+            // withdrawals instead of returning []. The root check below still
+            // guards correctness: a genuinely missing non-empty set won't match.
+            let withdrawals = block.withdrawals ?? []
             let withdrawalsRoot = await utils.calculateWithdrawalsRoot(withdrawals)
             assert.equal(block.withdrawalsRoot, withdrawalsRoot, 'failed to verify withdrawals root')
         }
