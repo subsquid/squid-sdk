@@ -125,7 +125,7 @@ export class Typegen {
                                     }
                                 }
                             } else {
-                                out.line('sts.struct({')
+                                out.line('sts.closedStruct({')
                                 out.indentation(() => {
                                     for (let f of it.def.fields) {
                                         out.blockComment(f.docs)

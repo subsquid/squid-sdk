@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Add `closedStruct` and `closedEnumStruct`, which do not match a scale struct with fields beyond the listed ones",
+      "type": "minor",
+      "packageName": "@subsquid/scale-type-system"
+    }
+  ],
+  "packageName": "@subsquid/scale-type-system"
+}
