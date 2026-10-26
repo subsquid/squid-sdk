@@ -2,12 +2,13 @@ import {assertNotNull, concurrentWriter, last} from '@subsquid/util-internal'
 import {Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
 import assert from 'assert'
+import type {Readable} from 'stream'
 import {pipeline} from 'stream/promises'
-import {createGunzip} from 'zlib'
 import {BlockRef, formatBlockNumber, getBlockNumber, getShortHash, peekBlockRef, RawBlock} from './block'
 import {DataChunk, getChunkPath, getDataChunkErrorMessage, tryParseChunkDir, tryParseTop} from './chunk'
+import {Compression, createDecompressor, getBlocksFileName, getOtherCompression} from './compression'
 import {ArchiveLayoutError, TopDirError} from './errors'
-import {getRange, GzipBuffer, splitLines} from './util'
+import {CompressedBuffer, getRange, isNotFoundError, splitLines} from './util'
 
 
 export interface ArchiveLayoutOptions {
@@ -17,6 +18,9 @@ export interface ArchiveLayoutOptions {
 
 export class ArchiveLayout {
     private topDirSize: number
+    // an archive is a run of gzip chunks followed by a run of zstd chunks,
+    // so the encoding of the previous chunk is the best guess for the next one
+    private lastReadCompression: Compression = 'gzip'
 
     constructor(
         public readonly fs: Fs,
@@ -198,9 +202,15 @@ export class ArchiveLayout {
             blocks: (nextBlock: number, prevShortHash?: string) => AsyncIterable<RawBlock[]>
             range?: Range
             chunkSize?: number
+            compression?: Compression
+            compressionLevel?: number
             onSuccessWrite?: (args: {chunk: string, blockRange: {from: BlockRef, to: BlockRef}}) => void
         }
     ): Promise<void> {
+        let compression = args.compression ?? 'gzip'
+        let fileName = getBlocksFileName(compression)
+        const newBuffer = () => new CompressedBuffer(compression, args.compressionLevel)
+
         return this.append(
             args.range || {from: 0},
             () => true,
@@ -208,7 +218,7 @@ export class ArchiveLayout {
                 let chunkSize = args.chunkSize || 40 * 1024 * 1024
                 let firstBlock: BlockRef | undefined
                 let lastBlock: BlockRef | undefined
-                let out = new GzipBuffer()
+                let out = newBuffer()
 
                 async function save(): Promise<void> {
                     let blockRange = {
@@ -220,7 +230,7 @@ export class ArchiveLayout {
 
                     await chunk.transactDir('.', async fs => {
                         let content = await out.end()
-                        return fs.write('blocks.jsonl.gz', content)
+                        return fs.write(fileName, content)
                     })
 
                     args.onSuccessWrite?.({
@@ -230,7 +240,7 @@ export class ArchiveLayout {
 
                     firstBlock = undefined
                     lastBlock = undefined
-                    out = new GzipBuffer()
+                    out = newBuffer()
                 }
 
                 for await (let batch of args.blocks(nextBlock, prevHash)) {
@@ -282,9 +292,10 @@ export class ArchiveLayout {
             let numChunks = 0
             let maxNumChunks = args?.chunksLimit ?? Number.MAX_SAFE_INTEGER
             for await (let chunk of this.getDataChunks(r)) {
+                let file = await this.openRawChunk(chunk)
                 await pipeline(
-                    await this.getChunkFs(chunk).readStream('blocks.jsonl.gz'),
-                    createGunzip(),
+                    file.stream,
+                    createDecompressor(file.compression),
                     async dataChunks => {
                         for await (let lines of splitLines(dataChunks)) {
                             for (let line of lines) {
@@ -314,13 +325,36 @@ export class ArchiveLayout {
         })
     }
 
+    async openRawChunk(chunk: DataChunk): Promise<{stream: Readable, compression: Compression}> {
+        let fs = this.getChunkFs(chunk)
+        let preferred = this.lastReadCompression
+        let other = getOtherCompression(preferred)
+        // the third attempt covers a .gz replaced by .zst between the first two
+        for (let compression of [preferred, other, preferred]) {
+            let stream
+            try {
+                stream = await fs.readStream(getBlocksFileName(compression))
+            } catch(err: any) {
+                if (isNotFoundError(err)) continue
+                throw err
+            }
+            this.lastReadCompression = compression
+            return {stream, compression}
+        }
+        throw new ArchiveLayoutError(
+            this.fs.abs(),
+            `data chunk ${getChunkPath(chunk)} has neither ${getBlocksFileName('gzip')} nor ${getBlocksFileName('zstd')}`
+        )
+    }
+
     readRawChunk<B>(chunk: DataChunk): AsyncIterable<B[]> {
         return concurrentWriter(1, async write => {
             let blocks: B[] = []
             let bytesBuffered = 0
+            let file = await this.openRawChunk(chunk)
             await pipeline(
-                await this.getChunkFs(chunk).readStream('blocks.jsonl.gz'),
-                createGunzip(),
+                file.stream,
+                createDecompressor(file.compression),
                 async dataChunks => {
                     for await (let lines of splitLines(dataChunks)) {
                         for (let line of lines) {

@@ -1,4 +1,5 @@
 export * from './chunk'
+export * from './compression'
 export * from './errors'
 export * from './layout'
 export * from './block'

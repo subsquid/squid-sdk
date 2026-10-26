@@ -20,15 +20,15 @@
   },
   "dependencies": {
     "@subsquid/logger": "^1.6.0",
-    "@subsquid/solana-normalization": "^1.0.0",
-    "@subsquid/solana-rpc-data": "^1.0.0",
+    "@subsquid/solana-normalization": "^1.1.0",
+    "@subsquid/solana-rpc-data": "^1.1.0",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-ingest-cli": "^0.2.1",
     "@subsquid/util-internal-json": "^1.2.4",
     "@subsquid/util-internal-validation": "^0.9.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^24.13.6",
     "typescript": "5.5.4"
   }
 }

@@ -26,6 +26,8 @@ export interface IngestOptions {
     range: Range
     strideSize: number
     strideConcurrency: number
+    /** Pause before asking for the chain head again, once caught up with it. */
+    headPollInterval: number
 }
 
 
@@ -41,6 +43,7 @@ export function ingest(args: IngestOptions): AsyncIterable<IngestBatch> {
         req,
         strideConcurrency,
         strideSize,
+        headPollInterval,
     } = args
 
     let finalizedHeadTracker = new Throttler(
@@ -99,7 +102,7 @@ export function ingest(args: IngestOptions): AsyncIterable<IngestBatch> {
                 beg = poll.position()
 
                 if (blocks.length == 0) {
-                    await wait(100)
+                    await wait(headPollInterval)
                     continue
                 }
 

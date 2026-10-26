@@ -1,4 +1,3 @@
-import {Logger} from '@subsquid/logger'
 import {RpcClient} from '@subsquid/rpc-client'
 import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
 import {collectDefaultMetrics, Gauge, Counter, Registry} from 'prom-client'
@@ -6,12 +5,14 @@ import {collectDefaultMetrics, Gauge, Counter, Registry} from 'prom-client'
 
 export class PrometheusServer {
     private registry = new Registry()
+    private compressionGauge: Gauge
     private chainHeightGauge: Gauge
     private lastWrittenBlockGauge: Gauge
     private rpcRequestsGauge: Gauge
     private rpcRequestsServedTotal: Counter
     private rpcAvgResponseTimeSeconds: Gauge
     private rpcConnectionErrorsTotal: Counter
+    private rpcRetriedErrorsTotal: Counter
     private s3RequestsCounter: Counter
     private latestReceivedBlockNumberGauge: Gauge
     private latestReceivedBlockTimestampGauge: Gauge
@@ -22,24 +23,20 @@ export class PrometheusServer {
 
     constructor(
         private port: number,
-        getFinalizedHeight: () => Promise<number>,
-        rpc: RpcClient,
-        log: Logger
+        rpc: RpcClient
     ) {
-        let chainHeight = 0
-        
+        // Set by the ingest loop: a collect() that calls the RPC hangs the scrape while the endpoint fails.
         this.chainHeightGauge = new Gauge({
             name: 'sqd_dump_chain_height',
             help: 'Finalized head of a chain',
-            registers: [this.registry],
-            async collect() {
-                try {
-                    chainHeight = await getFinalizedHeight()
-                } catch(err: any) {
-                    log.error(err, 'failed to acquire chain height')
-                }
-                this.set(chainHeight)
-            }
+            registers: [this.registry]
+        })
+
+        this.compressionGauge = new Gauge({
+            name: 'sqd_dump_raw_compression',
+            help: 'Compression of the data chunks being written (1 for the active one)',
+            labelNames: ['compression'],
+            registers: [this.registry]
         })
 
         this.lastWrittenBlockGauge = new Gauge({
@@ -150,6 +147,20 @@ export class PrometheusServer {
             }
         });
 
+        this.rpcRetriedErrorsTotal = new Counter({
+            name: 'sqd_chain_rpc_retried_errors_total',
+            help: 'Total number of retried RPC errors by kind',
+            labelNames: ['url', 'kind'],
+            registers: [this.registry],
+            collect() {
+                const metrics = rpc.getMetrics()
+                this.reset()
+                for (let [kind, count] of Object.entries(metrics.retriedErrors)) {
+                    this.inc({url: metrics.url, kind}, count)
+                }
+            }
+        })
+
         this.s3RequestsCounter = new Counter({
             name: 'sqd_s3_request_count',
             help: 'Number of s3 requests made',
@@ -158,6 +169,16 @@ export class PrometheusServer {
         })
 
         collectDefaultMetrics({register: this.registry})
+    }
+
+    setCompression(active: string) {
+        for (let compression of ['gzip', 'zstd']) {
+            this.compressionGauge.set({compression}, compression == active ? 1 : 0)
+        }
+    }
+
+    setChainHeight(height: number) {
+        this.chainHeightGauge.set(height)
     }
 
     setLastWrittenBlock(block: number) {

@@ -4,6 +4,8 @@ import {assertNotNull, def, last, runProgram, Throttler, waitDrain} from '@subsq
 import {
     ArchiveLayout,
     checkShorHashMatch,
+    Compression,
+    COMPRESSIONS,
     getBlockNumber,
     getParentBlockNumber,
     RawBlock
@@ -12,7 +14,7 @@ import {FileOrUrl, nat, positiveInt, positiveReal, Url} from '@subsquid/util-int
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
-import {Command} from 'commander'
+import {Command, Option} from 'commander'
 import {EventEmitter} from 'events'
 import {PrometheusServer} from './prometheus'
 
@@ -27,6 +29,8 @@ export interface DumperOptions {
     lastBlock?: number
     chunkSize: number
     topDirSize: number
+    compression: Compression
+    compressionLevel?: number
     metrics?: number
     maxCacheSize?: number
 }
@@ -92,6 +96,12 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         this.setUpProgram(program)
         program.option('--chunk-size <MB>', 'Data chunk size in megabytes', positiveInt, this.getDefaultChunkSize())
         program.option('--top-dir-size <number>', 'Number of items in a top level dir', positiveInt, this.getDefaultTopDirSize())
+        program.addOption(
+            new Option('--compression <codec>', 'Compression of data chunks')
+                .choices(COMPRESSIONS)
+                .default('gzip')
+        )
+        program.option('--compression-level <number>', 'Compression level (default: 9 for zstd, 6 for gzip)', nat)
         program.option('--max-cache-size <number>', 'Maximum number of blocks to keep in memory cache', positiveInt, this.getDefaultCacheSize())
         program.option('--metrics <port>', 'Enable prometheus metrics server', nat)
         return program
@@ -158,12 +168,7 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
 
     @def
     protected prometheus() {
-        let server = new PrometheusServer(
-            this.options().metrics ?? 0,
-            () => this.getLastFinalizedBlockNumber(),
-            this.rpc(),
-            this.log().child('prometheus')
-        )
+        let server = new PrometheusServer(this.options().metrics ?? 0, this.rpc())
         this.eventEmitter().on('S3FsOperation', (op: string) => server.incS3Requests(op))
         return server
     }
@@ -175,7 +180,11 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         }
         assertRange(range)
 
-        let head = new Throttler(() => this.getLastFinalizedBlockNumber(), 60_000)
+        let head = new Throttler(async () => {
+            let height = await this.getLastFinalizedBlockNumber()
+            this.prometheus().setChainHeight(height)
+            return height
+        }, 60_000)
         let headNumber = await head.get()
 
         let progress = new Progress({
@@ -239,7 +248,7 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
 
     run(): void {
         runProgram(async () => {
-            let {dest, chunkSize, metrics} = this.options()
+            let {dest, chunkSize, compression, compressionLevel, metrics} = this.options()
             let prometheus = this.prometheus()
 
             if (metrics != null) {
@@ -263,10 +272,13 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
                 let archive = new ArchiveLayout(this.destination(), {
                     topDirSize: this.options().topDirSize
                 })
+                prometheus.setCompression(compression)
                 await archive.appendRawBlocks({
                     blocks: (nextBlock, prevHash) => this.ingest(nextBlock, prevHash),
                     range: this.range(),
                     chunkSize: chunkSize * 1024 * 1024,
+                    compression,
+                    compressionLevel,
                     onSuccessWrite: ctx => {
                         const blockHeight = ctx.blockRange.to.number;
                         prometheus.setLastWrittenBlock(blockHeight);

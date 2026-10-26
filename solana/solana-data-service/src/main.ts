@@ -22,7 +22,7 @@ runProgram(async () => {
     program.option('--geyser-block-queue-size <number>', 'Max queue size of Geyser subscription', positiveInt, 10)
     program.option('--block-cache-size <number>', 'Max number of blocks to buffer', positiveInt, 1000)
     program.option('-p, --port <number>', 'Port to listen on', positiveInt, 3000)
-    program.option('--votes', 'Include vote transactions (by default all votes are excluded)')
+    program.option('--votes', 'Include consensus vote transactions (excluded by default)')
     program.parse()
 
     let args = program.opts() as {

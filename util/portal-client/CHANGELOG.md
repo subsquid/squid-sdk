@@ -1,6 +1,20 @@
 # Change Log - @subsquid/portal-client
 
-This log was last generated on Wed, 08 Jul 2026 22:11:26 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 0.8.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- accept the transactionConfig field of Solana v1 transactions in portal query results
+
+## 0.7.0
+Thu, 27 Aug 2026 13:59:40 GMT
+
+### Minor changes
+
+- a configured `retryAttempts` (including `Infinity`) is no longer overridden by the client's own default, and that default goes from 6 retries to 20, so portal requests now keep retrying for about five minutes (was about 33 seconds) before failing
 
 ## 0.6.0
 Wed, 08 Jul 2026 22:11:26 GMT

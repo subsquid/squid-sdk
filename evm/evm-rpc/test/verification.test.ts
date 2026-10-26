@@ -1,8 +1,17 @@
 import {assertNotNull} from '@subsquid/util-internal'
 import {describe, it, expect} from 'vitest'
-import {loadBlock, loadReceipts, loadAllReceipts, hasReceipts, listFixtures, getChainId} from './helpers/fixture-loader'
+import {
+    loadBlock,
+    loadReceipts,
+    loadAllReceipts,
+    hasReceipts,
+    loadBlockAccessList,
+    hasBlockAccessList,
+    listFixtures,
+    getChainId
+} from './helpers/fixture-loader'
 import {ChainUtils} from '../src/chain-utils'
-import {GetBlock, Transaction} from '../src/rpc-data'
+import {BlockAccessList, GetBlock, Transaction} from '../src/rpc-data'
 
 
 describe('Verification Functions', () => {
@@ -74,7 +83,12 @@ describe('Verification Functions', () => {
                 })
             }
 
-            it('withdrawalsRoot verification', async () => {
+            it.skipIf(
+                // OP-stack chains store the root of the L2-to-L1 message tree in
+                // withdrawalsRoot, while the JSON-RPC `withdrawals` list stays
+                // empty - the root cannot be recomputed from the list.
+                fixture.chain === 'base-mainnet'
+            )('withdrawalsRoot verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 if (block.withdrawalsRoot == null) return
 
@@ -83,6 +97,23 @@ describe('Verification Functions', () => {
                 const withdrawals = assertNotNull(block.withdrawals)
                 const computed = await utils.calculateWithdrawalsRoot(withdrawals)
                 expect(computed).toEqual(block.withdrawalsRoot)
+            })
+
+            if (hasBlockAccessList(fixture.chain, fixture.blockNumber)) {
+                it('blockAccessListHash verification', () => {
+                    const block = loadBlock(fixture.chain, fixture.blockNumber)
+                    const accessList = loadBlockAccessList(fixture.chain, fixture.blockNumber)
+                    expect(BlockAccessList.validate(accessList)).toBeUndefined()
+                    const utils = new ChainUtils(getChainId(fixture.chain))
+                    expect(utils.calculateBlockAccessListHash(accessList)).toEqual(block.blockAccessListHash)
+                })
+            }
+
+            it('extData verification', () => {
+                const block = loadBlock(fixture.chain, fixture.blockNumber)
+                if (block.extDataHash == null) return // non-Avalanche fixtures
+                const utils = new ChainUtils(getChainId(fixture.chain))
+                expect(block.extDataHash).toEqual(utils.calculateExtDataHash(block))
             })
 
             it('transaction sender recovery', async () => {
@@ -105,4 +136,54 @@ describe('Verification Functions', () => {
             })
         })
     }
+})
+
+
+// Sepolia block 11856337 is the first Amsterdam (Glamsterdam) block: its
+// header carries blockAccessListHash (EIP-7928) and slotNumber (EIP-7843).
+describe('Amsterdam header commitments', () => {
+    const utils = new ChainUtils(getChainId('ethereum-sepolia'))
+
+    it('a forged slotNumber fails the block hash', () => {
+        const block = loadBlock('ethereum-sepolia', 11856337)
+        expect(block.slotNumber).toBeDefined()
+        const forged = {...block, slotNumber: `0x${(BigInt(block.slotNumber!) + 1n).toString(16)}`}
+        expect(utils.calculateBlockHash(forged)).not.toEqual(block.hash)
+    })
+
+    it('a forged blockAccessListHash fails the block hash', () => {
+        const block = loadBlock('ethereum-sepolia', 11856337)
+        const forged = {...block, blockAccessListHash: `0x${'00'.repeat(32)}`}
+        expect(utils.calculateBlockHash(forged)).not.toEqual(block.hash)
+    })
+
+    it('a forged storage write fails the block access list hash', () => {
+        const block = loadBlock('ethereum-sepolia', 11856337)
+        const accessList = loadBlockAccessList('ethereum-sepolia', 11856337)
+        const account = accessList.find(a => a.storageChanges.length > 0)!
+        const change = account.storageChanges[0].changes[0]
+        change.value = `0x${(BigInt(change.value) + 1n).toString(16)}`
+        expect(utils.calculateBlockAccessListHash(accessList)).not.toEqual(block.blockAccessListHash)
+    })
+
+    it('a dropped storage read fails the block access list hash', () => {
+        const block = loadBlock('ethereum-sepolia', 11856337)
+        const accessList = loadBlockAccessList('ethereum-sepolia', 11856337)
+        const account = accessList.find(a => a.storageReads.length > 0)!
+        account.storageReads.pop()
+        expect(utils.calculateBlockAccessListHash(accessList)).not.toEqual(block.blockAccessListHash)
+    })
+
+    it('an access list missing a change kind fails the schema', () => {
+        const accessList: any[] = loadBlockAccessList('ethereum-sepolia', 11856337)
+        const {storageReads, ...withoutReads} = accessList[0]
+        accessList[0] = withoutReads
+        expect(BlockAccessList.validate(accessList)).toBeDefined()
+    })
+
+    it('an empty access list hashes to keccak256(rlp([]))', () => {
+        expect(utils.calculateBlockAccessListHash([])).toEqual(
+            '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347'
+        )
+    })
 })

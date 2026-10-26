@@ -1,7 +1,7 @@
 import type * as rpc from '@subsquid/solana-rpc-data'
 import {addErrorContext, assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
-import {Balance, Block, BlockHeader, Instruction, LogMessage, Reward, TokenBalance, Transaction} from './data'
+import {Balance, Block, BlockHeader, Instruction, LogMessage, Reward, TokenBalance, Transaction, TransactionConfig} from './data'
 import {InstructionTreeTraversal, MessageStream, ParsingError} from './instruction-parser'
 import {LogTruncatedMessage} from './log-parser'
 import {Journal, TransactionContext} from './transaction-context'
@@ -142,7 +142,7 @@ class ItemMapping {
 
 
 function mapTransaction(transactionIndex: number, src: rpc.Transaction): Transaction {
-    return {
+    let tx: Transaction = {
         transactionIndex,
         version: src.version,
         accountKeys: src.transaction.message.accountKeys,
@@ -159,6 +159,18 @@ function mapTransaction(transactionIndex: number, src: rpc.Transaction): Transac
         loadedAddresses: src.meta.loadedAddresses ?? {readonly: [], writable: []},
         hasDroppedLogMessages: false
     }
+
+    let config = src.transaction.message.transactionConfig
+    if (config) {
+        tx.transactionConfig = {
+            computeUnitLimit: config.computeUnitLimit,
+            heapSize: config.heapSize,
+            loadedAccountsDataSizeLimit: config.loadedAccountsDataSizeLimit,
+            priorityFee: config.priorityFee == null ? null : BigInt(config.priorityFee)
+        }
+    }
+
+    return tx
 }
 
 

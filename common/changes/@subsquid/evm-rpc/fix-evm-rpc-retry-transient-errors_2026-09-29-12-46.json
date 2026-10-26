@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "Retry transient provider and proxy errors: rate limits under code -32429, error text or null in place of a result, and upstream-unavailable or block-not-yet-available messages",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}

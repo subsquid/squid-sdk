@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-data-service",
+      "comment": "Report retried RPC errors from the worker threads",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-data-service"
+}

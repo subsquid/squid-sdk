@@ -60,6 +60,15 @@ function* mapDebugFrame(
         return
     }
 
+    // Scroll nodes return a structurally empty call frame ({"type": "", "from": "", ...}, or the
+    // equivalent `{}` result) for failed L1 message transactions (tx type 126, L1MessageTx):
+    // the geth callTracer has no call frame to reconstruct for them.
+    // https://github.com/scroll-tech/go-ethereum/issues/1170
+    // Treat an empty/missing top-level frame type as "trace is not available".
+    if (!debugFrameResult.result.type) {
+        return
+    }
+
     for (let node of traverseDebugFrame(debugFrameResult.result, [])) {
         yield mapDebugFrameNode(transactionIndex, node)
     }
@@ -665,6 +674,18 @@ function mapBlockHeader(src: rpc.GetBlock): BlockHeader {
         sharedGasLimit: src.sharedGasLimit ?? undefined,
         timestampMillisPart: src.timestampMillisPart ?? undefined,
         consensusContext: src.consensusContext ? mapTempoConsensusContext(src.consensusContext) : undefined,
+        blockExtraData: src.blockExtraData ?? undefined,
+        blockGasCost: src.blockGasCost ?? undefined,
+        extDataGasUsed: src.extDataGasUsed ?? undefined,
+        extDataHash: src.extDataHash ?? undefined,
+        minDelayExcess: src.minDelayExcess ?? undefined,
+        timestampMilliseconds: src.timestampMilliseconds ?? undefined,
+        targetExponent: src.targetExponent ?? undefined,
+        minPriceExponent: src.minPriceExponent ?? undefined,
+        settledHeight: src.settledHeight ?? undefined,
+        settledGasUnix: src.settledGasUnix ?? undefined,
+        settledGasNumerator: src.settledGasNumerator ?? undefined,
+        settledExcess: src.settledExcess ?? undefined,
     }
 }
 

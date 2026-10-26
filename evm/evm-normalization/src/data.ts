@@ -42,6 +42,20 @@ export interface BlockHeader {
     sharedGasLimit?: Qty,
     timestampMillisPart?: Qty,
     consensusContext?: TempoConsensusContext,
+    // Avalanche-specific block header fields (C-Chain)
+    // https://github.com/ava-labs/avalanchego/blob/master/vms/saevm/cchain/README.md#block-header-changes
+    blockExtraData?: Bytes,
+    blockGasCost?: Qty,
+    extDataGasUsed?: Qty,
+    extDataHash?: Bytes32,
+    minDelayExcess?: Qty,
+    timestampMilliseconds?: Qty,
+    targetExponent?: Qty,
+    minPriceExponent?: Qty,
+    settledHeight?: Qty,
+    settledGasUnix?: Qty,
+    settledGasNumerator?: Qty,
+    settledExcess?: Qty,
 }
 
 

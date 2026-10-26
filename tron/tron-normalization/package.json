@@ -19,7 +19,7 @@
     "@subsquid/tron-data": "^0.0.5"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^24.13.6",
     "typescript": "5.5.4"
   }
 }

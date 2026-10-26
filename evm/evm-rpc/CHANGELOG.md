@@ -1,6 +1,18 @@
 # Change Log - @subsquid/evm-rpc
 
-This log was last generated on Thu, 30 Jul 2026 15:44:58 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 0.2.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- Make the head poll interval configurable through `EvmRpcDataSourceOptions.headPollInterval`. Defaults to the previous hard-coded 100ms.
+- expose Avalanche block header fields on GetBlock, verify block hashes and the extDataHash commitment
+
+### Patches
+
+- fall back to per-transaction debug tracing and receipts when a block response is too large
 
 ## 0.1.0
 Thu, 30 Jul 2026 15:44:58 GMT

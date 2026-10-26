@@ -20,6 +20,7 @@ export interface Transaction {
     // transaction message
     accountKeys: Base58Bytes[]
     addressTableLookups: AddressTableLookup[]
+    transactionConfig?: TransactionConfig
     numReadonlySignedAccounts: number
     numReadonlyUnsignedAccounts: number
     numRequiredSignatures: number
@@ -35,6 +36,14 @@ export interface Transaction {
         writable: Base58Bytes[]
     }
     hasDroppedLogMessages: boolean
+}
+
+
+export interface TransactionConfig {
+    computeUnitLimit: number | null
+    heapSize: number | null
+    loadedAccountsDataSizeLimit: number | null
+    priorityFee: bigint | null
 }
 
 

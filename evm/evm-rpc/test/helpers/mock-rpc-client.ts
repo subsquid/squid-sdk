@@ -1,3 +1,5 @@
+import {RpcError} from '@subsquid/rpc-client'
+
 export class MockRpcClient {
     private fixtures: Map<string, any>
 
@@ -27,13 +29,25 @@ export class MockRpcClient {
         throw new Error(`No fixture found for method: ${method} with params: ${JSON.stringify(params)}`)
     }
 
-    async batchCall(batch: {method: string, params?: any[]}[], options?: {validateResult?: (result: any) => any}): Promise<any[]> {
+    async batchCall(
+        batch: {method: string; params?: any[]}[],
+        options?: {
+            validateResult?: (result: any, req: {method: string; params?: any[]}) => any
+            validateError?: (info: {code: number; message: string}, req: {method: string; params?: any[]}) => any
+        },
+    ): Promise<any[]> {
         const results = []
         for (const req of batch) {
             try {
                 let result = await this.call(req.method, req.params)
-                if (options?.validateResult) {
-                    result = options.validateResult(result)
+                if (result?.error && typeof result.error === 'object' && 'message' in result.error) {
+                    if (options?.validateError) {
+                        result = options.validateError(result.error, req)
+                    } else {
+                        throw new RpcError(result.error)
+                    }
+                } else if (options?.validateResult) {
+                    result = options.validateResult(result, req)
                 }
                 results.push(result)
             } catch (error: any) {

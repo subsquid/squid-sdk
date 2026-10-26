@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-runtime
 
-This log was last generated on Fri, 06 Dec 2024 12:39:20 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 2.1.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- decode metadata v15 and v16, describe transaction extension pipelines per version and decode v5 general extrinsics of any extension version
 
 ## 2.0.1
 Fri, 06 Dec 2024 12:39:20 GMT

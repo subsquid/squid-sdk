@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Verify Amsterdam headers (blockAccessListHash, slotNumber) and optionally fetch and verify EIP-7928 block access lists; a block that stays invalid on the finalized polling path now fails the stream instead of stalling it",
+      "type": "minor",
+      "packageName": "@subsquid/evm-rpc"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc",
+  "email": "abernatskiy@toha.li"
+}

@@ -179,6 +179,12 @@ export class DataService {
         }
     }
 
+    /**
+     * Resolves once the first block is ingested.
+     *
+     * Rejects when ingestion fails before that. It is not restarted then,
+     * so the process has to exit, otherwise it serves a frozen head.
+     */
     started(): Promise<void> {
         return this.firstBlockIngestedFuture.promise()
     }
@@ -206,6 +212,7 @@ export class DataService {
                 let forkBase = this.chain.getForkBase(err.previousBlocks)
                 if (forkBase) {
                     base = forkBase
+                    this.metrics.incIngestionRestarts('fork')
                     this.log.info({forkBase: base, upstreamBlocks: err.previousBlocks}, 'fork encountered')
                 } else {
                     throw addErrorContext(new Error('rollback behind finalized head'), {
@@ -229,6 +236,7 @@ export class DataService {
                 base = head
 
                 let pause = stacked > 1 ? 30 : 0
+                this.metrics.incIngestionRestarts(err?.name ?? 'ended')
                 this.log.error(err, `data ingestion terminated, will restart in ${pause} seconds`)
                 await wait(pause * 1000)
             }

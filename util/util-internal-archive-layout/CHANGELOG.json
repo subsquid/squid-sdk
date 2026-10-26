@@ -2,6 +2,26 @@
   "name": "@subsquid/util-internal-archive-layout",
   "entries": [
     {
+      "version": "2.1.0",
+      "tag": "@subsquid/util-internal-archive-layout_v2.1.0",
+      "date": "Mon, 14 Sep 2026 10:49:58 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "read and write zstd data chunks"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.2.0` to `0.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.2.0` to `0.2.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.0.0",
       "tag": "@subsquid/util-internal-archive-layout_v2.0.0",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

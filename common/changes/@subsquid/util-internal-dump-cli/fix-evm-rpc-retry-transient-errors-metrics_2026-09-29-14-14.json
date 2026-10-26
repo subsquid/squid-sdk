@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "comment": "Export `sqd_chain_rpc_retried_errors_total` by kind",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-cli"
+}

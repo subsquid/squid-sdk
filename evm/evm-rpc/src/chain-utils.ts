@@ -1,8 +1,11 @@
 import {assertNotNull} from '@subsquid/util-internal'
-import {GetBlock, Log, Receipt, Transaction, Withdrawal} from './rpc-data'
-import {Qty} from './types'
+import {BlockAccessList, GetBlock, Log, Receipt, Transaction, Withdrawal} from './rpc-data'
+import {Bytes32, Qty} from './types'
 import {
+    avalancheBlockHash,
+    blockAccessListHash,
     blockHash,
+    extDataHash,
     tempoBlockHash,
     logsBloom,
     receiptsRoot,
@@ -37,6 +40,11 @@ export class ChainUtils {
     public readonly isCronosMainnet: boolean
     public readonly isShibariumMainnet: boolean
     public readonly isHederaMainnet: boolean
+    public readonly isAvalancheMainnet: boolean
+    public readonly isAvalancheTestnet: boolean
+    public readonly isScroll: boolean
+    /** The call tracer may answer `{}` for some transactions, see {@link allowsEmptyCallFrame} */
+    public readonly mayAnswerEmptyCallFrames: boolean
     public readonly isPolygonBased: boolean
     public readonly useGasUsedForReceiptsRoot: boolean
 
@@ -55,7 +63,11 @@ export class ChainUtils {
         this.isCronosMainnet = chainId == '0x19' // Chain ID 25
         this.isShibariumMainnet = chainId == '0x6d'
         this.isHederaMainnet = chainId == '0x127'
+        this.isAvalancheMainnet = chainId == '0xa86a'
+        this.isAvalancheTestnet = chainId == '0xa869'
+        this.isScroll = chainId == '0x82750' || chainId == '0x8274f' // Chain ID 534352 (mainnet) or 534351 (sepolia)
         this.isPolygonBased = this.isPolygonMainnet || this.isPolygonAmoy || this.isShibariumMainnet
+        this.mayAnswerEmptyCallFrames = this.isScroll
         this.useGasUsedForReceiptsRoot = options?.useGasUsedForReceiptsRoot ?? false
     }
 
@@ -69,12 +81,38 @@ export class ChainUtils {
         return this.isCronosMainnet && qty2Int(blockNumber) < CRONOS_ETHERMINT_BUG_LAST_BLOCK
     }
 
+    /**
+     * True when the call tracer is known to answer `{}` for the transaction, so that an
+     * empty call frame means "no execution to trace" rather than a broken response.
+     *
+     * Scroll's l2geth does this for an L1 message (type 0x7e) that fails before execution,
+     * e.g. scroll-mainnet tx 0xe398628cd2ea5c83d50b0e46e729caaf436f17a1adb3ddfb3a04837cc1f4dab5
+     * in block 35441201.
+     */
+    allowsEmptyCallFrame(tx: Transaction | Bytes32): boolean {
+        // A bare hash says nothing about the transaction; Rpc fetches full objects on such chains
+        if (typeof tx == 'string') return false
+        return this.isScroll && tx.type == '0x7e' && tx.queueIndex != null
+    }
+
     calculateBlockHash(block: GetBlock) {
         // Tempo extends the Ethereum header with additional fields
         if (this.isTempo) {
             return tempoBlockHash(block)
         }
+        if (this.isAvalancheMainnet || this.isAvalancheTestnet) {
+            return avalancheBlockHash(block)
+        }
         return blockHash(block)
+    }
+
+    calculateExtDataHash(block: GetBlock) {
+        let dataHash = assertNotNull(block.extDataHash, 'block.extDataHash is missing')
+        // pre-ApricotPhase1 Avalanche headers carry no extDataHash field at all,
+        // so the zero value here is a marshaling artifact rather than a real
+        // commitment — there is nothing to calculate, return the header value as-is
+        if (dataHash == "0x0000000000000000000000000000000000000000000000000000000000000000") return dataHash
+        return extDataHash(block)
     }
 
     calculateTransactionsRoot(block: GetBlock) {
@@ -146,6 +184,10 @@ export class ChainUtils {
 
     calculateWithdrawalsRoot(withdrawals: Withdrawal[]) {
         return withdrawalsRoot(withdrawals)
+    }
+
+    calculateBlockAccessListHash(accessList: BlockAccessList) {
+        return blockAccessListHash(accessList)
     }
 
     recoverTxSender(transaction: Transaction) {

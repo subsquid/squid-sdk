@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-fs
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:49:58 GMT and should not be manually modified.
+
+## 0.2.1
+Mon, 14 Sep 2026 10:49:58 GMT
+
+### Patches
+
+- `LocalFs.readStream()` rejects on a missing file
 
 ## 0.2.0
 Thu, 25 Jul 2024 11:48:18 GMT

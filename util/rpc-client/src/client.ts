@@ -6,6 +6,7 @@ import assert from 'assert'
 import {RetryError, RpcConnectionError, RpcError} from './errors'
 import {Connection, HttpHeaders, RpcCall, RpcErrorInfo, RpcNotification, RpcRequest, RpcResponse} from './interfaces'
 import {RateMeter} from './rate'
+import {redactRpcUrl, redactRpcUrlsInText} from './redact'
 import {Subscription, SubscriptionHandle, Subscriptions} from './subscriptions'
 import {HttpConnection} from './transport/http'
 import {WsConnection} from './transport/ws'
@@ -78,6 +79,10 @@ export interface RpcMetrics {
     connectionErrors: number
     notificationsReceived: number
     avgResponseTime: number
+    /**
+     * Retried errors by {@link RpcClient.getRetryKind}
+     */
+    retriedErrors: Record<string, number>
 }
 
 
@@ -133,6 +138,7 @@ export class RpcClient {
     private schedulingScheduled = false
     private connectionErrorsInRow = 0
     private connectionErrors = 0
+    private retriedErrors: Record<string, number> = {}
     private requestsServed = 0
     private notificationsReceived = 0
     private totalResponseTime = 0
@@ -211,6 +217,7 @@ export class RpcClient {
             // FIXME: only one of these metrics should remain; decide which to keep
             avg_response_time: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
             avgResponseTime: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
+            retriedErrors: {...this.retriedErrors},
         }
     }
 
@@ -421,6 +428,7 @@ export class RpcClient {
             if (this.isConnectionError(err)) {
                 if (req.retryAttempts > 0) {
                     req.retryAttempts -= 1
+                    this.countRetriedError(err)
                     this.enqueue(req)
                 } else {
                     req.reject(err)
@@ -452,6 +460,7 @@ export class RpcClient {
             } catch(err: any) {
                 if (this.closed) return
                 if (err instanceof RpcConnectionError) {
+                    this.countRetriedError(err)
                     this.backoff(err)
                 } else {
                     throw err
@@ -480,7 +489,10 @@ export class RpcClient {
                 httpResponseBody = reason.response.body
             }
             this.log.warn({
-                reason: reason.toString(),
+                // The transport already scrubs its own errors, but `reason` can
+                // originate outside it (e.g. subscription plumbing), so redact
+                // here as well — this text quotes third-party error messages.
+                reason: redactRpcUrlsInText(reason.toString()),
                 httpResponseBody,
                 rpcCall: req?.call
             }, 'connection failure')
@@ -540,12 +552,51 @@ export class RpcClient {
                 case 502:
                 case 503:
                 case 504:
+                // Cloudflare: the edge is up, the origin behind it failed or timed out
+                case 520:
+                case 521:
+                case 522:
+                case 523:
+                case 524:
                     return true
+                // Bitcoin Core and others answer ordinary JSON-RPC errors with a 500.
+                // Any other body comes from a proxy in front of the node failing.
+                case 500:
+                    return !isJsonRpcResponseBody(err.response.body)
                 default:
                     return false
             }
         }
         return false
+    }
+
+    /**
+     * Coarse class of an error {@link isConnectionError} accepted, for metrics.
+     */
+    getRetryKind(err: Error): string {
+        if (err instanceof HttpError) {
+            switch(err.response.status) {
+                case 429:
+                    return 'rate_limit'
+                case 408:
+                case 504:
+                case 524:
+                    return 'timeout'
+                default:
+                    return 'http'
+            }
+        }
+        if (isRateLimitError(err)) return 'rate_limit'
+        if (err instanceof HttpTimeoutError) return 'timeout'
+        if (isExecutionTimeoutError(err) || isRequestTimedOutError(err)) return 'timeout'
+        if (err instanceof RpcConnectionError || isHttpConnectionError(err)) return 'connection'
+        if (err instanceof RetryError) return 'retry'
+        return 'other'
+    }
+
+    private countRetriedError(err: Error): void {
+        let kind = this.getRetryKind(err)
+        this.retriedErrors[kind] = (this.retriedErrors[kind] ?? 0) + 1
     }
 
     reset(reason?: RpcConnectionError): void {
@@ -589,27 +640,6 @@ function getCallPriority(req: Req): number {
 }
 
 
-/**
- * Remove credentials from an RPC endpoint before it is included in logs,
- * metrics, or error context.
- *
- * The query and fragment are dropped because providers commonly put API keys
- * there. Key-like path segments are masked while ordinary routing components
- * remain visible so operators can still identify the endpoint.
- */
-export function redactRpcUrl(url: string): string {
-    let u = new URL(url)
-    u.password = ''
-    u.username = ''
-    u.search = ''
-    u.hash = ''
-    u.pathname = u.pathname
-        .replace(/sqd_[A-Za-z0-9]+/g, 'sqd_***')
-        .replace(/[A-Za-z0-9_-]{24,}/g, '***')
-    return u.toString()
-}
-
-
 function isRateLimitError(err: unknown): boolean {
     return err instanceof RpcError && /rate limit/i.test(err.message)
 }
@@ -622,5 +652,34 @@ function isExecutionTimeoutError(err: unknown): boolean {
 
 function isRequestTimedOutError(err: unknown): boolean {
     return err instanceof RpcError && /request.*timed out/i.test(err.message)
+}
+
+
+function isJsonRpcResponseBody(body: unknown): boolean {
+    let json = parseJson(body)
+    let responses = Array.isArray(json) ? json : [json]
+    return responses.some(isJsonRpcResponse)
+}
+
+
+// JSON-RPC 1.0 responses, Bitcoin Core's among them, have no `jsonrpc` member,
+// only `id`. A bare `error` object, with neither, comes from a proxy.
+function isJsonRpcResponse(value: unknown): boolean {
+    if (value == null || typeof value != 'object') return false
+
+    let hasEnvelope = 'jsonrpc' in value || 'id' in value
+    let hasOutcome = 'result' in value || 'error' in value
+    return hasEnvelope && hasOutcome
+}
+
+
+// JSON sent under a non-JSON content type arrives as text or bytes.
+function parseJson(body: unknown): unknown {
+    if (typeof body != 'string' && !Buffer.isBuffer(body)) return body
+    try {
+        return JSON.parse(body.toString())
+    } catch {
+        return undefined
+    }
 }
 

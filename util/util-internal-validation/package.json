@@ -26,7 +26,7 @@
   },
   "devDependencies": {
     "@subsquid/logger": "^1.6.0",
-    "@types/node": "^24.0.0",
+    "@types/node": "^24.13.6",
     "typescript": "5.5.4"
   }
 }

@@ -1,0 +1,25 @@
+{
+  "name": "@subsquid/raw-archive-recompress",
+  "entries": [
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/raw-archive-recompress_v0.1.0",
+      "date": "Mon, 14 Sep 2026 10:49:58 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "tool converting gzip data chunks of a raw archive to zstd"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-layout\" from `^2.0.0` to `2.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.2.0` to `0.2.1`"
+          }
+        ]
+      }
+    }
+  ]
+}

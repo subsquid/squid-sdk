@@ -28,6 +28,11 @@ export function decodeExtrinsics(
             extrinsic.signature = src.signature
         }
 
+        if (src.extensions) {
+            extrinsic.extensionVersion = src.extensionVersion
+            extrinsic.extensions = src.extensions
+        }
+
         if (withHash) {
             extrinsic.hash = toHex(blake2b(32).update(bytes).digest())
         }

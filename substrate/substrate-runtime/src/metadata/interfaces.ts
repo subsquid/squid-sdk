@@ -1,5 +1,5 @@
 
-export type Metadata = Metadata_V0 | Metadata_V1 | Metadata_V2 | Metadata_V3 | Metadata_V4 | Metadata_V5 | Metadata_V6 | Metadata_V7 | Metadata_V8 | Metadata_V9 | Metadata_V10 | Metadata_V11 | Metadata_V12 | Metadata_V13 | Metadata_V14
+export type Metadata = Metadata_V0 | Metadata_V1 | Metadata_V2 | Metadata_V3 | Metadata_V4 | Metadata_V5 | Metadata_V6 | Metadata_V7 | Metadata_V8 | Metadata_V9 | Metadata_V10 | Metadata_V11 | Metadata_V12 | Metadata_V13 | Metadata_V14 | Metadata_V15 | Metadata_V16
 
 export interface Metadata_V0 {
   __kind: 'V0'
@@ -665,4 +665,180 @@ export interface Si1Variant {
   fields: Si1Field[]
   index: number
   docs: string[]
+}
+
+export interface Metadata_V15 {
+  __kind: 'V15'
+  value: MetadataV15
+}
+
+export interface Metadata_V16 {
+  __kind: 'V16'
+  value: MetadataV16
+}
+
+export interface MetadataV15 {
+  lookup: PortableRegistryV14
+  pallets: PalletMetadataV15[]
+  extrinsic: ExtrinsicMetadataV15
+  ty: number
+  apis: RuntimeApiMetadataV15[]
+  outerEnums: OuterEnumsV15
+  custom: CustomMetadataV15
+}
+
+export interface PalletMetadataV15 {
+  name: string
+  storage: PalletStorageMetadataV14 | undefined
+  calls: PalletCallMetadataV14 | undefined
+  event: PalletEventMetadataV14 | undefined
+  constants: PalletConstantMetadataV14[]
+  error: PalletErrorMetadataV14 | undefined
+  index: number
+  docs: string[]
+}
+
+export interface SignedExtensionMetadataV15 {
+  identifier: string
+  ty: number
+  additionalSigned: number
+}
+
+export interface ExtrinsicMetadataV15 {
+  version: number
+  addressTy: number
+  callTy: number
+  signatureTy: number
+  extraTy: number
+  signedExtensions: SignedExtensionMetadataV15[]
+}
+
+export interface OuterEnumsV15 {
+  callEnumTy: number
+  eventEnumTy: number
+  errorEnumTy: number
+}
+
+export interface CustomMetadataV15 {
+  map: [string, CustomValueMetadataV15][]
+}
+
+export interface CustomValueMetadataV15 {
+  ty: number
+  value: string
+}
+
+export interface RuntimeApiMetadataV15 {
+  name: string
+  methods: RuntimeApiMethodMetadataV15[]
+  docs: string[]
+}
+
+export interface RuntimeApiMethodMetadataV15 {
+  name: string
+  inputs: RuntimeApiMethodParamMetadataV15[]
+  output: number
+  docs: string[]
+}
+
+export interface RuntimeApiMethodParamMetadataV15 {
+  name: string
+  ty: number
+}
+
+export interface MetadataV16 {
+  lookup: PortableRegistryV14
+  pallets: PalletMetadataV16[]
+  extrinsic: ExtrinsicMetadataV16
+  apis: RuntimeApiMetadataV16[]
+  outerEnums: OuterEnumsV15
+  custom: CustomMetadataV15
+}
+
+export interface PalletMetadataV16 {
+  name: string
+  storage: PalletStorageMetadataV14 | undefined
+  calls: PalletCallMetadataV16 | undefined
+  event: PalletEventMetadataV16 | undefined
+  constants: PalletConstantMetadataV16[]
+  error: PalletErrorMetadataV16 | undefined
+  associatedTypes: PalletAssociatedTypeMetadataV16[]
+  viewFunctions: PalletViewFunctionMetadataV16[]
+  index: number
+  docs: string[]
+  deprecationInfo: DeprecationInfoV16
+}
+
+export interface DeprecationInfoV16 {
+  __kind?: string
+  value?: {note: string, since?: string}
+}
+
+export interface PalletCallMetadataV16 {
+  ty: number
+  deprecationInfo: [number, DeprecationInfoV16][]
+}
+
+export interface PalletEventMetadataV16 {
+  ty: number
+  deprecationInfo: [number, DeprecationInfoV16][]
+}
+
+export interface PalletConstantMetadataV16 {
+  name: string
+  ty: number
+  value: string
+  docs: string[]
+  deprecationInfo: DeprecationInfoV16
+}
+
+export interface PalletErrorMetadataV16 {
+  ty: number
+  deprecationInfo: [number, DeprecationInfoV16][]
+}
+
+export interface PalletAssociatedTypeMetadataV16 {
+  name: string
+  ty: number
+  docs: string[]
+}
+
+export interface PalletViewFunctionMetadataV16 {
+  name: string
+  id: number
+  inputs: RuntimeApiMethodParamMetadataV15[]
+  output: number
+  docs: string[]
+  deprecationInfo: DeprecationInfoV16
+}
+
+export interface ExtrinsicMetadataV16 {
+  versions: number[]
+  addressTy: number
+  callTy: number
+  signatureTy: number
+  transactionExtensionsByVersion: [number, number[]][]
+  transactionExtensions: TransactionExtensionMetadataV16[]
+}
+
+export interface TransactionExtensionMetadataV16 {
+  identifier: string
+  ty: number
+  implicit: number
+}
+
+export interface RuntimeApiMetadataV16 {
+  name: string
+  methods: RuntimeApiMethodMetadataV16[]
+  docs: string[]
+  version: number
+  deprecationInfo: DeprecationInfoV16
+}
+
+export interface RuntimeApiMethodMetadataV16 {
+  name: string
+  inputs: RuntimeApiMethodParamMetadataV15[]
+  output: number
+  docs: string[]
+  deprecationInfo: DeprecationInfoV16
 }

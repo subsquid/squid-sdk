@@ -1,0 +1,26 @@
+{
+  "network": "devnet",
+  "scenario": "staticcall",
+  "client": "anvil/v1.0.0",
+  "transactionHash": "0x29a536c4c36bdd3a0c8934886a07bd8e918ad557fe79e5a40c24889e4cb1bebb",
+  "trace": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x441d8",
+    "gasUsed": "0x48302",
+    "to": "0x5fc8d32690cc91d4c39d9d3abcbd16989f875707",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0x5fc8d32690cc91d4c39d9d3abcbd16989f875707",
+        "gas": "0x426c1",
+        "gasUsed": "0x426c1",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "error": "StateChangeDuringStaticCall",
+        "type": "STATICCALL"
+      }
+    ],
+    "value": "0xde0b6b3a7640000",
+    "type": "CALL"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "network": "devnet",
+  "defect": "incomplete",
+  "scenario": "delegatecall",
+  "traceAddress": [
+    0,
+    0
+  ],
+  "defectiveClient": "anvil/v1.0.0",
+  "defectiveTransactionHash": "0x7335e5ba132c6dd1dfd3ff0a978c952a23a0a9ef78ae4b72c68891a198cbfd11",
+  "completeClient": "Geth/v1.17.5-stable-9621c6ad/linux-arm64/go1.26.5",
+  "completeTransactionHash": "0x055060b9d1f63da1efcf4bbfd589e6e554233031e564a971b1b36ced6069cf71",
+  "defective": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x441d8",
+    "gasUsed": "0x6fcb",
+    "to": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+        "gas": "0x426c1",
+        "gasUsed": "0x138a",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "calls": [
+          {
+            "from": "0x0000000000000000000000000000000000000000",
+            "gas": "0x0",
+            "gasUsed": "0x0",
+            "input": "0x",
+            "type": "SELFDESTRUCT"
+          }
+        ],
+        "value": "0xde0b6b3a7640000",
+        "type": "DELEGATECALL"
+      }
+    ],
+    "value": "0xde0b6b3a7640000",
+    "type": "CALL"
+  },
+  "complete": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x493e0",
+    "gasUsed": "0x715b",
+    "to": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+        "gas": "0x42537",
+        "gasUsed": "0x138a",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "calls": [
+          {
+            "from": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "gas": "0x0",
+            "gasUsed": "0x0",
+            "to": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+            "input": "0x",
+            "value": "0xde0b6b3a7640000",
+            "type": "SELFDESTRUCT"
+          }
+        ],
+        "value": "0xde0b6b3a7640000",
+        "type": "DELEGATECALL"
+      }
+    ],
+    "value": "0xde0b6b3a7640000",
+    "type": "CALL"
+  }
+}

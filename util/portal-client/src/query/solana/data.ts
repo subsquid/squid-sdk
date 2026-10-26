@@ -18,6 +18,7 @@ export interface Transaction {
     // transaction message
     accountKeys: Base58Bytes[]
     addressTableLookups: AddressTableLookup[]
+    transactionConfig?: TransactionConfig
     numReadonlySignedAccounts: number
     numReadonlyUnsignedAccounts: number
     numRequiredSignatures: number
@@ -38,6 +39,17 @@ export interface AddressTableLookup {
     accountKey: Base58Bytes
     readonlyIndexes: number[]
     writableIndexes: number[]
+}
+
+/**
+ * Compute budget declared inline by a v1 transaction message,
+ * in place of the ComputeBudget program instructions used by legacy and v0.
+ */
+export interface TransactionConfig {
+    computeUnitLimit: number | null
+    heapSize: number | null
+    loadedAccountsDataSizeLimit: number | null
+    priorityFee: bigint | null
 }
 
 export interface Instruction {

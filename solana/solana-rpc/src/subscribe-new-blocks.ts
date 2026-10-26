@@ -30,7 +30,7 @@ export function subscribeNewBlocks(
                 commitment,
                 showRewards: req.rewards,
                 transactionDetails: req.transactions ? 'full' : 'none',
-                maxSupportedTransactionVersion: 0,
+                maxSupportedTransactionVersion: 1,
                 encoding: 'json'
             }
         ],

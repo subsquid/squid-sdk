@@ -2,6 +2,18 @@
   "name": "@subsquid/http-client",
   "entries": [
     {
+      "version": "1.9.0",
+      "tag": "@subsquid/http-client_v1.9.0",
+      "date": "Thu, 27 Aug 2026 13:59:40 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "expose the configured `retryAttempts` and `retrySchedule` as readonly properties, so wrappers can defer to a caller's retry configuration instead of overriding it, and can work out how long a retry budget spans"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.8.1",
       "tag": "@subsquid/http-client_v1.8.1",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

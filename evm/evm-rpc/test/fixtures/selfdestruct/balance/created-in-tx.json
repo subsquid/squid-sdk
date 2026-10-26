@@ -1,0 +1,105 @@
+{
+  "scenario": "A constructor calls itself with one wei, then selfdestructs to itself.",
+  "source": "Block and call trace recorded from Anvil; opcode events recorded by revm-inspectors 0.41.2 replaying the same constructor, sender, nonce and value under Cancun.",
+  "block": {
+    "hash": "0x238bb1df62f29dd381e3c9ba36d224f504880125bd393cd5606502f4fec79751",
+    "parentHash": "0x1838b8979cfdb95ff198678b9fc1241cc63d1b95ceadd50368af5a51b9d2aa59",
+    "sha3Uncles": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+    "miner": "0x0000000000000000000000000000000000000000",
+    "stateRoot": "0xec07ea4bca4020da19fbe71fb7172d79706ffd6f2e88b0f5b8dfbc8cc653a2f3",
+    "transactionsRoot": "0x5e0f93b78ed05a5fe763c6cf87a0513f7c5873237c2821738dbe871232fd6dfe",
+    "receiptsRoot": "0xd67b7e749486ec73738063be7d865ebc4df68b2bd114955c2bd2bf67b236cd07",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "difficulty": "0x0",
+    "number": "0x1",
+    "gasLimit": "0x1c9c380",
+    "gasUsed": "0xfe09",
+    "timestamp": "0x6aaadeb7",
+    "extraData": "0x",
+    "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "nonce": "0x0000000000000000",
+    "baseFeePerGas": "0x3b9aca00",
+    "withdrawalsRoot": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+    "blobGasUsed": "0x0",
+    "excessBlobGas": "0x0",
+    "parentBeaconBlockRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "totalDifficulty": "0x0",
+    "size": "0x2b3",
+    "uncles": [],
+    "transactions": [
+      {
+        "type": "0x2",
+        "chainId": "0x7a69",
+        "nonce": "0x0",
+        "gas": "0x493e0",
+        "maxFeePerGas": "0x77359400",
+        "maxPriorityFeePerGas": "0x0",
+        "to": null,
+        "value": "0x1",
+        "accessList": [],
+        "input": "0x60006000600060006001305af15030ff",
+        "r": "0x596bdf4843d2c2b46285ae7fcc9b6e77b51febec10d6aee4c61b9f7d4ffc9cd5",
+        "s": "0x57183d4cebd17b9000c3b438d32d83fd09df69f7f9029fed192129fe0b0a7d7c",
+        "yParity": "0x0",
+        "v": "0x0",
+        "hash": "0x1e9cd24c220629dbc2f34daf099fb9618802e05aa31802c74f23ee663f1e0d9c",
+        "blockHash": "0x238bb1df62f29dd381e3c9ba36d224f504880125bd393cd5606502f4fec79751",
+        "blockNumber": "0x1",
+        "transactionIndex": "0x0",
+        "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "gasPrice": "0x3b9aca00"
+      }
+    ],
+    "withdrawals": []
+  },
+  "trace": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x3c406",
+    "gasUsed": "0xfe09",
+    "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+    "input": "0x60006000600060006001305af15030ff",
+    "calls": [
+      {
+        "from": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "gas": "0x39ae2",
+        "gasUsed": "0x0",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "value": "0x1",
+        "type": "CALL"
+      },
+      {
+        "from": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "gas": "0x0",
+        "gasUsed": "0x0",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "value": "0x1",
+        "type": "SELFDESTRUCT"
+      }
+    ],
+    "value": "0x1",
+    "type": "CREATE"
+  },
+  "events": [
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "sd",
+      "from": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "bal": "0x0",
+      "preBalance": "0x1"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    }
+  ]
+}

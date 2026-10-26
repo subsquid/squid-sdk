@@ -1,0 +1,228 @@
+{
+  "network": "mainnet",
+  "blockHash": "0x38017815ea6097f4a6997bfb7949dc51b67656010ede713e03616cba745583ad",
+  "transactionHash": "0xfdae66c16d1aa538872f6b80ceae1d5cb5a845a545b6377e7f37f8b8f09cfe96",
+  "transactionIndex": 203,
+  "traceAddress": [
+    0,
+    2,
+    6,
+    0,
+    2
+  ],
+  "frame": "defective",
+  "client": "reth/v2.5.2-5a6940e/x86_64-unknown-linux-gnu",
+  "events": [
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "bal": "0x0",
+      "from": "0xd3b09cae7ced7727c23c07486077ef7f97c878c2",
+      "preBalance": "0x0",
+      "t": "sd",
+      "to": "0xd3b09cae7ced7727c23c07486077ef7f97c878c2"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "exit"
+    }
+  ]
+}

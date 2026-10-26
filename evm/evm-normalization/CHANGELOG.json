@@ -2,6 +2,23 @@
   "name": "@subsquid/evm-normalization",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/evm-normalization_v0.1.0",
+      "date": "Mon, 14 Sep 2026 10:05:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "expose Avalanche block header fields (blockExtraData, extDataHash, minDelayExcess, timestampMilliseconds, targetExponent, minPriceExponent, settled*) on the normalized block header"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.1.0` to `0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.6",
       "tag": "@subsquid/evm-normalization_v0.0.6",
       "date": "Thu, 30 Jul 2026 15:44:58 GMT",

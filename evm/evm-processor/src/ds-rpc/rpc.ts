@@ -42,7 +42,12 @@ function getResultValidator<V extends Validator>(validator: V): (result: unknown
 
 export interface RpcValidationFlags {
     /**
-     * Checks the logs list is non-empty if logsBloom is non-zero
+     * Checks the logs list is non-empty if logsBloom is non-zero.
+     *
+     * For headers with `settledHeight` (Avalanche C-Chain since Helicon, mainnet and Fuji),
+     * where `logsBloom` commits to settled blocks rather than the block itself,
+     * an empty logs list for a block with transactions is instead confirmed
+     * with `eth_getTransactionReceipt` for each transaction.
      */
     disableLogsBloomCheck?: boolean 
     /**
@@ -275,14 +280,62 @@ export class Rpc {
 
         let logsByBlock = groupBy(logs, log => log.blockHash)
 
+        let settlementBlocks: Block[] = []
+
         for (let block of blocks) {
             let logs = logsByBlock.get(block.hash) || []
             block.logs = logs
 
-            if (!this.validation.disableLogsBloomCheck && (logs.length === 0 && block.block.logsBloom !== NO_LOGS_BLOOM)) {
+            if (this.validation.disableLogsBloomCheck) continue
+
+            if (block.block.settledHeight != null) {
+                // Avalanche C-Chain since Helicon (ACP-194): header logsBloom commits
+                // to the blocks settled since the previous header, not to this block's logs.
+                // Also eth_getLogs returns [] for accepted, but not yet executed blocks,
+                // so an empty result must be confirmed with tx receipts.
+                this.props.noteSettlementHeader(block, this.log)
+                if (logs.length === 0 && block.block.transactions.length > 0) {
+                    settlementBlocks.push(block)
+                }
+            } else if (logs.length === 0 && block.block.logsBloom !== NO_LOGS_BLOOM) {
                 block._isInvalid = true
                 block._errorMessage = 'got 0 log records from eth_getLogs, but logs bloom is not empty'
-            } 
+            }
+        }
+
+        if (settlementBlocks.length > 0) {
+            await this.confirmNoLogsByReceipts(settlementBlocks)
+        }
+    }
+
+    private async confirmNoLogsByReceipts(blocks: Block[]): Promise<void> {
+        let call = []
+        for (let block of blocks) {
+            for (let tx of block.block.transactions) {
+                call.push({
+                    method: 'eth_getTransactionReceipt',
+                    params: [getTxHash(tx)]
+                })
+            }
+        }
+
+        let receipts: (TransactionReceipt | null)[] = await this.batchCall(call, {
+            validateResult: getResultValidator(nullable(TransactionReceipt))
+        })
+
+        let i = 0
+        for (let block of blocks) {
+            for (let j = 0; j < block.block.transactions.length; j++, i++) {
+                let receipt = receipts[i]
+                if (block._isInvalid) continue
+if (receipt == null || receipt.blockHash !== block.hash || receipt.transactionHash !== getTxHash(block.block.transactions[j])) {
+                    block._isInvalid = true
+                    block._errorMessage = 'got 0 log records from eth_getLogs, but tx receipts are not available yet'
+                } else if (receipt.logs.length > 0) {
+                    block._isInvalid = true
+                    block._errorMessage = 'got 0 log records from eth_getLogs, but tx receipts have logs'
+                }
+            }
         }
     }
 
@@ -710,6 +763,7 @@ type GetReceiptsMethod =
 class RpcProps {
     private genesisHash?: Bytes
     private receiptsMethod?: GetReceiptsMethod
+    private settlementHeaderSeen = false
 
     constructor(
         private client: RpcClient,
@@ -722,6 +776,16 @@ class RpcProps {
         let hash = await rpc.getBlockHash(this.genesisHeight)
         if (hash == null) throw new Error(`block ${this.genesisHeight} is not known to ${this.client.url}`)
         return this.genesisHash = hash
+    }
+
+    noteSettlementHeader(block: Block, log?: Logger): void {
+        if (this.settlementHeaderSeen) return
+        this.settlementHeaderSeen = true
+        log?.info(
+            {blockNumber: block.height},
+            'got a block header with settledHeight (Avalanche Helicon), ' +
+            'confirming empty eth_getLogs results with tx receipts instead of the logs bloom check'
+        )
     }
 
     async getReceiptsMethod(): Promise<GetReceiptsMethod> {
@@ -746,6 +810,8 @@ class RpcProps {
 function isLogsRangeError(message: string): boolean {
     if (/after last accepted block/i.test(message)) return true
     if (/block range extends beyond current head block/i.test(message)) return true
+    // Avalanche since Helicon: the block is accepted, but its logs are not stored yet
+    if (/failed to get logs for block/i.test(message)) return true
     return false
 }
 

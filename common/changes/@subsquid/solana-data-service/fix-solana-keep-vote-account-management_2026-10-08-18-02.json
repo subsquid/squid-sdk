@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Keep vote-account management transactions (Withdraw, Authorize, UpdateCommission) when vote transactions are excluded",
+      "type": "patch",
+      "packageName": "@subsquid/solana-data-service"
+    }
+  ],
+  "packageName": "@subsquid/solana-data-service"
+}

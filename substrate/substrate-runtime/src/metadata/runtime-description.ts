@@ -8,6 +8,8 @@ import type {
     FunctionMetadataV9,
     Metadata,
     MetadataV14,
+    MetadataV15,
+    MetadataV16,
     ModuleMetadataV10,
     ModuleMetadataV11,
     ModuleMetadataV12,
@@ -31,6 +33,12 @@ export interface RuntimeDescription {
     eventRecord: Ti
     eventRecordList: Ti
     signature: Ti
+    /**
+     * Transaction extension values of a v5 general extrinsic per supported pipeline (extension) version.
+     *
+     * Only present for chains with V14+ metadata.
+     */
+    generalExtensionsByVersion?: Record<number, Ti>
     storage: Storage
     constants: Constants
 }
@@ -117,6 +125,10 @@ export function getRuntimeDescription(
             return new FromOld(metadata, oldTypes).convert()
         case "V14":
             return new FromV14(metadata.value).convert()
+        case "V15":
+            return new FromV15(metadata.value).convert()
+        case "V16":
+            return new FromV16(metadata.value).convert()
         default:
             throw new Error(`Unsupported metadata version: ${metadata.__kind}`)
     }
@@ -124,7 +136,11 @@ export function getRuntimeDescription(
 
 
 class FromV14 {
-    constructor(private metadata: MetadataV14) {}
+    constructor(protected metadata: {
+        lookup: MetadataV14['lookup'],
+        pallets: MetadataV14['pallets'],
+        extrinsic: MetadataV14['extrinsic']
+    }) {}
 
     convert(): RuntimeDescription {
         return {
@@ -137,6 +153,7 @@ class FromV14 {
             eventRecord: this.eventRecord(),
             eventRecordList: this.eventRecordList(),
             signature: this.signature(),
+            generalExtensionsByVersion: {0: this.generalExtensions()},
             storage: this.storage(),
             constants: this.constants()
         }
@@ -186,22 +203,8 @@ class FromV14 {
 
     @def
     private signature(): Ti {
+        let signedExtensions = this.signedExtensions()
         let types = this.types()
-
-        let signedExtensionsType: Type = {
-            kind: TypeKind.Composite,
-            fields: this.metadata.extrinsic.signedExtensions.map(ext => {
-                return {
-                    name: toCamelCase(ext.identifier),
-                    type: ext.type
-                }
-            }).filter(f => {
-                return !isUnitType(types[f.type])
-            }),
-            path: ['SignedExtensions']
-        }
-
-        let signedExtensions = types.push(signedExtensionsType) - 1
 
         let signatureType: Type = {
             kind: TypeKind.Composite,
@@ -223,6 +226,33 @@ class FromV14 {
         }
 
         return types.push(signatureType) - 1
+    }
+
+    @def
+    private generalExtensions(): Ti {
+        let types = this.types()
+
+        return buildExtensionsComposite(types, this.metadata.extrinsic.signedExtensions, ['TransactionExtensions'])
+    }
+
+    @def
+    private signedExtensions(): Ti {
+        let types = this.types()
+
+        let signedExtensionsType: Type = {
+            kind: TypeKind.Composite,
+            fields: this.metadata.extrinsic.signedExtensions.map(ext => {
+                return {
+                    name: toCamelCase(ext.identifier),
+                    type: ext.type
+                }
+            }).filter(f => {
+                return !isUnitType(types[f.type])
+            }),
+            path: ['SignedExtensions']
+        }
+
+        return types.push(signedExtensionsType) - 1
     }
 
     @def
@@ -409,10 +439,146 @@ class FromV14 {
     }
 }
 
+class FromV15 {
+    private base: FromV14
+
+    constructor(private metadata: MetadataV15) {
+        this.base = new FromV14({
+            lookup: metadata.lookup,
+            // the private base only needs pallet names/type ids
+            pallets: metadata.pallets as unknown as MetadataV14['pallets'],
+            extrinsic: {
+                type: metadata.extrinsic.extraTy,
+                version: metadata.extrinsic.version,
+                signedExtensions: metadata.extrinsic.signedExtensions.map(ext => ({
+                    identifier: ext.identifier,
+                    type: ext.ty,
+                    additionalSigned: ext.additionalSigned
+                }))
+            }
+        })
+    }
+
+    convert(): RuntimeDescription {
+        let base = this.base.convert()
+        let e = this.metadata.extrinsic
+        let types = base.types
+        let signedExtensions = e.signedExtensions.map(ext => ({identifier: ext.identifier, type: ext.ty}))
+        return {
+            ...base,
+            address: e.addressTy,
+            call: e.callTy,
+            signature: buildSignature(types, e.addressTy, e.signatureTy, buildExtensionsComposite(
+                types,
+                signedExtensions,
+                ['SignedExtensions']
+            )),
+            generalExtensionsByVersion: {
+                0: buildExtensionsComposite(
+                    types,
+                    signedExtensions,
+                    ['TransactionExtensions']
+                )
+            }
+        }
+    }
+}
+
+class FromV16 {
+    private base: FromV14
+
+    constructor(private metadata: MetadataV16) {
+        this.base = new FromV14({
+            lookup: metadata.lookup,
+            // private base machinery only needs pallet names/type ids
+            pallets: metadata.pallets as unknown as MetadataV14['pallets'],
+            extrinsic: {
+                type: metadata.extrinsic.callTy,
+                version: 5,
+                signedExtensions: []
+            }
+        })
+    }
+
+    convert(): RuntimeDescription {
+        let base = this.base.convert()
+        let e = this.metadata.extrinsic
+        let types = base.types
+
+        let generalExtensionsByVersion: Record<number, Ti> = {}
+        for (let [version, indexes] of e.transactionExtensionsByVersion) {
+            let extensions = indexes.map(i => {
+                let ext = assertNotNull(
+                    e.transactionExtensions[i],
+                    `transaction extension index ${i} of pipeline version ${version} not found in metadata`
+                )
+                return {identifier: ext.identifier, type: ext.ty}
+            })
+            generalExtensionsByVersion[version] = buildExtensionsComposite(types, extensions, ['TransactionExtensionsV' + version])
+        }
+
+        let versions = e.transactionExtensionsByVersion.map(([version]) => version)
+        // v4 signed transactions use the legacy (lowest) pipeline as their extension list
+        let legacyVersion = e.versions.includes(4) ? 0 : Math.min(...versions)
+        let signedExtensions = generalExtensionsByVersion[legacyVersion]
+        assert(signedExtensions != null, 'failed to derive ExtrinsicSignature type')
+        return {
+            ...base,
+            address: e.addressTy,
+            call: e.callTy,
+            signature: buildSignature(types, e.addressTy, e.signatureTy, signedExtensions),
+            generalExtensionsByVersion
+        }
+    }
+}
+
+interface ExtensionField {
+    identifier: string
+    type: Ti
+}
+
+function buildExtensionsComposite(types: Type[], extensions: ExtensionField[], path: string[]): Ti {
+    let extensionsType: Type = {
+        kind: TypeKind.Composite,
+        fields: extensions.map(ext => {
+            return {
+                name: toCamelCase(ext.identifier),
+                type: ext.type
+            }
+        }).filter(f => {
+            return !isUnitType(types[f.type])
+        }),
+        path
+    }
+    return types.push(extensionsType) - 1
+}
+
+function buildSignature(types: Type[], address: Ti, signature: Ti, signedExtensions: Ti): Ti {
+    let signatureType: Type = {
+        kind: TypeKind.Composite,
+        fields: [
+            {
+                name: "address",
+                type: address,
+            },
+            {
+                name: "signature",
+                type: signature,
+            },
+            {
+                name: 'signedExtensions',
+                type: signedExtensions
+            }
+        ],
+        path: ['ExtrinsicSignature']
+    }
+
+    return types.push(signatureType) - 1
+}
+
 
 class FromOld {
     private registry: OldTypeRegistry
-
     constructor(private metadata: Metadata, private oldTypes: OldTypes) {
         this.registry = new OldTypeRegistry(oldTypes)
         this.defineGenericExtrinsicEra()

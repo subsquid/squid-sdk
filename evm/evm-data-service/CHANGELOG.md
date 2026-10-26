@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-data-service
 
-This log was last generated on Thu, 30 Jul 2026 15:44:58 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 0.2.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- add --verify-ext-data-hash flag: check blockExtraData against the extDataHash header commitment
 
 ## 0.1.0
 Thu, 30 Jul 2026 15:44:58 GMT

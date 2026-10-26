@@ -2,7 +2,8 @@ import {BlockBatch, BlockStream, DataSource, StreamRequest} from '@subsquid/util
 import {ListeningServer} from '@subsquid/util-internal-http-server'
 import {DataService} from './data-service'
 import {createHttpApp} from './http-app'
-import {Metrics} from './metrics'
+import {Metrics, RpcRetriedErrors} from './metrics'
+import {RpcMetricsCollector, RpcMetricsSource} from './rpc-metrics'
 import {Block, BlockHeader, BlockRef} from './types'
 
 
@@ -14,6 +15,9 @@ export {
     BlockStream,
     DataSource,
     Metrics,
+    RpcMetricsCollector,
+    RpcMetricsSource,
+    RpcRetriedErrors,
     StreamRequest
 }
 

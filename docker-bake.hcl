@@ -21,6 +21,7 @@ group "default" {
     "hyperliquid-fills-ingest",
     "hyperliquid-replica-cmds-ingest",
     "hyperliquid-replica-cmds-data-service",
+    "raw-archive-recompress",
   ]
 }
 
@@ -132,4 +133,9 @@ target "hyperliquid-replica-cmds-ingest" {
 target "hyperliquid-replica-cmds-data-service" {
   inherits = ["_common"]
   target   = "hyperliquid-replica-cmds-data-service"
+}
+
+target "raw-archive-recompress" {
+  inherits = ["_common"]
+  target   = "raw-archive-recompress"
 }

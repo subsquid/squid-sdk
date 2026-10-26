@@ -1,0 +1,26 @@
+{
+  "network": "devnet",
+  "scenario": "staticcall",
+  "client": "Geth/v1.17.5-stable-9621c6ad/linux-arm64/go1.26.5",
+  "transactionHash": "0x4ea421ec54f63fc9409b7e442f5bdb73988e3bd8a71f46ee1221ba593c8cba0f",
+  "trace": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x493e0",
+    "gasUsed": "0x48308",
+    "to": "0x5fc8d32690cc91d4c39d9d3abcbd16989f875707",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0x5fc8d32690cc91d4c39d9d3abcbd16989f875707",
+        "gas": "0x42537",
+        "gasUsed": "0x42537",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "error": "out of gas: write protection",
+        "type": "STATICCALL"
+      }
+    ],
+    "value": "0xde0b6b3a7640000",
+    "type": "CALL"
+  }
+}

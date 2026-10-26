@@ -29,7 +29,7 @@ export class SolanaIngest extends Ingest<Options> {
                 option.required = true
             }
         })
-        program.option('--no-votes', 'Exclude vote transactions')
+        program.option('--no-votes', 'Exclude consensus vote transactions')
         program.option('--relaxed', 'Do not crush on log parsing failure')
     }
 
