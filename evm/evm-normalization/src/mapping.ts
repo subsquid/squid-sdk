@@ -589,6 +589,21 @@ function mapTempoFeePayerSignature(src: {v: string, r: string, s: string}): Temp
 }
 
 
+// Some nodes leave `yParity` out of typed transactions. For the EIP-2930, EIP-1559, EIP-4844
+// and EIP-7702 envelopes `v` is the y-parity itself, so it is taken from there. Legacy
+// transactions have no y-parity field, and other types (system, deposit, chain-specific) are
+// left as the node returned them.
+const V_IS_Y_PARITY_TYPES = new Set([1, 2, 3, 4])
+
+
+function mapYParity(src: rpc.Transaction): number | undefined {
+    if (src.yParity) return qty2Int(src.yParity)
+    if (src.type == null || src.v == null || !V_IS_Y_PARITY_TYPES.has(qty2Int(src.type))) return undefined
+    let v = qty2Int(src.v)
+    return v === 0 || v === 1 ? v : undefined
+}
+
+
 function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transaction {
     return {
         transactionIndex: qty2Int(src.transactionIndex),
@@ -606,7 +621,7 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         v: src.v ?? undefined,
         r: src.r ?? undefined,
         s: src.s ?? undefined,
-        yParity: src.yParity ? qty2Int(src.yParity) : undefined,
+        yParity: mapYParity(src),
         accessList: src.accessList?.map(mapAccessListItem),
         chainId: src.chainId ? safeQty2Int(src.chainId) : undefined,
         maxFeePerBlobGas: src.maxFeePerBlobGas ?? undefined,
