@@ -49,6 +49,12 @@ importers:
       '@keyv/redis':
         specifier: ~2.5.8
         version: 2.5.8(supports-color@8.1.1)
+      '@nats-io/jetstream':
+        specifier: ^3.4.0
+        version: 3.4.0
+      '@nats-io/transport-node':
+        specifier: ^3.4.0
+        version: 3.4.0
       '@rush-temp/astar-erc20':
         specifier: file:./projects/astar-erc20.tgz
         version: file:projects/astar-erc20.tgz(bufferutil@4.0.7)(ioredis@5.3.2(supports-color@8.1.1))(supports-color@8.1.1)(ts-node@10.9.2(@types/node@24.13.6)(typescript@5.5.4))(utf-8-validate@5.0.10)
@@ -105,7 +111,7 @@ importers:
         version: file:projects/evm-data-service.tgz
       '@rush-temp/evm-dump':
         specifier: file:./projects/evm-dump.tgz
-        version: file:projects/evm-dump.tgz
+        version: file:projects/evm-dump.tgz(esbuild@0.28.2)(tsx@4.23.15)
       '@rush-temp/evm-ingest':
         specifier: file:./projects/evm-ingest.tgz
         version: file:projects/evm-ingest.tgz
@@ -379,6 +385,9 @@ importers:
       '@rush-temp/util-internal-dump-cli':
         specifier: file:./projects/util-internal-dump-cli.tgz
         version: file:projects/util-internal-dump-cli.tgz(esbuild@0.28.2)(tsx@4.23.15)
+      '@rush-temp/util-internal-dump-stream':
+        specifier: file:./projects/util-internal-dump-stream.tgz
+        version: file:projects/util-internal-dump-stream.tgz(esbuild@0.28.2)(tsx@4.23.15)
       '@rush-temp/util-internal-fs':
         specifier: file:./projects/util-internal-fs.tgz
         version: file:projects/util-internal-fs.tgz
@@ -1117,6 +1126,24 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
+  '@nats-io/jetstream@3.4.0':
+    resolution: {integrity: sha512-GzHQodNJ942+R5LRb8PuZ5ugVWVWMRiufxUYLLVWkXKfwDXYN+Owo0d7L/b9O7BPyrbYD7jQWAC6+ZVuXa9Gyw==}
+
+  '@nats-io/nats-core@3.4.0':
+    resolution: {integrity: sha512-QMDM86EUNm+wudlKC67HLar/KHHQUvJGLfb4jbahje3pUk3K9afeck9fwsxBZF0eUFox6T/TA6m/t+lQqf+QsQ==}
+
+  '@nats-io/nkeys@2.0.3':
+    resolution: {integrity: sha512-JVt56GuE6Z89KUkI4TXUbSI9fmIfAmk6PMPknijmuL72GcD+UgIomTcRWiNvvJKxA01sBbmIPStqJs5cMRBC3A==}
+    engines: {node: '>=18.0.0'}
+
+  '@nats-io/nuid@3.0.0':
+    resolution: {integrity: sha512-QbXZDrxmYlrn5AD06gYcUTmEHwxn96HBQMIk7XTjDlEcx6FPzVBBPjp4AMRh1lEv6B4iJ6Xb/Uz61JugPXFRQg==}
+    engines: {node: '>= 22.x'}
+
+  '@nats-io/transport-node@3.4.0':
+    resolution: {integrity: sha512-hH7u7ejIBTFEJIZ8rIcMrHJI6wl+HhpO5sVFs1+ppmXa8RuB2+Lh1+UwTzZ5xTNNm1TKcRkYy+2qCV56qp8RxA==}
+    engines: {node: '>= 18.0.0'}
+
   '@noble/ciphers@1.3.0':
     resolution: {integrity: sha512-2I0gnIVPtfnMw9ee9h1dJG7tp81+8Ob3OJb3Mv37rx5L40/b0i7djjCVvGOVqc9AEIQyvyu1i6ypKdFw8R8gQw==}
     engines: {node: ^14.21.3 || >=16}
@@ -1350,7 +1377,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/evm-dump@file:projects/evm-dump.tgz':
-    resolution: {integrity: sha512-jq4zZtL580owz5wAsjBOAh4Xi81msJe68mG8S8+QVBRqWXFPLiISaiwGL7GE9OeR4YKg6J0ov+AqumahKoNYBA==, tarball: file:projects/evm-dump.tgz}
+    resolution: {integrity: sha512-Tz/iKvCH0aeHSMFwxjvsl+BRRxc+UYng7neXeOFyvDp0n64200RpW7WwXztyS2Ff/Ag/1hQ7L2n3tREwR/ZrRQ==, tarball: file:projects/evm-dump.tgz}
     version: 0.0.0
 
   '@rush-temp/evm-ingest@file:projects/evm-ingest.tgz':
@@ -1711,6 +1738,10 @@ packages:
 
   '@rush-temp/util-internal-dump-cli@file:projects/util-internal-dump-cli.tgz':
     resolution: {integrity: sha512-myjQDC5pYuBvhuixwyarpiDEbVBDLObQNO5k4vDlVLJJsJvP45mErKf2yxWKN41ey5UJtrIxBh94jmDtLV9FMg==, tarball: file:projects/util-internal-dump-cli.tgz}
+    version: 0.0.0
+
+  '@rush-temp/util-internal-dump-stream@file:projects/util-internal-dump-stream.tgz':
+    resolution: {integrity: sha512-Vt/qEgp8pILw6Ul96UXIh5peMWKY70EM9MG56v7h6gpC23m/PN7VdL25jQAk0/Al3Nei6FO+hVfAbzoCgT88DA==, tarball: file:projects/util-internal-dump-stream.tgz}
     version: 0.0.0
 
   '@rush-temp/util-internal-fs@file:projects/util-internal-fs.tgz':
@@ -3981,6 +4012,9 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
 
+  tweetnacl@1.0.3:
+    resolution: {integrity: sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==}
+
   type-fest@2.19.0:
     resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
     engines: {node: '>=12.20'}
@@ -4929,6 +4963,27 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
+  '@nats-io/jetstream@3.4.0':
+    dependencies:
+      '@nats-io/nats-core': 3.4.0
+
+  '@nats-io/nats-core@3.4.0':
+    dependencies:
+      '@nats-io/nkeys': 2.0.3
+      '@nats-io/nuid': 3.0.0
+
+  '@nats-io/nkeys@2.0.3':
+    dependencies:
+      tweetnacl: 1.0.3
+
+  '@nats-io/nuid@3.0.0': {}
+
+  '@nats-io/transport-node@3.4.0':
+    dependencies:
+      '@nats-io/nats-core': 3.4.0
+      '@nats-io/nkeys': 2.0.3
+      '@nats-io/nuid': 3.0.0
+
   '@noble/ciphers@1.3.0': {}
 
   '@noble/curves@1.2.0':
@@ -5366,10 +5421,36 @@ snapshots:
       commander: 11.1.0
       typescript: 5.5.4
 
-  '@rush-temp/evm-dump@file:projects/evm-dump.tgz':
+  '@rush-temp/evm-dump@file:projects/evm-dump.tgz(esbuild@0.28.2)(tsx@4.23.15)':
     dependencies:
+      '@nats-io/jetstream': 3.4.0
+      '@nats-io/transport-node': 3.4.0
       '@types/node': 24.13.6
       typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.13.6)(esbuild@0.28.2)(tsx@4.23.15)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
 
   '@rush-temp/evm-ingest@file:projects/evm-ingest.tgz':
     dependencies:
@@ -6866,6 +6947,37 @@ snapshots:
       '@types/node': 24.13.6
       commander: 11.1.0
       prom-client: 14.2.0
+      typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.13.6)(esbuild@0.28.2)(tsx@4.23.15)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
+
+  '@rush-temp/util-internal-dump-stream@file:projects/util-internal-dump-stream.tgz(esbuild@0.28.2)(tsx@4.23.15)':
+    dependencies:
+      '@nats-io/jetstream': 3.4.0
+      '@nats-io/transport-node': 3.4.0
+      '@types/node': 24.13.6
       typescript: 5.5.4
       vitest: 4.1.5(@types/node@24.13.6)(esbuild@0.28.2)(tsx@4.23.15)
     transitivePeerDependencies:
@@ -9501,6 +9613,8 @@ snapshots:
       esbuild: 0.28.2
     optionalDependencies:
       fsevents: 2.3.3
+
+  tweetnacl@1.0.3: {}
 
   type-fest@2.19.0: {}
 

@@ -1,0 +1,31 @@
+{
+  "name": "@subsquid/util-internal-dump-stream",
+  "version": "0.0.0",
+  "description": "Chain agnostic reader of raw block streams for data dumpers, with RPC fallback",
+  "license": "GPL-3.0-or-later",
+  "repository": "git@github.com:subsquid/squid-sdk.git",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "@nats-io/jetstream": "^3.4.0",
+    "@nats-io/transport-node": "^3.4.0",
+    "@subsquid/logger": "^1.6.0",
+    "@subsquid/util-internal": "^3.3.1",
+    "@subsquid/util-internal-dump-cli": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
+  }
+}
