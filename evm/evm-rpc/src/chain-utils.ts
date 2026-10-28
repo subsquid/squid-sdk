@@ -12,6 +12,7 @@ import {
     recoverTxSender,
     transactionsRoot,
     calculateStateSyncTxHash,
+    transactionHash,
     withdrawalsRoot
 } from './verification'
 import {getTxHash, qty2Int} from './util'
@@ -116,6 +117,16 @@ export class ChainUtils {
     }
 
     calculateTransactionsRoot(block: GetBlock) {
+        let transactions = this.getRootTransactions(block)
+        if (transactions == null) return block.transactionsRoot
+
+        return transactionsRoot(transactions)
+    }
+
+    /**
+     * Transactions the transactions root covers, `undefined` when the root of the block can't be calculated
+     */
+    getRootTransactions(block: GetBlock): Transaction[] | undefined {
         let transactions = block.transactions as Transaction[]
 
         if (this.isPolygonBased) {
@@ -125,7 +136,7 @@ export class ChainUtils {
                 if (tx.type == '0x7f') {
                     // PIP-74 tx type requires extra data that can't be obtained from rpc
                     // so for now blocks that contain this tx type aren't verified
-                    return block.transactionsRoot
+                    return undefined
                 }
 
                 if (tx.hash != stateSyncTxHash) {
@@ -139,7 +150,11 @@ export class ChainUtils {
             transactions = transactions.filter(tx => !isHyperliquidSystemTx(tx))
         }
 
-        return transactionsRoot(transactions)
+        return transactions
+    }
+
+    calculateTransactionHash(tx: Transaction) {
+        return transactionHash(tx)
     }
 
     calculateLogsBloom(block: GetBlock, logs: Log[]) {

@@ -977,6 +977,12 @@
       "versionPolicyName": "docker"
     },
     {
+      "packageName": "@subsquid/util-internal-dump-stream",
+      "projectFolder": "util/util-internal-dump-stream",
+      "shouldPublish": true,
+      "versionPolicyName": "docker"
+    },
+    {
       "packageName": "@subsquid/util-internal-fs",
       "projectFolder": "util/util-internal-fs",
       "shouldPublish": true,

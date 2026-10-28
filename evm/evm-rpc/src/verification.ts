@@ -770,6 +770,14 @@ export async function transactionsRoot(transactions: Transaction[]) {
 }
 
 
+/**
+ * The hash of a transaction is the hash of the same encoding the transactions root covers
+ */
+export function transactionHash(tx: Transaction): Bytes32 {
+    return toHex(keccak256(encodeTransaction(tx)))
+}
+
+
 function decodeLogs(logs: Log[]) {
     return logs.map(log => [
         decodeHex(log.address),
