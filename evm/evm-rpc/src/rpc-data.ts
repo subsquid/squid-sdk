@@ -61,7 +61,7 @@ export type EIP7702Authorization = GetSrcType<typeof EIP7702Authorization>
 export const FrontierEIP7702Authorization = object({
     chain_id: NAT,
     address: BYTES,
-    nonce: SMALL_QTY,
+    nonce: QTY,
     signature: object({
         odd_y_parity: BOOLEAN,
         r: BYTES,
@@ -183,7 +183,7 @@ export type TempoSignatureObject = TempoPrimitiveSignature | TempoKeychainSignat
 export const TempoSignedAuthorization = object({
     chainId: QTY,
     address: BYTES,
-    nonce: SMALL_QTY,
+    nonce: QTY,
     signature: TempoSignatureObject,
 })
 

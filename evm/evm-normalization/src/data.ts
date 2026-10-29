@@ -1,6 +1,21 @@
 import {Bytes, Bytes8, Bytes20, Bytes32, Qty} from '@subsquid/evm-rpc'
 
 
+/**
+ * A `JSON.rawJSON` value: `JSON.stringify` writes its text as is.
+ */
+export interface RawJSON {
+    readonly rawJSON: string
+}
+
+
+/**
+ * An unsigned 64-bit integer. Values above `Number.MAX_SAFE_INTEGER` are raw JSON
+ * numbers, so the serialized block keeps every digit.
+ */
+export type Uint64 = number | RawJSON
+
+
 export interface Withdrawal {
     address: Bytes20,
     amount: Qty,
@@ -138,7 +153,7 @@ export type TempoSignature = TempoPrimitiveSignature | TempoKeychainSignature
 export interface TempoSignedAuthorization {
     chainId: Qty,
     address: Bytes20,
-    nonce: number,
+    nonce: Uint64,
     signature: TempoSignature
 }
 
@@ -186,7 +201,7 @@ export interface TempoFeePayerSignature {
 export interface Transaction {
     transactionIndex: number,
     hash: Bytes32,
-    nonce: number,
+    nonce: Uint64,
     from: Bytes20,
     to?: Bytes20,
     // Optional for Tempo 0x76 transactions which use batched `calls` instead of `input`
