@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-json",
+      "comment": "Pass JSON.rawJSON values through toJSON unchanged",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-json"
+}

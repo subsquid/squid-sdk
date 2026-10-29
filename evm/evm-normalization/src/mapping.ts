@@ -27,7 +27,9 @@ import {
     TraceSelfdestructAction,
     StateDiff,
     TraceCreateResult,
-    TraceCallResult
+    TraceCallResult,
+    RawJSON,
+    Uint64
 } from './data'
 import {RawBlock} from './raw'
 
@@ -35,6 +37,26 @@ import {RawBlock} from './raw'
 function safeQty2Int(qty: string): number | undefined {
     let i = parseInt(qty, 16)
     return Number.isSafeInteger(i) ? i : undefined
+}
+
+
+const UINT64_MAX = 0xffffffffffffffffn
+
+// JSON.rawJSON (Node 21+) is missing from the TypeScript 5.5 lib.
+const rawJSON: (text: string) => RawJSON = (JSON as any).rawJSON
+
+
+// The archive writer reads these fields as a plain u64, so a value above 2^53
+// must reach it as a number, not as the string that a bigint serializes to.
+function qty2Uint64(qty: string): Uint64 {
+    let value = BigInt(qty)
+    assert(value <= UINT64_MAX)
+
+    if (value <= Number.MAX_SAFE_INTEGER) {
+        return Number(value)
+    }
+
+    return rawJSON(value.toString())
 }
 
 
@@ -533,7 +555,7 @@ function mapTempoSignedAuthorization(src: rpc.TempoSignedAuthorization): TempoSi
     return {
         chainId: src.chainId,
         address: src.address.toLowerCase(),
-        nonce: qty2Int(src.nonce),
+        nonce: qty2Uint64(src.nonce),
         signature: mapTempoSignature(src.signature),
     }
 }
@@ -593,7 +615,7 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
     return {
         transactionIndex: qty2Int(src.transactionIndex),
         hash: src.hash,
-        nonce: qty2Int(src.nonce),
+        nonce: qty2Uint64(src.nonce),
         from: src.from.toLowerCase(),
         to: src.to ? src.to.toLowerCase() : undefined,
         input: src.input ?? undefined,

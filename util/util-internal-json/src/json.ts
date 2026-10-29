@@ -1,6 +1,10 @@
 import {toHex} from "@subsquid/util-internal-hex"
 
 
+// JSON.isRawJSON (Node 21+) is missing from the TypeScript 5.5 lib.
+const isRawJSON: (val: object) => boolean = (JSON as any).isRawJSON ?? (() => false)
+
+
 export function toJSON(val: unknown): any {
     let json: any
     switch(typeof val) {
@@ -8,7 +12,10 @@ export function toJSON(val: unknown): any {
             return val.toString()
         case 'object':
             if (val == null) return null
-            if (val instanceof Uint8Array) {
+            if (isRawJSON(val)) {
+                // The property walk below would turn it into a plain {rawJSON} object.
+                return val
+            } else if (val instanceof Uint8Array) {
                 return toHex(val)
             } else if (val instanceof Date) {
                 return val.toISOString()

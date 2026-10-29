@@ -315,6 +315,25 @@ describe('Rpc Class Integration', () => {
             expect(blocks).toBeTruthy()
             expect(blocks.length).toEqual(1)
         })
+
+        it('accepts a Frontier EIP-7702 authorization nonce above 2^53', async () => {
+            // EIP-7702 bounds an authorization nonce only by 2^64 and skips a tuple whose
+            // nonce does not match, so any sender can put such a nonce into a valid transaction.
+            const fixtureBlock = loadBlock('bittensor-testnet', 6646068)
+            const tx = fixtureBlock.transactions[0] as any
+            tx.authorizationList[0].nonce = '0xffffffffffffffff'
+
+            const mockClient = new MockRpcClient()
+            mockClient.setFixture('eth_chainId', undefined, '0x3b1')
+            mockClient.setFixture('eth_getBlockByNumber', [toQty(6646068), true], fixtureBlock)
+
+            const rpc = new Rpc({
+                client: mockClient as any
+            })
+
+            const blocks = await rpc.getBlockBatch([6646068], { transactions: true })
+            expect(blocks.length).toEqual(1)
+        })
     })
 
 })
