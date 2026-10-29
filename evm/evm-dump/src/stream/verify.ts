@@ -44,8 +44,10 @@ export function createLineVerifier(utils: ChainUtils, options: ComponentOptions)
     }
 
     return async function verifyLine(block, expected) {
-        let hashDefect = findHashDefect(block, expected, utils)
-        if (hashDefect) return {reason: 'hash', details: hashDefect}
+        if (options.verifyBlockHash) {
+            let hashDefect = findHashDefect(block, expected, utils)
+            if (hashDefect) return {reason: 'hash', details: hashDefect}
+        }
 
         try {
             let defect =
@@ -93,6 +95,9 @@ function getSelection(options: ComponentOptions): Selection {
 /**
  * The header hash covers the number, the parent hash and every root of the block,
  * so a match with the trusted hash makes all of them authentic.
+ *
+ * Made only with `--verify-block-hash`, as on the RPC path. A chain whose header hash RPC fields do not give
+ * runs without it, and its blocks are taken for the hash and the parent hash they state, which `readLine()` has matched.
  */
 function findHashDefect(block: RawBlock, expected: BlockLink, utils: ChainUtils): string | undefined {
     let hash: string

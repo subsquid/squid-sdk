@@ -88,7 +88,13 @@ describe('stream options', () => {
     })
 
     it('warns about the parts nothing ties to the verified header', () => {
-        let {warnings} = openStream('--stream-url', 'nats://localhost:4222', '--stream-dataset', 'ethereum-mainnet')
+        let {warnings} = openStream(
+            '--stream-url',
+            'nats://localhost:4222',
+            '--stream-dataset',
+            'ethereum-mainnet',
+            '--verify-block-hash',
+        )
 
         expect(warnings).toHaveLength(1)
         expect(warnings[0]).toContain('--verify-tx-root')
@@ -101,6 +107,7 @@ describe('stream options', () => {
             'nats://localhost:4222',
             '--stream-dataset',
             'ethereum-mainnet',
+            '--verify-block-hash',
             '--verify-tx-root',
             '--verify-logs-bloom',
         )
@@ -109,12 +116,28 @@ describe('stream options', () => {
         expect(warnings[0]).toContain('logs (--with-receipts --verify-receipts-root)')
     })
 
+    it('warns about a header it does not hash', () => {
+        let {warnings} = openStream(
+            '--stream-url',
+            'nats://localhost:4222',
+            '--stream-dataset',
+            'ethereum-mainnet',
+            '--with-receipts',
+            '--verify-tx-root',
+            '--verify-receipts-root',
+        )
+
+        expect(warnings).toHaveLength(1)
+        expect(warnings[0]).toContain('--verify-block-hash')
+    })
+
     it('says nothing when a root covers every set', () => {
         let {warnings} = openStream(
             '--stream-url',
             'nats://localhost:4222',
             '--stream-dataset',
             'ethereum-mainnet',
+            '--verify-block-hash',
             '--with-receipts',
             '--verify-tx-root',
             '--verify-receipts-root',

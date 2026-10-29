@@ -139,9 +139,11 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         )
         addStreamOptions(
             program,
-            'The stream is not trusted: a block is taken only when its header hashes to the hash known from RPC, ' +
+            'The stream is not trusted: a block is taken only when it states the hash known from RPC, ' +
                 'down the parent links from the finalized head, and passes every --verify-* check that is on. ' +
-                'Any other block is fetched from RPC, which is every block of a chain whose header hashing is not supported. ' +
+                'With --verify-block-hash its header must also hash to that hash. Without it the header is taken as ' +
+                'the publisher states it, so leave it off only on a chain whose header hashing is not supported. ' +
+                'Any other block is fetched from RPC. ' +
                 'Transactions are tied to the header only by --verify-tx-root, receipts and logs only by ' +
                 '--with-receipts with --verify-receipts-root, a logs bloom covers just addresses and topics. ' +
                 'Call traces and state diffs can not be tied to the header at all, the same as with RPC.',
@@ -243,6 +245,13 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
             this.log().warn(
                 `nothing ties these parts of a streamed block to its verified header: ${unverified.join(', ')}. ` +
                     'A stream that changes, drops or adds them is not detected, turn the named options on to close the gap',
+            )
+        }
+
+        if (!options.verifyBlockHash) {
+            this.log().warn(
+                'a streamed header is not hashed without --verify-block-hash, ' +
+                    'below the top of a walk the stream is trusted for the hash and the parent hash each block states',
             )
         }
 

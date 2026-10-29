@@ -98,7 +98,7 @@ type GetResult = {msg: StreamMessage} | {miss: MissReason; error?: unknown}
 /**
  * Takes blocks from `req.top` down the parent links to `req.from`.
  *
- * A block is taken only when its header hashes to the hash it was asked by, which makes its parent hash
+ * A block is taken only when `req.verify` accepts it as the block it was asked by, which makes its parent hash
  * as trusted as its own. The walk stops at the first block that is absent or fails a check,
  * and short of its bottom when the payloads it holds fill `req.payloadBudget`.
  * Whether the bottom block links to what lies below the range is for the caller to check.

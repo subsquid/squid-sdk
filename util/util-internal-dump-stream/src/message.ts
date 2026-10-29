@@ -74,7 +74,7 @@ export interface LineFormat<B> {
  * Message headers tell, whether the message is what was asked for and where the chain goes next.
  *
  * Nothing here is trusted: `readLine()` checks the payload against the headers,
- * and the payload itself is only as good as the header hash recomputed from it.
+ * and the payload itself is only as good as the `LineVerifier` checks of it.
  */
 export function readHeaders<B>(
     msg: StreamMessage,

@@ -36,10 +36,13 @@ A dumper adds what only its chain knows.
   - `isHash`: accepts only a well formed hash. A parent hash goes into the next subject.
   - `normalizeHash` (optional): brings RPC and archive hashes to the form of the stream, e.g. lower case for EVM
   - `getRef`: the number, hash and parent hash a decoded block says it has
-- `LineVerifier<B>`: checks a decoded block against the trusted hash. It must recompute
-  the hash from the block, or the stream can give anything under a real hash. Every other
-  field the archive keeps, such as a transaction hash, must be recomputed or tied to that
-  hash as well.
+- `LineVerifier<B>`: checks a decoded block against the trusted hash. The stated hash and
+  parent hash are matched before it runs, but only a hash it recomputes from the block
+  authenticates the rest: without that the stream can give anything under a real hash,
+  and the parent hash the walk follows next is the publisher's word. Skip the recompute
+  only where the dumper takes headers on trust anyway, as `@subsquid/evm-dump` does
+  without `--verify-block-hash`. Every other field the archive keeps, such as a
+  transaction hash, must be recomputed or tied to that hash as well.
 - Heights must be consecutive: the parent of block `n` is block `n - 1`.
 - `RpcSource<B>`: the finalized head, the hash of a finalized block, and finalized blocks of a range.
 
