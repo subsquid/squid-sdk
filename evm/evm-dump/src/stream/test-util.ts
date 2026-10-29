@@ -83,7 +83,7 @@ export function makeChain(from: number, to: number, branch = 'main'): RawBlock[]
     return blocks
 }
 
-export const verifyTestLine = createLineVerifier(testChainUtils, {})
+export const verifyTestLine = createLineVerifier(testChainUtils, {verifyBlockHash: true})
 
 /**
  * A mainnet block with its receipts, the way a dumper running `--with-receipts` writes it

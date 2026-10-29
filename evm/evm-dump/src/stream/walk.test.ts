@@ -202,6 +202,49 @@ describe('walk', () => {
     })
 })
 
+describe('walk without --verify-block-hash', () => {
+    /**
+     * A chain whose header hashes RPC fields do not give, linked only by the hashes its blocks state
+     */
+    function makeUnhashableChain(from: number, to: number): RawBlock[] {
+        let chain = makeChain(from, to)
+        for (let i = 0; i < chain.length; i++) {
+            chain[i].hash = makeHash(`unhashable:${from + i}`)
+            if (i > 0) chain[i].parentHash = chain[i - 1].hash
+        }
+        return chain
+    }
+
+    it('follows the parent hashes the blocks state', async () => {
+        let chain = makeUnhashableChain(10, 14)
+        let stream = new FakeStream().putChain(chain)
+
+        let hashed = await walk(request(stream, 10, linkOf(chain[4])))
+        expect(hashed.miss).toMatchObject({number: 14, reason: 'hash'})
+
+        let res = await walk({
+            ...request(stream, 10, linkOf(chain[4])),
+            verify: createLineVerifier(testChainUtils, {}),
+        })
+
+        expect(res.miss).toBeUndefined()
+        expect(res.blocks.map((b) => b.hash)).toEqual(chain.map((b) => b.hash))
+    })
+
+    it('misses on a body that states another hash than its message', async () => {
+        let chain = makeUnhashableChain(10, 12)
+        let forged = forge(chain[1], {hash: makeHash('another header')})
+        let stream = new FakeStream().putChain(chain).putMessage(chain[1], makeMessage(forged, {hash: chain[1].hash}))
+
+        let res = await walk({
+            ...request(stream, 10, linkOf(chain[2])),
+            verify: createLineVerifier(testChainUtils, {}),
+        })
+
+        expect(res.miss).toMatchObject({number: 11, reason: 'link'})
+    })
+})
+
 /**
  * What anybody able to publish to the stream can do: the hash strings are real, the content is not
  */

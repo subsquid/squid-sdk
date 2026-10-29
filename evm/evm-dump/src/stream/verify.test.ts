@@ -34,7 +34,7 @@ function loadTracedBlock(): RawBlock {
 }
 
 function verify(block: RawBlock, options: ComponentOptions) {
-    let verifyLine = createLineVerifier(testChainUtils, options)
+    let verifyLine = createLineVerifier(testChainUtils, {verifyBlockHash: true, ...options})
     return verifyLine(block, linkOf(block))
 }
 
@@ -100,6 +100,47 @@ describe.each([false, true])('log associations with receipts=%s', (withReceipts)
         expect(await verify(block, options)).toMatchObject({
             reason: 'verify',
             details: expect.stringContaining('log is of another transaction'),
+        })
+    })
+})
+
+describe('a header without --verify-block-hash', () => {
+    const options: ComponentOptions = {withReceipts: true, verifyTxRoot: true, verifyReceiptsRoot: true}
+
+    /**
+     * A block of a chain whose header hash RPC fields do not give, the hash it states is all there is
+     */
+    function loadUnhashableBlock(): RawBlock {
+        let block = loadMainnetBlock()
+        let hash = makeHash('unhashable header')
+
+        block.hash = hash
+        for (let tx of block.transactions) {
+            tx.blockHash = hash
+            tx.receipt_!.blockHash = hash
+            for (let log of tx.receipt_!.logs) {
+                log.blockHash = hash
+            }
+        }
+
+        return block
+    }
+
+    it('is taken for the hash it states', async () => {
+        let block = loadUnhashableBlock()
+
+        expect(await verify(block, options)).toMatchObject({reason: 'hash'})
+        expect(await verify(block, {...options, verifyBlockHash: false})).toBeUndefined()
+    })
+
+    it('still ties the body to its roots', async () => {
+        let block = changeTransaction(loadUnhashableBlock(), 3, (tx) => {
+            tx.value = '0xde0b6b3a7640000'
+        })
+
+        expect(await verify(block, {...options, verifyBlockHash: false})).toMatchObject({
+            reason: 'verify',
+            details: 'failed to verify transactions root',
         })
     })
 })

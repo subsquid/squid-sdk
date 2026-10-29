@@ -34,8 +34,15 @@ budget, so publication lag does not continually move the recovery target. Blocks
 has already fetched are handed over before such a check starts, so the waiting budget
 never delays data that is in hand.
 
-Streamed headers are always checked against hashes obtained from RPC. Transaction,
-receipt, and log verification follows the enabled `--verify-*` options; traces and
+A walk starts from a block hash obtained from RPC and goes down the parent hashes.
+Each streamed block must state the hash the walk expects. With `--verify-block-hash`
+its header must also hash to that value, which authenticates every header field and
+so the parent hash the walk follows next. Without it the header, parent hash included,
+is taken as the publisher states it, the same trust the RPC path places in its endpoint.
+Leave the option off only on a chain whose header hashing is not supported; the dumper
+warns at startup when it is off.
+
+Transaction, receipt, and log verification follows the enabled `--verify-*` options; traces and
 state diffs cannot be authenticated by the header. Blocks must match the requested
 data components and continue the archived chain. Archive layout and output
 compression are independent of the source used to obtain each block.
