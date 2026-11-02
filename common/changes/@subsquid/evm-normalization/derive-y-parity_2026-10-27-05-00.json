@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-normalization",
+      "comment": "take `yParity` of an EIP-2930, EIP-1559, EIP-4844 or EIP-7702 transaction from `v` when the node leaves it out",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-normalization"
+}
