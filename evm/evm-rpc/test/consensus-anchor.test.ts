@@ -215,6 +215,32 @@ describe('consensus anchors on damaged data', () => {
         expect(rulesViolated(input(c, 'replay'))).toEqual(['gas'])
     })
 
+    // the fee rule reads the BSC fixture's state diff, which has nothing to do with these edits
+    let statusAndGas = (c: Case) =>
+        checkConsensusAnchors(input(c, 'replay'), new Set<ConsensusAnchorRule>(['status', 'gas'])).map((v) => v.rule)
+
+    it('takes no gas anchor from a zero-priced transaction whose receipt reports no gas', () => {
+        // A HyperEVM HyperCore system transaction: gas price 0, not sent by the miner, receipt
+        // gasUsed 0, while its root frame uses gas.
+        let c = caseAt(35774034, 1)
+        c.transaction.gasPrice = '0x0'
+        c.receipt.gasUsed = '0x0'
+        c.callFrame.gasUsed = '0xa57a'
+        expect(statusAndGas(c)).toEqual([])
+        c.callFrame.gasUsed = undefined
+        expect(statusAndGas(c)).toEqual([])
+        // its status is still checked
+        c.callFrame.error = 'execution reverted'
+        expect(statusAndGas(c)).toEqual(['status'])
+    })
+
+    it('still compares a zero-priced transaction whose receipt reports gas', () => {
+        let c = caseAt(35774034, 1)
+        c.transaction.gasPrice = '0x0'
+        c.callFrame.gasUsed = '0x1'
+        expect(statusAndGas(c)).toEqual(['gas'])
+    })
+
     it('skips the fee rule without a state diff', () => {
         let c = caseAt(120000000, 5)
         expect(checkConsensusAnchors({...input(c, 'replay'), systemBalanceDelta: undefined}, ALL_RULES)).toEqual([])
