@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "consensus anchors: the `gas` rule skips a zero-priced transaction whose receipt reports no gas (HyperEVM HyperCore system transactions)",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}

@@ -1408,13 +1408,22 @@ export function checkConsensusAnchors(
         transaction.gasPrice != null &&
         toBigInt(transaction.gasPrice) === 0n
 
+    // A transaction that pays nothing and whose receipt reports no gas has no gas anchor: the
+    // receipt does not measure its execution. HyperEVM's HyperCore system transactions are such
+    // (gas price 0, not sent by the miner, receipt gasUsed 0 while the root frame uses gas).
+    let hasGasAnchor =
+        isSystem ||
+        transaction.gasPrice == null ||
+        toBigInt(transaction.gasPrice) !== 0n ||
+        BigInt(receipt.gasUsed) !== 0n
+
     // A missing call frame, or a root STOP, carries no execution to compare. Accepting it
     // would let any trace pass by being replaced with one, so the first selected rule
     // that applies to this transaction reports it.
     if (root == null || root.type === 'STOP') {
         let applicable: ConsensusAnchorRule[] = [
             ...(receipt.status != null ? ['status' as const] : []),
-            isSystem ? 'system-gas' : 'gas',
+            ...(isSystem ? ['system-gas' as const] : hasGasAnchor ? ['gas' as const] : []),
             ...(input.systemBalanceDelta !== undefined ? ['system-fee' as const] : [])
         ]
         let rule = applicable.find(r => rules.has(r))
@@ -1431,7 +1440,7 @@ export function checkConsensusAnchors(
     let receiptGasUsed = BigInt(receipt.gasUsed)
     let rootGasUsed = root.gasUsed != null ? toBigInt(root.gasUsed) : undefined
 
-    if ((rules.has('gas') && !isSystem) || (rules.has('system-gas') && isSystem)) {
+    if ((rules.has('gas') && !isSystem && hasGasAnchor) || (rules.has('system-gas') && isSystem)) {
         if (rootGasUsed == null) {
             violations.push({
                 rule: isSystem ? 'system-gas' : 'gas',
@@ -1452,7 +1461,7 @@ export function checkConsensusAnchors(
         }
     }
 
-    if (rules.has('gas') && !isSystem && rootGasUsed != null && rootGasUsed !== receiptGasUsed) {
+    if (rules.has('gas') && !isSystem && hasGasAnchor && rootGasUsed != null && rootGasUsed !== receiptGasUsed) {
         violations.push({
             rule: 'gas',
             expected: `root gasUsed ${receiptGasUsed}`,
