@@ -295,3 +295,129 @@ describe('call frames of a stream block', () => {
         expect(await verify(makeBlock(0), {withTraces: true})).toBeUndefined()
     })
 })
+
+describe('consensus anchors of a stream block', () => {
+    /**
+     * A mainnet block with receipts and call frames, each root frame agreeing with its receipt
+     */
+    function loadAnchoredBlock(): RawBlock {
+        let block = loadMainnetBlock()
+        for (let tx of block.transactions) {
+            tx.debugFrame_ = {
+                txHash: tx.hash,
+                result: {
+                    type: tx.to == null ? 'CREATE' : 'CALL',
+                    from: tx.from,
+                    to: tx.to ?? `0x${'11'.repeat(20)}`,
+                    input: tx.input,
+                    value: tx.value,
+                    gas: tx.gas,
+                    gasUsed: tx.receipt_!.gasUsed,
+                    ...(Number(tx.receipt_!.status) == 0 ? {error: 'execution reverted'} : {}),
+                },
+            }
+        }
+        return block
+    }
+
+    const options: ComponentOptions = {withReceipts: true, withTraces: true, verifyReceiptsRoot: true}
+
+    function check(block: RawBlock, mode: string, rules?: ComponentOptions['consensusAnchorRules'], seen?: any[]) {
+        let verifyLine = createLineVerifier(
+            testChainUtils,
+            {verifyBlockHash: true, ...options, consensusAnchorValidation: mode, consensusAnchorRules: rules},
+            {onConsensusAnchorViolation: (o) => seen?.push(o)},
+        )
+        return verifyLine(block, linkOf(block))
+    }
+
+    it('take a block whose traces agree with the receipts', async () => {
+        let block = loadAnchoredBlock()
+        expect(await check(block, 'reject')).toBeUndefined()
+        expect(await check(block, 'reject', ['status', 'gas'])).toBeUndefined()
+    })
+
+    it('send a block whose root frame used other gas than its receipt to RPC under reject', async () => {
+        let block = changeTransaction(loadAnchoredBlock(), 5, (tx) => {
+            tx.debugFrame_!.result.gasUsed = '0x1'
+        })
+
+        expect(await check(block, 'reject')).toMatchObject({
+            reason: 'verify',
+            details: expect.stringContaining('consensus anchor violation (gas)'),
+        })
+        expect(await check(block, 'off')).toBeUndefined()
+    })
+
+    it('send a block whose root frame failed under a successful receipt to RPC under reject', async () => {
+        let block = changeTransaction(loadAnchoredBlock(), 5, (tx) => {
+            tx.debugFrame_!.result.error = 'execution reverted'
+        })
+
+        expect(await check(block, 'reject', ['status'])).toMatchObject({
+            reason: 'verify',
+            details: expect.stringContaining('consensus anchor violation (status)'),
+        })
+    })
+
+    it('take the block under observe and report each violating transaction', async () => {
+        let block = changeTransaction(loadAnchoredBlock(), 5, (tx) => {
+            tx.debugFrame_!.result.gasUsed = '0x1'
+        })
+        block = changeTransaction(block, 7, (tx) => {
+            tx.debugFrame_!.result.gasUsed = '0x2'
+        })
+
+        let seen: any[] = []
+        expect(await check(block, 'observe', undefined, seen)).toBeUndefined()
+        expect(seen.map((o) => o.transactionIndex)).toEqual([5, 7])
+        expect(seen[0]).toMatchObject({
+            blockNumber: Number(block.number),
+            transactionHash: block.transactions[5].hash,
+            violations: [{rule: 'gas'}],
+        })
+    })
+
+    it('leave a zero-priced transaction with a zero-gas receipt out of the gas rule', async () => {
+        // HyperEVM's HyperCore system transactions: gas price 0, receipt gasUsed 0, a root frame that uses gas.
+        // Receipts root and cumulative gas checks are off, so changing the receipt only touches the anchor.
+        let block = changeTransaction(loadAnchoredBlock(), 5, (tx) => {
+            tx.debugFrame_!.result.gasUsed = '0x5208'
+        })
+        let verifyLine = createLineVerifier(testChainUtils, {
+            verifyBlockHash: true,
+            withReceipts: true,
+            withTraces: true,
+            skipCumulativeGasUsedCheck: true,
+            consensusAnchorValidation: 'reject',
+        })
+        let tx = block.transactions[5]
+        tx.receipt_!.gasUsed = '0x0'
+        tx.gasPrice = '0x1'
+        expect(await verifyLine(block, linkOf(block))).toMatchObject({
+            details: expect.stringContaining('consensus anchor violation (gas)'),
+        })
+        tx.gasPrice = '0x0'
+        expect(await verifyLine(block, linkOf(block))).toBeUndefined()
+    })
+
+    it('need receipts and call frames', () => {
+        expect(() =>
+            createLineVerifier(testChainUtils, {withTraces: true, consensusAnchorValidation: 'reject'}),
+        ).toThrow('consensus anchor validation needs receipts and debug call frames')
+        expect(() =>
+            createLineVerifier(testChainUtils, {withReceipts: true, consensusAnchorValidation: 'observe'}),
+        ).toThrow('consensus anchor validation needs receipts and debug call frames')
+    })
+
+    it('are not checked in a genesis block', async () => {
+        let verifyLine = createLineVerifier(testChainUtils, {
+            withReceipts: true,
+            withTraces: true,
+            consensusAnchorValidation: 'reject',
+        })
+        let genesis = makeBlock(0)
+        genesis.logs_ = undefined
+        expect(await verifyLine(genesis, linkOf(genesis))).toBeUndefined()
+    })
+})

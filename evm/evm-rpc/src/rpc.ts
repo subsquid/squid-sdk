@@ -38,6 +38,7 @@ import {
     checkConsensusAnchors,
     checkDebugFrameStructure,
     CONSENSUS_ANCHOR_RULES,
+    type ConsensusAnchorInput,
     type ConsensusAnchorRule,
     type ConsensusAnchorViolation,
     DefectiveSelfdestruct,
@@ -75,6 +76,15 @@ export const CONSENSUS_ANCHOR_VALIDATION_MODES = ['off', 'observe', 'reject'] as
 export type ConsensusAnchorValidationMode = (typeof CONSENSUS_ANCHOR_VALIDATION_MODES)[number]
 
 export { CONSENSUS_ANCHOR_RULES, type ConsensusAnchorRule }
+
+// For checks of blocks that did not come through `Rpc`, such as a dumper's streamed blocks
+export {
+    checkConsensusAnchors,
+    type ConsensusAnchorInput,
+    type ConsensusAnchorViolation,
+    systemBalanceDeltaFromPrestate,
+    systemBalanceDeltaFromReplay,
+}
 
 export const DEFAULT_CONSENSUS_ANCHOR_RULES: readonly ConsensusAnchorRule[] = ['status', 'gas']
 

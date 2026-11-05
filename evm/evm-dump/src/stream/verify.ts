@@ -5,13 +5,20 @@ import {
     checkBlockHeader,
     checkBlockLogs,
     checkBlockReceipts,
+    checkConsensusAnchors,
     checkStoredDebugFrame,
+    type ConsensusAnchorRule,
+    type ConsensusAnchorViolation,
+    DEFAULT_CONSENSUS_ANCHOR_RULES,
     DebugFrameResult,
     DebugStateDiffResult,
     GetBlock,
     getTraceTransactionReplayValidator,
     Log,
+    qty2Int,
     Receipt,
+    systemBalanceDeltaFromPrestate,
+    systemBalanceDeltaFromReplay,
 } from '@subsquid/evm-rpc'
 import type {BlockLink, LineVerifier} from '@subsquid/util-internal-dump-stream'
 import type {ComponentOptions} from './components'
@@ -28,9 +35,40 @@ interface Selection {
     traceReplay?: Validator
 }
 
-export function createLineVerifier(utils: ChainUtils, options: ComponentOptions): LineVerifier<RawBlock> {
+/**
+ * The consensus anchor violations of one transaction of a streamed block
+ */
+export interface ConsensusAnchorObservation {
+    blockNumber: number
+    blockHash: string
+    transactionIndex: number
+    transactionHash: string
+    violations: ConsensusAnchorViolation[]
+}
+
+export interface LineVerifierHooks {
+    /**
+     * Called with `--consensus-anchor-validation observe` for a streamed block that violates
+     * a rule, once for each violating transaction. The block is taken.
+     */
+    onConsensusAnchorViolation?(observation: ConsensusAnchorObservation): void
+}
+
+export function createLineVerifier(
+    utils: ChainUtils,
+    options: ComponentOptions,
+    hooks: LineVerifierHooks = {},
+): LineVerifier<RawBlock> {
     let selection = getSelection(options)
     let withCallFrameTree = options.callFrameValidation == 'reject'
+
+    let anchorMode = options.consensusAnchorValidation ?? 'off'
+    let anchorRules = new Set<ConsensusAnchorRule>(options.consensusAnchorRules ?? DEFAULT_CONSENSUS_ANCHOR_RULES)
+    if (anchorMode != 'off' && (!selection.receipts || !selection.debugFrames)) {
+        // The same requirement the dumper puts on its RPC path: a block that cannot be checked
+        // must not pass as checked
+        throw new Error('consensus anchor validation needs receipts and debug call frames')
+    }
 
     let checks: BlockCheckOptions = {
         verifyExtDataHash: options.verifyExtDataHash,
@@ -69,10 +107,88 @@ export function createLineVerifier(utils: ChainUtils, options: ComponentOptions)
             } else {
                 checkBlockLogs(block, block.logs_!, utils, checks)
             }
+
+            if (anchorMode != 'off') {
+                let found = findConsensusAnchorViolations(block, anchorRules, selection, !!options.withStatediffs)
+                if (found.length > 0 && anchorMode == 'reject') {
+                    // A miss: the block goes to RPC, whose checks reject and re-fetch it the same way
+                    let {transactionHash, violations} = found[0]
+                    let v = violations[0]
+                    return {
+                        reason: 'verify',
+                        details:
+                            `consensus anchor violation (${v.rule}) for transaction ${transactionHash}: ` +
+                            `expected ${v.expected}, got ${v.actual}`,
+                    }
+                }
+                for (let observation of found) {
+                    hooks.onConsensusAnchorViolation?.(observation)
+                }
+            }
         } catch (err: any) {
             return {reason: 'verify', details: String(err?.message ?? err)}
         }
     }
+}
+
+/**
+ * The rules `Rpc` applies to the blocks it fetches, applied to a streamed block: each transaction's
+ * root call frame, and its state diff when the dumper takes state diffs, against its receipt
+ */
+function findConsensusAnchorViolations(
+    block: RawBlock,
+    rules: ReadonlySet<ConsensusAnchorRule>,
+    selection: Selection,
+    withStatediffs: boolean,
+): ConsensusAnchorObservation[] {
+    let number = Number(block.number)
+    if (number == 0) return []
+
+    let found: ConsensusAnchorObservation[] = []
+    for (let i = 0; i < block.transactions.length; i++) {
+        let tx = block.transactions[i]
+        // The shape check has made sure every transaction has its receipt
+        let receipt = tx.receipt_!
+
+        // `null`: state diffs are taken, but there is none for this transaction
+        let systemBalanceDelta: bigint | null | undefined = withStatediffs ? null : undefined
+        if (selection.debugStateDiffs) {
+            let diff = tx.debugStateDiff_
+            if (diff != null && (diff.txHash == null || diff.txHash.toLowerCase() === tx.hash.toLowerCase())) {
+                systemBalanceDelta = systemBalanceDeltaFromPrestate(diff.result)
+            }
+        } else if (withStatediffs && tx.traceReplay_?.stateDiff != null) {
+            systemBalanceDelta = systemBalanceDeltaFromReplay(tx.traceReplay_.stateDiff)
+        }
+
+        let violations = checkConsensusAnchors(
+            {
+                miner: block.miner,
+                transaction: tx,
+                receipt: {
+                    status: receipt.status != null ? qty2Int(receipt.status) : undefined,
+                    gasUsed: receipt.gasUsed,
+                    effectiveGasPrice: receipt.effectiveGasPrice,
+                    blobGasUsed: receipt.blobGasUsed,
+                    blobGasPrice: receipt.blobGasPrice,
+                },
+                root: tx.debugFrame_?.result,
+                systemBalanceDelta,
+            },
+            rules,
+        )
+
+        if (violations.length > 0) {
+            found.push({
+                blockNumber: number,
+                blockHash: block.hash,
+                transactionIndex: i,
+                transactionHash: tx.hash,
+                violations,
+            })
+        }
+    }
+    return found
 }
 
 function getSelection(options: ComponentOptions): Selection {

@@ -13,9 +13,11 @@ The dataset name accepts letters, digits, underscores, and hyphens. Stream reads
 require Node.js 22.15 or later with built-in zstd support. The stream must already
 contain messages in the supported raw block format; this tool does not publish them.
 
-The stream verifier does not make the block access list and consensus anchor checks
-yet, so the dumper refuses `--with-block-access-lists` and `--consensus-anchor-validation`
-together with a stream.
+The stream verifier makes the consensus anchor checks the RPC path makes. With
+`--consensus-anchor-validation reject`, a streamed block that violates a rule is fetched
+from RPC, where the same checks apply; with `observe`, it is taken and the violation is
+logged. The stream verifier does not check block access lists yet, so the dumper refuses
+`--with-block-access-lists` together with a stream.
 
 If the selected finalized head is missing from the stream, the dumper retries that
 same block number and hash once per second before falling back to RPC. Advancing
