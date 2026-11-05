@@ -401,6 +401,107 @@ describe('consensus anchors of a stream block', () => {
         expect(await verifyLine(block, linkOf(block))).toBeUndefined()
     })
 
+    const SYS = '0xfffffffffffffffffffffffffffffffffffffffe'
+
+    function feeOf(tx: RawTransaction): bigint {
+        return BigInt(tx.receipt_!.gasUsed) * BigInt(tx.receipt_!.effectiveGasPrice ?? tx.gasPrice ?? '0x0')
+    }
+
+    /**
+     * Each transaction's state diff credits its fee to the system address, the way BSC does
+     */
+    function withFeeCredits(block: RawBlock, shape: 'replay' | 'prestate'): RawBlock {
+        for (let tx of block.transactions) {
+            let fee = '0x' + feeOf(tx).toString(16)
+            if (shape == 'replay') {
+                tx.traceReplay_ = {
+                    transactionHash: tx.hash,
+                    stateDiff: {[SYS]: {balance: {'*': {from: '0x0', to: fee}}, code: '=', nonce: '=', storage: {}}},
+                } as any
+            } else {
+                tx.debugStateDiff_ = {
+                    txHash: tx.hash,
+                    result: {pre: {[SYS]: {balance: '0x0'}}, post: {[SYS]: {balance: fee}}},
+                }
+            }
+        }
+        return block
+    }
+
+    function withCredit(tx: RawTransaction, shape: 'replay' | 'prestate', credit: bigint): void {
+        let value = '0x' + credit.toString(16)
+        if (shape == 'replay') {
+            ;(tx.traceReplay_ as any).stateDiff[SYS].balance = {'*': {from: '0x0', to: value}}
+        } else {
+            tx.debugStateDiff_!.result.post[SYS].balance = value
+        }
+    }
+
+    describe.each(['replay', 'prestate'] as const)('with %s state diffs', (shape) => {
+        const diffOptions: ComponentOptions = {
+            ...options,
+            withStatediffs: true,
+            useDebugApiForStatediffs: shape == 'prestate',
+        }
+        const rules: ComponentOptions['consensusAnchorRules'] = ['status', 'gas', 'system-fee']
+
+        function checkDiffs(block: RawBlock, mode: string, seen?: any[]) {
+            let verifyLine = createLineVerifier(
+                testChainUtils,
+                {verifyBlockHash: true, ...diffOptions, consensusAnchorValidation: mode, consensusAnchorRules: rules},
+                {onConsensusAnchorViolation: (o) => seen?.push(o)},
+            )
+            return verifyLine(block, linkOf(block))
+        }
+
+        it('take a block whose system-address credits equal the fees', async () => {
+            expect(await checkDiffs(withFeeCredits(loadAnchoredBlock(), shape), 'reject')).toBeUndefined()
+        })
+
+        it('send a block with a wrong credit to RPC under reject, and report it under observe', async () => {
+            let block = changeTransaction(withFeeCredits(loadAnchoredBlock(), shape), 5, (tx) => {
+                withCredit(tx, shape, feeOf(tx) + 1n)
+            })
+
+            expect(await checkDiffs(block, 'reject')).toMatchObject({
+                reason: 'verify',
+                details: expect.stringContaining('consensus anchor violation (system-fee)'),
+            })
+
+            let seen: any[] = []
+            expect(await checkDiffs(block, 'observe', seen)).toBeUndefined()
+            expect(seen).toMatchObject([{transactionIndex: 5, violations: [{rule: 'system-fee'}]}])
+        })
+
+        it('send a block whose diff leaves the credit out to RPC', async () => {
+            let block = changeTransaction(withFeeCredits(loadAnchoredBlock(), shape), 5, (tx) => {
+                if (shape == 'replay') {
+                    ;(tx.traceReplay_ as any).stateDiff = {}
+                } else {
+                    tx.debugStateDiff_!.result = {pre: {}, post: {}}
+                }
+            })
+
+            expect(feeOf(block.transactions[5])).toBeGreaterThan(0n)
+            expect(await checkDiffs(block, 'reject')).toMatchObject({
+                details: expect.stringContaining('consensus anchor violation (system-fee)'),
+            })
+        })
+
+        it('send a block whose prestate diff is of another transaction to RPC', async () => {
+            if (shape != 'prestate') return
+            let block = changeTransaction(withFeeCredits(loadAnchoredBlock(), shape), 5, (tx) => {
+                tx.debugStateDiff_!.txHash = makeHash('another transaction')
+            })
+            // The link check sends it to RPC before the anchors are looked at
+            expect(await checkDiffs(block, 'reject')).toMatchObject({reason: 'verify'})
+        })
+    })
+
+    it('leave the system-fee rule out when the dumper takes no state diffs', async () => {
+        expect(await check(loadAnchoredBlock(), 'reject', ['status', 'gas', 'system-fee'])).toBeUndefined()
+    })
+
     it('need receipts and call frames', () => {
         expect(() =>
             createLineVerifier(testChainUtils, {withTraces: true, consensusAnchorValidation: 'reject'}),
