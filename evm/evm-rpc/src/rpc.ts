@@ -481,12 +481,12 @@ export class Rpc {
     }
 
     private async addReceiptsByBlock(blocks: Block[]) {
-        let call = blocks.map(block => ({
+        let call = (block: Block) => ({
             method: 'eth_getBlockReceipts',
             params: [block.block.number]
-        }))
+        })
 
-        let results = await this.reduceBatchOnRetry<Receipt[] | null | typeof RESPONSE_TOO_BIG>(call, {
+        let results = await this.callForTransactions<Receipt[] | null | typeof RESPONSE_TOO_BIG>(blocks, call, {
             validateResult: getResultValidator(nullable(array(Receipt))),
             validateError: info => {
                 if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
@@ -662,12 +662,12 @@ export class Rpc {
         // universally supported (e.g. Alchemy silently responds with just the
         // reward frame). Reorg consistency is ensured by the frame.blockHash
         // check below.
-        let call = blocks.map(block => ({
+        let call = (block: Block) => ({
             method: 'trace_block',
             params: [block.block.number]
-        }))
+        })
 
-        let results = await this.reduceBatchOnRetry(call, {
+        let results = await this.callForTransactions(blocks, call, {
             validateResult: getResultValidator(array(TraceFrame))
         })
 
@@ -719,7 +719,7 @@ export class Rpc {
             timeout: req.debugTraceTimeout
         }
 
-        let call = blocks.map(block => {
+        let call = (block: Block) => {
             if (req.useDebugTraceBlockByNumber) {
                 return {
                     method: 'debug_traceBlockByNumber',
@@ -731,9 +731,9 @@ export class Rpc {
                     params: [block.hash, traceConfig]
                 }
             }
-        })
+        }
 
-        let results = await this.reduceBatchOnRetry<DebugStateDiffResult[] | null | typeof RESPONSE_TOO_BIG>(call, {
+        let results = await this.callForTransactions<DebugStateDiffResult[] | null | typeof RESPONSE_TOO_BIG>(blocks, call, {
             validateResult: getResultValidator(array(DebugStateDiffResult)),
             validateError: info => {
                 if (info.message.includes('not found')) return null
@@ -801,7 +801,7 @@ export class Rpc {
             delete (traceConfig as any).tracerConfig
         }
 
-        let call = blocks.map(block => {
+        let call = (block: Block) => {
             if (req.useDebugTraceBlockByNumber) {
                 return {
                     method: 'debug_traceBlockByNumber',
@@ -813,9 +813,9 @@ export class Rpc {
                     params: [block.hash, traceConfig]
                 }
             }
-        })
+        }
 
-        let results = await this.reduceBatchOnRetry<MaybeEmptyDebugFrameResult[] | null | typeof RESPONSE_TOO_BIG>(call, {
+        let results = await this.callForTransactions<MaybeEmptyDebugFrameResult[] | null | typeof RESPONSE_TOO_BIG>(blocks, call, {
             validateResult: result => {
                 if (Array.isArray(result)) {
                     // Moonbeam quirk
@@ -1350,12 +1350,12 @@ export class Rpc {
 
         if (tracers.length == 0) return
 
-        let call = blocks.map(block => ({
+        let call = (block: Block) => ({
             method: 'trace_replayBlockTransactions',
             params: [block.block.hash, tracers]
-        }))
+        })
 
-        let replaysByBlock = await this.reduceBatchOnRetry(call, {
+        let replaysByBlock = await this.callForTransactions(blocks, call, {
             validateResult: getResultValidator(
                 nullable(array(getTraceTransactionReplayValidator(traces)))
             )
@@ -1394,6 +1394,55 @@ export class Rpc {
 
             block.traceReplays = replays
         }
+    }
+
+    /**
+     * Makes the call of each block, except for a block the transactions root proves empty, which gets `[]`.
+     *
+     * Receipts, traces and state diffs are per transaction: for a block without transactions the code after
+     * these calls either reduces an answer to `[]` or rejects it, so asking would change nothing.
+     */
+    private async callForTransactions<T>(
+        blocks: Block[],
+        getCall: (block: Block) => { method: string, params?: any[] },
+        options: CallOptions<T>
+    ): Promise<(T | [])[]> {
+        let results: (T | [])[] = new Array(blocks.length)
+        let asked: number[] = []
+
+        for (let i = 0; i < blocks.length; i++) {
+            let isEmpty = await this.isProvenEmpty(blocks[i])
+            if (isEmpty) {
+                results[i] = []
+            } else {
+                asked.push(i)
+            }
+        }
+
+        if (asked.length == 0) return results
+
+        let answers = await this.reduceBatchOnRetry(asked.map(i => getCall(blocks[i])), options)
+        for (let j = 0; j < asked.length; j++) {
+            results[asked[j]] = answers[j]
+        }
+
+        return results
+    }
+
+    /**
+     * Without the transactions root check, or on a chain whose root can't be calculated, an empty list
+     * is the provider's word, and only the receipts or traces of the missing transactions would expose it
+     */
+    private async isProvenEmpty(block: Block): Promise<boolean> {
+        if (!this.checks.verifyTxRoot) return false
+        if (block.block.transactions.length > 0) return false
+
+        let utils = await this.getChainUtils()
+        let transactions = utils.getRootTransactions(block.block)
+        if (transactions == null) return false
+
+        let root = await utils.calculateTransactionsRoot(block.block)
+        return root === block.block.transactionsRoot
     }
 
     private async reduceBatchOnRetry<T = any>(batch: { method: string, params?: any[] }[], options: CallOptions<T>): Promise<T[]> {
