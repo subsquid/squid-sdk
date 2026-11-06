@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-dump",
+      "comment": "the stream verifier makes the consensus anchor checks, so `--consensus-anchor-validation` works with `--stream-url`: under `reject` a violating streamed block is fetched from RPC, under `observe` it is taken and logged",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-dump"
+}

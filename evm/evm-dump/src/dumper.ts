@@ -260,7 +260,15 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
             connect: () => connectNatsStream({url, dataset, name: 'evm-dump'}),
             format: getLineFormat(options),
             // The chain id is asked for once, `Rpc` remembers it
-            getVerifier: async () => createLineVerifier(await rpc.getChainUtils(), options),
+            getVerifier: async () =>
+                createLineVerifier(await rpc.getChainUtils(), options, {
+                    onConsensusAnchorViolation: (observation) => {
+                        this.log().warn(
+                            observation,
+                            'consensus anchor violation observed in a streamed block; block accepted',
+                        )
+                    },
+                }),
             headPollInterval: options.headPollInterval ?? 1000,
             waitTimeout: stream.waitTimeout,
             metrics: createStreamMetrics(this.prometheus()),
@@ -288,11 +296,6 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
 function assertStreamInputs(options: Options): void {
     if (options.withBlockAccessLists) {
         throw new ErrorMessage('--stream-url does not support --with-block-access-lists yet')
-    }
-
-    let isAnchorValidationOn = (options.consensusAnchorValidation ?? 'off') !== 'off'
-    if (isAnchorValidationOn) {
-        throw new ErrorMessage('--stream-url does not support --consensus-anchor-validation yet')
     }
 }
 

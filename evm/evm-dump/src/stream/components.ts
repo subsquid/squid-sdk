@@ -1,3 +1,4 @@
+import type {ConsensusAnchorRule} from '@subsquid/evm-rpc'
 import type {ComponentsRule} from '@subsquid/util-internal-dump-stream'
 
 /**
@@ -17,6 +18,8 @@ export interface ComponentOptions {
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
     callFrameValidation?: string
+    consensusAnchorValidation?: string
+    consensusAnchorRules?: readonly ConsensusAnchorRule[]
     skipLogIndexCheck?: boolean
     skipCumulativeGasUsedCheck?: boolean
     useGasUsedForReceiptsRoot?: boolean

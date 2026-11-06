@@ -146,19 +146,41 @@ describe('stream options', () => {
         expect(warnings).toEqual([])
     })
 
-    it.each([
-        [['--with-block-access-lists'], '--with-block-access-lists'],
-        [
-            ['--with-traces', '--with-receipts', '--consensus-anchor-validation', 'observe'],
-            '--consensus-anchor-validation',
-        ],
-    ])('rejects %j, that the stream does not check yet', (args, option) => {
+    it('rejects --with-block-access-lists, that the stream does not check yet', () => {
         let open = () =>
-            getRawStream('--stream-url', 'nats://localhost:4222', '--stream-dataset', 'ethereum-mainnet', ...args)
+            getRawStream(
+                '--stream-url',
+                'nats://localhost:4222',
+                '--stream-dataset',
+                'ethereum-mainnet',
+                '--with-block-access-lists',
+            )
 
         expect(open).toThrow(ErrorMessage)
-        expect(open).toThrow(`--stream-url does not support ${option} yet`)
+        expect(open).toThrow('--stream-url does not support --with-block-access-lists yet')
     })
+
+    it.each(['observe', 'reject'])(
+        'takes --consensus-anchor-validation %s, that the stream verifier checks',
+        (mode) => {
+            let open = () =>
+                getRawStream(
+                    '--stream-url',
+                    'nats://localhost:4222',
+                    '--stream-dataset',
+                    'ethereum-mainnet',
+                    '--with-traces',
+                    '--with-receipts',
+                    '--verify-receipts-root',
+                    '--verify-tx-root',
+                    '--verify-tx-sender',
+                    '--consensus-anchor-validation',
+                    mode,
+                )
+
+            expect(open).not.toThrow()
+        },
+    )
 
     it('names the Node.js version it needs', () => {
         zlib.zstdDecompressSync = undefined as any
