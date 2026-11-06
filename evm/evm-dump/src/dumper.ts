@@ -59,7 +59,12 @@ interface Options extends DumperOptions, StreamOptions {
     skipLogIndexCheck?: boolean
     skipCumulativeGasUsedCheck?: boolean
     useGasUsedForReceiptsRoot?: boolean
+    deriveTotalDifficulty?: boolean
+    parentTotalDifficulty?: bigint
 }
+
+// A warning about the provider's totalDifficulty disagreeing with the derived one, at most this often
+const TD_MISMATCH_WARNING_INTERVAL_MS = 10 * 60 * 1000
 
 export class EvmDumper extends Dumper<RawBlock, Options> {
     protected setUpProgram(program: Command): void {
@@ -136,6 +141,26 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.option(
             '--use-gas-used-for-receipts-root',
             'Use gasUsed instead of cumulativeGasUsed for receipts root calculation',
+        )
+        program.option(
+            '--derive-total-difficulty',
+            "Write each block's totalDifficulty as its parent's plus its difficulty, in place of what the provider " +
+                "returns (providers leave it out or count it from a snapshot). The parent's is read from the archive; " +
+                'a dump that starts at genesis starts from 0',
+        )
+        program.option(
+            '--parent-total-difficulty <qty>',
+            'With --derive-total-difficulty: the total difficulty of the block below the first one dumped, ' +
+                'when the archive does not hold it',
+            (value: string) => {
+                try {
+                    let td = BigInt(value)
+                    if (td < 0n) throw new Error()
+                    return td
+                } catch {
+                    throw new ErrorMessage(`--parent-total-difficulty: not a non-negative integer: ${value}`)
+                }
+            },
         )
         addStreamOptions(
             program,
@@ -277,6 +302,77 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
     }
 
     protected async *getBlocks(range: Range, prevHash?: string): AsyncIterable<RawBlock[]> {
+        let source = this.getSourceBlocks(range, prevHash)
+        if (!this.options().deriveTotalDifficulty) {
+            yield* source
+            return
+        }
+
+        let expected = range.from
+        let td = await this.getParentTotalDifficulty(range.from)
+        for await (let blocks of source) {
+            for (let block of blocks) {
+                let number = Number(block.number)
+                if (number !== expected) {
+                    throw new Error(`total difficulty is derived block by block, got block ${number} for ${expected}`)
+                }
+                td += BigInt(block.difficulty ?? '0x0')
+                if (block.totalDifficulty != null && BigInt(block.totalDifficulty) !== td) {
+                    this.countTotalDifficultyMismatch(number, block.totalDifficulty, td)
+                }
+                block.totalDifficulty = '0x' + td.toString(16)
+                expected += 1
+            }
+            if (blocks.length > 0) {
+                this.lastTotalDifficulty = {number: expected - 1, td}
+            }
+            yield blocks
+        }
+    }
+
+    private lastTotalDifficulty?: {number: number; td: bigint}
+    private tdMismatches = {count: 0, sinceWarning: 0, lastWarning: 0}
+
+    private async getParentTotalDifficulty(from: number): Promise<bigint> {
+        if (from === 0) return 0n
+        let parent = from - 1
+        if (this.lastTotalDifficulty?.number === parent) return this.lastTotalDifficulty.td
+
+        let archived = await this.getArchivedBlock(parent)
+        if (archived?.totalDifficulty != null) return BigInt(archived.totalDifficulty)
+
+        let given = this.options().parentTotalDifficulty
+        if (given != null) return given
+
+        let reason = archived ? 'the archived block has none' : 'the archive does not hold it'
+        throw new ErrorMessage(
+            `--derive-total-difficulty needs the total difficulty of block ${parent}, and ${reason}: ` +
+                'backfill it, or pass --parent-total-difficulty',
+        )
+    }
+
+    private countTotalDifficultyMismatch(number: number, given: string, derived: bigint): void {
+        let m = this.tdMismatches
+        m.count += 1
+        m.sinceWarning += 1
+        let now = Date.now()
+        if (m.lastWarning === 0 || now - m.lastWarning >= TD_MISMATCH_WARNING_INTERVAL_MS) {
+            this.log().warn(
+                {
+                    blockNumber: number,
+                    providerTotalDifficulty: given,
+                    derivedTotalDifficulty: '0x' + derived.toString(16),
+                    mismatchesSinceLastWarning: m.sinceWarning,
+                    mismatches: m.count,
+                },
+                "the provider's totalDifficulty differs from the derived one; the derived one is written",
+            )
+            m.sinceWarning = 0
+            m.lastWarning = now
+        }
+    }
+
+    private async *getSourceBlocks(range: Range, prevHash?: string): AsyncIterable<RawBlock[]> {
         let stream = this.rawStream()
         if (stream) {
             yield* stream.getBlocks(range, prevHash)
