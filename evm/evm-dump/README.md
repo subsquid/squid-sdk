@@ -62,3 +62,13 @@ blocks and stops short once they reach 64 MiB, and later walks are sized from th
 the last one has shown. Blocks are decompressed again when they are handed over, in batches
 of at most 128 MiB of decompressed lines, and a bigger block goes in a batch of its own.
 This bounds what the stream lane costs on any chain.
+
+## Total difficulty
+
+`--derive-total-difficulty` writes each block's `totalDifficulty` as its parent's plus its
+`difficulty`, in place of what the provider returns. Providers leave the field out on some chains, or
+count it from a snapshot of their own. The parent's total difficulty is read from the last block of the
+archive; a dump that starts at genesis starts from 0, and `--parent-total-difficulty <qty>` gives it when
+the archive does not hold it. When the parent's total difficulty is unknown the dumper stops rather
+than write a wrong one. A provider value that differs from the derived one is logged at most every ten
+minutes, with a count.

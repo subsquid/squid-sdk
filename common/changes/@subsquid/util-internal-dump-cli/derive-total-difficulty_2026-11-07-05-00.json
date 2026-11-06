@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "comment": "`Dumper.getArchivedBlock()`: read a block back from the destination archive",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-cli"
+}

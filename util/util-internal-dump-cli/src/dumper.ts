@@ -65,6 +65,23 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
     protected abstract getLastFinalizedBlockNumber(): Promise<number>
 
     protected abstract getParentBlockHash(block: B): string
+
+    /**
+     * The block with the given number as the destination archive holds it.
+     * Undefined without a destination, or when the archive does not hold the block.
+     */
+    protected async getArchivedBlock(number: number): Promise<B | undefined> {
+        if (this.options().dest == null) return undefined
+        let archive = new ArchiveLayout(this.destination(), {topDirSize: this.options().topDirSize})
+        for await (let chunk of archive.getDataChunks({from: number, to: number})) {
+            for await (let blocks of archive.readRawChunk<B>(chunk)) {
+                for (let block of blocks) {
+                    if (getBlockNumber(block) === number) return block
+                }
+            }
+        }
+        return undefined
+    }
     protected abstract getBlockTimestamp(block: B): number
 
     protected setUpProgram(program: Command): void {}
