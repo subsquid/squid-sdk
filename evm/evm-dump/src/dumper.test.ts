@@ -273,6 +273,14 @@ describe('--derive-total-difficulty', () => {
         await expect(collect(dumper, 5)).rejects.toThrow('the archived block has none')
     })
 
+    it('refuses a block without a difficulty, and takes an explicit 0x0', async () => {
+        let {dumper} = setUp(['--derive-total-difficulty'], [[block(0, '0x1'), {number: '0x1'}]])
+        await expect(collect(dumper, 0)).rejects.toThrow('block 1 has no difficulty')
+
+        let zero = setUp(['--derive-total-difficulty'], [[block(0, '0x1'), block(1, '0x0')]])
+        expect((await collect(zero.dumper, 0)).map((b) => b.totalDifficulty)).toEqual(['0x1', '0x1'])
+    })
+
     it('refuses a gap in the blocks', async () => {
         let {dumper} = setUp(['--derive-total-difficulty'], [[block(0, '0x1'), block(2, '0x1')]])
         await expect(collect(dumper, 0)).rejects.toThrow('got block 2 for 1')

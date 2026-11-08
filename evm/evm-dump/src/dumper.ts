@@ -316,7 +316,13 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 if (number !== expected) {
                     throw new Error(`total difficulty is derived block by block, got block ${number} for ${expected}`)
                 }
-                td += BigInt(block.difficulty ?? '0x0')
+                if (block.difficulty == null) {
+                    // A missing difficulty counted as 0 would undercount this block and every one after it
+                    throw new ErrorMessage(
+                        `--derive-total-difficulty: block ${number} has no difficulty, its total difficulty can not be derived`,
+                    )
+                }
+                td += BigInt(block.difficulty)
                 if (block.totalDifficulty != null && BigInt(block.totalDifficulty) !== td) {
                     this.countTotalDifficultyMismatch(number, block.totalDifficulty, td)
                 }
