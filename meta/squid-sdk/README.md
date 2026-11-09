@@ -90,6 +90,21 @@ validation and pick the right trace/state-diff method. Without either — an unk
 and no overrides — validation is off and dataset parity with the Portal is **not guaranteed**; the
 source logs a warning in that case rather than failing silently.
 
+Hung endpoints (connection accepted, no response) are bounded at two layers, so they fail over instead
+of stalling the processor:
+
+- **Per request:** `rpc` sources in a fallback default to `requestTimeout: 30_000` (ms; `0` disables).
+  A timed-out request errors and frees its client `capacity` slot. `retryAttempts` defaults to `0`:
+  failing over to the next source is the retry, and a large value would turn a hung endpoint back into
+  a stall inside the client. Standalone RPC sources accept the same two options but default to no
+  timeout.
+- **Active head:** the policy's `activeHeadTimeoutMs` (default `60_000`; `null` disables) bounds the
+  active source's `getHead()`/`getFinalizedHead()`, which the processor awaits before every batch. It
+  also covers `portal` and `custom` sources. A timeout counts as a liveness failure, so the source fails
+  over after `livenessFailThreshold` consecutive timeouts. Keep it above
+  `requestTimeout × (retryAttempts + 1)` so the client's own error fires first. It is separate from
+  `headPollTimeoutMs` (default `500`), which only bounds head polls of the standby sources.
+
 Semantic debug call-frame validation is controlled by `rpc.callFrameValidation`: `off` skips the
 heuristic, `observe` logs violations while accepting the block, and `reject` retries/rejects a
 violating block. Standard-validation presets use `observe` so network-specific tracer behavior can

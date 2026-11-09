@@ -134,11 +134,22 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * it clears the active state and waits out the all-down poll, retrying until a source recovers —
      * or throwing `AllSourcesDownError` once the all-down timeout elapses. It never completes
      * normally, so callers loop over it until they return a result or it throws.
+     *
+     * `exhausted` holds the sources the caller condemned during the current sweep (see
+     * {@link exhaust}); they are skipped until every other candidate has been tried. Without this, a
+     * failure that takes at least `cooldownMs` to surface (a request timeout) lets the first condemned
+     * source cool down while the next one is still failing, and the sweep restarts from index 0
+     * forever: `[hung A, hung B, healthy C]` never reaches C. Once no unexhausted candidate is left,
+     * the sweep starts over with every recovered source.
      */
-    private async *selectActive(): AsyncGenerator<number> {
+    private async *selectActive(exhausted: Set<number>): AsyncGenerator<number> {
         let allDownSince: number | undefined
         while (true) {
-            let active = this.selector.pickForFailover()
+            let active = this.selector.pickForFailover(exhausted)
+            if (active == null && exhausted.size > 0) {
+                exhausted.clear() // sweep complete: retry whatever has recovered since
+                active = this.selector.pickForFailover()
+            }
             if (active == null) {
                 this.clearActive()
                 if (await this.waitAllDown(allDownSince ?? (allDownSince = this.policy.clock()))) continue
@@ -158,7 +169,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
         this.#lagArmed = false
         this.#lastCommitted = lastNumber
 
-        for await (let active of this.selectActive()) {
+        let exhausted = new Set<number>()
+        for await (let active of this.selectActive(exhausted)) {
             this.setActive(active)
 
             let streamReq: StreamRequest = {from: lastNumber + 1, to: req.to, parentHash: lastHash}
@@ -177,6 +189,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                                 active,
                                 freshnessFailure('stream', 'stale', 'no batch progress while a fresher source was ahead'),
                             )
+                            this.exhaust(active, exhausted)
                             break
                         }
                         if (next.done) return // bounded stream finished
@@ -189,6 +202,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         // forever yet never leave `unknown` for `healthy`.
                         this.health[active].onBatch()
                         this.health[active].onCapability(true)
+                        exhausted.clear() // a delivered batch ends the failover sweep
                         yield batch
 
                         if (batch.blocks.length) {
@@ -204,6 +218,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                                 active,
                                 freshnessFailure('stream', 'lag', `fell behind the chain head by more than ${this.policy.maxLagBlocks} blocks`),
                             )
+                            this.exhaust(active, exhausted)
                             break
                         }
 
@@ -224,6 +239,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
             } catch (e) {
                 if (isForkException(e)) throw e // propagate; do NOT switch
                 this.failSource(active, classifyError('stream', e))
+                this.exhaust(active, exhausted)
                 // re-select and resume from lastCommitted on the next iteration
             }
         }
@@ -238,9 +254,18 @@ export class FallbackDataSource<B> implements DataSource<B> {
     }
 
     private async delegateHead(get: (s: DataSource<B>) => Promise<BlockRef>): Promise<BlockRef> {
-        for await (let active of this.selectActive()) {
+        let exhausted = new Set<number>()
+        for await (let active of this.selectActive(exhausted)) {
             try {
-                let head = await get(this.sources[active].source)
+                // Time-boxed by `activeHeadTimeoutMs`, not the standby `headPollTimeoutMs`: the active
+                // source's head request queues behind its own batch requests, so the tight standby
+                // bound would fail over a healthy-but-busy source. A timeout is a liveness failure.
+                let timeoutMs = this.policy.activeHeadTimeoutMs
+                let head = await withTimeout(
+                    get(this.sources[active].source),
+                    timeoutMs,
+                    () => new Error(`head delegation timed out after ${timeoutMs}ms`),
+                )
                 // A head query *is* the liveness signal (cf. `getCachedHead`): a success records a
                 // liveness pass, which resets the consecutive-fail counter so earlier transient blips
                 // don't accumulate toward `livenessFailThreshold` across intervening successes.
@@ -252,9 +277,18 @@ export class FallbackDataSource<B> implements DataSource<B> {
                 // would needlessly switch an otherwise-healthy stream. A below-threshold fail leaves
                 // the source eligible, so this retries it (transient-friendly) before failing over.
                 this.failSource(active, classifyError('liveness', e))
+                this.exhaust(active, exhausted)
             }
         }
         throw new AllSourcesDownError() // unreachable: selectActive throws on the all-down timeout
+    }
+
+    /**
+     * Exclude `i` from the rest of the current failover sweep once a failure has actually condemned
+     * it. A below-threshold liveness fail leaves it eligible, so it is retried as before.
+     */
+    private exhaust(i: number, exhausted: Set<number>): void {
+        if (this.health[i].state === 'unhealthy') exhausted.add(i)
     }
 
     getBlocksCountInRange(range: FiniteRange): number {
