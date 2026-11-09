@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Preserve all words when encoding fixed-size arrays of static composite elements.",
+      "type": "patch",
+      "packageName": "@subsquid/evm-codec"
+    }
+  ],
+  "packageName": "@subsquid/evm-codec",
+  "email": "103102868+mkzung@users.noreply.github.com"
+}

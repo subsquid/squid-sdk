@@ -34,7 +34,7 @@ export class FixedSizeArrayCodec<const TIn, const TOut> implements Codec<readonl
 
   constructor(public readonly item: Codec<TIn, TOut>, public readonly size: number) {
     this.isDynamic = item.isDynamic && size > 0
-    this.slotsCount = this.isDynamic ? 1 : size
+    this.slotsCount = this.isDynamic ? 1 : size * (item.slotsCount ?? 1)
   }
 
   encode(sink: Sink, val: TIn[]) {
