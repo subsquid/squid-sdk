@@ -240,7 +240,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
     private async delegateHead(get: (s: DataSource<B>) => Promise<BlockRef>): Promise<BlockRef> {
         for await (let active of this.selectActive()) {
             try {
-                let timeoutMs = this.policy.headPollTimeoutMs
+                // Time-boxed by `activeHeadTimeoutMs`, not the standby `headPollTimeoutMs`: the active
+                // source's head request queues behind its own batch requests, so the tight standby
+                // bound would fail over a healthy-but-busy source. A timeout is a liveness failure.
+                let timeoutMs = this.policy.activeHeadTimeoutMs
                 let head = await withTimeout(
                     get(this.sources[active].source),
                     timeoutMs,

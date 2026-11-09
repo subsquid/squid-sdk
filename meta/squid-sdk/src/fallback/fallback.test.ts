@@ -779,19 +779,79 @@ describe('FallbackDataSource — getHead delegation', () => {
     it.each(['getHead', 'getFinalizedHead'] as const)(
         '%s times out an active RPC endpoint that accepts a connection but never responds',
         async (method) => {
-            let noop: StreamFn = async function* () { yield* [] }
+            let noop: StreamFn = async function* () {}
             let s0 = new MockSource(noop, {
                 // The RPC connection is accepted, but the endpoint never sends a response.
                 head: () => new Promise<BlockRef>(() => {}),
             })
             let s1 = new MockSource(noop, {head: async () => ({number: 7, hash: '0x7'})})
-            let fb = fallback([s0, s1], {headPollTimeoutMs: 20, livenessFailThreshold: 1})
+            let fb = fallback([s0, s1], {activeHeadTimeoutMs: 20, livenessFailThreshold: 1})
 
             expect(await fb[method]()).toEqual({number: 7, hash: '0x7'})
             expect(fb.metrics().sources[0].cause).toMatchObject({check: 'liveness', reason: 'timeout'})
         },
         1000,
     )
+
+    it('fails a hung active head over only after livenessFailThreshold consecutive timeouts', async () => {
+        let noop: StreamFn = async function* () {}
+        let s0calls = 0
+        let s0 = new MockSource(noop, {
+            head: () => {
+                s0calls++
+                return new Promise<BlockRef>(() => {})
+            },
+        })
+        let s1 = new MockSource(noop, {head: async () => ({number: 7, hash: '0x7'})})
+        let fb = fallback([s0, s1], {activeHeadTimeoutMs: 20, livenessFailThreshold: 2})
+
+        expect(await fb.getHead()).toEqual({number: 7, hash: '0x7'})
+        // The first timeout is retried on the same source (a blip); the second condemns it.
+        expect(s0calls).toBe(2)
+        expect(fb.metrics().sources[0]).toMatchObject({
+            health: 'unhealthy',
+            cause: {check: 'liveness', reason: 'timeout'},
+        })
+    }, 1000)
+
+    it('a single active-head timeout followed by a response does not fail the source over', async () => {
+        let noop: StreamFn = async function* () {}
+        let s0calls = 0
+        let s0 = new MockSource(noop, {
+            head: () => (s0calls++ === 0 ? new Promise<BlockRef>(() => {}) : Promise.resolve({number: 5, hash: '0x5'})),
+        })
+        let s1 = new MockSource(noop, {head: async () => ({number: 7, hash: '0x7'})})
+        let fb = fallback([s0, s1], {activeHeadTimeoutMs: 20, livenessFailThreshold: 2})
+
+        expect(await fb.getHead()).toEqual({number: 5, hash: '0x5'})
+        expect(fb.metrics().sources[0].health).not.toBe('unhealthy')
+    }, 1000)
+
+    // The active source's head request queues behind its own batch requests, so it may legitimately
+    // take far longer than an idle standby's poll. The standby bound must not apply to it.
+    it('a slow-but-alive active head is not bound by the standby headPollTimeoutMs', async () => {
+        let noop: StreamFn = async function* () {}
+        let s0 = new MockSource(noop, {
+            head: () => new Promise<BlockRef>((resolve) => setTimeout(() => resolve({number: 5, hash: '0x5'}), 100)),
+        })
+        let s1 = new MockSource(noop, {head: async () => ({number: 7, hash: '0x7'})})
+        let fb = fallback([s0, s1], {headPollTimeoutMs: 20, livenessFailThreshold: 1})
+
+        expect(await fb.getHead()).toEqual({number: 5, hash: '0x5'})
+        expect(await fb.getFinalizedHead()).toEqual({number: 5, hash: '0x5'})
+        expect(fb.metrics().sources[0].health).not.toBe('unhealthy')
+    }, 2000)
+
+    it('activeHeadTimeoutMs: null disables the active-head guard', async () => {
+        let noop: StreamFn = async function* () {}
+        let s0 = new MockSource(noop, {head: () => new Promise<BlockRef>(() => {})})
+        let s1 = new MockSource(noop, {head: async () => ({number: 7, hash: '0x7'})})
+        let fb = fallback([s0, s1], {activeHeadTimeoutMs: null, livenessFailThreshold: 1})
+
+        let pending = Symbol('pending')
+        let winner = await Promise.race([fb.getHead(), new Promise((r) => setTimeout(() => r(pending), 100))])
+        expect(winner).toBe(pending)
+    }, 1000)
 
     it('treats a head-fetch failure as liveness (a single blip does not condemn the source)', async () => {
         let noop: StreamFn = async function* () {}
