@@ -135,6 +135,25 @@ describe('FallbackDataSource — failure-driven switching', () => {
 
         expect(numbers(await collect(fb.getStream({from: 1, to: 3})))).toEqual([1, 2, 3])
     })
+
+    // A stream error that takes at least `cooldownMs` to surface (a request timeout) must not let the
+    // first failed source cool down and restart the sweep at index 0 before the third is tried.
+    it('reaches the third source when each failure takes longer than the cooldown', async () => {
+        let slowFail = (tag: string): StreamFn =>
+            async function* () {
+                await new Promise((r) => setTimeout(r, 30))
+                throw new Error(tag)
+            }
+        let s0 = new MockSource(slowFail('e0'))
+        let s1 = new MockSource(slowFail('e1'))
+        let s2 = new MockSource(async function* (req) {
+            yield batch([blk(req.from), blk(req.from + 1)])
+        })
+        let fb = fallback([s0, s1, s2], {cooldownMs: 10, maxLagBlocks: null, maxStalenessMs: null})
+
+        expect(numbers(await collect(fb.getStream({from: 1, to: 2})))).toEqual([1, 2])
+        expect([s0.calls.length, s1.calls.length, s2.calls.length]).toEqual([1, 1, 1])
+    }, 2000)
 })
 
 describe('FallbackDataSource — fork handling', () => {
@@ -840,6 +859,25 @@ describe('FallbackDataSource — getHead delegation', () => {
         expect(await fb.getHead()).toEqual({number: 5, hash: '0x5'})
         expect(await fb.getFinalizedHead()).toEqual({number: 5, hash: '0x5'})
         expect(fb.metrics().sources[0].health).not.toBe('unhealthy')
+    }, 2000)
+
+    // Copilot finding on #620: when a timeout lasts at least `cooldownMs`, the first condemned source
+    // cools down while the second is still timing out, and selection restarted at index 0, so
+    // A and B alternated forever and the healthy C was never tried.
+    it('reaches a healthy third source past two hung ones even when the timeout outlasts the cooldown', async () => {
+        let noop: StreamFn = async function* () {}
+        let calls = [0, 0]
+        let hang = (i: number) => () => {
+            calls[i]++
+            return new Promise<BlockRef>(() => {})
+        }
+        let s0 = new MockSource(noop, {head: hang(0)})
+        let s1 = new MockSource(noop, {head: hang(1)})
+        let s2 = new MockSource(noop, {head: async () => ({number: 7, hash: '0x7'})})
+        let fb = fallback([s0, s1, s2], {activeHeadTimeoutMs: 30, cooldownMs: 10, livenessFailThreshold: 2})
+
+        expect(await fb.getHead()).toEqual({number: 7, hash: '0x7'})
+        expect(calls).toEqual([2, 2])
     }, 2000)
 
     it('activeHeadTimeoutMs: null disables the active-head guard', async () => {
