@@ -79,3 +79,43 @@ describe('sqd_dump_chain_height', () => {
         expect(headRequests).toBe(1)
     })
 })
+
+describe('getArchivedBlock', () => {
+    class ArchiveDumper extends TestDumper {
+        constructor(private dest?: string) {
+            super(async () => 0)
+        }
+
+        protected options(): DumperOptions {
+            return {...super.options(), dest: this.dest, topDirSize: 1000}
+        }
+
+        read(number: number): Promise<TestBlock | undefined> {
+            return this.getArchivedBlock(number)
+        }
+    }
+
+    async function makeArchive(): Promise<string> {
+        let fs = await import('node:fs/promises')
+        let os = await import('node:os')
+        let path = await import('node:path')
+        let zlib = await import('node:zlib')
+        let dir = await fs.mkdtemp(path.join(os.tmpdir(), 'dump-cli-'))
+        let chunk = path.join(dir, '0000000000', '0000000000-0000000002-0000beef')
+        await fs.mkdir(chunk, {recursive: true})
+        let lines = [0, 1, 2].map((n) => JSON.stringify({hash: `0x${n}000beef`, number: n, mark: `block ${n}`}))
+        await fs.writeFile(path.join(chunk, 'blocks.jsonl.gz'), zlib.gzipSync(lines.join('\n') + '\n'))
+        return dir
+    }
+
+    it('reads a block from the raw chunk that holds it', async () => {
+        let dumper = new ArchiveDumper(await makeArchive())
+        expect(await dumper.read(1)).toMatchObject({number: 1, mark: 'block 1'})
+        expect(await dumper.read(2)).toMatchObject({number: 2, mark: 'block 2'})
+    })
+
+    it('gives undefined for a block the archive does not hold, or without a destination', async () => {
+        expect(await new ArchiveDumper(await makeArchive()).read(5)).toBeUndefined()
+        expect(await new ArchiveDumper().read(1)).toBeUndefined()
+    })
+})

@@ -191,3 +191,104 @@ describe('stream options', () => {
         expect(open).toThrow('requires Node.js 22.15 or later')
     })
 })
+
+describe('--derive-total-difficulty', () => {
+    afterEach(() => {
+        process.argv = argv
+    })
+
+    function block(number: number, difficulty: string, totalDifficulty?: string): any {
+        return {number: '0x' + number.toString(16), difficulty, ...(totalDifficulty ? {totalDifficulty} : {})}
+    }
+
+    function setUp(args: string[], batches: any[][], archived?: any) {
+        let dumper = makeDumper(...args)
+        let warnings: any[] = []
+        let archiveReads: number[] = []
+        dumper.log = () => ({warn: (o: any) => warnings.push(o), info: () => {}, debug: () => {}})
+        dumper.getSourceBlocks = async function* () {
+            for (let b of batches) yield structuredClone(b)
+        }
+        dumper.getArchivedBlock = async (n: number) => {
+            archiveReads.push(n)
+            return archived
+        }
+        return {dumper, warnings, archiveReads}
+    }
+
+    async function collect(dumper: any, from: number): Promise<any[]> {
+        let out: any[] = []
+        for await (let bb of dumper.getBlocks({from})) out.push(...bb)
+        return out
+    }
+
+    it("writes the parent's total difficulty plus the block's difficulty, from 0 at genesis", async () => {
+        let {dumper} = setUp(['--derive-total-difficulty'], [[block(0, '0x1'), block(1, '0x2')], [block(2, '0x2')]])
+        let out = await collect(dumper, 0)
+        expect(out.map((b) => b.totalDifficulty)).toEqual(['0x1', '0x3', '0x5'])
+    })
+
+    it("starts from the archived parent's total difficulty and reads the archive once", async () => {
+        let {dumper, archiveReads} = setUp(
+            ['--derive-total-difficulty'],
+            [[block(100, '0x2')]],
+            block(99, '0x2', '0x10'),
+        )
+        expect((await collect(dumper, 100)).map((b) => b.totalDifficulty)).toEqual(['0x12'])
+
+        dumper.getSourceBlocks = async function* () {
+            yield [block(101, '0x0')]
+        }
+        expect((await collect(dumper, 101)).map((b) => b.totalDifficulty)).toEqual(['0x12'])
+        expect(archiveReads).toEqual([99])
+    })
+
+    it('replaces a total difficulty the provider got wrong, and warns once', async () => {
+        let {dumper, warnings} = setUp(
+            ['--derive-total-difficulty'],
+            [[block(1, '0x2', '0x100'), block(2, '0x2', '0x101')]],
+            block(0, '0x1', '0x1'),
+        )
+        expect((await collect(dumper, 1)).map((b) => b.totalDifficulty)).toEqual(['0x3', '0x5'])
+        expect(warnings).toHaveLength(1)
+        expect(warnings[0]).toMatchObject({
+            blockNumber: 1,
+            providerTotalDifficulty: '0x100',
+            derivedTotalDifficulty: '0x3',
+        })
+    })
+
+    it('takes --parent-total-difficulty when the archive has no total difficulty for the parent', async () => {
+        let {dumper} = setUp(
+            ['--derive-total-difficulty', '--parent-total-difficulty', '0x20'],
+            [[block(5, '0x2')]],
+            block(4, '0x2'),
+        )
+        expect((await collect(dumper, 5)).map((b) => b.totalDifficulty)).toEqual(['0x22'])
+    })
+
+    it("stops when the parent's total difficulty is unknown", async () => {
+        let {dumper} = setUp(['--derive-total-difficulty'], [[block(5, '0x2')]], block(4, '0x2'))
+        await expect(collect(dumper, 5)).rejects.toThrow(ErrorMessage)
+        await expect(collect(dumper, 5)).rejects.toThrow('the archived block has none')
+    })
+
+    it('refuses a block without a difficulty, and takes an explicit 0x0', async () => {
+        let {dumper} = setUp(['--derive-total-difficulty'], [[block(0, '0x1'), {number: '0x1'}]])
+        await expect(collect(dumper, 0)).rejects.toThrow('block 1 has no difficulty')
+
+        let zero = setUp(['--derive-total-difficulty'], [[block(0, '0x1'), block(1, '0x0')]])
+        expect((await collect(zero.dumper, 0)).map((b) => b.totalDifficulty)).toEqual(['0x1', '0x1'])
+    })
+
+    it('refuses a gap in the blocks', async () => {
+        let {dumper} = setUp(['--derive-total-difficulty'], [[block(0, '0x1'), block(2, '0x1')]])
+        await expect(collect(dumper, 0)).rejects.toThrow('got block 2 for 1')
+    })
+
+    it('leaves the blocks as they are without the option', async () => {
+        let {dumper, archiveReads} = setUp([], [[block(1, '0x2', '0x100')]])
+        expect((await collect(dumper, 1)).map((b) => b.totalDifficulty)).toEqual(['0x100'])
+        expect(archiveReads).toEqual([])
+    })
+})
