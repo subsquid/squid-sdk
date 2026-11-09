@@ -240,7 +240,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
     private async delegateHead(get: (s: DataSource<B>) => Promise<BlockRef>): Promise<BlockRef> {
         for await (let active of this.selectActive()) {
             try {
-                let head = await get(this.sources[active].source)
+                let timeoutMs = this.policy.headPollTimeoutMs
+                let head = await withTimeout(
+                    get(this.sources[active].source),
+                    timeoutMs,
+                    () => new Error(`head delegation timed out after ${timeoutMs}ms`),
+                )
                 // A head query *is* the liveness signal (cf. `getCachedHead`): a success records a
                 // liveness pass, which resets the consecutive-fail counter so earlier transient blips
                 // don't accumulate toward `livenessFailThreshold` across intervening successes.
