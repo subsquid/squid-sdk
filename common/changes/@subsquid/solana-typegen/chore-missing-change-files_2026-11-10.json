@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-typegen",
+      "comment": "Update dependency ranges: @solana/addresses ^6.10.0, @solanafm/explorer-kit-idls ^1.1.4",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-typegen"
+}

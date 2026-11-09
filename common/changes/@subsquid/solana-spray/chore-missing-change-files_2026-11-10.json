@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-spray",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/solana-spray"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/typeorm-migration",
+      "comment": "Update dependency ranges: dotenv ^16.6.1; peer typeorm ^0.3.31",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-migration"
+}

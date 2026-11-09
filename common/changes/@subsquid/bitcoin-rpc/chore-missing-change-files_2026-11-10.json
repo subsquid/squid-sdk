@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/bitcoin-rpc",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/bitcoin-rpc"
+}

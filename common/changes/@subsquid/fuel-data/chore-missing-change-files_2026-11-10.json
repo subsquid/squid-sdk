@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/fuel-data",
+      "comment": "Update dependency ranges: @subsquid/http-client ^1.9.0 (peer)",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/fuel-data"
+}
