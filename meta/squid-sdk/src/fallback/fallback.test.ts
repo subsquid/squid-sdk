@@ -776,6 +776,23 @@ describe('FallbackDataSource — getHead delegation', () => {
         expect(await fb.getHead()).toEqual({number: 7, hash: '0x7'})
     })
 
+    it.each(['getHead', 'getFinalizedHead'] as const)(
+        '%s times out an active RPC endpoint that accepts a connection but never responds',
+        async (method) => {
+            let noop: StreamFn = async function* () { yield* [] }
+            let s0 = new MockSource(noop, {
+                // The RPC connection is accepted, but the endpoint never sends a response.
+                head: () => new Promise<BlockRef>(() => {}),
+            })
+            let s1 = new MockSource(noop, {head: async () => ({number: 7, hash: '0x7'})})
+            let fb = fallback([s0, s1], {headPollTimeoutMs: 20, livenessFailThreshold: 1})
+
+            expect(await fb[method]()).toEqual({number: 7, hash: '0x7'})
+            expect(fb.metrics().sources[0].cause).toMatchObject({check: 'liveness', reason: 'timeout'})
+        },
+        1000,
+    )
+
     it('treats a head-fetch failure as liveness (a single blip does not condemn the source)', async () => {
         let noop: StreamFn = async function* () {}
         let calls = 0
