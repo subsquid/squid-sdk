@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Allow encoding the maximum signed 64-bit integer.",
+      "type": "patch",
+      "packageName": "@subsquid/evm-codec"
+    }
+  ],
+  "packageName": "@subsquid/evm-codec",
+  "email": "103102868+mkzung@users.noreply.github.com"
+}
