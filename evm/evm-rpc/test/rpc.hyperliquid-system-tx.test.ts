@@ -16,8 +16,13 @@ function answers() {
         ...block,
         transactions: block.transactions.filter((tx: any) => tx.hash !== SYSTEM_TX),
     }
-    const receiptsWithoutSystemTx = receipts.filter(r => r.transactionHash !== SYSTEM_TX)
-    return {block, receipts, withoutSystemTx, receiptsWithoutSystemTx}
+    // An answer that leaves the system tx out consistently: the other logs renumbered from 0, as if it never was
+    let next = 0
+    const receiptsWithoutSystemTx = structuredClone(receipts.filter(r => r.transactionHash !== SYSTEM_TX))
+    for (const r of receiptsWithoutSystemTx) for (const log of r.logs) log.logIndex = toQty(next++)
+    // The same, without renumbering: the logs skip the system tx's log index
+    const receiptsWithLogGap = receipts.filter(r => r.transactionHash !== SYSTEM_TX)
+    return {block, receipts, withoutSystemTx, receiptsWithoutSystemTx, receiptsWithLogGap}
 }
 
 function setUp(chainId = '0x3e7') {
@@ -29,13 +34,23 @@ function setUp(chainId = '0x3e7') {
         verifyTxRoot: true,
         verifyReceiptsRoot: true,
         verifyLogsBloom: true,
+        checkLogIndex: true,
     })
     const answer = (body: any, receipts: any[]) => {
         client.setFixture('eth_getBlockByNumber', [toQty(BLOCK), true], body)
         client.setFixture('eth_getBlockReceipts', [toQty(BLOCK)], receipts)
         return rpc.getBlockBatch([BLOCK], {transactions: true, receipts: true}).then(blocks => blocks[0])
     }
-    return {rpc, answer}
+    // a body with transaction hashes only, as a request that needs no transaction objects gets it
+    const answerHashOnly = (body: any, receipts: any[]) => {
+        client.setFixture('eth_getBlockByNumber', [toQty(BLOCK), false], {
+            ...body,
+            transactions: body.transactions.map((tx: any) => tx.hash),
+        })
+        client.setFixture('eth_getBlockReceipts', [toQty(BLOCK)], receipts)
+        return rpc.getBlockBatch([BLOCK], {receipts: true}).then(blocks => blocks[0])
+    }
+    return {rpc, answer, answerHashOnly}
 }
 
 describe('HyperEVM system transactions', () => {
@@ -53,11 +68,52 @@ describe('HyperEVM system transactions', () => {
         expect(got._errorMessage).toContain(`system transaction mismatch: eth_getBlockReceipts has system transaction ${SYSTEM_TX}`)
     })
 
-    it('mark a block invalid when the body has a system transaction the receipts do not', async () => {
-        const {block, receiptsWithoutSystemTx} = answers()
-        const got = await setUp().answer(block, receiptsWithoutSystemTx)
+    it('mark a block invalid when an answer left a system transaction and its logs out of everything but did not renumber the logs', async () => {
+        const {withoutSystemTx, receiptsWithLogGap} = answers()
+        const got = await setUp().answer(withoutSystemTx, receiptsWithLogGap)
         expect(got._isInvalid).toBe(true)
-        expect(got._errorMessage).toMatch(/system transaction mismatch|invalid number of receipts/)
+        expect(got._errorMessage).toBe(
+            "system transaction mismatch: the receipt logs skip log index 0, an answer left out a transaction's logs",
+        )
+    })
+
+    it('mark a block invalid, with the log index check on, when the body has a system transaction the receipts do not', async () => {
+        const {block, receiptsWithLogGap} = answers()
+        // without the system tx's receipt the remaining logs start at index 1, which the log index check rejects
+        const got = await setUp().answer(block, receiptsWithLogGap)
+        expect(got._isInvalid).toBe(true)
+        expect(got._errorMessage).toBe(
+            `system transaction mismatch: the block body has system transaction ${SYSTEM_TX}, eth_getBlockReceipts does not`,
+        )
+    })
+
+    it('take no evidence from receipts of another block', async () => {
+        const {block, receipts, withoutSystemTx, receiptsWithoutSystemTx} = answers()
+        const {answer} = setUp()
+        const foreign = receipts.map(r => ({...r, blockHash: '0x' + '11'.repeat(32)}))
+        const first = await answer(block, foreign)
+        expect(first._errorMessage).toBe('eth_getBlockReceipts returned receipts for a different block')
+
+        // receipts of another block that name the system tx are no evidence about this one: after them, a
+        // consistent answer without it is taken (a fresh Rpc, so no body has shown it either)
+        const fresh = setUp()
+        await fresh.answer(withoutSystemTx, foreign)
+        expect((await fresh.answer(withoutSystemTx, receiptsWithoutSystemTx))._isInvalid).toBeUndefined()
+    })
+
+    it('hold a hash-only body to an earlier answer that showed a system transaction', async () => {
+        const {block, receipts, withoutSystemTx, receiptsWithoutSystemTx} = answers()
+        const {answer, answerHashOnly} = setUp()
+        expect((await answer(block, receipts))._isInvalid).toBeUndefined()
+
+        const got = await answerHashOnly(withoutSystemTx, receiptsWithoutSystemTx)
+        expect(got._isInvalid).toBe(true)
+        expect(got._errorMessage).toBe(
+            `system transaction mismatch: ${SYSTEM_TX} is in an earlier answer for this block but not in the block body`,
+        )
+        // a full answer is taken again (with full transaction objects: the logs bloom of a HyperEVM block
+        // can only be checked when the body tells which transactions are system ones)
+        expect((await answer(block, receipts))._isInvalid).toBeUndefined()
     })
 
     it('take only an answer with the system transaction once an earlier answer for the block had it', async () => {

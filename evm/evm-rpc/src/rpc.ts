@@ -86,6 +86,37 @@ export {
     systemBalanceDeltaFromReplay,
 }
 
+/**
+ * Why the receipts of a block do not match its body transaction for transaction, or undefined when they do
+ */
+function findReceiptMismatch(block: Block, receipts: Receipt[], utils: ChainUtils): string | undefined {
+    let bodyHashes = new Set(block.block.transactions.map(tx => getTxHash(tx).toLowerCase()))
+    let foreign = receipts.find(receipt => !bodyHashes.has(receipt.transactionHash.toLowerCase()))
+    if (foreign != null) {
+        return utils.isHyperliquidSystemReceipt(foreign)
+            ? `system transaction mismatch: eth_getBlockReceipts has system transaction ${foreign.transactionHash}, the block body does not`
+            : `eth_getBlockReceipts has a receipt of transaction ${foreign.transactionHash}, which is not in the block body`
+    }
+    let receiptHashes = new Set(receipts.map(receipt => receipt.transactionHash.toLowerCase()))
+    for (let tx of block.block.transactions) {
+        if (receiptHashes.has(getTxHash(tx).toLowerCase())) continue
+        return typeof tx !== 'string' && utils.isHyperliquidSystemTransaction(tx)
+            ? `system transaction mismatch: the block body has system transaction ${tx.hash}, eth_getBlockReceipts does not`
+            : `got invalid number of receipts from eth_getBlockReceipts`
+    }
+    if (utils.hasHyperliquidSystemTransactions) {
+        // Log indices count the logs of every transaction, system ones included. Receipts whose logs do not
+        // run 0, 1, 2, ... lost some transaction's logs: an answer that dropped a system transaction from
+        // both the body and the receipts, without renumbering the rest.
+        let indices = receipts.flatMap(receipt => receipt.logs.map(log => qty2Int(log.logIndex))).sort((a, b) => a - b)
+        let gap = indices.findIndex((index, i) => index !== i)
+        if (gap >= 0) {
+            return `system transaction mismatch: the receipt logs skip log index ${gap}, an answer left out a transaction's logs`
+        }
+    }
+    return undefined
+}
+
 // How many blocks' worth of HyperEVM system transaction evidence Rpc keeps
 const SYSTEM_TRANSACTION_EVIDENCE_BLOCKS = 10_000
 
@@ -551,17 +582,17 @@ export class Rpc {
             }
 
             block.receipts = receipts
+            if (block._isInvalid) continue
 
-            // A receipt of a transaction the body does not have would fail an assertion in the logs bloom
-            // check and stop the process; the answers disagree, so the block is fetched again instead.
-            // On HyperEVM this is a system transaction the body left out.
-            let bodyHashes = new Set(block.block.transactions.map(tx => getTxHash(tx).toLowerCase()))
-            let foreign = receipts.find(receipt => !bodyHashes.has(receipt.transactionHash.toLowerCase()))
-            if (foreign != null) {
+            // The body and the receipts must name the same transactions before the receipts are checked:
+            // a receipt of a transaction the body lacks fails an assertion in the logs bloom check, and a
+            // transaction without its receipt shifts the log indices, and either stops the process. The two
+            // answers disagree, so the block is fetched again instead, unchecked. On HyperEVM this is a
+            // system transaction one of the answers left out.
+            let mismatch = findReceiptMismatch(block, receipts, utils)
+            if (mismatch != null) {
                 block._isInvalid = true
-                block._errorMessage = utils.isHyperliquidSystemReceipt(foreign)
-                    ? `system transaction mismatch: eth_getBlockReceipts has system transaction ${foreign.transactionHash}, the block body does not`
-                    : `eth_getBlockReceipts has a receipt of transaction ${foreign.transactionHash}, which is not in the block body`
+                block._errorMessage = mismatch
                 continue
             }
 
@@ -621,26 +652,29 @@ export class Rpc {
     private checkHyperliquidSystemTransactions(block: Block, utils: ChainUtils): void {
         // An answer already found invalid (a receipt of a transaction the body lacks, say) still counts as
         // evidence: what it showed is recorded, only the comparison is skipped.
-        let body: Set<string> | undefined = new Set()
+        let key = block.hash.toLowerCase()
+        // Every transaction the body names; a hash-only body names them without telling which are
+        // system transactions, so it gives no new evidence but is still held to the earlier evidence.
+        let bodyHashes = new Set(block.block.transactions.map(tx => getTxHash(tx).toLowerCase()))
+        let body = new Set<string>()
         for (let tx of block.block.transactions) {
-            if (typeof tx === 'string') {
-                // Without full transaction objects the body does not tell which are system transactions
-                body = undefined
-                break
-            }
-            if (utils.isHyperliquidSystemTransaction(tx)) body.add(tx.hash.toLowerCase())
+            if (typeof tx !== 'string' && utils.isHyperliquidSystemTransaction(tx)) body.add(tx.hash.toLowerCase())
         }
         let receipts: Set<string> | undefined
+        let receiptHashes: Set<string> | undefined
         if (block.receipts != null) {
             receipts = new Set()
+            receiptHashes = new Set()
             for (let receipt of block.receipts) {
+                // A receipt of another block is no evidence about this one
+                if (receipt.blockHash.toLowerCase() !== key) continue
+                receiptHashes.add(receipt.transactionHash.toLowerCase())
                 if (utils.isHyperliquidSystemReceipt(receipt)) receipts.add(receipt.transactionHash.toLowerCase())
             }
         }
 
-        let key = block.hash.toLowerCase()
         let earlier = this.systemTransactionEvidence.get(key)
-        let seen = new Set<string>([...(earlier ?? []), ...(body ?? []), ...(receipts ?? [])])
+        let seen = new Set<string>([...(earlier ?? []), ...body, ...(receipts ?? [])])
         this.systemTransactionEvidence.delete(key)
         this.systemTransactionEvidence.set(key, seen)
         if (this.systemTransactionEvidence.size > SYSTEM_TRANSACTION_EVIDENCE_BLOCKS) {
@@ -650,8 +684,8 @@ export class Rpc {
         if (block._isInvalid) return
 
         for (let hash of seen) {
-            let from = earlier?.has(hash) ? 'an earlier answer for this block' : body?.has(hash) ? 'the block body' : 'eth_getBlockReceipts'
-            let missingFrom = body != null && !body.has(hash) ? 'the block body' : receipts != null && !receipts.has(hash) ? 'the receipts' : undefined
+            let from = earlier?.has(hash) ? 'an earlier answer for this block' : body.has(hash) ? 'the block body' : 'eth_getBlockReceipts'
+            let missingFrom = !bodyHashes.has(hash) ? 'the block body' : receiptHashes != null && !receiptHashes.has(hash) ? 'the receipts' : undefined
             if (missingFrom == null) continue
             block._isInvalid = true
             block._errorMessage = `system transaction mismatch: ${hash} is in ${from} but not in ${missingFrom}`
