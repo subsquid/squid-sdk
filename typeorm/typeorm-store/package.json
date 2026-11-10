@@ -23,7 +23,7 @@
   },
   "peerDependencies": {
     "typeorm": "^0.3.31",
-    "@subsquid/big-decimal": "^1.0.1"
+    "@subsquid/big-decimal": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.13.6",

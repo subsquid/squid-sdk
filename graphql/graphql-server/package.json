@@ -47,7 +47,7 @@
     "keyv": "~4.5.4"
   },
   "peerDependencies": {
-    "@subsquid/big-decimal": "^1.0.1",
+    "@subsquid/big-decimal": "^1.0.0",
     "class-validator": "^0.14.4",
     "type-graphql": "^1.2.0-rc.1",
     "typeorm": "^0.3.31"
