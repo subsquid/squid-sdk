@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/commands",
+      "comment": "Update dependency ranges: glob ^10.5.0",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/commands"
+}

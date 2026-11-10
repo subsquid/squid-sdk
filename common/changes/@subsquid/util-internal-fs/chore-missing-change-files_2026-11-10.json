@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-fs",
+      "comment": "Propagate requestPayer to child filesystems created by S3Fs.cd() and to the list/delete requests in S3Fs.delete(); update dependency ranges: @aws-sdk/client-s3 ^3.1136.0",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-fs"
+}

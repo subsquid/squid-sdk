@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/big-decimal",
+      "comment": "Update dependency ranges: big.js ~6.2.2",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/big-decimal"
+}
