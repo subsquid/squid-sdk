@@ -452,10 +452,11 @@
       "versionPolicyName": "npm"
     },
     {
+      // TEMPORARY: "docker" keeps the npm release from publishing this package until it has an npm trusted publisher; restore "npm" then.
       "packageName": "@subsquid/ink-abi",
       "projectFolder": "substrate/ink-abi",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/ink-typegen",
@@ -546,16 +547,18 @@
       "versionPolicyName": "npm"
     },
     {
+      // TEMPORARY: "docker" keeps the npm release from publishing this package until it has an npm trusted publisher; restore "npm" then.
       "packageName": "@subsquid/solana-typegen",
       "projectFolder": "solana/solana-typegen",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
+      // TEMPORARY: "docker" keeps the npm release from publishing this package until it has an npm trusted publisher; restore "npm" then.
       "packageName": "@subsquid/frontier",
       "projectFolder": "substrate/frontier",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/scale-codec",
@@ -792,16 +795,18 @@
       "versionPolicyName": "npm"
     },
     {
+      // TEMPORARY: "docker" keeps the npm release from publishing this package until it has an npm trusted publisher; restore "npm" then.
       "packageName": "@subsquid/big-decimal",
       "projectFolder": "util/big-decimal",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
+      // TEMPORARY: "docker" keeps the npm release from publishing this package until it has an npm trusted publisher; restore "npm" then.
       "packageName": "@subsquid/commands",
       "projectFolder": "util/commands",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/http-client",
@@ -870,10 +875,11 @@
       "versionPolicyName": "npm"
     },
     {
+      // TEMPORARY: "docker" keeps the npm release from publishing this package until it has an npm trusted publisher; restore "npm" then.
       "packageName": "@subsquid/util-internal-config",
       "projectFolder": "util/util-internal-config",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/util-internal-counters",
@@ -1013,10 +1019,11 @@
       "versionPolicyName": "npm"
     },
     {
+      // TEMPORARY: "docker" keeps the npm release from publishing this package until it has an npm trusted publisher; restore "npm" then.
       "packageName": "@subsquid/util-xxhash",
       "projectFolder": "util/util-xxhash",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "balances",

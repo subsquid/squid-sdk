@@ -46,7 +46,7 @@
     "inflected": "^2.1.0"
   },
   "peerDependencies": {
-    "@subsquid/big-decimal": "^1.0.1"
+    "@subsquid/big-decimal": "^1.0.0"
   },
   "peerDependenciesMeta": {
     "@subsquid/big-decimal": {
