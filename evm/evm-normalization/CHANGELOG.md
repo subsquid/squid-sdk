@@ -1,6 +1,19 @@
 # Change Log - @subsquid/evm-normalization
 
-This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 0.2.0
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Minor changes
+
+- Carry the EIP-7928 block access list in raw blocks as `blockAccessList_`
+
+### Patches
+
+- take `yParity` of an EIP-2930, EIP-1559, EIP-4844 or EIP-7702 transaction from `v` when the node leaves it out
+- Write a transaction or Tempo AA authorization nonce above 2^53 as an exact JSON number instead of failing on it
+- skip structurally empty debug call frames returned by Scroll nodes for failed L1MessageTx (type 126) transactions instead of aborting normalization (see https://github.com/scroll-tech/go-ethereum/issues/1170)
 
 ## 0.1.0
 Mon, 14 Sep 2026 10:05:38 GMT

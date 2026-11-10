@@ -2,6 +2,44 @@
   "name": "@subsquid/squid-sdk",
   "entries": [
     {
+      "version": "0.7.0",
+      "tag": "@subsquid/squid-sdk_v0.7.0",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "fallback: time-box the active source's getHead()/getFinalizedHead() (new `activeHeadTimeoutMs` policy, 60 s default) so a hung source fails over instead of stalling the processor; `rpc` sources gain `requestTimeout`/`retryAttempts` options, and fallback `rpc` members default to a 30 s request timeout"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.16.1` to `4.17.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-store\" from `^1.9.2` to `1.9.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-json\" from `^1.2.4` to `1.2.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/big-decimal\" from `^1.0.0` to `1.0.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.1.0` to `0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.2.0` to `0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.1.0` to `0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.2.0` to `0.3.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.6.2",
       "tag": "@subsquid/squid-sdk_v0.6.2",
       "date": "Mon, 14 Sep 2026 10:05:38 GMT",

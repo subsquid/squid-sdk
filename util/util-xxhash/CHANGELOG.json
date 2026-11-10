@@ -2,6 +2,18 @@
   "name": "@subsquid/util-xxhash",
   "entries": [
     {
+      "version": "1.2.3",
+      "tag": "@subsquid/util-xxhash_v1.2.3",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Update dependency ranges: xxhash-wasm ^1.1.0"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.2",
       "tag": "@subsquid/util-xxhash_v1.2.2",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

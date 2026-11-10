@@ -2,6 +2,64 @@
   "name": "@subsquid/evm-rpc",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/evm-rpc_v0.3.0",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Validate transaction nonce as a wide quantity so Tempo 0x76 uint64 nonces no longer crash the dumper"
+          },
+          {
+            "comment": "consensus anchors: the `gas` rule skips a zero-priced transaction whose receipt reports no gas (HyperEVM HyperCore system transactions)"
+          },
+          {
+            "comment": "disable cronos specific logic"
+          },
+          {
+            "comment": "export `checkConsensusAnchors` and the system-address balance helpers, for checks of blocks that did not come through `Rpc`"
+          },
+          {
+            "comment": "accept the empty call frame Scroll returns for an L1 message that fails before execution, rejecting empty frames everywhere else with a clear error; verify the transactions root of blocks with Scroll L1 messages"
+          },
+          {
+            "comment": "Classify retried errors as rate_limit, transient, internal or no_result for metrics"
+          },
+          {
+            "comment": "Retry transient provider and proxy errors: rate limits under code -32429, error text or null in place of a result, and upstream-unavailable or block-not-yet-available messages"
+          },
+          {
+            "comment": "recover selfdestruct call frames misreported by revm-based tracers with an opcode-level trace, and reject the block when they cannot be recovered"
+          },
+          {
+            "comment": "Retry transaction pre-check failures (insufficient funds, nonce too low or high, intrinsic gas too low) returned while tracing a mined block, under any code or proxy cause"
+          },
+          {
+            "comment": "Accept a nonce above 2^53 in Tempo AA and Frontier EIP-7702 authorizations"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "Verify Amsterdam headers (blockAccessListHash, slotNumber) and optionally fetch and verify EIP-7928 block access lists; a block that stays invalid on the finalized polling path now fails the stream instead of stalling it"
+          },
+          {
+            "comment": "export `ChainUtils` and the block checks of `Rpc` (`checkBlockHeader()`, `checkBlockLogs()`, `checkBlockReceipts()`, `checkStoredDebugFrame()`), make `Rpc.getChainUtils()` public. Add `ChainUtils.getRootTransactions()` and `ChainUtils.calculateTransactionHash()`"
+          },
+          {
+            "comment": "Validate debug call frames and state diffs against receipt status, gasUsed and transaction fees (--consensus-anchor-validation, --consensus-anchor-rules)"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.16.1` to `4.17.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.16.1` to `4.17.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/evm-rpc_v0.2.0",
       "date": "Mon, 14 Sep 2026 10:05:38 GMT",

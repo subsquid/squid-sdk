@@ -1,0 +1,20 @@
+{
+  "name": "@subsquid/hyperliquid-ingest-fills",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/hyperliquid-ingest-fills_v0.0.1",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-json\" from `^1.2.4` to `1.2.5`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.2.1` to `0.2.2`"
+          }
+        ]
+      }
+    }
+  ]
+}

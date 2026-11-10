@@ -2,6 +2,40 @@
   "name": "@subsquid/util-internal-dump-cli",
   "entries": [
     {
+      "version": "2.2.0",
+      "tag": "@subsquid/util-internal-dump-cli_v2.2.0",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "`Dumper.getArchivedBlock()`: read a block back from the destination archive"
+          },
+          {
+            "comment": "pass the hash of the last archived block to `getBlocks()`, let a dumper register its own counters and check its options through `validateOptions()` before the dump starts"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Report `sqd_dump_chain_height` from the head the ingest loop polls, so `/metrics` no longer waits on the RPC endpoint"
+          },
+          {
+            "comment": "Export `sqd_chain_rpc_retried_errors_total` by kind"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.16.1` to `4.17.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-layout\" from `^2.1.0` to `2.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.2.1` to `0.2.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.1.0",
       "tag": "@subsquid/util-internal-dump-cli_v2.1.0",
       "date": "Mon, 14 Sep 2026 10:49:58 GMT",

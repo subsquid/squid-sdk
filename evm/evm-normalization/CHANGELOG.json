@@ -2,6 +2,37 @@
   "name": "@subsquid/evm-normalization",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/evm-normalization_v0.2.0",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "take `yParity` of an EIP-2930, EIP-1559, EIP-4844 or EIP-7702 transaction from `v` when the node leaves it out"
+          },
+          {
+            "comment": "Write a transaction or Tempo AA authorization nonce above 2^53 as an exact JSON number instead of failing on it"
+          },
+          {
+            "comment": "skip structurally empty debug call frames returned by Scroll nodes for failed L1MessageTx (type 126) transactions instead of aborting normalization (see https://github.com/scroll-tech/go-ethereum/issues/1170)"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "Carry the EIP-7928 block access list in raw blocks as `blockAccessList_`"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.2.0` to `0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-json\" from `^1.2.4` to `1.2.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/evm-normalization_v0.1.0",
       "date": "Mon, 14 Sep 2026 10:05:38 GMT",

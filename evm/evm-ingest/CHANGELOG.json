@@ -2,6 +2,21 @@
   "name": "@subsquid/evm-ingest",
   "entries": [
     {
+      "version": "0.0.8",
+      "tag": "@subsquid/evm-ingest_v0.0.8",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.1.0` to `0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-json\" from `^1.2.4` to `1.2.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.7",
       "tag": "@subsquid/evm-ingest_v0.0.7",
       "date": "Mon, 14 Sep 2026 10:05:38 GMT",

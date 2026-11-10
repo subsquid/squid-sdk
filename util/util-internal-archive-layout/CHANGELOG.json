@@ -2,6 +2,29 @@
   "name": "@subsquid/util-internal-archive-layout",
   "entries": [
     {
+      "version": "2.2.0",
+      "tag": "@subsquid/util-internal-archive-layout_v2.2.0",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "optional zlib `chunkSize` for `createCompressor()` and `createDecompressor()`"
+          },
+          {
+            "comment": "zstd data chunks use long-distance matching with a 128 MiB window"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.2.1` to `0.2.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.2.1` to `0.2.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.1.0",
       "tag": "@subsquid/util-internal-archive-layout_v2.1.0",
       "date": "Mon, 14 Sep 2026 10:49:58 GMT",

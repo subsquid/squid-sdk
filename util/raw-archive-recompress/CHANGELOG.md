@@ -1,6 +1,13 @@
 # Change Log - @subsquid/raw-archive-recompress
 
-This log was last generated on Mon, 14 Sep 2026 10:49:58 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 0.2.0
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Minor changes
+
+- convert `--to` and `--concurrency`; `status --from/--to` reports one range; S3 requests time out instead of hanging
 
 ## 0.1.0
 Mon, 14 Sep 2026 10:49:58 GMT

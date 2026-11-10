@@ -2,6 +2,29 @@
   "name": "@subsquid/hyperliquid-fills-data-service",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/hyperliquid-fills-data-service_v0.0.4",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Exit when data ingestion fails before the first block, instead of serving the initial block without ever restarting ingestion"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.16.1` to `4.17.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-data-service\" from `^0.1.1` to `0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-json\" from `^1.2.4` to `1.2.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/hyperliquid-fills-data-service_v0.0.3",
       "date": "Thu, 30 Jul 2026 15:44:58 GMT",

@@ -2,6 +2,52 @@
   "name": "@subsquid/evm-dump",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/evm-dump_v0.3.0",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "`--derive-total-difficulty`: write totalDifficulty as the parent's plus the block's difficulty, from the archive's last block (or `--parent-total-difficulty`)"
+          },
+          {
+            "comment": "Add `--with-block-access-lists` and `--verify-block-access-list-hash`; Amsterdam blocks pass block-hash verification"
+          },
+          {
+            "comment": "add `--stream-url` and `--stream-dataset` options to read block bodies from a JetStream stream of raw blocks, falling back to RPC. The stream is not trusted: a block is taken only when it states the hash known from RPC, down the parent links from the finalized head, and it passes every `--verify-*` check that is on. With `--verify-block-hash` its header must also hash to that hash; without it, as on the RPC path, the header is taken as stated, so a chain whose header hashing is not supported reads from the stream too. Transactions are tied to the header only by `--verify-tx-root`, which also checks each transaction hash, receipts and logs only by `--with-receipts` with `--verify-receipts-root`, call traces and state diffs can not be tied to it at all, the same as with RPC. Requires Node.js 22.15 or later for its built-in zstd"
+          },
+          {
+            "comment": "Validate debug call frames and state diffs against receipt status, gasUsed and transaction fees (--consensus-anchor-validation, --consensus-anchor-rules)"
+          },
+          {
+            "comment": "the stream verifier makes the consensus anchor checks, so `--consensus-anchor-validation` works with `--stream-url`: under `reject` a violating streamed block is fetched from RPC, under `observe` it is taken and logged"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "hand over the blocks RPC has already fetched before asking the stream for them, so the publication waiting budget no longer delays data that is in hand. Bound the memory of a stream walk with a payload budget, size later walks from the weight of the last one, and bound each handed over batch by its decompressed size. Warn at startup about the parts of a streamed block that no `--verify-*` option ties to its header, and report a bad `--stream-*` combination before the dump starts"
+          },
+          {
+            "comment": "Wait up to 10 minutes for delayed publication of a selected finalized block before falling back to RPC, including recovery probes. Add --stream-wait-timeout to configure or disable the waiting budget."
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.2.0` to `0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.1.0` to `0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^2.1.0` to `2.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-stream\" from `^0.0.0` to `0.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/evm-dump_v0.2.0",
       "date": "Mon, 14 Sep 2026 10:05:38 GMT",

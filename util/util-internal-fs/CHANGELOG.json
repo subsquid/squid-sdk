@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-fs",
   "entries": [
     {
+      "version": "0.2.2",
+      "tag": "@subsquid/util-internal-fs_v0.2.2",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Propagate requestPayer to child filesystems created by S3Fs.cd() and to the list/delete requests in S3Fs.delete(); update dependency ranges: @aws-sdk/client-s3 ^3.1136.0"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.1",
       "tag": "@subsquid/util-internal-fs_v0.2.1",
       "date": "Mon, 14 Sep 2026 10:49:58 GMT",

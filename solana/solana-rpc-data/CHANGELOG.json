@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-rpc-data",
   "entries": [
     {
+      "version": "1.1.1",
+      "tag": "@subsquid/solana-rpc-data_v1.1.1",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Keep vote-account management transactions (Withdraw, Authorize, UpdateCommission) when vote transactions are excluded"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.0",
       "tag": "@subsquid/solana-rpc-data_v1.1.0",
       "date": "Mon, 14 Sep 2026 10:05:38 GMT",

@@ -2,6 +2,26 @@
   "name": "@subsquid/raw-archive-recompress",
   "entries": [
     {
+      "version": "0.2.0",
+      "tag": "@subsquid/raw-archive-recompress_v0.2.0",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "convert `--to` and `--concurrency`; `status --from/--to` reports one range; S3 requests time out instead of hanging"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-archive-layout\" from `^2.1.0` to `2.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-fs\" from `^0.2.1` to `0.2.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "tag": "@subsquid/raw-archive-recompress_v0.1.0",
       "date": "Mon, 14 Sep 2026 10:49:58 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/ink-abi
 
-This log was last generated on Fri, 26 Jul 2024 09:41:08 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 3.1.3
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- Update dependency ranges: ajv ^8.20.0
 
 ## 3.1.2
 Fri, 26 Jul 2024 09:41:08 GMT

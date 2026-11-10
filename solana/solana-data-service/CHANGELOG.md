@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-data-service
 
-This log was last generated on Wed, 08 Jul 2026 22:11:26 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 0.0.8
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- Keep vote-account management transactions (Withdraw, Authorize, UpdateCommission) when vote transactions are excluded
 
 ## 0.0.7
 Wed, 08 Jul 2026 22:11:26 GMT

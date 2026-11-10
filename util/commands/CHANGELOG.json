@@ -2,6 +2,23 @@
   "name": "@subsquid/commands",
   "entries": [
     {
+      "version": "2.3.2",
+      "tag": "@subsquid/commands_v2.3.2",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Update dependency ranges: glob ^10.5.0"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-config\" from `^2.2.2` to `2.2.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.3.1",
       "tag": "@subsquid/commands_v2.3.1",
       "date": "Fri, 01 Dec 2023 16:55:51 GMT",

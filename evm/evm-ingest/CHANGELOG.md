@@ -1,6 +1,11 @@
 # Change Log - @subsquid/evm-ingest
 
-This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 0.0.8
+Tue, 10 Nov 2026 07:49:45 GMT
+
+_Version update only_
 
 ## 0.0.7
 Mon, 14 Sep 2026 10:05:38 GMT

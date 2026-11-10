@@ -2,6 +2,43 @@
   "name": "@subsquid/evm-data-service",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "@subsquid/evm-data-service_v0.3.0",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Validate debug call frames and state diffs against receipt status, gasUsed and transaction fees (--consensus-anchor-validation, --consensus-anchor-rules)"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Exit when data ingestion fails before the first block, instead of serving the initial block without ever restarting ingestion"
+          },
+          {
+            "comment": "Report retried RPC errors from the worker threads"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.2.0` to `0.3.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.1.0` to `0.2.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.16.1` to `4.17.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-data-service\" from `^0.1.1` to `0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-json\" from `^1.2.4` to `1.2.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "tag": "@subsquid/evm-data-service_v0.2.0",
       "date": "Mon, 14 Sep 2026 10:05:38 GMT",

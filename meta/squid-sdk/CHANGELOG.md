@@ -1,6 +1,13 @@
 # Change Log - @subsquid/squid-sdk
 
-This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 0.7.0
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Minor changes
+
+- fallback: time-box the active source's getHead()/getFinalizedHead() (new `activeHeadTimeoutMs` policy, 60 s default) so a hung source fails over instead of stalling the processor; `rpc` sources gain `requestTimeout`/`retryAttempts` options, and fallback `rpc` members default to a 30 s request timeout
 
 ## 0.6.2
 Mon, 14 Sep 2026 10:05:38 GMT

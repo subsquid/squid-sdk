@@ -2,6 +2,28 @@
   "name": "@subsquid/util-internal-data-service",
   "entries": [
     {
+      "version": "0.1.2",
+      "tag": "@subsquid/util-internal-data-service_v0.1.2",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "Document that started() rejects when ingestion fails before the first block"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Export `sqd_hotblocks_ingestion_restarts_total` and `sqd_chain_rpc_retried_errors_total`, with `RpcMetricsCollector` to read RPC clients in worker threads"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-json\" from `^1.2.4` to `1.2.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.1",
       "tag": "@subsquid/util-internal-data-service_v0.1.1",
       "date": "Wed, 08 Jul 2026 22:11:26 GMT",
