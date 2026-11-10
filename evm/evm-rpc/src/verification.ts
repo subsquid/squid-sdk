@@ -1607,31 +1607,64 @@ export interface SelfdestructEvent {
  * entries per depth yields the same trace addresses the tree uses. Items that
  * do not parse are skipped: a short or malformed stream simply yields fewer
  * events, and the caller rejects what it cannot bind.
+ *
+ * One opcode can reach the stream twice: as its `sd` step and as the
+ * `SELFDESTRUCT` frame the client enters for it, which is the frame the call
+ * tree holds. Clients differ in the order: Geth steps first, while newer reth
+ * enters and exits the frame and steps after executing the opcode. An `sd`
+ * therefore shares its index with a `SELFDESTRUCT` frame directly next to it,
+ * on either side. Only an `enter` that names its type can pair; an untyped one
+ * takes a new index, so the `sd` keeps its own and a genuine sibling call
+ * before it is never mistaken for its frame.
  */
 export function selfdestructEvents(stream: unknown[]): SelfdestructEvent[] {
     let path: number[] = []
     let children: number[] = [0]
     let found: SelfdestructEvent[] = []
 
+    // What the previous item left that the next one may pair with: an `sd`
+    // awaiting its frame (`sd`), a `SELFDESTRUCT` frame just entered (`entered`),
+    // or one that closed with nothing inside, awaiting its `sd` (`frame`).
+    let pending: {kind: 'sd' | 'entered' | 'frame', index: number} | undefined
+
     for (let item of stream) {
         if (item == null || typeof item !== 'object') continue
         let rec = item as Record<string, unknown>
+        let previous = pending
+        pending = undefined
 
         switch (rec.t) {
             case 'enter': {
+                let selfdestructFrame = isSelfdestructFrameType(rec.type)
+                if (selfdestructFrame && previous?.kind === 'sd') {
+                    path.push(previous.index)
+                    children.push(0)
+                    break
+                }
                 let index = children[children.length - 1]++
                 path.push(index)
                 children.push(0)
+                if (selfdestructFrame) {
+                    pending = {kind: 'entered', index}
+                }
                 break
             }
             case 'exit':
                 if (path.length > 0) {
-                    path.pop()
+                    let index = path.pop()!
                     children.pop()
+                    if (previous?.kind === 'entered' && previous.index === index) {
+                        pending = {kind: 'frame', index}
+                    }
                 }
                 break
             case 'sd': {
-                let index = children[children.length - 1]++
+                let index = previous?.kind === 'frame'
+                    ? previous.index
+                    : children[children.length - 1]++
+                if (previous?.kind !== 'frame') {
+                    pending = {kind: 'sd', index}
+                }
 
                 let {from, to, bal, preBalance} = rec
                 if (typeof from !== 'string' || typeof to !== 'string' || typeof bal !== 'string') {
@@ -1651,6 +1684,11 @@ export function selfdestructEvents(stream: unknown[]): SelfdestructEvent[] {
     }
 
     return found
+}
+
+
+function isSelfdestructFrameType(type: unknown): boolean {
+    return typeof type === 'string' && SELFDESTRUCT_FRAME_TYPES.has(type.toUpperCase())
 }
 
 
