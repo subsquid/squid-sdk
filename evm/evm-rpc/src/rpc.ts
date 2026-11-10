@@ -117,6 +117,27 @@ function findReceiptMismatch(block: Block, receipts: Receipt[], utils: ChainUtil
     return undefined
 }
 
+/**
+ * Why the logs of a block do not fit its body, or undefined when they do
+ */
+function findLogMismatch(block: Block, logs: Log[], utils: ChainUtils): string | undefined {
+    let bodyHashes = new Set(block.block.transactions.map(tx => getTxHash(tx).toLowerCase()))
+    let foreign = logs.find(log => !bodyHashes.has(log.transactionHash.toLowerCase()))
+    if (foreign != null) {
+        return utils.hasHyperliquidSystemTransactions
+            ? `system transaction mismatch: eth_getLogs has a log of transaction ${foreign.transactionHash}, the block body does not`
+            : `eth_getLogs has a log of transaction ${foreign.transactionHash}, which is not in the block body`
+    }
+    if (utils.hasHyperliquidSystemTransactions) {
+        let indices = logs.map(log => qty2Int(log.logIndex)).sort((a, b) => a - b)
+        let gap = indices.findIndex((index, i) => index !== i)
+        if (gap >= 0) {
+            return `system transaction mismatch: eth_getLogs skips log index ${gap}, an answer left out a transaction's logs`
+        }
+    }
+    return undefined
+}
+
 // How many blocks' worth of HyperEVM system transaction evidence Rpc keeps
 const SYSTEM_TRANSACTION_EVIDENCE_BLOCKS = 10_000
 
@@ -488,6 +509,15 @@ export class Rpc {
 
             if (utils.isStable) {
                 this.fixLogIndexes(logs)
+            }
+
+            // As with receipts: a log of a transaction the body lacks fails an assertion in the logs bloom
+            // check, so the answers disagree and the block is fetched again, unchecked
+            let mismatch = findLogMismatch(block, logs, utils)
+            if (mismatch != null) {
+                block._isInvalid = true
+                block._errorMessage = mismatch
+                continue
             }
 
             try {

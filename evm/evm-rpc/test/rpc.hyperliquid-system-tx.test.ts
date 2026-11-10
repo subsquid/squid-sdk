@@ -204,4 +204,27 @@ describe('HyperEVM system transactions', () => {
             )
         })
     })
+
+    describe('on the eth_getLogs path', () => {
+        it('mark a block invalid, instead of throwing, when a log names a system transaction the body left out', async () => {
+            const {block, receipts, withoutSystemTx} = answers()
+            const logs = receipts.flatMap((r: any) => r.logs)
+            const client = new MockRpcClient()
+            client.setFixture('eth_chainId', undefined, '0x3e7')
+            const rpc = new Rpc({client: client as any, verifyTxRoot: true, verifyLogsBloom: true, checkLogIndex: true})
+            const answer = (body: any) => {
+                client.setFixture('eth_getBlockByNumber', [toQty(BLOCK), true], body)
+                client.setFixture('eth_getLogs', [{fromBlock: toQty(BLOCK), toBlock: toQty(BLOCK)}], logs)
+                return rpc.getBlockBatch([BLOCK], {transactions: true, logs: true}).then(blocks => blocks[0])
+            }
+
+            expect((await answer(block))._isInvalid).toBeUndefined()
+            const got = await answer(withoutSystemTx)
+            expect(got._isInvalid).toBe(true)
+            expect(got._errorMessage).toBe(
+                `system transaction mismatch: eth_getLogs has a log of transaction ${SYSTEM_TX}, the block body does not`,
+            )
+        })
+    })
 })
+
