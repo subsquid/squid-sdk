@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "bind an opcode-traced selfdestruct to its own `SELFDESTRUCT` frame whichever the client reports first, so a genuine selfdestruct traced by newer reth is confirmed instead of rejected",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}

@@ -290,7 +290,70 @@ describe('selfdestructEvents', () => {
             expect(events[0].traceAddress, trace.name).toEqual(trace.traceAddress)
         }
     })
+
+    // reth 2.10 enters and exits each SELFDESTRUCT frame before stepping the
+    // opcode; counted apart, every event would land one index past its frame.
+    it('binds events that follow their own selfdestruct frame', () => {
+        let recorded = readJson(Path.join(FIXTURES, 'complete/mainnet-legitimate-repeat-reth.json'))
+        let trace: CallFrame = recorded.trace
+
+        let events = selfdestructEvents(recorded.events)
+
+        expect(events.map(e => e.traceAddress)).toEqual([[0, 0], [1, 0], [2, 0], [3]])
+        for (let event of events) {
+            let frame = frameAt(trace, event.traceAddress)
+            expect(frame.type).toBe('SELFDESTRUCT')
+            expect(event.account).toBe(frame.from.toLowerCase())
+            expect(event.beneficiary).toBe(frame.to!.toLowerCase())
+        }
+    })
+
+    it('binds an event to the selfdestruct frame entered right after it', () => {
+        let events = selfdestructEvents([
+            {t: 'enter', type: 'CALL'},
+            {t: 'exit'},
+            sdItem(),
+            {t: 'enter', type: 'SELFDESTRUCT'},
+            {t: 'exit'},
+            {t: 'enter', type: 'CALL'},
+            sdItem(),
+            {t: 'enter', type: 'SELFDESTRUCT'},
+            {t: 'exit'},
+            {t: 'exit'}
+        ])
+
+        expect(events.map(e => e.traceAddress)).toEqual([[1], [2, 0]])
+    })
+
+    it('never pairs an event with a frame of another type or one it did not follow out of', () => {
+        let events = selfdestructEvents([
+            // a genuine call right before the opcode is a sibling, not its frame
+            {t: 'enter', type: 'CALL'},
+            {t: 'exit'},
+            sdItem(),
+            // nor is a call entered right after it
+            {t: 'enter', type: 'CALL'},
+            {t: 'exit'},
+            // an event inside a selfdestruct frame belongs to that frame's children
+            {t: 'enter', type: 'SELFDESTRUCT'},
+            sdItem(),
+            {t: 'exit'}
+        ])
+
+        expect(events.map(e => e.traceAddress)).toEqual([[1], [3, 0]])
+    })
 })
+
+
+function sdItem(): Record<string, string> {
+    return {
+        t: 'sd',
+        from: '0x00000000000000000000000000000000000000aa',
+        to: '0x00000000000000000000000000000000000000bb',
+        bal: '0x0',
+        preBalance: '0x1'
+    }
+}
 
 
 describe('repairDefectiveSelfdestruct', () => {
@@ -326,6 +389,23 @@ describe('repairDefectiveSelfdestruct', () => {
 
         let defects = findDefectiveSelfdestructs(trace)
         expect(defects).toHaveLength(1)
+        expect(checkDebugFrameStructure(trace)).toBeUndefined()
+
+        let outcome = repairDefectiveSelfdestruct(trace, defects[0], selfdestructEvents(recorded.events))
+
+        expect(outcome).toEqual({repair: 'confirmed'})
+        expect(trace).toEqual(before)
+    })
+
+    // An existing contract sweeps two equal deposits to the same account: the second
+    // sweep repeats the first. reth traced it, so the opcode events follow their frames.
+    it('confirms a legitimate repeat that a reth opcode trace reports', () => {
+        let recorded = readJson(Path.join(FIXTURES, 'complete/mainnet-legitimate-repeat-reth.json'))
+        let trace: CallFrame = recorded.trace
+        let before = clone(trace)
+
+        let defects = findDefectiveSelfdestructs(trace)
+        expect(defects.map(d => d.traceAddress)).toEqual([recorded.traceAddress])
         expect(checkDebugFrameStructure(trace)).toBeUndefined()
 
         let outcome = repairDefectiveSelfdestruct(trace, defects[0], selfdestructEvents(recorded.events))
