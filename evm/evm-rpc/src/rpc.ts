@@ -86,6 +86,9 @@ export {
     systemBalanceDeltaFromReplay,
 }
 
+// How many blocks' worth of HyperEVM system transaction evidence Rpc keeps
+const SYSTEM_TRANSACTION_EVIDENCE_BLOCKS = 10_000
+
 export const DEFAULT_CONSENSUS_ANCHOR_RULES: readonly ConsensusAnchorRule[] = ['status', 'gas']
 
 /** Parses a comma-separated rule list such as `status,gas,system-gas,system-fee`. */
@@ -154,6 +157,8 @@ export class Rpc {
     private consensusAnchorValidation: ConsensusAnchorValidationMode
     private consensusAnchorRules: ReadonlySet<ConsensusAnchorRule>
     private consensusAnchorInputsMissingLogged = false
+    // HyperEVM: the system transactions any answer has shown for a block hash (see checkHyperliquidSystemTransactions)
+    private systemTransactionEvidence = new Map<string, Set<string>>()
     private useGasUsedForReceiptsRoot?: boolean
     private log: Logger
     private receiptsMethod?: GetReceiptsMethod
@@ -291,6 +296,13 @@ export class Rpc {
         }
 
         await this.addRequestedData(chain, req)
+
+        let utils = await this.getChainUtils()
+        if (utils.hasHyperliquidSystemTransactions) {
+            for (let block of chain) {
+                this.checkHyperliquidSystemTransactions(block, utils)
+            }
+        }
 
         // Receipts, call frames and state diffs arrive from separate requests, so the
         // checks that compare them run once all of them are attached.
@@ -540,6 +552,19 @@ export class Rpc {
 
             block.receipts = receipts
 
+            // A receipt of a transaction the body does not have would fail an assertion in the logs bloom
+            // check and stop the process; the answers disagree, so the block is fetched again instead.
+            // On HyperEVM this is a system transaction the body left out.
+            let bodyHashes = new Set(block.block.transactions.map(tx => getTxHash(tx).toLowerCase()))
+            let foreign = receipts.find(receipt => !bodyHashes.has(receipt.transactionHash.toLowerCase()))
+            if (foreign != null) {
+                block._isInvalid = true
+                block._errorMessage = utils.isHyperliquidSystemReceipt(foreign)
+                    ? `system transaction mismatch: eth_getBlockReceipts has system transaction ${foreign.transactionHash}, the block body does not`
+                    : `eth_getBlockReceipts has a receipt of transaction ${foreign.transactionHash}, which is not in the block body`
+                continue
+            }
+
             let logs = []
             for (let receipt of receipts) {
                 logs.push(...receipt.logs)
@@ -583,6 +608,59 @@ export class Rpc {
         return this.reduceBatchOnRetry(call, {
             validateResult: getResultValidator(Receipt)
         })
+    }
+
+    /**
+     * HyperEVM's system transactions are not committed to by the header, and RPC endpoints drop them
+     * from some answers (the body, the receipts, or both), so no single answer proves one missing.
+     * What this catches: a body and receipts that disagree on them, and an answer without one that an
+     * earlier answer for the same block hash had. Such a block is marked invalid and fetched again;
+     * once an answer has shown a system transaction, only answers that have it are taken. A block
+     * whose every answer leaves one out is not caught here.
+     */
+    private checkHyperliquidSystemTransactions(block: Block, utils: ChainUtils): void {
+        // An answer already found invalid (a receipt of a transaction the body lacks, say) still counts as
+        // evidence: what it showed is recorded, only the comparison is skipped.
+        let body: Set<string> | undefined = new Set()
+        for (let tx of block.block.transactions) {
+            if (typeof tx === 'string') {
+                // Without full transaction objects the body does not tell which are system transactions
+                body = undefined
+                break
+            }
+            if (utils.isHyperliquidSystemTransaction(tx)) body.add(tx.hash.toLowerCase())
+        }
+        let receipts: Set<string> | undefined
+        if (block.receipts != null) {
+            receipts = new Set()
+            for (let receipt of block.receipts) {
+                if (utils.isHyperliquidSystemReceipt(receipt)) receipts.add(receipt.transactionHash.toLowerCase())
+            }
+        }
+
+        let key = block.hash.toLowerCase()
+        let earlier = this.systemTransactionEvidence.get(key)
+        let seen = new Set<string>([...(earlier ?? []), ...(body ?? []), ...(receipts ?? [])])
+        this.systemTransactionEvidence.delete(key)
+        this.systemTransactionEvidence.set(key, seen)
+        if (this.systemTransactionEvidence.size > SYSTEM_TRANSACTION_EVIDENCE_BLOCKS) {
+            let oldest = this.systemTransactionEvidence.keys().next().value
+            if (oldest != null) this.systemTransactionEvidence.delete(oldest)
+        }
+        if (block._isInvalid) return
+
+        for (let hash of seen) {
+            let from = earlier?.has(hash) ? 'an earlier answer for this block' : body?.has(hash) ? 'the block body' : 'eth_getBlockReceipts'
+            let missingFrom = body != null && !body.has(hash) ? 'the block body' : receipts != null && !receipts.has(hash) ? 'the receipts' : undefined
+            if (missingFrom == null) continue
+            block._isInvalid = true
+            block._errorMessage = `system transaction mismatch: ${hash} is in ${from} but not in ${missingFrom}`
+            this.log.warn(
+                {rpcEndpoint: this.client.url, blockNumber: block.number, blockHash: block.hash, transactionHash: hash, from, missingFrom},
+                'HyperEVM system transaction missing from an answer; block fetched again'
+            )
+            return
+        }
     }
 
     private async addReceiptsByTx(blocks: Block[]) {

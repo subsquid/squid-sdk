@@ -153,6 +153,22 @@ export class ChainUtils {
         return transactions
     }
 
+    /**
+     * HyperEVM's system transactions, which move assets from HyperCore. The header commits to none of
+     * them, so nothing in a block proves one missing; see {@link Rpc} for how a dropped one is caught.
+     */
+    get hasHyperliquidSystemTransactions(): boolean {
+        return this.isHyperliquidMainnet || this.isHyperliquidTestnet
+    }
+
+    isHyperliquidSystemTransaction(tx: Transaction): boolean {
+        return this.hasHyperliquidSystemTransactions && isHyperliquidSystemTx(tx)
+    }
+
+    isHyperliquidSystemReceipt(receipt: Receipt): boolean {
+        return this.hasHyperliquidSystemTransactions && isHyperliquidSystemReceipt(receipt)
+    }
+
     calculateTransactionHash(tx: Transaction) {
         return transactionHash(tx)
     }
