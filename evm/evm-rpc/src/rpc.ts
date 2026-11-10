@@ -721,10 +721,21 @@ export class Rpc {
         for (let block of blocks) {
             let receipts = receiptsByBlock.get(block.hash) || []
             let logs = receipts.flatMap(r => r.logs)
+            // Attached even when the answer is rejected below: the receipts it did return are evidence of
+            // the block's HyperEVM system transactions (see checkHyperliquidSystemTransactions)
+            block.receipts = receipts
 
             if (receipts.length !== block.block.transactions.length) {
                 block._isInvalid = true
                 block._errorMessage = 'failed to get receipts for all transactions'
+                continue
+            }
+
+            // As on the by-block path: an answer whose receipts and body disagree is fetched again, unchecked
+            let mismatch = findReceiptMismatch(block, receipts, utils)
+            if (mismatch != null) {
+                block._isInvalid = true
+                block._errorMessage = mismatch
                 continue
             }
 
@@ -742,8 +753,6 @@ export class Rpc {
                     rpcMethod: 'receipts validation (eth_getTransactionReceipt path)'
                 })
             }
-
-            block.receipts = receipts
         }
     }
 

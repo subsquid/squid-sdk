@@ -148,4 +148,60 @@ describe('HyperEVM system transactions', () => {
             `eth_getBlockReceipts has a receipt of transaction ${SYSTEM_TX}, which is not in the block body`,
         )
     })
+
+    describe('on the eth_getTransactionReceipt path', () => {
+        function setUpByTx() {
+            const client = new MockRpcClient()
+            client.setFixture('eth_chainId', undefined, '0x3e7')
+            // no fixture for eth_getBlockReceipts: the probe fails and receipts are fetched per transaction
+            const rpc = new Rpc({
+                client: client as any,
+                verifyTxRoot: true,
+                verifyReceiptsRoot: true,
+                verifyLogsBloom: true,
+                checkLogIndex: true,
+            })
+            const answer = (body: any, receipts: any[], hashOnly = false) => {
+                const all = answers()
+                for (const tx of all.block.transactions) {
+                    client.setFixture('eth_getTransactionReceipt', [tx.hash], receipts.find(r => r.transactionHash === tx.hash) ?? null)
+                }
+                client.setFixture(
+                    'eth_getBlockByNumber',
+                    [toQty(BLOCK), !hashOnly],
+                    hashOnly ? {...body, transactions: body.transactions.map((tx: any) => tx.hash)} : body,
+                )
+                return rpc
+                    .getBlockBatch([BLOCK], hashOnly ? {receipts: true} : {transactions: true, receipts: true})
+                    .then(blocks => blocks[0])
+            }
+            return {answer}
+        }
+
+        it('mark a block invalid, instead of throwing, when an answer left a system transaction out without renumbering the logs', async () => {
+            const {withoutSystemTx, receiptsWithLogGap} = answers()
+            const got = await setUpByTx().answer(withoutSystemTx, receiptsWithLogGap)
+            expect(got._isInvalid).toBe(true)
+            expect(got._errorMessage).toBe(
+                "system transaction mismatch: the receipt logs skip log index 0, an answer left out a transaction's logs",
+            )
+        })
+
+        it('keep the evidence of a partial answer', async () => {
+            const {block, receipts, withoutSystemTx, receiptsWithoutSystemTx} = answers()
+            const {answer} = setUpByTx()
+            // a hash-only body with every transaction, receipts only for the system tx: rejected, but evidence
+            const partial = receipts.filter(r => r.transactionHash === SYSTEM_TX)
+            const first = await answer(block, partial, true)
+            expect(first._isInvalid).toBe(true)
+            expect(first._errorMessage).toBe('failed to get receipts for all transactions')
+
+            // a consistent answer without the system tx is then rejected
+            const second = await answer(withoutSystemTx, receiptsWithoutSystemTx)
+            expect(second._isInvalid).toBe(true)
+            expect(second._errorMessage).toBe(
+                `system transaction mismatch: ${SYSTEM_TX} is in an earlier answer for this block but not in the block body`,
+            )
+        })
+    })
 })
