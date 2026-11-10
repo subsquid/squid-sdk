@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/hyperliquid-fills-ingest",
+      "comment": "raise the data service socket timeout to 600 s so a cold start can finish its chunk search",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/hyperliquid-fills-ingest"
+}

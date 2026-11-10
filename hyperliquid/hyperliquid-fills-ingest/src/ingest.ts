@@ -18,6 +18,13 @@ export class HyperliquidIngest extends Ingest<HyperliquidIngestOptions> {
         return 'sqd:hyperliquid-ingest'
     }
 
+    // A cold start binary-searches the hourly files for the resume block, reading one
+    // file per step; that takes minutes, longer than the 120 s default, and the writer
+    // exits if its first request fails, so the pod would crash-loop.
+    protected getSocketTimeout() {
+        return 600_000
+    }
+
     protected setUpProgram(program: Command) {
         program.description('Data ingestion tool for Hyperliquid')
             .requiredOption('--hl-archive <url>', 'Hyperliquid archive url', FileOrUrl(['s3:']))
