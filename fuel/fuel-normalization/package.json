@@ -16,7 +16,7 @@
     "build": "rm -rf lib && tsc"
   },
   "dependencies": {
-    "@subsquid/fuel-data": "^1.1.6",
+    "@subsquid/fuel-data": "^1.1.7",
     "@subsquid/logger": "^1.6.0",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-ingest-tools": "^1.2.0",

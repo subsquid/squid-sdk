@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@subsquid/util-internal-hex": "^1.2.3",
-    "@subsquid/util-internal-json": "^1.2.4"
+    "@subsquid/util-internal-json": "^1.2.5"
   },
   "devDependencies": {
     "@types/node": "^24.13.6",

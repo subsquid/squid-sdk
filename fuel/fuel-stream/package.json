@@ -19,7 +19,7 @@
     "@subsquid/http-client": "^1.9.0",
     "@subsquid/logger": "^1.6.0",
     "@subsquid/fuel-normalization": "^1.2.5",
-    "@subsquid/fuel-data": "^1.1.6",
+    "@subsquid/fuel-data": "^1.1.7",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-archive-client": "^0.2.1",
     "@subsquid/util-internal-ingest-tools": "^1.2.0",

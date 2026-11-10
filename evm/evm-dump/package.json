@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/evm-dump",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Data archiving tool for EVM-based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -20,11 +20,11 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@subsquid/evm-rpc": "^0.2.0",
-    "@subsquid/evm-normalization": "^0.1.0",
+    "@subsquid/evm-rpc": "^0.3.0",
+    "@subsquid/evm-normalization": "^0.2.0",
     "@subsquid/util-internal": "^3.3.1",
-    "@subsquid/util-internal-dump-cli": "^2.1.0",
-    "@subsquid/util-internal-dump-stream": "^0.0.0"
+    "@subsquid/util-internal-dump-cli": "^2.2.0",
+    "@subsquid/util-internal-dump-stream": "^0.1.0"
   },
   "devDependencies": {
     "@nats-io/jetstream": "^3.4.0",

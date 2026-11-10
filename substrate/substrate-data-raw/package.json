@@ -23,10 +23,10 @@
   },
   "peerDependencies": {
     "@subsquid/logger": "^1.6.0",
-    "@subsquid/rpc-client": "^4.16.1"
+    "@subsquid/rpc-client": "^4.17.0"
   },
   "devDependencies": {
-    "@subsquid/rpc-client": "^4.16.1",
+    "@subsquid/rpc-client": "^4.17.0",
     "@types/node": "^24.13.6",
     "typescript": "5.5.4"
   }

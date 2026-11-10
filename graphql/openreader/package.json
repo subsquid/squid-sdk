@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/openreader",
-  "version": "5.5.1",
+  "version": "5.5.2",
   "description": "GraphQL server for postgres-compatible databases",
   "keywords": [
     "graphql",
@@ -46,7 +46,7 @@
     "inflected": "^2.1.0"
   },
   "peerDependencies": {
-    "@subsquid/big-decimal": "^1.0.0"
+    "@subsquid/big-decimal": "^1.0.1"
   },
   "peerDependenciesMeta": {
     "@subsquid/big-decimal": {

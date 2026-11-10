@@ -22,16 +22,16 @@
     "@subsquid/util-internal-hex": "^1.2.3",
     "@subsquid/util-internal-ingest-tools": "^1.2.0",
     "@subsquid/util-internal-range": "^0.3.0",
-    "@subsquid/util-xxhash": "^1.2.2",
+    "@subsquid/util-xxhash": "^1.2.3",
     "@substrate/calc": "^0.2.8",
     "blake2b": "^2.1.4"
   },
   "peerDependencies": {
-    "@subsquid/rpc-client": "^4.16.1",
+    "@subsquid/rpc-client": "^4.17.0",
     "@subsquid/substrate-runtime": "^2.1.0"
   },
   "devDependencies": {
-    "@subsquid/rpc-client": "^4.16.1",
+    "@subsquid/rpc-client": "^4.17.0",
     "@subsquid/substrate-runtime": "^2.1.0",
     "@types/node": "^24.13.6",
     "typescript": "5.5.4"

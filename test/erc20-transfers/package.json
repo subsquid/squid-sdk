@@ -8,9 +8,9 @@
   },
   "dependencies": {
     "@subsquid/batch-processor": "^1.1.0",
-    "@subsquid/graphql-server": "^4.12.1",
-    "@subsquid/typeorm-migration": "^1.4.0",
-    "@subsquid/typeorm-store": "^1.9.2",
+    "@subsquid/graphql-server": "^4.12.2",
+    "@subsquid/typeorm-migration": "^1.4.1",
+    "@subsquid/typeorm-store": "^1.9.3",
     "@subsquid/evm-stream": "^0.1.5",
     "@subsquid/evm-objects": "^0.0.3",
     "dotenv": "^16.6.1",
