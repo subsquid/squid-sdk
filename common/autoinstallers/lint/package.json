@@ -5,5 +5,8 @@
   "description": "Autoinstaller for `rush lint` (Biome).",
   "dependencies": {
     "@biomejs/biome": "1.9.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": []
   }
 }
