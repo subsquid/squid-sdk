@@ -1,5 +1,5 @@
 import {createLogger} from '@subsquid/logger'
-import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
+import {CallOptions, RpcClient, RpcError, RpcProtocolError, RetryError} from '@subsquid/rpc-client'
 import {RpcCall, RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {GetBlock} from '@subsquid/solana-rpc-data'
 import {
@@ -140,6 +140,9 @@ export class Rpc implements RpcApi {
 function captureNoBlockAtSlot(info: RpcErrorInfo): 'skipped' | undefined {
     if (info.message.startsWith('Block not available for slot')) return undefined
     if (/was skipped/.test(info.message)) return 'skipped'
+    if (info.code === -32603 && (info.message === 'Service overloaded' || info.message === 'Internal error')) {
+        throw new RetryError(info.message)
+    }
     throw new RpcError(info)
 }
 
