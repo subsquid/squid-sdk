@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-rpc",
+      "comment": "retry transient Solana getBlock overload and internal-error responses through the existing RPC backoff instead of terminating ingestion",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-rpc"
+}
