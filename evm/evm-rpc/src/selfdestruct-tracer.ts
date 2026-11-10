@@ -6,9 +6,11 @@
  * It also records the balance at the preceding balance-preserving step of the
  * same frame, which stays valid whether a client invokes `step` before or after
  * executing an opcode, including when the selfdestruct burns the balance.
- * `enter`/`exit` carry the call path, so each event binds to exactly one frame,
- * and the reported block and transaction hashes bind the answer to the block
- * being acquired.
+ * `enter`/`exit` carry the call path, so each event binds to exactly one frame;
+ * `enter` names the frame type, because a client also enters a `SELFDESTRUCT`
+ * frame for the opcode, before or after its step (see `selfdestructEvents`).
+ * The reported block and transaction hashes bind the answer to the block being
+ * acquired.
  */
 export const SELFDESTRUCT_TRACER = `{
     evs: [],
@@ -41,7 +43,9 @@ export const SELFDESTRUCT_TRACER = `{
     },
     enter: function(f) {
         this.frames.push({});
-        this.evs.push({t: "enter"});
+        var type = null;
+        try { type = f.getType(); } catch (e) {}
+        this.evs.push({t: "enter", type: type});
     },
     exit: function(r) {
         if (this.frames.length > 1) this.frames.pop();
