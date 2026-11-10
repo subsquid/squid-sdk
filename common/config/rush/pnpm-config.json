@@ -1,0 +1,35 @@
+/**
+ * PNPM settings for this repo (moved here from the legacy "pnpmOptions" field of rush.json).
+ * Reference: https://rushjs.io/pages/configs/pnpm-config_json/
+ */
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/rush/v5/pnpm-config.schema.json",
+
+  "strictPeerDependencies": true,
+  "preventManualShrinkwrapChanges": true,
+
+  /**
+   * Allowlist of dependencies permitted to run install-time scripts (preinstall/install/postinstall,
+   * including the implicit node-gyp build of a package with a binding.gyp). Every other package
+   * installs without running any of its code, so a compromised transitive dependency cannot execute
+   * during `rush install`, which runs in CI, in Docker builds and in the release job.
+   *
+   * Only add a package when skipping its script would break or degrade it, and review what the
+   * script does first. Deliberately excluded: es5-ext, type-graphql and @apollo/protobufjs, whose
+   * scripts only print messages or create unused folders.
+   *
+   * Rush warns that this field needs pnpm 10.1+, but pnpm 9 honors `onlyBuiltDependencies` as well.
+   */
+  "globalOnlyBuiltDependencies": [
+    // native binary download for tsx
+    "esbuild",
+    // native addons, no pure-JS fallback (lz4) or degraded fallback (others)
+    "lz4",
+    "bigint-buffer",
+    "keccak",
+    "secp256k1",
+    // optional native accelerators for ws
+    "bufferutil",
+    "utf-8-validate"
+  ]
+}
