@@ -1,0 +1,171 @@
+{
+  "network": "ethereum-mainnet",
+  "scenario": "legitimate-repeat",
+  "note": "an existing contract sweeps two equal deposits by post-Cancun selfdestruct; reth enters and exits each SELFDESTRUCT frame before the opcode step, block 26384860 transaction 301",
+  "blockHash": "0xc86a1a5fcdf8838b3e81d84c20efd17940aaaba630efacbbfc27e0b15e7755ae",
+  "transactionHash": "0x2f280ecc51b03a0251aa839493a687414c6391305bfbda5bc7e307a50806ac4f",
+  "traceAddress": [
+    2,
+    0
+  ],
+  "client": "reth/v2.10.1-58ebce1/x86_64-unknown-linux-gnu",
+  "trace": {
+    "from": "0x4838b106fce9647bdf1e7877bf73ce8b0bad5f97",
+    "gas": "0x10a98",
+    "gasUsed": "0x10a98",
+    "to": "0xfeeeeeeaea9b3ce71ce8a252aaa11d2dc439cc69",
+    "input": "0x6af31e4fbef7b36845ca31045e86d0b46dbcac4e6752a9cebef7b36845ca31045e86d0b46dbcac4e6752a9ce000000000000099dca7101a6bef7b36845ca31045e86d0b46dbcac4e6752a9ce000000000000b78ffce94dc0bef7b36845ca31045e86d0b46dbcac4e6752a9ce000000000000b78ffce94dc0",
+    "calls": [
+      {
+        "from": "0xfeeeeeeaea9b3ce71ce8a252aaa11d2dc439cc69",
+        "gas": "0x8247",
+        "gasUsed": "0x1393",
+        "to": "0xfeeeeee0e9c10f0484111144ba82788e0b550d91",
+        "input": "0xbef7b36845ca31045e86d0b46dbcac4e6752a9ce",
+        "calls": [
+          {
+            "from": "0xfeeeeee0e9c10f0484111144ba82788e0b550d91",
+            "gas": "0x0",
+            "gasUsed": "0x0",
+            "to": "0xbef7b36845ca31045e86d0b46dbcac4e6752a9ce",
+            "input": "0x",
+            "value": "0x99dca7101a6",
+            "type": "SELFDESTRUCT"
+          }
+        ],
+        "value": "0x99dca7101a6",
+        "type": "CALL"
+      },
+      {
+        "from": "0xfeeeeeeaea9b3ce71ce8a252aaa11d2dc439cc69",
+        "gas": "0x5495",
+        "gasUsed": "0x1393",
+        "to": "0xfeeeeee0e9c10f0484111144ba82788e0b550d91",
+        "input": "0xbef7b36845ca31045e86d0b46dbcac4e6752a9ce",
+        "calls": [
+          {
+            "from": "0xfeeeeee0e9c10f0484111144ba82788e0b550d91",
+            "gas": "0x0",
+            "gasUsed": "0x0",
+            "to": "0xbef7b36845ca31045e86d0b46dbcac4e6752a9ce",
+            "input": "0x",
+            "value": "0xb78ffce94dc0",
+            "type": "SELFDESTRUCT"
+          }
+        ],
+        "value": "0xb78ffce94dc0",
+        "type": "CALL"
+      },
+      {
+        "from": "0xfeeeeeeaea9b3ce71ce8a252aaa11d2dc439cc69",
+        "gas": "0x26e4",
+        "gasUsed": "0x1393",
+        "to": "0xfeeeeee0e9c10f0484111144ba82788e0b550d91",
+        "input": "0xbef7b36845ca31045e86d0b46dbcac4e6752a9ce",
+        "calls": [
+          {
+            "from": "0xfeeeeee0e9c10f0484111144ba82788e0b550d91",
+            "gas": "0x0",
+            "gasUsed": "0x0",
+            "to": "0xbef7b36845ca31045e86d0b46dbcac4e6752a9ce",
+            "input": "0x",
+            "value": "0xb78ffce94dc0",
+            "type": "SELFDESTRUCT"
+          }
+        ],
+        "value": "0xb78ffce94dc0",
+        "type": "CALL"
+      },
+      {
+        "from": "0xfeeeeeeaea9b3ce71ce8a252aaa11d2dc439cc69",
+        "gas": "0x0",
+        "gasUsed": "0x0",
+        "to": "0xbef7b36845ca31045e86d0b46dbcac4e6752a9ce",
+        "input": "0x",
+        "value": "0x80d42707a5d8",
+        "type": "SELFDESTRUCT"
+      }
+    ],
+    "value": "0x1f991eb4b42fe",
+    "type": "CALL"
+  },
+  "events": [
+    {
+      "t": "enter",
+      "type": "CALL"
+    },
+    {
+      "t": "enter",
+      "type": "SELFDESTRUCT"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "bal": "0x0",
+      "from": "0xfeeeeee0e9c10f0484111144ba82788e0b550d91",
+      "preBalance": "0x99dca7101a6",
+      "t": "sd",
+      "to": "0xbef7b36845ca31045e86d0b46dbcac4e6752a9ce"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter",
+      "type": "CALL"
+    },
+    {
+      "t": "enter",
+      "type": "SELFDESTRUCT"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "bal": "0x0",
+      "from": "0xfeeeeee0e9c10f0484111144ba82788e0b550d91",
+      "preBalance": "0xb78ffce94dc0",
+      "t": "sd",
+      "to": "0xbef7b36845ca31045e86d0b46dbcac4e6752a9ce"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter",
+      "type": "CALL"
+    },
+    {
+      "t": "enter",
+      "type": "SELFDESTRUCT"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "bal": "0x0",
+      "from": "0xfeeeeee0e9c10f0484111144ba82788e0b550d91",
+      "preBalance": "0xb78ffce94dc0",
+      "t": "sd",
+      "to": "0xbef7b36845ca31045e86d0b46dbcac4e6752a9ce"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "enter",
+      "type": "SELFDESTRUCT"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "bal": "0x0",
+      "from": "0xfeeeeeeaea9b3ce71ce8a252aaa11d2dc439cc69",
+      "preBalance": "0x80d42707a5d8",
+      "t": "sd",
+      "to": "0xbef7b36845ca31045e86d0b46dbcac4e6752a9ce"
+    }
+  ]
+}
