@@ -57,16 +57,16 @@ Confirm before starting:
 
 ## Previewing a release without side effects
 
-**`rush publish --apply` is not a dry run, even without `--publish`.** Only the npm publish and the git tags are dry-run. It still runs `git checkout -b publish-*`, `git add :/*`, commits the version bump, pushes the temporary branch, then checks out `release/arrowsquid`, merges the bump into it and **pushes `release/arrowsquid`**. The same goes for `rush version --bump`, which is what `bump.yml` runs. Never run either locally against the real `origin` just to "see what would happen".
+**`--target-branch` turns `rush publish --apply` and `rush version --bump` into real releases, even without `--publish`.** With `--target-branch release/arrowsquid` (as `bump.yml` passes it), `rush publish --apply` only dry-runs the npm publish. It still runs `git checkout -b publish-*`, `git add :/*`, commits the version bump, pushes the temporary branch, then checks out `release/arrowsquid`, merges the bump into it and **pushes `release/arrowsquid`**. `rush version --bump --target-branch …` does the same. Without `--target-branch`, Rush skips every git step (they print as `DRYRUN`) and only edits `package.json`, `CHANGELOG.*` and `common/changes/` in the working tree. Never pass `--target-branch` locally just to "see what would happen".
 
-To preview what the next release will bump or publish, stay read-only:
+To preview what the next release will bump or publish, without touching any remote:
 - **Pending changes:** list the change files added since the last bump:
   ```sh
   git fetch origin master release/arrowsquid
   git diff --name-only --diff-filter=A origin/release/arrowsquid origin/master -- common/changes
   ```
 - **What `release.yml` will publish:** after the bump, every `npm`-policy project whose version (`git show origin/release/arrowsquid:<folder>/package.json`) is not yet on npm (`npm view <pkg>@<version> version` fails). Check that each has a trusted publisher; one without stops the publish job at that package.
-- **The exact bump result:** run `rush version --bump --target-branch release/arrowsquid` in a throwaway clone whose `origin` is a local bare repository (`git clone --bare` of this repo, then clone that), so its pushes go nowhere.
+- **The exact bump result:** in a throwaway worktree (`git worktree add --detach <dir> origin/master`), run `rush version --bump` *without* `--target-branch` and inspect `git diff`. Remove the worktree afterwards; nothing is committed or pushed.
 
 ## Steps
 
