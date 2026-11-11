@@ -1,5 +1,5 @@
 import {createLogger} from '@subsquid/logger'
-import {CallOptions, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
+import {CallOptions, RetryError, RpcClient, RpcError, RpcProtocolError} from '@subsquid/rpc-client'
 import {RpcCall, RpcErrorInfo} from '@subsquid/rpc-client/lib/interfaces'
 import {GetBlock} from '@subsquid/solana-rpc-data'
 import {
@@ -40,6 +40,24 @@ export interface GetBlockOptions {
 }
 
 
+/**
+ * Bounded retry of `getBlock` responses that report a `-32603 Internal error`. Unlike an overload,
+ * this code is also returned for permanent failures, so it is retried only a few times: an unlimited
+ * retry would stall the dump on a bad slot instead of stopping it.
+ */
+export interface InternalErrorRetryOptions {
+    /** Total attempts, including the first. `1` disables the retry. Default `5`. */
+    attempts?: number
+    /** Pause before each retry, in ms; the last value repeats. Default `[1000, 2000, 5000, 10000]`. */
+    backoffMs?: number[]
+}
+
+
+export interface RpcOptions {
+    internalErrorRetry?: InternalErrorRetryOptions
+}
+
+
 export interface RpcApi {
     getLatestBlockhash(commitment: Commitment, minContextSlot?: number): Promise<LatestBlockhash>
     getBlocks(commitment: Commitment, startSlot: number, endSlot: number): Promise<number[]>
@@ -49,10 +67,19 @@ export interface RpcApi {
 
 
 export class Rpc implements RpcApi {
+    private internalErrorAttempts: number
+    private internalErrorBackoffMs: number[]
+
     constructor(
         public readonly client: RpcClient,
-        public readonly log = createLogger('sqd:solana-rpc')
-    ) {}
+        public readonly log = createLogger('sqd:solana-rpc'),
+        options: RpcOptions = {}
+    ) {
+        this.internalErrorAttempts = options.internalErrorRetry?.attempts ?? 5
+        this.internalErrorBackoffMs = options.internalErrorRetry?.backoffMs ?? [1000, 2000, 5000, 10000]
+        assert(this.internalErrorAttempts >= 1, 'internalErrorRetry.attempts must be at least 1')
+        assert(this.internalErrorBackoffMs.length > 0, 'internalErrorRetry.backoffMs must not be empty')
+    }
 
     call<T=any>(method: string, params?: any[], options?: CallOptions<T>): Promise<T> {
         return this.client.call(method, params, options)
@@ -89,10 +116,12 @@ export class Rpc implements RpcApi {
     }
 
     getBlock(slot: number, options?: GetBlockOptions): Promise<GetBlock | 'skipped' | null | undefined> {
-        return this.call<GetBlock | 'skipped' | null | undefined>('getBlock', options ? [slot, options] : [slot], {
-            validateResult: getResultValidator(nullable(GetBlock)),
-            validateError: captureNoBlockAtSlot
-        })
+        return this.retryInternalError([slot], () =>
+            this.call<GetBlock | 'skipped' | null | undefined>('getBlock', options ? [slot, options] : [slot], {
+                validateResult: getResultValidator(nullable(GetBlock)),
+                validateError: captureNoBlockAtSlot
+            })
+        )
     }
 
     getBlockBatch(slots: number[], options?: GetBlockOptions): Promise<(GetBlock | 'skipped' | null | undefined)[]> {
@@ -108,10 +137,39 @@ export class Rpc implements RpcApi {
             let params = options ? [slot, options] : [slot]
             call[i] = {method: 'getBlock', params}
         }
-        return this.reduceBatchOnRetry<GetBlock | 'skipped' | null | undefined>(call, {
-            validateResult: getResultValidator(nullable(GetBlock)),
-            validateError: captureNoBlockAtSlot
-        })
+        return this.retryInternalError(slots, () =>
+            this.reduceBatchOnRetry<GetBlock | 'skipped' | null | undefined>(call, {
+                validateResult: getResultValidator(nullable(GetBlock)),
+                validateError: captureNoBlockAtSlot
+            })
+        )
+    }
+
+    /**
+     * Run `fn`, retrying it a bounded number of times while it fails with a `-32603 Internal error`
+     * (see {@link InternalErrorRetryOptions}). Each retry is logged with the affected slots; once the
+     * attempts are used up, the error is rethrown so the caller stops instead of stalling.
+     */
+    private async retryInternalError<T>(slots: number[], fn: () => Promise<T>): Promise<T> {
+        for (let attempt = 1; ; attempt++) {
+            try {
+                return await fn()
+            } catch (err: any) {
+                if (!isInternalError(err) || attempt >= this.internalErrorAttempts) throw err
+                let pause = this.internalErrorBackoffMs[Math.min(attempt, this.internalErrorBackoffMs.length) - 1]
+                this.log.warn(
+                    {
+                        code: err.code,
+                        reason: err.message,
+                        slots: slots.length > 2 ? `${slots[0]}..${slots[slots.length - 1]} (${slots.length})` : slots,
+                        attempt,
+                        attempts: this.internalErrorAttempts,
+                    },
+                    `getBlock failed with "${err.message}" (code ${err.code}), retrying in ${pause}ms`
+                )
+                await new Promise((resolve) => setTimeout(resolve, pause))
+            }
+        }
     }
 
     private async reduceBatchOnRetry<T=any>(batch: {method: string, params?: any[]}[], options: CallOptions<T>): Promise<T[]>  {
@@ -140,7 +198,19 @@ export class Rpc implements RpcApi {
 function captureNoBlockAtSlot(info: RpcErrorInfo): 'skipped' | undefined {
     if (info.message.startsWith('Block not available for slot')) return undefined
     if (/was skipped/.test(info.message)) return 'skipped'
+    // An overload is transient by definition: retry it through the client's backoff, without limit.
+    // The code goes into the message so the client's retry log shows which response it was.
+    if (info.code === -32603 && info.message === 'Service overloaded') {
+        throw new RetryError(`${info.message} (code ${info.code})`)
+    }
+    // `-32603 Internal error` stays an RpcError; `Rpc.retryInternalError` retries it a bounded
+    // number of times, because the same response is also returned for permanent failures.
     throw new RpcError(info)
+}
+
+
+function isInternalError(err: unknown): err is RpcError {
+    return err instanceof RpcError && err.code === -32603 && err.message === 'Internal error'
 }
 
 
