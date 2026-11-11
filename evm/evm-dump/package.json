@@ -20,7 +20,7 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@subsquid/evm-rpc": "^0.3.1",
+    "@subsquid/evm-rpc": "^0.3.2",
     "@subsquid/evm-normalization": "^0.2.0",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-dump-cli": "^2.2.0",
