@@ -274,6 +274,7 @@
     "typescript": "5.5.4",
     "vitest": "4.1.5",
     "@subsquid/solana-rpc": "^1.1.1",
-    "@subsquid/solana-normalization": "^1.1.0"
+    "@subsquid/solana-normalization": "^1.1.0",
+    "@subsquid/util-internal-testing": "^0.0.0"
   }
 }

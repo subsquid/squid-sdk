@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/batch-processor",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/batch-processor"
+}
