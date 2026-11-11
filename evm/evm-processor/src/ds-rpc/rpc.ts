@@ -625,7 +625,7 @@ if (receipt == null || receipt.blockHash !== block.hash || receipt.transactionHa
             let frames = results[i]
             if (frames == null) {
                 block._isInvalid = true
-                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
+                block._errorMessage = 'got no debug call frames from debug_traceBlockByHash (block not found or not yet accepted)'
             } else if (block.block.transactions.length === frames.length) {
                 block.debugFrames = frames
             } else {
@@ -663,7 +663,7 @@ if (receipt == null || receipt.blockHash !== block.hash || receipt.transactionHa
             let diffs = results[i]
             if (diffs == null) {
                 block._isInvalid = true
-                block._errorMessage = 'got "block not found" from debug_traceBlockByHash'
+                block._errorMessage = 'got no debug state diffs from debug_traceBlockByHash (block not found or not yet accepted)'
             } else if (block.block.transactions.length === diffs.length) {
                 block.debugStateDiffs = diffs
             } else {
@@ -861,5 +861,6 @@ function toBlock(getBlock?: GetBlock | null): Block | undefined {
 function captureNotFound(info: RpcErrorInfo): null {
     if (/not found/i.test(info.message)) return null
     if (/not currently canonical/i.test(info.message)) return null
+    if (/cannot query unfinalized data/i.test(info.message)) return null // Avalanche
     throw new RpcError(info)
 }
