@@ -281,6 +281,23 @@ describe('getForkPreviousBlocks', () => {
         ])
     })
 
+    it('reports genesis once when the lookback reaches it', async () => {
+        // Genesis (slot 0) names itself as its parent, with a hash of its own.
+        const headers: Header[] = [
+            {slot: 0, blockhash: 'h0', parentSlot: 0, previousBlockhash: 'h-genesis-parent'},
+            ...chain(1, 2, 3),
+        ]
+        headers[1].previousBlockhash = 'h0'
+        const {rpc} = stubRpc(headers)
+
+        expect(await getForkPreviousBlocks(rpc, 'confirmed', 3, 'h3')).toEqual([
+            {number: 0, hash: 'h0'},
+            {number: 1, hash: 'h1'},
+            {number: 2, hash: 'h2'},
+            {number: 3, hash: 'h3'},
+        ])
+    })
+
     it('reports the parent alone when the slots cannot be listed', async () => {
         const {rpc} = stubRpc([], {failListing: true})
 

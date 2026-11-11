@@ -257,6 +257,8 @@ export async function getForkPreviousBlocks(
         let header = headers[i]
         if (header == null || header === 'skipped' || header.blockhash !== expected.hash) break
         chain.push(expected)
+        // Genesis names its own slot as its parent: there is no block below it to vouch for.
+        if (header.parentSlot >= slot) return chain.reverse()
         expected = {number: header.parentSlot, hash: header.previousBlockhash}
     }
     chain.push(expected)
