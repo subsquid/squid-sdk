@@ -45,6 +45,28 @@ describe('MockEvmRpc', () => {
         }
     })
 
+    it('keeps mining on the new branch after a reorg that adds no blocks', () => {
+        rpc = new MockEvmRpc()
+        rpc.mine(5)
+        let old5 = rpc.hashAt(5)
+        rpc.reorg({depth: 1, length: 0})
+        rpc.mine()
+
+        expect(rpc.head.number).toBe(5)
+        expect(rpc.hashAt(5)).not.toBe(old5)
+        expect(rpc.chain[5].parentHash).toBe(rpc.hashAt(4))
+    })
+
+    it('records the block tags it is asked for', async () => {
+        rpc = new MockEvmRpc({finalizedLag: 1})
+        rpc.mine(3)
+        let url = await rpc.listen()
+        await call(url, 'eth_getBlockByNumber', ['finalized', false])
+        await call(url, 'eth_getBlockByNumber', ['0x1', false])
+
+        expect([...rpc.tags]).toEqual([['finalized', 1]])
+    })
+
     it('answers batch requests and records unsupported methods', async () => {
         rpc = new MockEvmRpc()
         rpc.mine(2)

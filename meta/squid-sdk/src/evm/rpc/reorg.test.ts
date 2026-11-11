@@ -127,9 +127,10 @@ async function startChain(blocks: number, finalizedLag = FINALITY): Promise<void
     url = await chain.listen()
 }
 
-function rpcSource(to: number, finalityConfirmation: number | undefined = FINALITY) {
+/** `finality`: a fixed confirmation depth, or `'tag'` to rely on the node's `finalized` block tag. */
+function rpcSource(to: number, finality: number | 'tag' = FINALITY) {
     return new EvmRpcDataSourceBuilder()
-        .setRpc({url, rpc: finalityConfirmation == null ? {} : {finalityConfirmation}})
+        .setRpc({url, rpc: finality === 'tag' ? {} : {finalityConfirmation: finality}})
         .setFields({block: {hash: true}})
         .includeAllBlocks({from: 0, to})
         .build()
@@ -146,6 +147,8 @@ function fallbackSource(to: number) {
 
 interface Run {
     done: Promise<void>
+    /** Set once `done` has settled either way. */
+    settled: boolean
     /** `from` of every stream the processor opened: the first one, then one per fork it navigated. */
     streams: number[]
 }
@@ -164,7 +167,12 @@ function startProcessor(src: DataSource<any>, db: MemoryHotDatabase): Run {
             return src.getFinalizedStream(req)
         },
     }
-    return {done: new Processor(traced, db, handler).run(), streams}
+    let run: Run = {done: new Processor(traced, db, handler).run(), settled: false, streams}
+    run.done.then(
+        () => (run.settled = true),
+        () => (run.settled = true),
+    )
+    return run
 }
 
 /**
@@ -250,7 +258,17 @@ describe('RPC source reorgs, end to end (#631)', {timeout: 30_000}, () => {
         let finalized = db.finalizedHeight
 
         // Four blocks replaced by two: the canonical head moves below what the processor stored.
+        let stored = new Map(db.rows)
         let base = chain.reorg({depth: 4, length: 2})
+
+        // While the head is below its own, an RPC source cannot see the fork yet - the next block it
+        // needs does not exist. Let the processor poll the shorter chain a few times: it must keep
+        // waiting, neither failing nor writing anything, until the chain grows past its head.
+        let polls = chain.tags.get('latest') ?? 0
+        await until(() => (chain.tags.get('latest') ?? 0) >= polls + 3, 'processor to poll the shorter head')
+        expect(run.settled).toBe(false)
+        expect(db.rows).toEqual(stored)
+
         chain.mineTo(30)
 
         await run.done
@@ -294,7 +312,7 @@ describe('RPC source reorgs, end to end (#631)', {timeout: 30_000}, () => {
     it('rolls back when finality comes from the `finalized` tag', async () => {
         await startChain(12, 4)
         let db = new MemoryHotDatabase()
-        let run = startProcessor(rpcSource(30, undefined), db)
+        let run = startProcessor(rpcSource(30, 'tag'), db)
         await settle(db)
         let finalized = db.finalizedHeight
 
@@ -304,6 +322,7 @@ describe('RPC source reorgs, end to end (#631)', {timeout: 30_000}, () => {
         await run.done
         expectCanonical(db, 30)
         expectRolledBackTo(run, finalized, base.number)
+        expect(chain.tags.get('finalized') ?? 0).toBeGreaterThan(0) // finality really came from the tag
     })
 
     it('rolls back a reorg served through an `rpc` fallback source', async () => {

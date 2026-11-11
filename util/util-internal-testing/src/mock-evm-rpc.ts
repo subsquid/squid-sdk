@@ -49,6 +49,8 @@ export class MockEvmRpc {
     /** Every block ever produced, by hash, including abandoned branches. */
     private known = new Map<string, MockEvmBlock>()
     private branchCounter = 0
+    /** Branch new blocks are mined on: the latest reorg's, even when it added no blocks. */
+    private currentBranch = 0
     private server?: Server
     private chainId: number
     finalizedLag: number
@@ -57,6 +59,8 @@ export class MockEvmRpc {
     readonly calls = new Map<string, number>()
     /** Methods that were called but are not implemented by the mock. */
     readonly unsupportedMethods = new Set<string>()
+    /** Block tags (`latest`, `finalized`, ...) requested from `eth_getBlockByNumber`, with counts. */
+    readonly tags = new Map<string, number>()
 
     constructor(options: MockEvmRpcOptions = {}) {
         this.chainId = options.chainId ?? 31337
@@ -79,7 +83,7 @@ export class MockEvmRpc {
     mine(count = 1): void {
         for (let i = 0; i < count; i++) {
             let parent = this.head
-            this.append(parent.number + 1, parent.branch, parent.hash)
+            this.append(parent.number + 1, this.currentBranch, parent.hash)
         }
     }
 
@@ -96,11 +100,10 @@ export class MockEvmRpc {
         if (depth < 1 || depth >= this.chain.length) throw new Error(`invalid reorg depth ${depth}`)
         this.chain.length -= depth
         let base = this.head
-        let branch = ++this.branchCounter
-        for (let i = 0; i < length; i++) {
-            let parent = this.head
-            this.append(parent.number + 1, branch, parent.hash)
-        }
+        // Mining continues on the new branch even if it starts empty (`length: 0`); otherwise the
+        // next block would recreate an abandoned one, hash included, and the reorg would vanish.
+        this.currentBranch = ++this.branchCounter
+        this.mine(length)
         return base
     }
 
@@ -177,6 +180,7 @@ export class MockEvmRpc {
     }
 
     private blockByTag(tag: string): unknown {
+        if (!tag.startsWith('0x')) this.tags.set(tag, (this.tags.get(tag) ?? 0) + 1)
         let number: number
         switch (tag) {
             case 'latest':
