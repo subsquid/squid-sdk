@@ -2,16 +2,26 @@ import {createServer} from 'node:http'
 import {RpcClient} from '@subsquid/rpc-client'
 import type {RpcRequest} from '@subsquid/rpc-client/lib/interfaces'
 import {describe, expect, it} from 'vitest'
-import {Rpc} from './rpc'
+import {Rpc, type RpcOptions} from './rpc'
 
 type RpcReply = {error: {code: number; message: string}} | {result: unknown}
 
+// Retry fast in tests; the defaults pause for seconds.
+const FAST_RETRY: RpcOptions = {internalErrorRetry: {attempts: 3, backoffMs: [0]}}
+
 async function withRpcServer(
     replies: RpcReply[],
-    run: (rpc: Rpc, client: RpcClient, requests: RpcRequest[]) => Promise<void>,
+    run: (rpc: Rpc, client: RpcClient, requests: RpcRequest[], warnings: string[]) => Promise<void>,
+    rpcOptions: RpcOptions = FAST_RETRY,
 ): Promise<void> {
     const requests: RpcRequest[] = []
+    const warnings: string[] = []
     const pendingReplies = [...replies]
+    // Answers each JSON-RPC request (single or batch) with the next queued reply.
+    const answer = (request: RpcRequest) => {
+        requests.push(request)
+        return {jsonrpc: '2.0', id: request.id, ...pendingReplies.shift()}
+    }
     const server = createServer((req, res) => {
         let body = ''
         req.setEncoding('utf8')
@@ -20,10 +30,8 @@ async function withRpcServer(
         })
         req.on('end', () => {
             const request = JSON.parse(body)
-            requests.push(request)
-            const response = pendingReplies.shift()
             res.setHeader('content-type', 'application/json')
-            res.end(JSON.stringify({jsonrpc: '2.0', id: request.id, ...response}))
+            res.end(JSON.stringify(Array.isArray(request) ? request.map(answer) : answer(request)))
         })
     })
 
@@ -44,10 +52,11 @@ async function withRpcServer(
         retrySchedule: [0],
         log: null,
     })
-    const rpc = new Rpc(client, {warn() {}} as any)
+    const log = {warn: (_info: unknown, msg: string) => void warnings.push(msg)}
+    const rpc = new Rpc(client, log as any, rpcOptions)
 
     try {
-        await run(rpc, client, requests)
+        await run(rpc, client, requests, warnings)
     } finally {
         client.close()
         await new Promise<void>((resolve, reject) => {
@@ -58,17 +67,68 @@ async function withRpcServer(
 }
 
 describe('getBlock RPC error handling', () => {
-    it.each(['Service overloaded', 'Internal error'])(
-        'retries transient -32603 %s response and then succeeds',
-        async (message) => {
-            await withRpcServer([{error: {code: -32603, message}}, {result: null}], async (rpc, client, requests) => {
+    it('retries a transient -32603 Service overloaded response through the client backoff', async () => {
+        await withRpcServer(
+            [{error: {code: -32603, message: 'Service overloaded'}}, {result: null}],
+            async (rpc, client, requests) => {
                 await expect(rpc.getBlock(42)).resolves.toBeNull()
                 expect(requests).toHaveLength(2)
                 expect(requests.map((request) => request.params?.[0])).toEqual([42, 42])
                 expect(client.getMetrics().retriedErrors).toEqual({retry: 1})
-            })
-        },
-    )
+            },
+        )
+    })
+
+    it('retries -32603 Internal error a bounded number of times and logs each retry', async () => {
+        await withRpcServer(
+            [{error: {code: -32603, message: 'Internal error'}}, {result: null}],
+            async (rpc, client, requests, warnings) => {
+                await expect(rpc.getBlock(42)).resolves.toBeNull()
+                expect(requests.map((request) => request.params?.[0])).toEqual([42, 42])
+                // Retried by Rpc, not by the client's unlimited backoff.
+                expect(client.getMetrics().retriedErrors).toEqual({})
+                expect(warnings).toEqual(['getBlock failed with "Internal error" (code -32603), retrying in 0ms'])
+            },
+        )
+    })
+
+    it('fails after the attempts are used up when -32603 Internal error persists', async () => {
+        const internal = {error: {code: -32603, message: 'Internal error'}}
+        await withRpcServer(
+            [internal, internal, internal, {result: null}],
+            async (rpc, _client, requests, warnings) => {
+                await expect(rpc.getBlock(42)).rejects.toMatchObject({
+                    name: 'RpcError',
+                    code: -32603,
+                    message: 'Internal error',
+                })
+                expect(requests).toHaveLength(3)
+                expect(warnings).toHaveLength(2)
+            },
+        )
+    })
+
+    it('applies the bounded Internal error retry to getBlockBatch', async () => {
+        await withRpcServer(
+            [{error: {code: -32603, message: 'Internal error'}}, {result: null}, {result: null}, {result: null}],
+            async (rpc, _client, requests, warnings) => {
+                await expect(rpc.getBlockBatch([41, 42])).resolves.toEqual([null, null])
+                expect(requests.map((request) => request.params?.[0])).toEqual([41, 42, 41, 42])
+                expect(warnings).toEqual(['getBlock failed with "Internal error" (code -32603), retrying in 0ms'])
+            },
+        )
+    })
+
+    it('does not retry Internal error when attempts is 1', async () => {
+        await withRpcServer(
+            [{error: {code: -32603, message: 'Internal error'}}, {result: null}],
+            async (rpc, _client, requests) => {
+                await expect(rpc.getBlock(42)).rejects.toMatchObject({name: 'RpcError', code: -32603})
+                expect(requests).toHaveLength(1)
+            },
+            {internalErrorRetry: {attempts: 1}},
+        )
+    })
 
     it.each([
         {message: 'Block not available for slot 42', expected: undefined},
