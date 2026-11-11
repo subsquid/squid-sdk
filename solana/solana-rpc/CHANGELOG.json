@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-rpc",
   "entries": [
     {
+      "version": "1.1.1",
+      "tag": "@subsquid/solana-rpc_v1.1.1",
+      "date": "Wed, 11 Nov 2026 17:34:29 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "retry transient `-32603 Service overloaded` getBlock responses through the RPC backoff instead of terminating ingestion; retry `-32603 Internal error` a bounded number of times, with a warning per retry, before failing"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.0",
       "tag": "@subsquid/solana-rpc_v1.1.0",
       "date": "Mon, 14 Sep 2026 10:05:38 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+This log was last generated on Wed, 11 Nov 2026 17:34:29 GMT and should not be manually modified.
+
+## 1.30.3
+Wed, 11 Nov 2026 17:34:29 GMT
+
+### Patches
+
+- retry on "cannot query unfinalized data" error from eth_getBlockByHash and debug_traceBlockByHash
 
 ## 1.30.2
 Tue, 10 Nov 2026 07:49:45 GMT

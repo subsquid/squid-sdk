@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/hyperliquid-fills-ingest",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Data fetcher and normalizer for Hyperliquid fills",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",

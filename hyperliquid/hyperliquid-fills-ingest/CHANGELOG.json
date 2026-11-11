@@ -2,6 +2,18 @@
   "name": "@subsquid/hyperliquid-fills-ingest",
   "entries": [
     {
+      "version": "0.0.4",
+      "tag": "@subsquid/hyperliquid-fills-ingest_v0.0.4",
+      "date": "Wed, 11 Nov 2026 17:34:29 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "raise the data service socket timeout to 600 s so a cold start can finish its chunk search"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/hyperliquid-fills-ingest_v0.0.3",
       "date": "Tue, 10 Nov 2026 07:49:45 GMT",

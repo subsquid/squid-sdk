@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-rpc
 
-This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+This log was last generated on Wed, 11 Nov 2026 17:34:29 GMT and should not be manually modified.
+
+## 0.3.1
+Wed, 11 Nov 2026 17:34:29 GMT
+
+### Patches
+
+- bind an opcode-traced selfdestruct to its own `SELFDESTRUCT` frame whichever the client reports first, so a genuine selfdestruct traced by newer reth is confirmed instead of rejected
 
 ## 0.3.0
 Tue, 10 Nov 2026 07:49:45 GMT

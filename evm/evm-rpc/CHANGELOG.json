@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-rpc",
   "entries": [
     {
+      "version": "0.3.1",
+      "tag": "@subsquid/evm-rpc_v0.3.1",
+      "date": "Wed, 11 Nov 2026 17:34:29 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "bind an opcode-traced selfdestruct to its own `SELFDESTRUCT` frame whichever the client reports first, so a genuine selfdestruct traced by newer reth is confirmed instead of rejected"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.0",
       "tag": "@subsquid/evm-rpc_v0.3.0",
       "date": "Tue, 10 Nov 2026 07:49:45 GMT",

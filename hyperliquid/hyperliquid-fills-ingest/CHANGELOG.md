@@ -1,6 +1,13 @@
 # Change Log - @subsquid/hyperliquid-fills-ingest
 
-This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+This log was last generated on Wed, 11 Nov 2026 17:34:29 GMT and should not be manually modified.
+
+## 0.0.4
+Wed, 11 Nov 2026 17:34:29 GMT
+
+### Patches
+
+- raise the data service socket timeout to 600 s so a cold start can finish its chunk search
 
 ## 0.0.3
 Tue, 10 Nov 2026 07:49:45 GMT

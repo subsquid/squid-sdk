@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-rpc
 
-This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+This log was last generated on Wed, 11 Nov 2026 17:34:29 GMT and should not be manually modified.
+
+## 1.1.1
+Wed, 11 Nov 2026 17:34:29 GMT
+
+### Patches
+
+- retry transient `-32603 Service overloaded` getBlock responses through the RPC backoff instead of terminating ingestion; retry `-32603 Internal error` a bounded number of times, with a warning per retry, before failing
 
 ## 1.1.0
 Mon, 14 Sep 2026 10:05:38 GMT
