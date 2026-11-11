@@ -2,6 +2,18 @@
   "name": "@subsquid/solana-rpc",
   "entries": [
     {
+      "version": "1.1.2",
+      "tag": "@subsquid/solana-rpc_v1.1.2",
+      "date": "Wed, 11 Nov 2026 19:54:14 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "On a reorg, report up to 100 blocks of the new chain below the fork in `ForkException.previousBlocks`, as the Portal does, so the batch processor can roll back to the last shared block instead of failing with \"Unable to process fork\""
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.1",
       "tag": "@subsquid/solana-rpc_v1.1.1",
       "date": "Wed, 11 Nov 2026 17:34:29 GMT",

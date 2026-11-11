@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-rpc
 
-This log was last generated on Wed, 11 Nov 2026 17:34:29 GMT and should not be manually modified.
+This log was last generated on Wed, 11 Nov 2026 19:54:14 GMT and should not be manually modified.
+
+## 0.3.2
+Wed, 11 Nov 2026 19:54:14 GMT
+
+### Patches
+
+- On a reorg, report up to 100 blocks of the new chain below the fork in `ForkException.previousBlocks`, as the Portal does, so the batch processor can roll back to the last shared block instead of failing with "Unable to process fork"
 
 ## 0.3.1
 Wed, 11 Nov 2026 17:34:29 GMT
