@@ -309,6 +309,15 @@ export class Rpc {
         return chain
     }
 
+    /**
+     * Block headers by number, one entry per requested number (`null` where the node has no block).
+     * Unlike {@link getBlockBatch}, the result is not truncated at a parent-hash mismatch, so a caller
+     * can link the blocks from the top instead (see `EvmRpcDataSource.ensureContinuity`).
+     */
+    getBlockHeaders(numbers: number[]): Promise<(Block | null)[]> {
+        return this.getBlocks(numbers, false)
+    }
+
     private async getBlocks(numbers: number[], withTransactions: boolean): Promise<(Block | null)[]> {
         let call = numbers.map(height => ({
             method: 'eth_getBlockByNumber',
