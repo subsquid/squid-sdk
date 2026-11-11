@@ -13,18 +13,9 @@
  * (reliability/README.md, "reorgs").
  */
 
-import {
-    type DataHandlerContext,
-    type FinalDatabaseState,
-    type FinalTxInfo,
-    type HashAndHeight,
-    type HotDatabase,
-    type HotDatabaseState,
-    type HotTxInfo,
-    Processor,
-} from '@subsquid/batch-processor'
+import {type DataHandlerContext, Processor} from '@subsquid/batch-processor'
 import {LogLevel, setLogLevelCallback} from '@subsquid/logger'
-import {MockEvmRpc} from '@subsquid/util-internal-testing'
+import {MemoryHotDatabase, type MemoryStore, MockEvmRpc} from '@subsquid/util-internal-testing'
 import type {DataSource} from '@subsquid/util-internal-data-source'
 import {afterEach, describe, expect, it, vi} from 'vitest'
 
@@ -43,73 +34,7 @@ setLogLevelCallback((ns) => (ns.startsWith('sqd:') ? LogLevel.ERROR : undefined)
 
 const FINALITY = 5 // blocks below the head that stay unfinalized (hot)
 
-interface Store {
-    write(height: number, hash: string): void
-}
-
-/**
- * A hot database with TypeormDatabase's rollback semantics: rows above `baseHead` are undone before
- * new blocks are written, `baseHead` must be a block the database actually holds, and finalized
- * blocks leave the hot set. `connect()` returns the same state, so a second processor can resume.
- */
-class MemoryHotDatabase implements HotDatabase<Store> {
-    readonly supportsHotBlocks = true as const
-    /** One row per handled block: height -> block hash. */
-    readonly rows = new Map<number, string>()
-    private finalized: HashAndHeight = {height: -1, hash: '0x'}
-    private top: HashAndHeight[] = []
-
-    get head(): HashAndHeight {
-        return this.top[this.top.length - 1] ?? this.finalized
-    }
-
-    get finalizedHeight(): number {
-        return this.finalized.height
-    }
-
-    async connect(): Promise<HotDatabaseState> {
-        return {...this.finalized, top: [...this.top]}
-    }
-
-    async transact(info: FinalTxInfo, cb: (store: Store) => Promise<unknown>): Promise<void> {
-        this.assertHolds(info.prevHead)
-        this.rollbackTo(info.prevHead.height)
-        await cb(this.store())
-        this.finalized = info.nextHead
-        this.top = []
-    }
-
-    async transactHot2(
-        info: HotTxInfo,
-        cb: (store: Store, sliceBeg: number, sliceEnd: number) => Promise<unknown>,
-    ): Promise<void> {
-        this.assertHolds(info.baseHead)
-        this.rollbackTo(info.baseHead.height)
-        await cb(this.store(), 0, info.newBlocks.length)
-        this.top.push(...info.newBlocks)
-        if (info.finalizedHead.height > this.finalized.height) {
-            this.finalized = info.finalizedHead
-            this.top = this.top.filter((b) => b.height > info.finalizedHead.height)
-        }
-    }
-
-    private assertHolds(ref: HashAndHeight): void {
-        if (ref.height < 0) return
-        let held = ref.height === this.finalized.height ? this.finalized : this.top.find((b) => b.height === ref.height)
-        if (held?.hash !== ref.hash) throw new Error(`database does not hold base block ${ref.height}#${ref.hash}`)
-    }
-
-    private rollbackTo(height: number): void {
-        for (let h of [...this.rows.keys()]) if (h > height) this.rows.delete(h)
-        this.top = this.top.filter((b) => b.height <= height)
-    }
-
-    private store(): Store {
-        return {write: (height, hash) => this.rows.set(height, hash)}
-    }
-}
-
-const handler = async (ctx: DataHandlerContext<{header: {number: number; hash: string}}, Store>) => {
+const handler = async (ctx: DataHandlerContext<{header: {number: number; hash: string}}, MemoryStore>) => {
     for (let b of ctx.blocks) ctx.store.write(b.header.number, b.header.hash)
 }
 

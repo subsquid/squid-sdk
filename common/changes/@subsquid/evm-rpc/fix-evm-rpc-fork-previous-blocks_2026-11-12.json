@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/evm-rpc",
-      "comment": "On a reorg, report the new chain below the fork in `ForkException.previousBlocks` (linked by parent hash, covering the unfinalized window), so the batch processor can roll back to the last shared block instead of failing with \"Unable to process fork\"",
+      "comment": "On a reorg, report up to 100 blocks of the new chain below the fork in `ForkException.previousBlocks`, as the Portal does, so the batch processor can roll back to the last shared block instead of failing with \"Unable to process fork\"",
       "type": "patch"
     }
   ],

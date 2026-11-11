@@ -6,14 +6,10 @@ import {EvmRpcDataSource} from './rpc-data-source'
 import type {IngestBatch} from './ingest'
 
 // On a fork, ensureContinuity asks the node for the new chain below the mismatching block
-// (getLatestBlockhash for the unfinalized window, getBlockHeaders for the blocks). The stub serves a
-// scripted "node chain" for that; the constructor also reads getConcurrency().
+// (getBlockHeaders). The stub serves a scripted "node chain" for that; the constructor also reads
+// getConcurrency().
 interface NodeChain {
     blocks?: Block[]
-    latest?: number
-    finalized?: number
-    /** Make the finality lookup fail. */
-    noFinality?: boolean
 }
 
 function mkSource(node: NodeChain = {}): EvmRpcDataSource & {headerRequests: number[][]} {
@@ -21,11 +17,6 @@ function mkSource(node: NodeChain = {}): EvmRpcDataSource & {headerRequests: num
     const headerRequests: number[][] = []
     const rpc = {
         getConcurrency: () => 1,
-        async getLatestBlockhash(commitment: 'latest' | 'finalized') {
-            if (node.noFinality) throw new Error('finality unavailable')
-            const number = commitment === 'latest' ? (node.latest ?? 0) : (node.finalized ?? 0)
-            return {number, hash: '0xhead'}
-        },
         async getBlockHeaders(numbers: number[]) {
             headerRequests.push(numbers)
             return numbers.map((n) => byNumber.get(n) ?? null)
@@ -110,7 +101,7 @@ describe('EvmRpcDataSource.ensureContinuity', () => {
         // (what we expected) and previousBlocks[0].hash='0x4alt' (what came
         // in). No blocks yield before the throw because the bad block is at
         // index 0.
-        const src = mkSource({blocks: newChain(4, 3), latest: 5, finalized: 2})
+        const src = mkSource({blocks: newChain(4, 3)})
         const batch: IngestBatch = {
             blocks: [mkBlock(5, '0x5', '0x4alt')],
         }
@@ -138,7 +129,7 @@ describe('EvmRpcDataSource.ensureContinuity', () => {
         // yielded to the consumer before the ForkException surfaces — a
         // deliberate design choice in ensureContinuity to simplify downstream
         // code that doesn't want to re-fetch the continuous prefix.
-        const src = mkSource({blocks: newChain(4, 3), latest: 5, finalized: 2})
+        const src = mkSource({blocks: newChain(4, 3)})
         const batch: IngestBatch = {
             blocks: [mkBlock(3, '0x3', '0x2'), mkBlock(4, '0x4', '0x3'), mkBlock(5, '0x5alt', '0x4alt')],
         }
@@ -161,7 +152,7 @@ describe('EvmRpcDataSource.ensureContinuity', () => {
         // Simulates the way ingest() delivers blocks — several small batches.
         // The first batch ends cleanly; the second opens with a block whose
         // parent doesn't match the last block of the previous batch.
-        const src = mkSource({blocks: newChain(2, 1), latest: 3, finalized: 0})
+        const src = mkSource({blocks: newChain(2, 1)})
         const first: IngestBatch = {blocks: [mkBlock(1, '0x1', '0x0'), mkBlock(2, '0x2', '0x1')]}
         const second: IngestBatch = {blocks: [mkBlock(3, '0x3alt', '0x2alt')]}
 
@@ -200,10 +191,25 @@ describe('EvmRpcDataSource.ensureContinuity', () => {
         it('stops at a broken link, as when a node answers some heights from the old branch', async () => {
             const blocks = newChain(4, 3)
             blocks[2] = mkBlock(2, '0x2old', '0x1') // not the parent of 0x3
-            const src = mkSource({blocks, latest: 5, finalized: 0})
+            const src = mkSource({blocks})
 
             const {error} = await drain(src.ensureContinuity(forkAt5(), 5, '0x4'))
 
+            // Block 3's parent hash still vouches for the shared block 2.
+            expect((error as ForkException).previousBlocks).toEqual([
+                {number: 2, hash: '0x2'},
+                {number: 3, hash: '0x3'},
+                {number: 4, hash: '0x4alt'},
+            ])
+        })
+
+        it('still reports a block it has no header for, when its child vouches for it', async () => {
+            const blocks = newChain(4, 3).filter((b) => b.number !== 3)
+            const src = mkSource({blocks})
+
+            const {error} = await drain(src.ensureContinuity(forkAt5(), 5, '0x4'))
+
+            // Block 4's parent hash identifies the shared block 3, the one the consumer rolls back to.
             expect((error as ForkException).previousBlocks).toEqual([
                 {number: 3, hash: '0x3'},
                 {number: 4, hash: '0x4alt'},
@@ -211,33 +217,26 @@ describe('EvmRpcDataSource.ensureContinuity', () => {
         })
 
         it('falls back to the parent alone when the node does not have it', async () => {
-            const src = mkSource({blocks: [], latest: 5, finalized: 0})
+            const src = mkSource({blocks: []})
 
             const {error} = await drain(src.ensureContinuity(forkAt5(), 5, '0x4'))
 
             expect((error as ForkException).previousBlocks).toEqual([{number: 4, hash: '0x4alt'}])
         })
 
-        it('still reports the chain when the finality lookup fails', async () => {
-            const src = mkSource({blocks: newChain(4, 3), noFinality: true})
-
-            const {error} = await drain(src.ensureContinuity(forkAt5(), 5, '0x4'))
-
-            expect((error as ForkException).previousBlocks).toHaveLength(5)
-        })
-
-        it('reaches below the unfinalized window by a margin, in bounded requests', async () => {
-            // latest 300, finalized 280: a 20-block window plus a 64-block margin below block 299.
-            const src = mkSource({blocks: newChain(299, 290), latest: 300, finalized: 280})
+        it('reports the 100 blocks below the fork, as the Portal does, in one request', async () => {
+            const src = mkSource({blocks: newChain(299, 290)})
 
             const {error} = await drain(
                 src.ensureContinuity(yieldBatches({blocks: [mkBlock(300, '0x300', '0x299alt')]}), 300, '0x299'),
             )
 
             const previous = (error as ForkException).previousBlocks
-            expect(previous[0].number).toBe(299 - (20 + 64) + 1)
+            // 100 headers, plus block 199 that the lowest of them vouches for.
+            expect(previous).toHaveLength(101)
+            expect(previous[0]).toEqual({number: 199, hash: '0x199'})
             expect(previous[previous.length - 1]).toEqual({number: 299, hash: '0x299alt'})
-            expect(Math.max(...src.headerRequests.map((r) => r.length))).toBeLessThanOrEqual(100)
+            expect(src.headerRequests).toEqual([Array.from({length: 100}, (_, i) => 200 + i)])
         })
     })
 })

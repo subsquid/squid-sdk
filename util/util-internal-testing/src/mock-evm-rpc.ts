@@ -14,8 +14,7 @@
  */
 
 import {createHash} from 'node:crypto'
-import {createServer, type Server} from 'node:http'
-import type {AddressInfo} from 'node:net'
+import {type JsonRpcReply, type JsonRpcRequest, serveJsonRpc} from './json-rpc-server'
 
 export interface MockEvmBlock {
     number: number
@@ -51,7 +50,7 @@ export class MockEvmRpc {
     private branchCounter = 0
     /** Branch new blocks are mined on: the latest reorg's, even when it added no blocks. */
     private currentBranch = 0
-    private server?: Server
+    private closeServer?: () => Promise<void>
     private chainId: number
     finalizedLag: number
 
@@ -108,43 +107,15 @@ export class MockEvmRpc {
     }
 
     async listen(): Promise<string> {
-        let server = createServer((req, res) => {
-            let body = ''
-            req.setEncoding('utf8')
-            req.on('data', (chunk) => {
-                body += chunk
-            })
-            req.on('end', () => {
-                let response: unknown
-                try {
-                    let request = JSON.parse(body)
-                    response = Array.isArray(request) ? request.map((r) => this.handle(r)) : this.handle(request)
-                } catch (err) {
-                    response = {jsonrpc: '2.0', id: null, error: {code: -32700, message: String(err)}}
-                }
-                res.setHeader('content-type', 'application/json')
-                res.end(JSON.stringify(response))
-            })
-        })
-        await new Promise<void>((resolve, reject) => {
-            server.once('error', reject)
-            server.listen(0, '127.0.0.1', () => {
-                server.off('error', reject)
-                resolve()
-            })
-        })
-        this.server = server
-        return `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+        let {url, close} = await serveJsonRpc((request) => this.handle(request))
+        this.closeServer = close
+        return url
     }
 
     async close(): Promise<void> {
-        let server = this.server
-        if (server == null) return
-        this.server = undefined
-        await new Promise<void>((resolve, reject) => {
-            server.close((err) => (err ? reject(err) : resolve()))
-            server.closeAllConnections()
-        })
+        let close = this.closeServer
+        this.closeServer = undefined
+        await close?.()
     }
 
     private append(number: number, branch: number, parentHash: string): void {
@@ -153,30 +124,23 @@ export class MockEvmRpc {
         this.known.set(block.hash, block)
     }
 
-    private handle(request: {id: unknown; method: string; params?: unknown[]}): unknown {
-        let {id, method, params = []} = request
+    private handle({method, params = []}: JsonRpcRequest): JsonRpcReply {
         this.calls.set(method, (this.calls.get(method) ?? 0) + 1)
-        let result: unknown
         switch (method) {
             case 'eth_chainId':
-                result = toQty(this.chainId)
-                break
+                return {result: toQty(this.chainId)}
             case 'eth_blockNumber':
-                result = toQty(this.head.number)
-                break
+                return {result: toQty(this.head.number)}
             case 'eth_getBlockByNumber':
-                result = this.blockByTag(params[0] as string)
-                break
+                return {result: this.blockByTag(params[0] as string)}
             case 'eth_getBlockByHash': {
                 let block = this.known.get(params[0] as string)
-                result = block ? this.toJson(block) : null
-                break
+                return {result: block ? this.toJson(block) : null}
             }
             default:
                 this.unsupportedMethods.add(method)
-                return {jsonrpc: '2.0', id, error: {code: -32601, message: `the method ${method} does not exist`}}
+                return {error: {code: -32601, message: `the method ${method} does not exist`}}
         }
-        return {jsonrpc: '2.0', id, result}
     }
 
     private blockByTag(tag: string): unknown {

@@ -7,16 +7,12 @@ import {ingest, IngestBatch} from './ingest'
 
 
 /**
- * Blocks of the new chain reported below a fork, on top of the current unfinalized window
- * (`latest - finalized`). The consumer rolls back to the newest of its blocks that is also in the
- * list, so the list has to reach below whatever the consumer still holds unfinalized: it may have
- * fallen behind the source's finality, or be resuming after downtime.
+ * Blocks of the new chain reported below a fork, ending at the new parent - the depth the Portal's
+ * hot-block service reports in its fork responses. The consumer rolls back to the newest of its
+ * blocks that is also in the list; the batch processor keeps only some of its unfinalized blocks,
+ * so a list that just reaches the fork point is often not enough.
  */
-const FORK_LOOKBACK_MARGIN = 64
-/** Upper bound on the blocks reported below a fork, for chains with a very long unfinalized window. */
-const FORK_LOOKBACK_LIMIT = 1000
-/** Blocks fetched per request while collecting them. */
-const FORK_LOOKBACK_BATCH = 100
+const FORK_PREVIOUS_BLOCKS = 100
 
 
 export interface EvmRpcDataSourceOptions {
@@ -141,37 +137,23 @@ export class EvmRpcDataSource implements DataSource<Block> {
      * is not on the new chain as far as this list can tell.
      */
     private async getForkPreviousBlocks(block: Block): Promise<BlockRef[]> {
-        let top = block.number - 1
-        let parent: BlockRef = {number: top, hash: block.block.parentHash}
-        if (top < 0) return [parent]
-
-        let depth = FORK_LOOKBACK_LIMIT
-        try {
-            let [head, finalized] = await Promise.all([
-                this.rpc.getLatestBlockhash('latest'),
-                this.rpc.getLatestBlockhash('finalized'),
-            ])
-            depth = Math.min(FORK_LOOKBACK_LIMIT, Math.max(0, head.number - finalized.number) + FORK_LOOKBACK_MARGIN)
-        } catch {
-            // The window is unknown; fall back to the limit rather than to too short a list.
-        }
-        let lowest = Math.max(0, top - depth + 1)
-
+        // Each block's parent hash vouches for the block below it, so the walk always ends with that
+        // link - even where the node has no header for it, or answers from the old branch.
+        let expected: BlockRef = {number: block.number - 1, hash: block.block.parentHash}
         let chain: BlockRef[] = []
-        let expectedHash = block.block.parentHash
-        for (let hi = top; hi >= lowest; hi -= FORK_LOOKBACK_BATCH) {
-            let lo = Math.max(lowest, hi - FORK_LOOKBACK_BATCH + 1)
+        if (expected.number >= 0) {
             let numbers: number[] = []
-            for (let n = lo; n <= hi; n++) numbers.push(n)
+            for (let n = Math.max(0, expected.number - FORK_PREVIOUS_BLOCKS + 1); n <= expected.number; n++) numbers.push(n)
             let headers = await this.rpc.getBlockHeaders(numbers)
             for (let i = headers.length - 1; i >= 0; i--) {
                 let b = headers[i]
-                if (b == null || b.block.hash !== expectedHash) return linked(chain, parent)
-                chain.push({number: b.number, hash: b.block.hash})
-                expectedHash = b.block.parentHash
+                if (b == null || b.block.hash !== expected.hash) break
+                chain.push(expected)
+                expected = {number: b.number - 1, hash: b.block.parentHash}
             }
         }
-        return linked(chain, parent)
+        if (expected.number >= 0) chain.push(expected)
+        return chain.reverse()
     }
 
     private ingest(commitment: Commitment, range: Range): AsyncIterable<IngestBatch> {
@@ -187,8 +169,3 @@ export class EvmRpcDataSource implements DataSource<Block> {
     }
 }
 
-
-/** `chain` was collected top-down; return it ascending, or at least the known parent. */
-function linked(chain: BlockRef[], parent: BlockRef): BlockRef[] {
-    return chain.length > 0 ? chain.reverse() : [parent]
-}
