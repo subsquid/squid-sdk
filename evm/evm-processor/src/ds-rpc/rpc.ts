@@ -625,7 +625,7 @@ if (receipt == null || receipt.blockHash !== block.hash || receipt.transactionHa
             let frames = results[i]
             if (frames == null) {
                 block._isInvalid = true
-                block._errorMessage = 'failed to get debug call frames for a block'
+                block._errorMessage = 'got no debug call frames from debug_traceBlockByHash (block not found or not yet accepted)'
             } else if (block.block.transactions.length === frames.length) {
                 block.debugFrames = frames
             } else {
@@ -663,7 +663,7 @@ if (receipt == null || receipt.blockHash !== block.hash || receipt.transactionHa
             let diffs = results[i]
             if (diffs == null) {
                 block._isInvalid = true
-                block._errorMessage = 'failed to get debug state diffs for a block'
+                block._errorMessage = 'got no debug state diffs from debug_traceBlockByHash (block not found or not yet accepted)'
             } else if (block.block.transactions.length === diffs.length) {
                 block.debugStateDiffs = diffs
             } else {
