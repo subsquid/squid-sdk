@@ -56,6 +56,8 @@ async function startUpstream(behaviour: Behaviour = {}): Promise<Upstream> {
                 return {result: frames}
             case 'debug_traceBlockByHash': {
                 requests.push('prestateTracer')
+                // Recovery reads balances only.
+                expect(req.params[1]?.tracerConfig).toEqual({disableCode: true, disableStorage: true})
                 return {result: block.transactions.map((tx: any) => ({
                     txHash: tx.hash,
                     result: tx.hash === POISONED_TX ? (behaviour.prestate?.() ?? EVIDENCE.prestate) : {}

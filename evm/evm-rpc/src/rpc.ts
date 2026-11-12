@@ -1340,7 +1340,13 @@ export class Rpc {
     private async traceBlockPrestates(block: Block, req: DataRequest): Promise<any[]> {
         let prestates = await this.call(
             'debug_traceBlockByHash',
-            [block.hash, {tracer: 'prestateTracer', timeout: req.debugTraceTimeout}],
+            // Only balances are read: code and storage would only make the answer
+            // bigger than some upstreams are willing to send.
+            [block.hash, {
+                tracer: 'prestateTracer',
+                tracerConfig: {disableCode: true, disableStorage: true},
+                timeout: req.debugTraceTimeout
+            }],
             {retryAttempts: SELFDESTRUCT_TRACE_RETRY_ATTEMPTS}
         )
         if (!Array.isArray(prestates) || prestates.length !== block.block.transactions.length) {
