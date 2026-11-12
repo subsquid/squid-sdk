@@ -61,19 +61,27 @@ export class SolanaDumper extends Dumper<Block, Options> {
         return this.options().validateChainContinuity
     }
 
+    /** The worker-thread RPC clients every request of this dumper goes through. */
     @def
-    private dataSource(): SolanaRpcDataSource {
+    private rpcPool(): RemoteRpcPool {
         let options = this.options()
-
-        let rpc = new RemoteRpcPool(options.strideConcurrency, {
+        return new RemoteRpcPool(options.strideConcurrency, {
             url: options.endpoint,
             capacity: Number.MAX_SAFE_INTEGER,
             retryAttempts: Number.MAX_SAFE_INTEGER,
             requestTimeout: 30_000
         })
+    }
 
+    // The dumper's own client (`rpc()`) sends no requests here; report the workers' clients.
+    protected rpcMetrics() {
+        return async () => [await this.rpcPool().getRpcMetrics()]
+    }
+
+    @def
+    private dataSource(): SolanaRpcDataSource {
         return new SolanaRpcDataSource({
-            rpc,
+            rpc: this.rpcPool(),
             req: {transactions: true, rewards: true},
             strideSize: this.options().strideSize,
             strideConcurrency: this.options().strideConcurrency,

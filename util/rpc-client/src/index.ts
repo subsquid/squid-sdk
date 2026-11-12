@@ -1,5 +1,6 @@
 export * from './errors'
 export * from './client'
 export * from './redact'
+export * from './rpc-metrics'
 export {Subscription, SubscriptionHandle} from './subscriptions'
 export {HttpHeaders} from './interfaces'

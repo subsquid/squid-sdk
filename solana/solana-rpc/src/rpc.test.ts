@@ -85,8 +85,9 @@ describe('getBlock RPC error handling', () => {
             async (rpc, client, requests, warnings) => {
                 await expect(rpc.getBlock(42)).resolves.toBeNull()
                 expect(requests.map((request) => request.params?.[0])).toEqual([42, 42])
-                // Retried by Rpc, not by the client's unlimited backoff.
-                expect(client.getMetrics().retriedErrors).toEqual({})
+                // Retried by Rpc, not by the client's unlimited backoff - but counted in the
+                // client's metrics, so the retry shows up in `sqd_chain_rpc_retried_errors_total`.
+                expect(client.getMetrics().retriedErrors).toEqual({internal: 1})
                 expect(warnings).toEqual(['getBlock failed with "Internal error" (code -32603), retrying in 0ms'])
             },
         )
@@ -115,6 +116,19 @@ describe('getBlock RPC error handling', () => {
                 await expect(rpc.getBlockBatch([41, 42])).resolves.toEqual([null, null])
                 expect(requests.map((request) => request.params?.[0])).toEqual([41, 42, 41, 42])
                 expect(warnings).toEqual(['getBlock failed with "Internal error" (code -32603), retrying in 0ms'])
+            },
+        )
+    })
+
+    it('counts a batch retried in halves in the client metrics', async () => {
+        // The overload fails the batch as a whole; Rpc retries it in halves, with the client's own
+        // retries off, so the retry has to be recorded in the client's metrics explicitly.
+        await withRpcServer(
+            [{error: {code: -32603, message: 'Service overloaded'}}, {result: null}, {result: null}, {result: null}],
+            async (rpc, client, requests) => {
+                await expect(rpc.getBlockBatch([41, 42])).resolves.toEqual([null, null])
+                expect(requests.map((request) => request.params?.[0])).toEqual([41, 42, 41, 42])
+                expect(client.getMetrics().retriedErrors).toEqual({retry: 1})
             },
         )
     })

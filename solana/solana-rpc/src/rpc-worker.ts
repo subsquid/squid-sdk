@@ -7,13 +7,15 @@ import type {RemoteRpcOptions} from './rpc-remote'
 
 const {noVotes, ...rpcOptions} = getServerArguments<RemoteRpcOptions>()
 
-const rpc = new Rpc(new RpcClient({
+const client = new RpcClient({
     ...rpcOptions,
     fixUnsafeIntegers: true
-}))
+})
+const rpc = new Rpc(client)
 
 
 getServer()
+    .def('getRpcMetrics', () => client.getMetrics())
     .def('getLatestBlockhash', (commitment: Commitment, minContextSlot?: number) => {
         return rpc.getLatestBlockhash(commitment, minContextSlot)
     })

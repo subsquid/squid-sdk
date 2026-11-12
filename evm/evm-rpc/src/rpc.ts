@@ -1712,6 +1712,8 @@ export class Rpc {
 
         let result = await this.batchCall(batch, { ...options, retryAttempts: 0 }).catch(err => {
             if (this.isBatchRetryableError(err)) {
+                // Retried here by splitting the batch, not by the client: count it for its metrics.
+                this.client.recordRetriedError(this.client.getRetryKind(err))
                 this.log.warn(err, 'will retry request with reduced batch')
             } else {
                 throw err

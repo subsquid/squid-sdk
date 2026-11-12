@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@subsquid/logger": "^1.6.0",
+    "@subsquid/rpc-client": "^4.17.0",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-data-source": "^0.0.0",
     "@subsquid/util-internal-http-server": "^2.0.1",

@@ -594,9 +594,18 @@ export class RpcClient {
         return 'other'
     }
 
-    private countRetriedError(err: Error): void {
-        let kind = this.getRetryKind(err)
+    /**
+     * Count a retry made on top of this client - by code that catches an error the client did not
+     * retry itself and calls again - so that `retriedErrors` in {@link getMetrics} covers it too.
+     * `kind` is the label it is counted under, as returned by {@link getRetryKind} for the client's
+     * own retries.
+     */
+    recordRetriedError(kind: string): void {
         this.retriedErrors[kind] = (this.retriedErrors[kind] ?? 0) + 1
+    }
+
+    private countRetriedError(err: Error): void {
+        this.recordRetriedError(this.getRetryKind(err))
     }
 
     reset(reason?: RpcConnectionError): void {

@@ -1,4 +1,4 @@
-import {RpcClient} from '@subsquid/rpc-client'
+import type {RpcMetrics} from '@subsquid/rpc-client'
 import {createPrometheusServer, ListeningServer} from '@subsquid/util-internal-prometheus-server'
 import {collectDefaultMetrics, Gauge, Counter, Registry} from 'prom-client'
 
@@ -21,10 +21,23 @@ export class PrometheusServer {
     private latestProcessedBlockNumberGauge: Gauge
     private blocksDeliveryDelayGauge: Gauge
 
+    /**
+     * `rpcMetrics` reports the metrics of the RPC clients the dumper's requests go through - the
+     * dumper's own client, or the clients of its worker threads. It is read once per scrape.
+     */
     constructor(
         private port: number,
-        rpc: RpcClient
+        rpcMetrics: () => Promise<RpcMetrics[]>
     ) {
+        // All RPC collectors of one scrape share a single read; a failed read keeps the last values.
+        let inflight: Promise<RpcMetrics[] | undefined> | undefined
+        const sample = (): Promise<RpcMetrics[] | undefined> =>
+            (inflight ??= rpcMetrics()
+                .catch(() => undefined)
+                .finally(() => {
+                    inflight = undefined
+                }))
+
         // Set by the ingest loop: a collect() that calls the RPC hangs the scrape while the endpoint fails.
         this.chainHeightGauge = new Gauge({
             name: 'sqd_dump_chain_height',
@@ -87,18 +100,13 @@ export class PrometheusServer {
             help: 'Number of rpc requests made',
             labelNames: ['url', 'kind'],
             registers: [this.registry],
-            collect() {
-                let metrics = rpc.getMetrics()
-
-                this.set({
-                    url: metrics.url,
-                    kind: 'success'
-                }, metrics.requestsServed)
-
-                this.set({
-                    url: metrics.url,
-                    kind: 'failure'
-                }, metrics.connectionErrors)
+            async collect() {
+                let all = await sample()
+                if (all == null) return
+                for (let metrics of all) {
+                    this.set({url: metrics.url, kind: 'success'}, metrics.requestsServed)
+                    this.set({url: metrics.url, kind: 'failure'}, metrics.connectionErrors)
+                }
             }
         })
 
@@ -107,12 +115,13 @@ export class PrometheusServer {
             help: 'Total number of served requests by connection',
             labelNames: ['url'],
             registers: [this.registry],
-            collect() {
-                const metrics = rpc.getMetrics()
+            async collect() {
+                let all = await sample()
+                if (all == null) return
                 this.reset()
-                this.inc({
-                    url: metrics.url,
-                }, metrics.requestsServed)
+                for (let metrics of all) {
+                    this.inc({url: metrics.url}, metrics.requestsServed)
+                }
             }
         });
 
@@ -121,16 +130,12 @@ export class PrometheusServer {
             help: 'Avg response time of connection',
             labelNames: ['url'],
             registers: [this.registry],
-            collect() {
-                const metrics = rpc.getMetrics()
-
-                this.set({
-                    url: metrics.url,
-                }, metrics.avg_response_time)
-                
-                this.set({
-                    url: metrics.url,
-                }, metrics.avgResponseTime)
+            async collect() {
+                let all = await sample()
+                if (all == null) return
+                for (let metrics of all) {
+                    this.set({url: metrics.url}, metrics.avgResponseTime)
+                }
             }
         });
         this.rpcConnectionErrorsTotal = new Counter({
@@ -138,12 +143,13 @@ export class PrometheusServer {
             help: 'Total number of connection errors',
             labelNames: ['url'],
             registers: [this.registry],
-            collect() {
-                const metrics = rpc.getMetrics()
+            async collect() {
+                let all = await sample()
+                if (all == null) return
                 this.reset()
-                this.inc({
-                    url: metrics.url,
-                }, metrics.connectionErrors)
+                for (let metrics of all) {
+                    this.inc({url: metrics.url}, metrics.connectionErrors)
+                }
             }
         });
 
@@ -152,11 +158,14 @@ export class PrometheusServer {
             help: 'Total number of retried RPC errors by kind',
             labelNames: ['url', 'kind'],
             registers: [this.registry],
-            collect() {
-                const metrics = rpc.getMetrics()
+            async collect() {
+                let all = await sample()
+                if (all == null) return
                 this.reset()
-                for (let [kind, count] of Object.entries(metrics.retriedErrors)) {
-                    this.inc({url: metrics.url, kind}, count)
+                for (let metrics of all) {
+                    for (let [kind, count] of Object.entries(metrics.retriedErrors)) {
+                        this.inc({url: metrics.url, kind}, count)
+                    }
                 }
             }
         })

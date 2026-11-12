@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-rpc",
+      "comment": "`RemoteRpcPool.getRpcMetrics()` reports the metrics of its worker threads' RPC clients; batch retries in halves and bounded `Internal error` retries (kind `internal`) are counted in the retried-errors metric",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-rpc"
+}

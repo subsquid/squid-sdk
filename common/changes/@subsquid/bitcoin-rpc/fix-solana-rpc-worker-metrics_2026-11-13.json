@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/bitcoin-rpc",
+      "comment": "Count a batch retried in halves in the client's retried-errors metric",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/bitcoin-rpc"
+}
