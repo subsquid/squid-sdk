@@ -72,3 +72,15 @@ archive; a dump that starts at genesis starts from 0, and `--parent-total-diffic
 the archive does not hold it. When the parent's total difficulty is unknown the dumper stops rather
 than write a wrong one. A provider value that differs from the derived one is logged at most every ten
 minutes, with a count.
+
+## HyperEVM system transactions
+
+The header of a HyperEVM block commits to none of its system transactions, and endpoints backed by the
+official node leave them out of the body and the receipts alike. `--hyperliquid-system-tx-oracle <url>`
+names an endpoint that serves `eth_getSystemTxsByBlockHash` (the official RPC). Each fetched block's
+system transactions are compared with its answer by sender and nonce, the official node signing them
+differently, and a block that lacks one, or has one the oracle does not, is fetched again. The oracle is
+asked while the rest of the block is fetched, once per block hash, with a short timeout; when it gives
+no answer the block is taken without the check, and a warning with a count is logged at most every ten
+minutes.
+

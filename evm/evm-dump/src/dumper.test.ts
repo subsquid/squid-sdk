@@ -292,3 +292,16 @@ describe('--derive-total-difficulty', () => {
         expect(archiveReads).toEqual([])
     })
 })
+
+describe('--hyperliquid-system-tx-oracle', () => {
+    afterEach(() => {
+        process.argv = argv
+    })
+
+    it('gives Rpc an oracle client for the url, and none without the option', () => {
+        expect(makeDumper('--hyperliquid-system-tx-oracle', 'https://oracle.example').systemTxOracle()?.url).toMatch(
+            /^https:\/\/oracle\.example\/?$/,
+        )
+        expect(makeDumper().systemTxOracle()).toBeUndefined()
+    })
+})

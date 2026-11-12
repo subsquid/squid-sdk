@@ -138,6 +138,16 @@ function findLogMismatch(block: Block, logs: Log[], utils: ChainUtils): string |
     return undefined
 }
 
+function systemTxKey(from: string, nonce: Qty | number): string {
+    return `${from.toLowerCase()}:${BigInt(nonce)}`
+}
+
+const SYSTEM_TX_ORACLE_RETRY_ATTEMPTS = 1
+const SYSTEM_TX_ORACLE_TIMEOUT_MS = 10_000
+
+// A warning about the system transaction oracle giving no answer, at most this often
+const SYSTEM_TX_ORACLE_WARNING_INTERVAL_MS = 10 * 60 * 1000
+
 // How many blocks' worth of HyperEVM system transaction evidence Rpc keeps
 const SYSTEM_TRANSACTION_EVIDENCE_BLOCKS = 10_000
 
@@ -197,6 +207,15 @@ export interface RpcOptions extends BlockCheckOptions {
     /** Rules to apply, {@link DEFAULT_CONSENSUS_ANCHOR_RULES} by default. */
     consensusAnchorRules?: readonly ConsensusAnchorRule[]
     useGasUsedForReceiptsRoot?: boolean
+    /**
+     * HyperEVM only: an endpoint that serves `eth_getSystemTxsByBlockHash` (the official RPC does).
+     * Each block's system transactions are compared with its answer by sender and nonce (the official
+     * node signs them differently, so hashes differ), and a block that disagrees is invalid and fetched
+     * again. This catches a system transaction left out of the body and the receipts alike, which no
+     * check of a single answer can. When the oracle fails or does not know a block, the block is taken
+     * without this check and a warning is logged, so the dump never waits on the oracle.
+     */
+    hyperliquidSystemTxOracle?: EvmRpcClient
 }
 
 
@@ -211,6 +230,10 @@ export class Rpc {
     private consensusAnchorInputsMissingLogged = false
     // HyperEVM: the system transactions any answer has shown for a block hash (see checkHyperliquidSystemTransactions)
     private systemTransactionEvidence = new Map<string, Set<string>>()
+    private systemTxOracle?: EvmRpcClient
+    // The oracle's system transactions of a block hash, as "sender:nonce"; a block's answer never changes
+    private systemTxOracleAnswers = new Map<string, Set<string>>()
+    private systemTxOracleUnavailable = {count: 0, sinceWarning: 0, lastWarning: 0}
     private useGasUsedForReceiptsRoot?: boolean
     private log: Logger
     private receiptsMethod?: GetReceiptsMethod
@@ -218,6 +241,7 @@ export class Rpc {
 
     constructor(options: RpcOptions) {
         this.client = options.client
+        this.systemTxOracle = options.hyperliquidSystemTxOracle
         this.finalityConfirmation = options.finalityConfirmation
         this.checks = {
             verifyBlockHash: options.verifyBlockHash,
@@ -334,8 +358,14 @@ export class Rpc {
         // Whether an empty call frame is legitimate depends on the transaction type.
         let needsTransactionsForEmptyCallFrames =
             !!req?.traces && !req.useTraceApi && (await this.getChainUtils()).mayAnswerEmptyCallFrames
+        let utils = await this.getChainUtils()
+        // The oracle comparison needs each system transaction's sender and nonce
+        let askSystemTxOracle = this.systemTxOracle != null && utils.hasHyperliquidSystemTransactions
         let withTransactions =
-            transactionsRequested || needsTransactionsForCallFrameValidation || needsTransactionsForEmptyCallFrames
+            transactionsRequested ||
+            needsTransactionsForCallFrameValidation ||
+            needsTransactionsForEmptyCallFrames ||
+            askSystemTxOracle
         let blocks = await this.getBlocks(numbers, withTransactions)
 
         let chain: Block[] = []
@@ -347,12 +377,20 @@ export class Rpc {
             chain.push(block)
         }
 
+        // asked while the rest of the block data is fetched, so it adds no latency of its own
+        let oracleAnswers = askSystemTxOracle ? this.askSystemTxOracle(chain) : undefined
+
         await this.addRequestedData(chain, req)
 
-        let utils = await this.getChainUtils()
         if (utils.hasHyperliquidSystemTransactions) {
             for (let block of chain) {
                 this.checkHyperliquidSystemTransactions(block, utils)
+            }
+        }
+        if (oracleAnswers != null) {
+            let answers = await oracleAnswers
+            for (let block of chain) {
+                this.checkAgainstSystemTxOracle(block, answers.get(block.hash.toLowerCase()), utils)
             }
         }
 
@@ -734,6 +772,78 @@ export class Rpc {
             )
             return
         }
+    }
+
+    /**
+     * The system transactions of each block as the oracle has them, by lowercase block hash; a block the
+     * oracle failed on, or does not know, has none.
+     */
+    private async askSystemTxOracle(blocks: Block[]): Promise<Map<string, Set<string>>> {
+        let answers = new Map<string, Set<string>>()
+        let ask: string[] = []
+        for (let block of blocks) {
+            let key = block.hash.toLowerCase()
+            let cached = this.systemTxOracleAnswers.get(key)
+            if (cached) answers.set(key, cached)
+            else ask.push(block.hash)
+        }
+        if (ask.length == 0 || this.systemTxOracle == null) return answers
+        try {
+            // A bounded budget of its own: a slow or failing oracle must not hold the batch up
+            let results = await this.systemTxOracle.batchCall<{from: string, nonce: Qty}[] | null>(
+                ask.map(hash => ({method: 'eth_getSystemTxsByBlockHash', params: [hash]})),
+                {retryAttempts: SYSTEM_TX_ORACLE_RETRY_ATTEMPTS, timeout: SYSTEM_TX_ORACLE_TIMEOUT_MS}
+            )
+            for (let i = 0; i < ask.length; i++) {
+                let txs = results[i]
+                if (!Array.isArray(txs)) continue // the oracle does not know the block (yet)
+                let set = new Set(txs.map(tx => systemTxKey(tx.from, tx.nonce)))
+                let key = ask[i].toLowerCase()
+                answers.set(key, set)
+                this.systemTxOracleAnswers.set(key, set)
+                if (this.systemTxOracleAnswers.size > SYSTEM_TRANSACTION_EVIDENCE_BLOCKS) {
+                    let oldest = this.systemTxOracleAnswers.keys().next().value
+                    if (oldest != null) this.systemTxOracleAnswers.delete(oldest)
+                }
+            }
+        } catch (err: any) {
+            this.log.debug({err, oracle: this.systemTxOracle.url}, 'system transaction oracle failed')
+        }
+        return answers
+    }
+
+    private checkAgainstSystemTxOracle(block: Block, oracle: Set<string> | undefined, utils: ChainUtils): void {
+        if (block._isInvalid) return
+        if (oracle == null) {
+            let u = this.systemTxOracleUnavailable
+            u.count += 1
+            u.sinceWarning += 1
+            let now = Date.now()
+            if (u.lastWarning === 0 || now - u.lastWarning >= SYSTEM_TX_ORACLE_WARNING_INTERVAL_MS) {
+                this.log.warn(
+                    {oracle: this.systemTxOracle?.url, blockNumber: block.number, blocksSinceLastWarning: u.sinceWarning, blocks: u.count},
+                    'system transaction oracle gave no answer; blocks taken without the oracle check'
+                )
+                u.sinceWarning = 0
+                u.lastWarning = now
+            }
+            return
+        }
+        let body = new Set<string>()
+        for (let tx of block.block.transactions) {
+            if (typeof tx !== 'string' && utils.isHyperliquidSystemTransaction(tx)) body.add(systemTxKey(tx.from, tx.nonce))
+        }
+        let missing = [...oracle].find(key => !body.has(key))
+        let extra = [...body].find(key => !oracle.has(key))
+        if (missing == null && extra == null) return
+        block._isInvalid = true
+        block._errorMessage = missing != null
+            ? `system transaction mismatch: the oracle has system transaction ${missing} (sender:nonce), the block body does not`
+            : `system transaction mismatch: the block body has system transaction ${extra} (sender:nonce), the oracle does not`
+        this.log.warn(
+            {rpcEndpoint: this.client.url, oracle: this.systemTxOracle?.url, blockNumber: block.number, blockHash: block.hash, missing, extra},
+            'HyperEVM system transactions differ from the oracle; block fetched again'
+        )
     }
 
     private async addReceiptsByTx(blocks: Block[]) {

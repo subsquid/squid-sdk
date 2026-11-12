@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-dump",
+      "comment": "`--hyperliquid-system-tx-oracle <url>`: check HyperEVM blocks against the official RPC's system transactions",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-dump"
+}
