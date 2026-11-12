@@ -239,7 +239,10 @@
       // This is needed to remove node_gyp_bins which contains symlinks outside the root
       // @see https://github.com/nodejs/node-gyp/issues/2713
       // @see https://github.com/nodejs/node-gyp/pull/2721
-      "find ./common -name node_gyp_bins -type d -exec rm -r '{}' \\;",
+      // `-prune` keeps find from descending into a directory it is about to delete, which made it
+      // exit 1 ("No such file or directory") on every install that built a native module. The
+      // recycler is skipped because Rush empties it in the background while this runs.
+      "find ./common -path ./common/temp/rush-recycler -prune -o -name node_gyp_bins -type d -prune -exec rm -r '{}' +",
       // Install the Biome autoinstaller used by `rush lint` / `rush format` / `rush biome`.
       // The `install-lint` command is flagged `safeForSimultaneousRushProcesses: true`
       // so it can run from inside this hook while `rush install` still holds its lock.
