@@ -1,7 +1,14 @@
 import {createLogger} from '@subsquid/logger'
 import {runProgram} from '@subsquid/util-internal'
 import {positiveInt, Url} from '@subsquid/util-internal-commander'
-import {Block, BlockStream, DataSource, runDataService, StreamRequest} from '@subsquid/util-internal-data-service'
+import {
+    Block,
+    BlockStream,
+    DataSource,
+    RpcMetricsCollector,
+    runDataService,
+    StreamRequest,
+} from '@subsquid/util-internal-data-service'
 import {waitForInterruption} from '@subsquid/util-internal-http-server'
 import {Command} from 'commander'
 import {DataSourceOptions, MainDataSource, SecondaryDataSource} from './data-source'
@@ -52,6 +59,11 @@ runProgram(async () => {
     let mainWorker = new MainDataSource(dataSourceOptions)
     let service: Awaited<ReturnType<typeof runDataService>> | undefined
 
+    // The RPC clients live in worker threads (two levels down): sum their metrics on each scrape,
+    // keeping the final counts of the backfill workers that have closed.
+    let rpcMetrics = new RpcMetricsCollector()
+    rpcMetrics.add(mainWorker)
+
     let dataSource: DataSource<Block> = {
         getHead() {
             return mainWorker.getHead()
@@ -61,11 +73,13 @@ runProgram(async () => {
         },
         async *getFinalizedStream(req: StreamRequest): BlockStream<Block> {
             let worker = new SecondaryDataSource(dataSourceOptions)
+            rpcMetrics.add(worker)
             service?.metrics.incActiveWorkers()
             try {
                 yield* worker.getFinalizedStream(req)
             } finally {
                 service?.metrics.decActiveWorkers()
+                await rpcMetrics.remove(worker)
                 worker.close()
             }
         },
@@ -79,6 +93,8 @@ runProgram(async () => {
         blockCacheSize: args.blockCacheSize,
         port: args.port
     })
+
+    service.metrics.setRpcMetricsSource(() => rpcMetrics.collect())
 
     log.info(`listening on port ${service.port}`)
 

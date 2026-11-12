@@ -1,5 +1,5 @@
 import {createLogger, Logger} from '@subsquid/logger'
-import {RpcClient} from '@subsquid/rpc-client'
+import {RpcClient, type RpcMetrics} from '@subsquid/rpc-client'
 import {assertNotNull, def, last, runProgram, Throttler, waitDrain} from '@subsquid/util-internal'
 import {
     ArchiveLayout,
@@ -190,9 +190,18 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         return new EventEmitter()
     }
 
+    /**
+     * The metrics of the RPC clients this dumper's requests go through, for the metrics server. By
+     * default that is {@link rpc}; a dumper that sends its requests through other clients - for
+     * example in worker threads - must report theirs instead, or its RPC metrics stay at zero.
+     */
+    protected rpcMetrics(): () => Promise<RpcMetrics[]> {
+        return async () => [this.rpc().getMetrics()]
+    }
+
     @def
     protected prometheus() {
-        let server = new PrometheusServer(this.options().metrics ?? 0, this.rpc())
+        let server = new PrometheusServer(this.options().metrics ?? 0, this.rpcMetrics())
         this.eventEmitter().on('S3FsOperation', (op: string) => server.incS3Requests(op))
         return server
     }

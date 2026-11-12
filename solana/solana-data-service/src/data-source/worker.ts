@@ -1,9 +1,11 @@
+import type {RpcMetrics} from '@subsquid/rpc-client'
 import {BlockRef, BlockStream, DataSource, StreamRequest} from '@subsquid/util-internal-data-service'
 import {Client, getServer} from '@subsquid/util-internal-worker-thread'
 
 
-export function startServer(source: DataSource<any>): void {
+export function startServer(source: DataSource<any>, getRpcMetrics: () => Promise<RpcMetrics>): void {
     getServer()
+        .def('getRpcMetrics', () => getRpcMetrics())
         .def('getFinalizedHead', () => source.getFinalizedHead())
         .def('getFinalizedStream', (req: StreamRequest) => source.getFinalizedStream(req))
         .def('getHead', () => source.getHead())
@@ -17,6 +19,11 @@ export class RemoteDataSource<B> implements DataSource<B> {
 
     close(): void {
         this.worker.close()
+    }
+
+    /** Metrics of the RPC clients this worker's data source fetches through. */
+    getRpcMetrics(): Promise<RpcMetrics> {
+        return this.worker.call('getRpcMetrics', [])
     }
 
     getFinalizedHead(): Promise<BlockRef> {

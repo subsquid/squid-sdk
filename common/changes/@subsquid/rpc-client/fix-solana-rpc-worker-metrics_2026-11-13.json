@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "`RpcMetricsCollector` and `mergeRpcMetrics`: sum the metrics of RPC clients that live elsewhere (e.g. in worker threads) per endpoint; `RpcClient.recordRetriedError(kind)` counts a retry made on top of the client in its `retriedErrors`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}
