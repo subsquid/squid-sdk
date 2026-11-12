@@ -85,12 +85,18 @@ describe('HyperEVM system transaction oracle', () => {
         expect((await setUp(null).answer(omitting, omittingReceipts))._isInvalid).toBeUndefined()
     })
 
-    it('ask the oracle once for a block hash', async () => {
+    it('ask the oracle once for a block hash while its answer agrees, and again after it disagreed', async () => {
         const {block, receipts, omitting, omittingReceipts, oracleAnswer} = answers()
         const {answer, oracle} = setUp(oracleAnswer)
-        expect((await answer(omitting, omittingReceipts))._isInvalid).toBe(true)
+        expect((await answer(block, receipts))._isInvalid).toBeUndefined()
         expect((await answer(block, receipts))._isInvalid).toBeUndefined()
         expect(oracle.calls).toBe(1)
+
+        // a fresh Rpc whose first answer the oracle rejects (no evidence yet, so the oracle check decides)
+        const second = setUp(oracleAnswer)
+        expect((await second.answer(omitting, omittingReceipts))._isInvalid).toBe(true)
+        expect((await second.answer(block, receipts))._isInvalid).toBeUndefined()
+        expect(second.oracle.calls).toBe(2)
     })
 
     it('fetch full transactions for the comparison, and give back hashes when only receipts were asked for', async () => {

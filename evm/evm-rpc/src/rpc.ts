@@ -864,6 +864,9 @@ export class Rpc {
         let missing = [...oracle].find(key => !body.has(key))
         let extra = [...body].find(key => !oracle.has(key))
         if (missing == null && extra == null) return
+        // Asked again on the retry: a disagreeing answer could be the oracle's own (a block it has not fully
+        // indexed yet), and a cached one would keep rejecting correct bodies
+        this.systemTxOracleAnswers.delete(block.hash.toLowerCase())
         block._isInvalid = true
         block._errorMessage = missing != null
             ? `system transaction mismatch: the oracle has system transaction ${missing} (sender:nonce), the block body does not`
