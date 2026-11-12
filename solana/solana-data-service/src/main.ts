@@ -60,8 +60,11 @@ runProgram(async () => {
     let service: Awaited<ReturnType<typeof runDataService>> | undefined
 
     // The RPC clients live in worker threads (two levels down): sum their metrics on each scrape,
-    // keeping the final counts of the backfill workers that have closed.
-    let rpcMetrics = new RpcMetricsCollector()
+    // keeping the final counts of the backfill workers that have closed. Each worker answers through
+    // its RemoteRpcPool, whose own collector waits up to 1 s for a stuck RPC worker; this timeout has
+    // to outlast that, or one stuck RPC worker would hide the healthy ones' counts - and lose a
+    // closing backfill worker's final ones.
+    let rpcMetrics = new RpcMetricsCollector(3000)
     rpcMetrics.add(mainWorker)
 
     let dataSource: DataSource<Block> = {

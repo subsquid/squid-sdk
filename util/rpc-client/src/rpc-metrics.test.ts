@@ -120,6 +120,26 @@ describe('RpcMetricsCollector', () => {
     })
 })
 
+describe('nested RpcMetricsCollectors', () => {
+    // e.g. a main thread collecting from workers that each collect from their own RPC workers
+    function nested(innerTimeoutMs: number, outerTimeoutMs: number) {
+        let inner = new RpcMetricsCollector(innerTimeoutMs)
+        inner.add(worker({retry: 2}))
+        inner.add(hung) // one stuck RPC worker
+        let outer = new RpcMetricsCollector(outerTimeoutMs)
+        outer.add({getRpcMetrics: async () => (await inner.collect())[0]})
+        return outer
+    }
+
+    it('keep the healthy counts of a stuck child when the outer timeout outlasts the inner one', async () => {
+        expect(retried(await nested(20, 200).collect())).toEqual([{url: 'http://rpc', retriedErrors: {retry: 2}}])
+    })
+
+    it('lose them when the outer timeout does not', async () => {
+        expect(await nested(200, 20).collect()).toEqual([])
+    })
+})
+
 describe('mergeRpcMetrics', () => {
     it('reports a zero average when nothing was served', () => {
         expect(mergeRpcMetrics([metrics({}), metrics({})])).toEqual([metrics({})])
