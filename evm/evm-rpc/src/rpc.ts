@@ -1191,6 +1191,11 @@ export class Rpc {
         let settled = new Map<number, Set<string>>()
         if (block._isInvalid || block.debugFrames == null) return settled
 
+        // One block-bound prestate trace serves every suspect transaction of the
+        // block, and a failed one is not repeated for each of them.
+        let prestates: Promise<any[]> | undefined
+        let blockPrestates = () => prestates ??= this.traceBlockPrestates(block, req)
+
         for (let i = 0; i < block.debugFrames.length; i++) {
             let frame = block.debugFrames[i]
             let tx = block.block.transactions[i]
@@ -1207,7 +1212,9 @@ export class Rpc {
             let method: 'builtin' | 'js' = 'builtin'
             let builtinRefusal: string | undefined
             try {
-                events = await this.traceSelfdestructsBuiltin(block, i, transactionHash, frame.result, req)
+                events = await this.traceSelfdestructsBuiltin(
+                    block, i, transactionHash, frame.result, defects.map(d => d.traceAddress), blockPrestates, req
+                )
             } catch (builtinErr: any) {
                 builtinRefusal = String(builtinErr?.message ?? builtinErr)
                 method = 'js'
@@ -1294,6 +1301,8 @@ export class Rpc {
         transactionIndex: number,
         transactionHash: Bytes32,
         root: CallFrame,
+        suspects: number[][],
+        blockPrestates: () => Promise<any[]>,
         req: DataRequest
     ): Promise<SelfdestructEvent[]> {
         let options = {retryAttempts: SELFDESTRUCT_TRACE_RETRY_ATTEMPTS}
@@ -1317,14 +1326,7 @@ export class Rpc {
 
         await this.expectTransactionInBlock(block, transactionHash)
 
-        let prestates = await this.call(
-            'debug_traceBlockByHash',
-            [block.hash, {tracer: 'prestateTracer', timeout: req.debugTraceTimeout}],
-            options
-        )
-        if (!Array.isArray(prestates) || prestates.length !== block.block.transactions.length) {
-            throw new Error('prestateTracer answered without a result for each transaction of the block')
-        }
+        let prestates = await blockPrestates()
         let entry = prestates.find(p => typeof p?.txHash === 'string' && p.txHash.toLowerCase() === transactionHash.toLowerCase())
             ?? (prestates.every(p => p?.txHash == null) ? prestates[transactionIndex] : undefined)
         let prestate = entry?.result
@@ -1332,7 +1334,19 @@ export class Rpc {
             throw new Error(`prestateTracer answered without accounts for transaction ${transactionHash}`)
         }
 
-        return builtinSelfdestructEvents(root, steps, prestate as Prestate)
+        return builtinSelfdestructEvents(root, steps, prestate as Prestate, suspects)
+    }
+
+    private async traceBlockPrestates(block: Block, req: DataRequest): Promise<any[]> {
+        let prestates = await this.call(
+            'debug_traceBlockByHash',
+            [block.hash, {tracer: 'prestateTracer', timeout: req.debugTraceTimeout}],
+            {retryAttempts: SELFDESTRUCT_TRACE_RETRY_ATTEMPTS}
+        )
+        if (!Array.isArray(prestates) || prestates.length !== block.block.transactions.length) {
+            throw new Error('prestateTracer answered without a result for each transaction of the block')
+        }
+        return prestates
     }
 
     private async expectTransactionInBlock(block: Block, transactionHash: Bytes32): Promise<void> {

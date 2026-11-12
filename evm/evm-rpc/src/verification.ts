@@ -1757,13 +1757,17 @@ export type Prestate = Record<string, {balance?: unknown} | null | undefined>
  * gas, a call or create before the opcode does not report the value or target it
  * moved, or the account selfdestructed to itself earlier in the transaction. Such
  * an earlier opcode keeps an existing contract's balance after Cancun and burns it
- * before, and the fork is not known here.
+ * before, and the fork is not known here. It also throws when a frame that is not
+ * `suspects` names another beneficiary than its opcode: the opcode log then did not
+ * come from this execution, and the movements it implies cannot be trusted.
  */
 export function builtinSelfdestructEvents(
     root: CallFrame,
     steps: OpcodeStep[],
-    prestate: Prestate
+    prestate: Prestate,
+    suspects: number[][] = []
 ): SelfdestructEvent[] {
+    let suspect = new Set(suspects.map(path => path.join('/')))
     let opcodes = steps.filter(step => step.op === 'SELFDESTRUCT' || step.op === 'SUICIDE')
     let frames = selfdestructFrameCount(root)
     if (opcodes.length !== frames) {
@@ -1848,6 +1852,9 @@ export function builtinSelfdestructEvents(
             if (beneficiary == null) {
                 throw new Error(`the SELFDESTRUCT step of frame ${traceAddress.join('/')} has no beneficiary on its stack`)
             }
+            if (!suspect.has(traceAddress.join('/')) && frame.to && frame.to.toLowerCase() !== beneficiary) {
+                throw new Error(`the opcode log sends selfdestruct frame ${traceAddress.join('/')} to ${beneficiary}, but the frame names ${frame.to.toLowerCase()}`)
+            }
             let balance = balanceOf(account)
             if (balance == null) {
                 throw new Error(`the prestate does not name ${account}, which executes selfdestruct frame ${traceAddress.join('/')}`)
@@ -1869,6 +1876,8 @@ export function builtinSelfdestructEvents(
             let moves = type === 'CALL' || CREATE_FRAME_TYPES.has(frame.type)
             if (moves && incomplete == null && (frame.value == null || !to)) {
                 incomplete = `${frame.type} frame ${traceAddress.join('/') || 'root'} reports no ${frame.value == null ? 'value' : 'target'}`
+                // A failed frame takes its unknown transfer with it.
+                journal.push(() => { incomplete = undefined })
             }
             if (CREATE_FRAME_TYPES.has(frame.type) && to) {
                 markCreated(to)

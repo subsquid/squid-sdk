@@ -702,4 +702,42 @@ describe('builtinSelfdestructEvents', () => {
         expect(() => builtinSelfdestructEvents(root, [step(VICTIM)], {[VICTIM]: {balance: '0x10'}, [ROUTER]: {}}))
             .toThrow('CALL frame 0 reports no value')
     })
+
+    it('forgets a transfer with no value when the frame that made it fails', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [
+                {type: 'CALL', from: ROUTER, to: OTHER, value: '0x0', error: 'execution reverted', calls: [
+                    {type: 'CALL', from: OTHER, to: VICTIM}
+                ]},
+                {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        let events = builtinSelfdestructEvents(root, [step(VICTIM)], {[VICTIM]: {balance: '0x10'}, [ROUTER]: {}})
+        expect(events[0].balance).toBe('0x10')
+    })
+
+    it('refuses an opcode log that sends an intact selfdestruct elsewhere than its frame', () => {
+        // An opcode log from another execution would replay A to C instead of A to B,
+        // and the later repair of B would miss what A sent it.
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [
+                {type: 'CALL', from: ROUTER, to: OTHER, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: OTHER, to: VICTIM, value: '0x20'}
+                ]},
+                {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        let prestate = {[OTHER]: {balance: '0x20'}, [VICTIM]: {balance: '0x3'}}
+        expect(() => builtinSelfdestructEvents(root, [step(SENDER), step(VICTIM)], prestate, [[1, 0]]))
+            .toThrow(`the opcode log sends selfdestruct frame 0/0 to ${SENDER}, but the frame names ${VICTIM}`)
+        // A suspect frame is the one being repaired, so its own claim is not checked.
+        expect(builtinSelfdestructEvents(root, [step(VICTIM), step(VICTIM)], prestate, [[0, 0], [1, 0]])
+            .map(e => e.balance)).toEqual(['0x20', '0x23'])
+    })
 })
