@@ -1788,7 +1788,8 @@ export function builtinSelfdestructEvents(
         let known = balances.get(account)
         if (known != null) return known
         let entry = prestate[account] ?? prestate[prestateKey(account, prestate)]
-        if (entry == null) return undefined
+        // Only an account object is evidence; the omitted-balance rule needs one.
+        if (entry == null || typeof entry !== 'object' || Array.isArray(entry)) return undefined
         // Clients omit a zero balance from a named account.
         let balance = entry.balance
         if (balance != null && typeof balance !== 'string') return undefined

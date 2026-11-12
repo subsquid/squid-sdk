@@ -1306,6 +1306,16 @@ export class Rpc {
         req: DataRequest
     ): Promise<SelfdestructEvent[]> {
         let options = {retryAttempts: SELFDESTRUCT_TRACE_RETRY_ATTEMPTS}
+        // The block-bound prestate comes first: once it has failed for the block,
+        // no transaction of it is worth an opcode trace.
+        let prestates = await blockPrestates()
+        let entry = prestates.find(p => typeof p?.txHash === 'string' && p.txHash.toLowerCase() === transactionHash.toLowerCase())
+            ?? (prestates.every(p => p?.txHash == null) ? prestates[transactionIndex] : undefined)
+        let prestate = entry?.result
+        if (prestate == null || typeof prestate !== 'object' || Array.isArray(prestate)) {
+            throw new Error(`prestateTracer answered without accounts for transaction ${transactionHash}`)
+        }
+
         await this.expectTransactionInBlock(block, transactionHash)
 
         let log = await this.call(
@@ -1323,16 +1333,18 @@ export class Rpc {
             throw new Error('the opcode logger answered without steps')
         }
         let steps: OpcodeStep[] = log.structLogs
+        // The lookups around the trace may reach another backend than the trace
+        // itself, so the opcode log must also agree with the call tree, which is
+        // bound to this block: an execution in another block spends other gas.
+        let rootGas = root.gasUsed == null ? undefined : Number(root.gasUsed)
+        if (rootGas == null || !Number.isSafeInteger(rootGas) || log.gas !== rootGas) {
+            throw new Error(`the opcode log spends ${log.gas} gas, but the call tree reports ${root.gasUsed}`)
+        }
+        if (!!log.failed !== (root.error != null)) {
+            throw new Error(`the opcode log ${log.failed ? 'fails' : 'succeeds'}, but the call tree ${root.error != null ? 'fails' : 'succeeds'}`)
+        }
 
         await this.expectTransactionInBlock(block, transactionHash)
-
-        let prestates = await blockPrestates()
-        let entry = prestates.find(p => typeof p?.txHash === 'string' && p.txHash.toLowerCase() === transactionHash.toLowerCase())
-            ?? (prestates.every(p => p?.txHash == null) ? prestates[transactionIndex] : undefined)
-        let prestate = entry?.result
-        if (prestate == null || typeof prestate !== 'object' || Array.isArray(prestate)) {
-            throw new Error(`prestateTracer answered without accounts for transaction ${transactionHash}`)
-        }
 
         return builtinSelfdestructEvents(root, steps, prestate as Prestate, suspects)
     }

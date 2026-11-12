@@ -27,6 +27,10 @@ interface Behaviour {
     /** The block `eth_getTransactionByHash` reports the transaction in. */
     includedIn?: (blockHash: string) => string
     prestate?: () => unknown
+    /** The gas the opcode log reports, the call tree's by default. */
+    opcodeGas?: (gasUsed: number) => number
+    /** Refuse the block prestate trace. */
+    prestateRefused?: boolean
 }
 
 
@@ -58,6 +62,7 @@ async function startUpstream(behaviour: Behaviour = {}): Promise<Upstream> {
                 requests.push('prestateTracer')
                 // Recovery reads balances only.
                 expect(req.params[1]?.tracerConfig).toEqual({disableCode: true, disableStorage: true})
+                if (behaviour.prestateRefused) return {error: {code: -32000, message: 'response too big'}}
                 return {result: block.transactions.map((tx: any) => ({
                     txHash: tx.hash,
                     result: tx.hash === POISONED_TX ? (behaviour.prestate?.() ?? EVIDENCE.prestate) : {}
@@ -75,7 +80,9 @@ async function startUpstream(behaviour: Behaviour = {}): Promise<Upstream> {
                     return {error: {code: -32000, message: 'custom tracer is not permitted'}}
                 }
                 requests.push('opcodeLogger')
-                return {result: {failed: false, gas: 0, returnValue: '', structLogs: EVIDENCE.steps}}
+                let gasUsed = Number(frames[POISONED_INDEX].result.gasUsed)
+                let gas = behaviour.opcodeGas?.(gasUsed) ?? gasUsed
+                return {result: {failed: false, gas, returnValue: '', structLogs: EVIDENCE.steps}}
             }
             default:
                 return {error: {code: -32601, message: `method ${req.method} not found`}}
@@ -142,7 +149,7 @@ describe('selfdestruct recovery from built-in tracers', () => {
         expect({type: repaired.type, from: repaired.from, to: repaired.to, value: repaired.value})
             .toEqual({type: complete.type, from: complete.from, to: complete.to, value: complete.value})
         expect(upstream.requests()).toEqual([
-            'eth_getTransactionByHash', 'opcodeLogger', 'eth_getTransactionByHash', 'prestateTracer'
+            'prestateTracer', 'eth_getTransactionByHash', 'opcodeLogger', 'eth_getTransactionByHash'
         ])
     }, 10_000)
 
@@ -158,6 +165,25 @@ describe('selfdestruct recovery from built-in tracers', () => {
             `invalid debug call frames for transaction ${POISONED_TX}: selfdestruct frame 0 has no beneficiary`
         )
         expect(upstream.requests()).not.toContain('opcodeLogger')
+    }, 10_000)
+
+    it('refuses an opcode log that spent other gas than the call tree, as an execution in another block would', async () => {
+        upstream = await startUpstream({opcodeGas: gas => gas + 2600})
+
+        let blocks = await fetchBlock(upstream.url)
+
+        expect(blocks[0]._isInvalid).toBe(true)
+        expect(upstream.requests()).toContain('js')
+    }, 10_000)
+
+    it('skips the opcode trace once the block prestate has failed', async () => {
+        upstream = await startUpstream({prestateRefused: true})
+
+        let blocks = await fetchBlock(upstream.url)
+
+        expect(blocks[0]._isInvalid).toBe(true)
+        expect(upstream.requests()).not.toContain('opcodeLogger')
+        expect(upstream.requests()).toContain('js')
     }, 10_000)
 
     it('falls back to the custom tracer when the prestate does not name the account', async () => {

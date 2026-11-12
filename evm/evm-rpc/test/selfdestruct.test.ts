@@ -667,6 +667,17 @@ describe('builtinSelfdestructEvents', () => {
             .toThrow(`the prestate does not name ${VICTIM}`)
     })
 
+    it('refuses a prestate entry that is not an account', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [{type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+            ]}]
+        }
+        expect(() => builtinSelfdestructEvents(root, [step(VICTIM)], {[VICTIM]: null as any, [ROUTER]: {}}))
+            .toThrow(`the prestate does not name ${VICTIM}`)
+    })
+
     it('refuses a selfdestruct that runs in the transaction sender', () => {
         let root: CallFrame = {type: 'CALL', from: SENDER, to: SENDER, value: '0x0', calls: [
             {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
