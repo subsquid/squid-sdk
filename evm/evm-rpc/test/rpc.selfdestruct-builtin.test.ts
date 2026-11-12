@@ -54,6 +54,13 @@ async function startUpstream(behaviour: Behaviour = {}): Promise<Upstream> {
                 return {result: block}
             case 'debug_traceBlockByNumber':
                 return {result: frames}
+            case 'debug_traceBlockByHash': {
+                requests.push('prestateTracer')
+                return {result: block.transactions.map((tx: any) => ({
+                    txHash: tx.hash,
+                    result: tx.hash === POISONED_TX ? (behaviour.prestate?.() ?? EVIDENCE.prestate) : {}
+                }))}
+            }
             case 'eth_getTransactionByHash': {
                 requests.push('eth_getTransactionByHash')
                 let blockHash = behaviour.includedIn?.(block.hash) ?? block.hash
@@ -64,10 +71,6 @@ async function startUpstream(behaviour: Behaviour = {}): Promise<Upstream> {
                 if (typeof config.tracer === 'string' && config.tracer.includes('function')) {
                     requests.push('js')
                     return {error: {code: -32000, message: 'custom tracer is not permitted'}}
-                }
-                if (config.tracer === 'prestateTracer') {
-                    requests.push('prestateTracer')
-                    return {result: behaviour.prestate?.() ?? EVIDENCE.prestate}
                 }
                 requests.push('opcodeLogger')
                 return {result: {failed: false, gas: 0, returnValue: '', structLogs: EVIDENCE.steps}}
@@ -137,7 +140,7 @@ describe('selfdestruct recovery from built-in tracers', () => {
         expect({type: repaired.type, from: repaired.from, to: repaired.to, value: repaired.value})
             .toEqual({type: complete.type, from: complete.from, to: complete.to, value: complete.value})
         expect(upstream.requests()).toEqual([
-            'eth_getTransactionByHash', 'opcodeLogger', 'prestateTracer', 'eth_getTransactionByHash'
+            'eth_getTransactionByHash', 'opcodeLogger', 'eth_getTransactionByHash', 'prestateTracer'
         ])
     }, 10_000)
 

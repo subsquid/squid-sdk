@@ -1207,7 +1207,7 @@ export class Rpc {
             let method: 'builtin' | 'js' = 'builtin'
             let builtinRefusal: string | undefined
             try {
-                events = await this.traceSelfdestructsBuiltin(block, transactionHash, frame.result, req)
+                events = await this.traceSelfdestructsBuiltin(block, i, transactionHash, frame.result, req)
             } catch (builtinErr: any) {
                 builtinRefusal = String(builtinErr?.message ?? builtinErr)
                 method = 'js'
@@ -1282,12 +1282,16 @@ export class Rpc {
      * beneficiary at each SELFDESTRUCT and `prestateTracer` for the balances the
      * call tree's movements start from (see {@link builtinSelfdestructEvents}).
      *
-     * Built-in tracers do not say which block they ran the transaction in, so the
-     * transaction is looked up before and after both traces, and a reorg that moved
-     * it out of this block in between is refused.
+     * The balances are what a repair writes, so the prestate is traced by block
+     * hash and is bound to this block. The opcode log only supplies the beneficiary,
+     * which a repair accepts only when it is the executing account itself; built-in
+     * tracers do not say which block they ran a single transaction in, so the
+     * transaction is looked up before and after it, and a reorg that moved it out of
+     * this block is refused.
      */
     private async traceSelfdestructsBuiltin(
         block: Block,
+        transactionIndex: number,
         transactionHash: Bytes32,
         root: CallFrame,
         req: DataRequest
@@ -1311,16 +1315,23 @@ export class Rpc {
         }
         let steps: OpcodeStep[] = log.structLogs
 
-        let prestate = await this.call(
-            'debug_traceTransaction',
-            [transactionHash, {tracer: 'prestateTracer', timeout: req.debugTraceTimeout}],
+        await this.expectTransactionInBlock(block, transactionHash)
+
+        let prestates = await this.call(
+            'debug_traceBlockByHash',
+            [block.hash, {tracer: 'prestateTracer', timeout: req.debugTraceTimeout}],
             options
         )
+        if (!Array.isArray(prestates) || prestates.length !== block.block.transactions.length) {
+            throw new Error('prestateTracer answered without a result for each transaction of the block')
+        }
+        let entry = prestates.find(p => typeof p?.txHash === 'string' && p.txHash.toLowerCase() === transactionHash.toLowerCase())
+            ?? (prestates.every(p => p?.txHash == null) ? prestates[transactionIndex] : undefined)
+        let prestate = entry?.result
         if (prestate == null || typeof prestate !== 'object' || Array.isArray(prestate)) {
-            throw new Error('prestateTracer answered without accounts')
+            throw new Error(`prestateTracer answered without accounts for transaction ${transactionHash}`)
         }
 
-        await this.expectTransactionInBlock(block, transactionHash)
         return builtinSelfdestructEvents(root, steps, prestate as Prestate)
     }
 

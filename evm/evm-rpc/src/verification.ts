@@ -1753,8 +1753,11 @@ export type Prestate = Record<string, {balance?: unknown} | null | undefined>
  *
  * Throws, so that validation rejects the block, when the evidence does not bind:
  * the step and frame counts differ, the prestate does not name an executing
- * account, or that account is the transaction sender, whose balance also pays for
- * gas.
+ * account, that account is the transaction sender, whose balance also pays for
+ * gas, a call or create before the opcode does not report the value or target it
+ * moved, or the account selfdestructed to itself earlier in the transaction. Such
+ * an earlier opcode keeps an existing contract's balance after Cancun and burns it
+ * before, and the fork is not known here.
  */
 export function builtinSelfdestructEvents(
     root: CallFrame,
@@ -1770,6 +1773,9 @@ export function builtinSelfdestructEvents(
     let sender = root.from?.toLowerCase()
     let balances = new Map<string, bigint>()
     let created = new Set<string>()
+    // Accounts whose balance after an earlier opcode depends on the fork.
+    let unknown = new Set<string>()
+    let incomplete: string | undefined
     let journal: (() => void)[] = []
     let found: SelfdestructEvent[] = []
     let next = 0
@@ -1807,6 +1813,12 @@ export function builtinSelfdestructEvents(
         if (toBalance != null) setBalance(to, toBalance + value)
     }
 
+    function markUnknown(account: string): void {
+        if (unknown.has(account)) return
+        unknown.add(account)
+        journal.push(() => unknown.delete(account))
+    }
+
     function markCreated(account: string): void {
         if (created.has(account)) return
         created.add(account)
@@ -1826,6 +1838,12 @@ export function builtinSelfdestructEvents(
             if (account === sender) {
                 throw new Error(`selfdestruct frame ${traceAddress.join('/')} runs in the transaction sender, whose balance pays for gas`)
             }
+            if (incomplete != null) {
+                throw new Error(`${incomplete}, so the balance at selfdestruct frame ${traceAddress.join('/')} is unknown`)
+            }
+            if (unknown.has(account)) {
+                throw new Error(`${account} selfdestructed to itself earlier in the transaction, so its balance at frame ${traceAddress.join('/')} depends on the fork`)
+            }
             let beneficiary = stackTopAddress(step.stack)
             if (beneficiary == null) {
                 throw new Error(`the SELFDESTRUCT step of frame ${traceAddress.join('/')} has no beneficiary on its stack`)
@@ -1842,15 +1860,21 @@ export function builtinSelfdestructEvents(
             } else if (created.has(account)) {
                 // A contract created in this transaction burns its balance.
                 setBalance(account, 0n)
+            } else {
+                markUnknown(account)
             }
         } else {
             let from = frame.from?.toLowerCase()
             let to = frame.to?.toLowerCase()
+            let moves = type === 'CALL' || CREATE_FRAME_TYPES.has(frame.type)
+            if (moves && incomplete == null && (frame.value == null || !to)) {
+                incomplete = `${frame.type} frame ${traceAddress.join('/') || 'root'} reports no ${frame.value == null ? 'value' : 'target'}`
+            }
             if (CREATE_FRAME_TYPES.has(frame.type) && to) {
                 markCreated(to)
             }
             let value = frame.value ? BigInt(frame.value) : 0n
-            if (value > 0n && from && to && (type === 'CALL' || CREATE_FRAME_TYPES.has(frame.type))) {
+            if (value > 0n && from && to && moves) {
                 move(from, to, value)
             }
             let childExecutor = isContextPreserving(frame.type) ? from : to

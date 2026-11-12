@@ -584,7 +584,7 @@ describe('builtinSelfdestructEvents', () => {
 
     it('drops the movements of a failed frame', () => {
         let root: CallFrame = {
-            type: 'CALL', from: SENDER, to: ROUTER,
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
             calls: [
                 {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x7', error: 'execution reverted'},
                 {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
@@ -600,12 +600,12 @@ describe('builtinSelfdestructEvents', () => {
         // The first selfdestruct sends its whole balance to VICTIM, whatever value its
         // frame reports; the second then sees it.
         let root: CallFrame = {
-            type: 'CALL', from: SENDER, to: ROUTER,
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
             calls: [
-                {type: 'CALL', from: ROUTER, to: OTHER, calls: [
+                {type: 'CALL', from: ROUTER, to: OTHER, value: '0x0', calls: [
                     {type: 'SELFDESTRUCT', from: OTHER, to: VICTIM, value: '0x1'}
                 ]},
-                {type: 'CALL', from: ROUTER, to: VICTIM, calls: [
+                {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
                     {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
                 ]}
             ]
@@ -620,7 +620,7 @@ describe('builtinSelfdestructEvents', () => {
 
     it('runs a DELEGATECALL selfdestruct in the caller', () => {
         let root: CallFrame = {
-            type: 'CALL', from: SENDER, to: VICTIM,
+            type: 'CALL', from: SENDER, to: VICTIM, value: '0x0',
             calls: [
                 {type: 'DELEGATECALL', from: VICTIM, to: OTHER, calls: [
                     {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
@@ -633,7 +633,7 @@ describe('builtinSelfdestructEvents', () => {
 
     it('burns the balance of a contract created in the same transaction', () => {
         let root: CallFrame = {
-            type: 'CALL', from: SENDER, to: ROUTER,
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
             calls: [
                 {type: 'CREATE', from: ROUTER, to: VICTIM, value: '0x4', calls: [
                     {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
@@ -652,7 +652,7 @@ describe('builtinSelfdestructEvents', () => {
     })
 
     it('refuses when the opcode log and the call tree count different selfdestructs', () => {
-        let root: CallFrame = {type: 'CALL', from: SENDER, to: VICTIM, calls: [
+        let root: CallFrame = {type: 'CALL', from: SENDER, to: VICTIM, value: '0x0', calls: [
             {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
         ]}
         expect(() => builtinSelfdestructEvents(root, [], {[VICTIM]: {balance: '0x1'}}))
@@ -660,7 +660,7 @@ describe('builtinSelfdestructEvents', () => {
     })
 
     it('refuses an executing account the prestate does not name', () => {
-        let root: CallFrame = {type: 'CALL', from: SENDER, to: VICTIM, calls: [
+        let root: CallFrame = {type: 'CALL', from: SENDER, to: VICTIM, value: '0x0', calls: [
             {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
         ]}
         expect(() => builtinSelfdestructEvents(root, [step(VICTIM)], {}))
@@ -668,10 +668,38 @@ describe('builtinSelfdestructEvents', () => {
     })
 
     it('refuses a selfdestruct that runs in the transaction sender', () => {
-        let root: CallFrame = {type: 'CALL', from: SENDER, to: SENDER, calls: [
+        let root: CallFrame = {type: 'CALL', from: SENDER, to: SENDER, value: '0x0', calls: [
             {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
         ]}
         expect(() => builtinSelfdestructEvents(root, [step(SENDER)], {[SENDER]: {balance: '0x1'}}))
             .toThrow('runs in the transaction sender')
+    })
+
+    it('refuses a second selfdestruct of an account that selfdestructed to itself, whose balance depends on the fork', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: VICTIM, value: '0x0',
+            calls: [
+                {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)},
+                {type: 'CALL', from: VICTIM, to: VICTIM, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        expect(() => builtinSelfdestructEvents(root, [step(VICTIM), step(VICTIM)], {[VICTIM]: {balance: '0x5'}}))
+            .toThrow('selfdestructed to itself earlier in the transaction')
+    })
+
+    it('refuses when a transfer before the opcode reports no value', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [
+                {type: 'CALL', from: ROUTER, to: VICTIM},
+                {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        expect(() => builtinSelfdestructEvents(root, [step(VICTIM)], {[VICTIM]: {balance: '0x10'}, [ROUTER]: {}}))
+            .toThrow('CALL frame 0 reports no value')
     })
 })
