@@ -693,6 +693,18 @@ describe('builtinSelfdestructEvents', () => {
         expect(events.map(e => e.balance)).toEqual(['0x7'])
     })
 
+    it('reads a prestate keyed by checksummed addresses', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [{type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+            ]}]
+        }
+        let checksummed = '0x00000000000000000000000000000000000000C3'
+        let events = builtinSelfdestructEvents(root, [step(VICTIM)], {[checksummed]: {balance: '0x9'}, [ROUTER]: {}})
+        expect(events.map(e => e.balance)).toEqual(['0x9'])
+    })
+
     it('refuses an executing account the prestate does not name', () => {
         let root: CallFrame = {type: 'CALL', from: SENDER, to: VICTIM, value: '0x0', calls: [
             {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}

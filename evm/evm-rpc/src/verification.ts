@@ -1787,8 +1787,14 @@ export function builtinSelfdestructEvents(
     let found: SelfdestructEvent[] = []
     let next = 0
 
+    // Clients key the prestate lowercase or checksummed.
+    let accounts = new Map<string, unknown>()
+    for (let key of Object.keys(prestate)) {
+        accounts.set(key.toLowerCase(), prestate[key])
+    }
+
     function named(account: string): boolean {
-        return Object.prototype.hasOwnProperty.call(prestate, prestateKey(account, prestate))
+        return accounts.has(account)
     }
 
     function balanceOf(account: string): bigint | undefined {
@@ -1802,7 +1808,7 @@ export function builtinSelfdestructEvents(
             balances.set(account, 0n)
             return 0n
         }
-        let entry = prestate[prestateKey(account, prestate)]
+        let entry: any = accounts.get(account)
         // Only an account object is evidence; the omitted-balance rule needs one.
         if (entry == null || typeof entry !== 'object' || Array.isArray(entry)) return undefined
         // Clients omit a zero balance from a named account.
@@ -1950,14 +1956,6 @@ function stackTopAddress(stack: unknown): Bytes20 | undefined {
  * The key a prestate answer uses for an account: clients key it lowercase or
  * checksummed.
  */
-function prestateKey(account: string, prestate: Prestate): string {
-    for (let key of Object.keys(prestate)) {
-        if (key.toLowerCase() === account) return key
-    }
-    return account
-}
-
-
 function isSelfdestructFrameType(type: unknown): boolean {
     return typeof type === 'string' && SELFDESTRUCT_FRAME_TYPES.has(type.toUpperCase())
 }
