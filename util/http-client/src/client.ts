@@ -38,6 +38,10 @@ export interface RequestOptions {
     /**
      * Largest response body, in bytes after decompression, to read. A larger
      * body fails the request with {@link HttpResponseTooLargeError}.
+     *
+     * Applies to bodies the client reads itself. With `stream: true`, a
+     * successful response's body is handed over unread, and the caller that
+     * consumes it is responsible for its size.
      */
     maxResponseSize?: number
 }
