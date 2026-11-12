@@ -755,10 +755,11 @@ export class Rpc {
         for (let hash of receipts ?? []) if (!seen.has(hash)) seen.set(hash, undefined)
         for (let [hash, txKey] of body) seen.set(hash, txKey)
         if (oracle != null) {
-            // The oracle is the authority where it answered: a system transaction it does not have is no
-            // evidence, or a corrected answer without it could never pass
+            // The oracle is the authority where it answered: only the system transactions it confirms stay
+            // evidence, or a corrected answer could never pass. Receipt-only evidence (no sender:nonce) goes
+            // too; the body is held to the oracle and the receipts to the body, so nothing is lost.
             for (let [hash, txKey] of seen) {
-                if (txKey != null && !oracle.has(txKey)) seen.delete(hash)
+                if (txKey == null || !oracle.has(txKey)) seen.delete(hash)
             }
         }
         this.systemTransactionEvidence.delete(key)

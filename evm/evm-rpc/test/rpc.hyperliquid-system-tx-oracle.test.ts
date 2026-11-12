@@ -140,5 +140,13 @@ describe('HyperEVM system transaction oracle', () => {
         const got: Map<string, Set<string>> = await (rpc as any).askSystemTxOracle([{hash: '0xaa'}, {hash: '0xbb'}])
         expect([...got.keys()]).toEqual(['0xbb'])
     })
+
+    it('take a corrected answer after one whose receipts alone had a system transaction the oracle rejected', async () => {
+        const {receipts, omitting, omittingReceipts} = answers()
+        const {answer} = setUp([])
+        // the receipts name the system tx, the body does not: rejected, and the receipt is evidence without sender:nonce
+        expect((await answer(omitting, receipts))._isInvalid).toBe(true)
+        expect((await answer(omitting, omittingReceipts))._isInvalid).toBeUndefined()
+    })
 })
 
