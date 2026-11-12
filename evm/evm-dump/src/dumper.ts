@@ -60,6 +60,7 @@ interface Options extends DumperOptions, StreamOptions {
     skipCumulativeGasUsedCheck?: boolean
     useGasUsedForReceiptsRoot?: boolean
     deriveTotalDifficulty?: boolean
+    hyperliquidSystemTxOracle?: string
     parentTotalDifficulty?: bigint
 }
 
@@ -143,6 +144,12 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
             'Use gasUsed instead of cumulativeGasUsed for receipts root calculation',
         )
         program.option(
+            '--hyperliquid-system-tx-oracle <url>',
+            'HyperEVM: an endpoint that serves eth_getSystemTxsByBlockHash (the official RPC). Each block is held ' +
+                'to its system transactions, compared by sender and nonce, and fetched again when it lacks one; ' +
+                'when the oracle gives no answer the block is taken without this check and a warning is logged',
+        )
+        program.option(
             '--derive-total-difficulty',
             "Write each block's totalDifficulty as its parent's plus its difficulty, in place of what the provider " +
                 "returns (providers leave it out or count it from a snapshot). The parent's is read from the archive; " +
@@ -207,9 +214,18 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
     }
 
     @def
+    private systemTxOracle(): EvmRpcClient | undefined {
+        let url = this.options().hyperliquidSystemTxOracle
+        if (url == null) return undefined
+        // its own small budget; Rpc bounds each oracle call further, so the oracle never holds the dump up
+        return new EvmRpcClient({url, capacity: 2, requestTimeout: 10_000, retryAttempts: 1})
+    }
+
+    @def
     private evmRpc(): Rpc {
         return new Rpc({
             client: this.rpc(),
+            hyperliquidSystemTxOracle: this.systemTxOracle(),
             finalityConfirmation: this.options().finalityConfirmation,
             verifyBlockHash: this.options().verifyBlockHash,
             verifyExtDataHash: this.options().verifyExtDataHash,
@@ -398,6 +414,11 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
 function assertStreamInputs(options: Options): void {
     if (options.withBlockAccessLists) {
         throw new ErrorMessage('--stream-url does not support --with-block-access-lists yet')
+    }
+
+    // Streamed blocks do not go through Rpc.getBlockBatch(), where the oracle is asked
+    if (options.hyperliquidSystemTxOracle != null) {
+        throw new ErrorMessage('--stream-url does not support --hyperliquid-system-tx-oracle yet')
     }
 }
 

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "`hyperliquidSystemTxOracle`: hold HyperEVM blocks to the system transactions of an `eth_getSystemTxsByBlockHash` endpoint, by sender and nonce",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}
