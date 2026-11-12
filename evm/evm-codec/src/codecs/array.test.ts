@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {address, array, bytes, fixedSizeArray, int8, BytesSink, BytesSrc, string, uint256} from '..'
+import {address, array, bytes, fixedSizeArray, int8, BytesSink, BytesSrc, HexSink, HexSrc, string, struct, uint256} from '..'
 
 function roundtrip<T>(codec: {encode: (s: BytesSink, v: T) => void; decode: (s: BytesSrc) => T; slotsCount?: number}, value: T) {
   const sink = new BytesSink(codec.slotsCount ?? 1)
@@ -30,6 +30,52 @@ describe('fixed size array', () => {
       'dasdas',
     ]
     roundtrip(arr, [data, [...data].reverse()])
+  })
+})
+
+describe.each([['bytes', BytesSink], ['hex', HexSink]] as const)('fixed size arrays with %s sink', (_backend, Sink) => {
+  const word = (value: bigint) => value.toString(16).padStart(64, '0')
+
+  it('accounts for static element widths', () => {
+    const matrix = fixedSizeArray(fixedSizeArray(uint256, 2), 3)
+    const value = [[1n, 2n], [3n, 4n], [5n, 6n]]
+    const expected = `0x${[1n, 2n, 3n, 4n, 5n, 6n].map(word).join('')}`
+    const sink = new Sink(matrix.slotsCount)
+    matrix.encode(sink, value)
+    expect(sink.toString()).toBe(expected)
+    expect(matrix.decode(new HexSrc(sink.toString()))).toStrictEqual(value)
+    expect(matrix.decode(new BytesSrc(Buffer.from(sink.toString().slice(2), 'hex')))).toStrictEqual(value)
+
+    const records = fixedSizeArray(struct({left: uint256, middle: uint256, right: uint256}), 2)
+    const recordValue = [{left: 1n, middle: 2n, right: 3n}, {left: 4n, middle: 5n, right: 6n}]
+    const recordSink = new Sink(records.slotsCount)
+    records.encode(recordSink, recordValue)
+    expect(recordSink.toString()).toBe(expected)
+    expect(records.decode(new HexSrc(recordSink.toString()))).toStrictEqual(recordValue)
+  })
+
+  it('keeps dynamic data after the complete static head', () => {
+    const matrix = fixedSizeArray(fixedSizeArray(uint256, 2), 2)
+    const codec = struct({matrix, label: string})
+    const value = {matrix: [[1n, 2n], [3n, 4n]], label: 'x'}
+    const sink = new Sink(1)
+    codec.encode(sink, value)
+    const expected = `0x${[32n, 1n, 2n, 3n, 4n, 160n, 1n].map(word).join('')}${'78'.padEnd(64, '0')}`
+    expect(sink.toString()).toBe(expected)
+    expect(codec.decode(new HexSrc(sink.toString()))).toStrictEqual(value)
+    expect(codec.decode(new BytesSrc(Buffer.from(sink.toString().slice(2), 'hex')))).toStrictEqual(value)
+  })
+
+  it('keeps a single outer head slot for dynamic elements', () => {
+    const codec = fixedSizeArray(string, 2)
+    const value = ['a', 'b']
+    const sink = new Sink(codec.slotsCount)
+    codec.encode(sink, value)
+    const expected = `0x${[32n, 64n, 128n, 1n].map(word).join('')}${'61'.padEnd(64, '0')}${word(1n)}${'62'.padEnd(64, '0')}`
+    expect(codec.slotsCount).toBe(1)
+    expect(sink.toString()).toBe(expected)
+    expect(codec.decode(new HexSrc(sink.toString()))).toStrictEqual(value)
+    expect(codec.decode(new BytesSrc(Buffer.from(sink.toString().slice(2), 'hex')))).toStrictEqual(value)
   })
 })
 
