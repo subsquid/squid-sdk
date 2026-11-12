@@ -1,0 +1,70 @@
+{
+  "network": "mainnet",
+  "transactionHash": "0xfdae66c16d1aa538872f6b80ceae1d5cb5a845a545b6377e7f37f8b8f09cfe96",
+  "client": "reth/v2.11.0-b9abbcc/x86_64-unknown-linux-gnu",
+  "note": "SELFDESTRUCT steps of the recorded opcode log (stack top only) and the prestate of the accounts in the call tree",
+  "steps": [
+    {
+      "op": "SELFDESTRUCT",
+      "stack": [
+        "0xd3b09cae7ced7727c23c07486077ef7f97c878c2"
+      ]
+    }
+  ],
+  "prestate": {
+    "0x0000000000000000000000000000000000000001": {
+      "balance": "0x31887c7f5dcb65428"
+    },
+    "0x03f7f3b8da875881206655d8099b9dacf721f1ef": {
+      "balance": "0x0"
+    },
+    "0x131c220c18874e32abbe945eb8aa998b84f63625": {
+      "balance": "0x0"
+    },
+    "0x41126be68d1cf057fc8e045f51c64ad7bc1cb789": {
+      "balance": "0x0"
+    },
+    "0x41675c099f32341bf84bfc5382af534df5c7461a": {
+      "balance": "0x3e871b540c000"
+    },
+    "0x4f1c53f096533c04d8157efb6bca3eb22ddc6360": {
+      "balance": "0x0"
+    },
+    "0x846bbe1925047023651de7ec289f329c24ded3a8": {
+      "balance": "0x0"
+    },
+    "0x891dee0483ebaa922e274ddd2ebbaa2d33468a38": {
+      "balance": "0x0"
+    },
+    "0xa66baaa0ccb6468c5a2cb61f5d672c7ba0440ee1": {
+      "balance": "0x0"
+    },
+    "0xaa7e4ba21db739b12368bb16e83f739377d3eab8": {
+      "balance": "0x0"
+    },
+    "0xadf5a8db090627b153ef0c5726ccfdc1c7aed7bd": {
+      "balance": "0x0"
+    },
+    "0xaf0dffac1ce85c3fce4c2bf50073251f615eefc4": {
+      "balance": "0x0"
+    },
+    "0xc3dc853dd716bd5754f421ef94fdcbac3902ab32": {
+      "balance": "0x0"
+    },
+    "0xcbedc66c9287346799abd51a59addeb0be55d907": {
+      "balance": "0x2d96aee0ad9068"
+    },
+    "0xd22c061a1ee043c75f642fcfb643f9541997fb85": {
+      "balance": "0x0"
+    },
+    "0xd3b09cae7ced7727c23c07486077ef7f97c878c2": {
+      "balance": "0x0"
+    },
+    "0xe97980f1d43c4cd4f1eef0277a2dea7ddbc2cd13": {
+      "balance": "0x0"
+    },
+    "0xebe37e43bc6b3aacfe318d6906fc80c4a2a7505a": {
+      "balance": "0x0"
+    }
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "network": "mainnet",
+  "transactionHash": "0x22d29894e6cdb8cf4dbbf71c7d6ba8ec0d597c8f130c500c93b19762828b1d6d",
+  "client": "reth/v2.11.0-b9abbcc/x86_64-unknown-linux-gnu",
+  "note": "SELFDESTRUCT steps of the recorded opcode log (stack top only) and the prestate of the accounts in the call tree",
+  "steps": [
+    {
+      "op": "SELFDESTRUCT",
+      "stack": [
+        "0xf92060aa5e079a0a90119bac558b8c93454d0467"
+      ]
+    }
+  ],
+  "prestate": {
+    "0x0000000000000000000000000000000000000001": {
+      "balance": "0x31887c7f5dcb65429"
+    },
+    "0x03f7f3b8da875881206655d8099b9dacf721f1ef": {
+      "balance": "0x0"
+    },
+    "0x131c220c18874e32abbe945eb8aa998b84f63625": {
+      "balance": "0x0"
+    },
+    "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984": {
+      "balance": "0x0"
+    },
+    "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": {
+      "balance": "0x0"
+    },
+    "0x41675c099f32341bf84bfc5382af534df5c7461a": {
+      "balance": "0x3e871b540c000"
+    },
+    "0x43506849d7c04f9138d1a2050bbf3a0c054402dd": {
+      "balance": "0x0"
+    },
+    "0x4f1c53f096533c04d8157efb6bca3eb22ddc6360": {
+      "balance": "0x0"
+    },
+    "0x514910771af9ca656af840dff83e8264ecf986ca": {
+      "balance": "0x0"
+    },
+    "0x56072c95faa701256059aa122697b133aded9279": {
+      "balance": "0x0"
+    },
+    "0x58783f682bd1ea0d11e1187e28445d3185b6a173": {
+      "balance": "0x0"
+    },
+    "0x5a98fcbea516cf06857215779fd812ca3bef1b32": {
+      "balance": "0x0"
+    },
+    "0x5d4aa78b08bc7c530e21bf7447988b1be7991322": {
+      "balance": "0x0"
+    },
+    "0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419": {
+      "balance": "0x0"
+    },
+    "0x6e500d3c8e294870cb1379c32aa0cea613a8f721": {
+      "balance": "0x442bbcdd60085"
+    },
+    "0x720ef97bf835699fcf07591952cd2b132d63a6c0": {
+      "balance": "0x0"
+    },
+    "0x747beaee139fba4a89fa71bebb5f21231530292b": {
+      "balance": "0x0"
+    },
+    "0x7d4e742018fb52e48b08be73d041c18b21de6fb5": {
+      "balance": "0x0"
+    },
+    "0x7eb9a40c39c0b8b2ef1ecb11a0238198915aa037": {
+      "balance": "0xa9f639fe0e000"
+    },
+    "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9": {
+      "balance": "0x0"
+    },
+    "0x823ca839da344da59d517b84ce3bab9ffc9f54ee": {
+      "balance": "0x0"
+    },
+    "0x846bbe1925047023651de7ec289f329c24ded3a8": {
+      "balance": "0x0"
+    },
+    "0x891dee0483ebaa922e274ddd2ebbaa2d33468a38": {
+      "balance": "0x0"
+    },
+    "0x8fffffd4afb6115b954bd326cbe7b4ba576818f6": {
+      "balance": "0x0"
+    },
+    "0x966ec191ed9e026cb6f7e22bb2a284bad6a2838d": {
+      "balance": "0x0"
+    },
+    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+      "balance": "0x0"
+    },
+    "0xadf5a8db090627b153ef0c5726ccfdc1c7aed7bd": {
+      "balance": "0x0"
+    },
+    "0xaf0dffac1ce85c3fce4c2bf50073251f615eefc4": {
+      "balance": "0x0"
+    },
+    "0xb0fd105dad6b9b07f36d5f8496712a36114279ad": {
+      "balance": "0x0"
+    },
+    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": {
+      "balance": "0x1dcdfb00d653c5852a575"
+    },
+    "0xc3dc853dd716bd5754f421ef94fdcbac3902ab32": {
+      "balance": "0x0"
+    },
+    "0xc9e1a09622afdb659913fefe800feae5dbbfe9d7": {
+      "balance": "0x0"
+    },
+    "0xd012801a53e9a7b58d3d72b0f3e9596a63e39704": {
+      "balance": "0x0"
+    },
+    "0xd7b0610db501b15bfb9b7ddad8b3869de262a327": {
+      "balance": "0x0"
+    },
+    "0xdeb288f737066589598e9214e782fa5a8ed689e8": {
+      "balance": "0x0"
+    },
+    "0xe97980f1d43c4cd4f1eef0277a2dea7ddbc2cd13": {
+      "balance": "0x0"
+    },
+    "0xf92060aa5e079a0a90119bac558b8c93454d0467": {
+      "balance": "0x0"
+    },
+    "0xfaf2c3db614e9d38fe05edc634848be7ff0542b9": {
+      "balance": "0x0"
+    },
+    "0xfedc73464dfd156d30f6524654a5d56e766da0c3": {
+      "balance": "0x0"
+    }
+  }
+}

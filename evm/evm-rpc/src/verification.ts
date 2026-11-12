@@ -1716,6 +1716,197 @@ export function selfdestructEvents(stream: unknown[]): SelfdestructEvent[] {
 }
 
 
+/**
+ * One step of a built-in opcode logger answer (`debug_traceTransaction` without a
+ * tracer): only the opcode and the stack are read.
+ */
+export interface OpcodeStep {
+    op?: unknown
+    stack?: unknown
+}
+
+
+/**
+ * A `prestateTracer` answer: the state of each touched account before the
+ * transaction ran.
+ */
+export type Prestate = Record<string, {balance?: unknown} | null | undefined>
+
+
+/**
+ * Selfdestruct events rebuilt from built-in tracers only, for upstreams that refuse
+ * a custom JS tracer.
+ *
+ * The frames come from the call tree; what a revm-based call tracer may get wrong
+ * about them comes from elsewhere:
+ *
+ * - the frame of each opcode: the k-th SELFDESTRUCT step of the opcode log is the
+ *   k-th selfdestruct frame of the call tree in execution order, which holds
+ *   whatever order a client invokes its tracer hooks in;
+ * - the executing account: the enclosing frame's call context, as for
+ *   {@link findDefectiveSelfdestructs};
+ * - the beneficiary: the top of the stack at the opcode;
+ * - the balance at the opcode: the prestate balance plus every value movement
+ *   before the frame in execution order, without the movements of failed frames.
+ *   Selfdestructs move what the opcode evidence says they moved, not what their
+ *   frames claim.
+ *
+ * Throws, so that validation rejects the block, when the evidence does not bind:
+ * the step and frame counts differ, the prestate does not name an executing
+ * account, or that account is the transaction sender, whose balance also pays for
+ * gas.
+ */
+export function builtinSelfdestructEvents(
+    root: CallFrame,
+    steps: OpcodeStep[],
+    prestate: Prestate
+): SelfdestructEvent[] {
+    let opcodes = steps.filter(step => step.op === 'SELFDESTRUCT' || step.op === 'SUICIDE')
+    let frames = selfdestructFrameCount(root)
+    if (opcodes.length !== frames) {
+        throw new Error(`the opcode log has ${opcodes.length} SELFDESTRUCT steps for ${frames} selfdestruct frames`)
+    }
+
+    let sender = root.from?.toLowerCase()
+    let balances = new Map<string, bigint>()
+    let created = new Set<string>()
+    let journal: (() => void)[] = []
+    let found: SelfdestructEvent[] = []
+    let next = 0
+
+    function balanceOf(account: string): bigint | undefined {
+        let known = balances.get(account)
+        if (known != null) return known
+        let entry = prestate[account] ?? prestate[prestateKey(account, prestate)]
+        if (entry == null) return undefined
+        // Clients omit a zero balance from a named account.
+        let balance = entry.balance
+        if (balance != null && typeof balance !== 'string') return undefined
+        let value = balance ? BigInt(balance) : 0n
+        balances.set(account, value)
+        return value
+    }
+
+    function setBalance(account: string, value: bigint): void {
+        let previous = balances.get(account)
+        balances.set(account, value)
+        journal.push(() => {
+            if (previous == null) {
+                balances.delete(account)
+            } else {
+                balances.set(account, previous)
+            }
+        })
+    }
+
+    function move(from: string, to: string, value: bigint): void {
+        if (value === 0n || from === to) return
+        let fromBalance = balanceOf(from)
+        if (fromBalance != null) setBalance(from, fromBalance - value)
+        let toBalance = balanceOf(to)
+        if (toBalance != null) setBalance(to, toBalance + value)
+    }
+
+    function markCreated(account: string): void {
+        if (created.has(account)) return
+        created.add(account)
+        journal.push(() => created.delete(account))
+    }
+
+    function visit(frame: CallFrame, traceAddress: number[], executor: string | undefined): void {
+        let checkpoint = journal.length
+        let type = frame.type.toUpperCase()
+
+        if (SELFDESTRUCT_FRAME_TYPES.has(type)) {
+            let step = opcodes[next++]
+            let account = executor
+            if (account == null) {
+                throw new Error(`no executing account for selfdestruct frame ${traceAddress.join('/')}`)
+            }
+            if (account === sender) {
+                throw new Error(`selfdestruct frame ${traceAddress.join('/')} runs in the transaction sender, whose balance pays for gas`)
+            }
+            let beneficiary = stackTopAddress(step.stack)
+            if (beneficiary == null) {
+                throw new Error(`the SELFDESTRUCT step of frame ${traceAddress.join('/')} has no beneficiary on its stack`)
+            }
+            let balance = balanceOf(account)
+            if (balance == null) {
+                throw new Error(`the prestate does not name ${account}, which executes selfdestruct frame ${traceAddress.join('/')}`)
+            }
+            let qty: Qty = '0x' + balance.toString(16)
+            found.push({traceAddress, account, beneficiary, balance: qty, preBalance: qty})
+
+            if (beneficiary !== account) {
+                move(account, beneficiary, balance)
+            } else if (created.has(account)) {
+                // A contract created in this transaction burns its balance.
+                setBalance(account, 0n)
+            }
+        } else {
+            let from = frame.from?.toLowerCase()
+            let to = frame.to?.toLowerCase()
+            if (CREATE_FRAME_TYPES.has(frame.type) && to) {
+                markCreated(to)
+            }
+            let value = frame.value ? BigInt(frame.value) : 0n
+            if (value > 0n && from && to && (type === 'CALL' || CREATE_FRAME_TYPES.has(frame.type))) {
+                move(from, to, value)
+            }
+            let childExecutor = isContextPreserving(frame.type) ? from : to
+            let calls = frame.calls ?? []
+            for (let i = 0; i < calls.length; i++) {
+                visit(calls[i], [...traceAddress, i], childExecutor)
+            }
+        }
+
+        if (frame.error != null) {
+            while (journal.length > checkpoint) {
+                journal.pop()!()
+            }
+        }
+    }
+
+    visit(root, [], undefined)
+    return found
+}
+
+
+function selfdestructFrameCount(frame: CallFrame): number {
+    let count = SELFDESTRUCT_FRAME_TYPES.has(frame.type.toUpperCase()) ? 1 : 0
+    for (let child of frame.calls ?? []) {
+        count += selfdestructFrameCount(child)
+    }
+    return count
+}
+
+
+/**
+ * The address on top of an opcode log stack. Clients print stack words with or
+ * without `0x` and with or without leading zeros.
+ */
+function stackTopAddress(stack: unknown): Bytes20 | undefined {
+    if (!Array.isArray(stack) || stack.length === 0) return undefined
+    let top = stack[stack.length - 1]
+    if (typeof top !== 'string') return undefined
+    let hex = top.startsWith('0x') || top.startsWith('0X') ? top.slice(2) : top
+    if (!/^[0-9a-fA-F]*$/.test(hex) || hex.length > 64) return undefined
+    return ('0x' + hex.padStart(40, '0').slice(-40)).toLowerCase()
+}
+
+
+/**
+ * The key a prestate answer uses for an account: clients key it lowercase or
+ * checksummed.
+ */
+function prestateKey(account: string, prestate: Prestate): string {
+    for (let key of Object.keys(prestate)) {
+        if (key.toLowerCase() === account) return key
+    }
+    return account
+}
+
+
 function isSelfdestructFrameType(type: unknown): boolean {
     return typeof type === 'string' && SELFDESTRUCT_FRAME_TYPES.has(type.toUpperCase())
 }
