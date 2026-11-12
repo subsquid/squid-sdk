@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/http-client",
+      "comment": "add `RequestOptions.maxResponseSize`: a larger response body fails the request with `HttpResponseTooLargeError`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/http-client"
+}

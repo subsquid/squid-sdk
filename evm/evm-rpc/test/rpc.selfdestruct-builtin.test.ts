@@ -1,12 +1,12 @@
-import * as fs from 'fs'
-import * as http from 'http'
-import {AddressInfo} from 'net'
-import * as Path from 'path'
-import {afterEach, describe, expect, it} from 'vitest'
-import {Rpc} from '../src/rpc'
+import * as fs from 'node:fs'
+import * as http from 'node:http'
+import type {AddressInfo} from 'node:net'
+import * as Path from 'node:path'
+import {RpcResponseTooLargeError} from '@subsquid/rpc-client'
+import {afterEach, describe, expect, it, vi} from 'vitest'
+import {Rpc, SELFDESTRUCT_OPCODE_LOG_MAX_BYTES} from '../src/rpc'
 import {EvmRpcClient} from '../src/rpc-client'
 import {getChainId, loadBlock, loadDebugFrames} from './helpers/fixture-loader'
-
 
 // Ethereum Sepolia block 11319411 as served by a provider that drops the payload
 // of the selfdestruct frame in transaction 17, a selfdestruct-to-self.
@@ -17,11 +17,9 @@ const POISONED_TX = '0xf6c6e39b79667c78858e4c5b924a22d834427d7287e8a3b26219fe5dc
 
 // The SELFDESTRUCT steps of its opcode log and its prestate, recorded from a node
 // that serves both.
-const EVIDENCE = JSON.parse(fs.readFileSync(
-    Path.join(__dirname, 'fixtures', CHAIN, String(BLOCK), 'selfdestruct-builtin.json'),
-    'utf-8'
-))
-
+const EVIDENCE = JSON.parse(
+    fs.readFileSync(Path.join(__dirname, 'fixtures', CHAIN, String(BLOCK), 'selfdestruct-builtin.json'), 'utf-8'),
+)
 
 interface Behaviour {
     /** The block `eth_getTransactionByHash` reports the transaction in. */
@@ -33,13 +31,11 @@ interface Behaviour {
     prestateRefused?: boolean
 }
 
-
 interface Upstream {
     url: string
     requests: () => string[]
     close: () => Promise<void>
 }
-
 
 /**
  * Serves the recorded block, its malformed call traces and the built-in tracers,
@@ -63,10 +59,12 @@ async function startUpstream(behaviour: Behaviour = {}): Promise<Upstream> {
                 // Recovery reads balances only.
                 expect(req.params[1]?.tracerConfig).toEqual({disableCode: true, disableStorage: true})
                 if (behaviour.prestateRefused) return {error: {code: -32000, message: 'response too big'}}
-                return {result: block.transactions.map((tx: any) => ({
-                    txHash: tx.hash,
-                    result: tx.hash === POISONED_TX ? (behaviour.prestate?.() ?? EVIDENCE.prestate) : {}
-                }))}
+                return {
+                    result: block.transactions.map((tx: any) => ({
+                        txHash: tx.hash,
+                        result: tx.hash === POISONED_TX ? (behaviour.prestate?.() ?? EVIDENCE.prestate) : {},
+                    })),
+                }
             }
             case 'eth_getTransactionByHash': {
                 requests.push('eth_getTransactionByHash')
@@ -91,42 +89,43 @@ async function startUpstream(behaviour: Behaviour = {}): Promise<Upstream> {
 
     let server = http.createServer((request, response) => {
         let body = ''
-        request.on('data', chunk => body += chunk)
+        request.on('data', (chunk) => {
+            body += chunk
+        })
         request.on('end', () => {
             let payload = JSON.parse(body)
             let reply = Array.isArray(payload)
-                ? payload.map(req => ({jsonrpc: '2.0', id: req.id, ...answer(req)}))
+                ? payload.map((req) => ({jsonrpc: '2.0', id: req.id, ...answer(req)}))
                 : {jsonrpc: '2.0', id: payload.id, ...answer(payload)}
             response.setHeader('content-type', 'application/json')
             response.end(JSON.stringify(reply))
         })
     })
-    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
     let {port} = server.address() as AddressInfo
 
     return {
         url: `http://127.0.0.1:${port}`,
         requests: () => requests,
-        close: () => new Promise(resolve => server.close(() => resolve()))
+        close: () => new Promise((resolve) => server.close(() => resolve())),
     }
 }
 
-
-function fetchBlock(url: string) {
+function fetchBlock(url: string, intercept?: (client: EvmRpcClient) => void) {
     let client = new EvmRpcClient({
         url,
         retryAttempts: Number.MAX_SAFE_INTEGER,
         retrySchedule: [0],
         retryInternalServerErrors: true,
-        log: null
+        log: null,
     })
+    intercept?.(client)
     return new Rpc({client}).getBlockBatch([BLOCK], {
         transactions: true,
         traces: true,
-        useDebugTraceBlockByNumber: true
+        useDebugTraceBlockByNumber: true,
     })
 }
-
 
 describe('selfdestruct recovery from built-in tracers', () => {
     let upstream: Upstream | undefined
@@ -146,32 +145,59 @@ describe('selfdestruct recovery from built-in tracers', () => {
         // differently; the selfdestruct frame is what the repair writes.
         let complete = loadDebugFrames(CHAIN, BLOCK)[POISONED_INDEX].result.calls[0]
         let repaired = blocks[0].debugFrames![POISONED_INDEX]!.result.calls![0]
-        expect({type: repaired.type, from: repaired.from, to: repaired.to, value: repaired.value})
-            .toEqual({type: complete.type, from: complete.from, to: complete.to, value: complete.value})
+        expect({type: repaired.type, from: repaired.from, to: repaired.to, value: repaired.value}).toEqual({
+            type: complete.type,
+            from: complete.from,
+            to: complete.to,
+            value: complete.value,
+        })
         expect(upstream.requests()).toEqual([
-            'prestateTracer', 'eth_getTransactionByHash', 'opcodeLogger', 'eth_getTransactionByHash'
+            'prestateTracer',
+            'eth_getTransactionByHash',
+            'opcodeLogger',
+            'eth_getTransactionByHash',
         ])
     }, 10_000)
 
     it('refuses a transaction that a reorg moved to another block', async () => {
         upstream = await startUpstream({
-            includedIn: () => '0x' + 'ab'.repeat(32)
+            includedIn: () => `0x${'ab'.repeat(32)}`,
         })
 
         let blocks = await fetchBlock(upstream.url)
 
         expect(blocks[0]._isInvalid).toBe(true)
         expect(blocks[0]._errorMessage).toContain(
-            `invalid debug call frames for transaction ${POISONED_TX}: selfdestruct frame 0 has no beneficiary`
+            `invalid debug call frames for transaction ${POISONED_TX}: selfdestruct frame 0 has no beneficiary`,
         )
         expect(upstream.requests()).not.toContain('opcodeLogger')
     }, 10_000)
 
     it('refuses an opcode log that spent other gas than the call tree, as an execution in another block would', async () => {
-        upstream = await startUpstream({opcodeGas: gas => gas + 2600})
+        upstream = await startUpstream({opcodeGas: (gas) => gas + 2600})
 
         let blocks = await fetchBlock(upstream.url)
 
+        expect(blocks[0]._isInvalid).toBe(true)
+        expect(upstream.requests()).toContain('js')
+    }, 10_000)
+
+    it('reads the opcode log under a size cap and falls back when it is larger', async () => {
+        upstream = await startUpstream()
+        let caps: (number | undefined)[] = []
+
+        let blocks = await fetchBlock(upstream.url, (client) => {
+            let call = client.call.bind(client)
+            vi.spyOn(client, 'call').mockImplementation((method: string, params?: any[], options?: any) => {
+                if (method === 'debug_traceTransaction' && params?.[1]?.tracer == null) {
+                    caps.push(options?.maxResponseSize)
+                    return Promise.reject(new RpcResponseTooLargeError(options?.maxResponseSize))
+                }
+                return call(method, params, options)
+            })
+        })
+
+        expect(caps).toEqual([SELFDESTRUCT_OPCODE_LOG_MAX_BYTES])
         expect(blocks[0]._isInvalid).toBe(true)
         expect(upstream.requests()).toContain('js')
     }, 10_000)

@@ -1,5 +1,5 @@
 import { Logger, createLogger } from '@subsquid/logger'
-import { CallOptions, RetryError, RpcError, RpcProtocolError } from '@subsquid/rpc-client'
+import { CallOptions, RetryError, RpcError, RpcProtocolError, RpcResponseTooLargeError } from '@subsquid/rpc-client'
 import {
     array,
     BYTES,
@@ -61,6 +61,14 @@ export type Commitment = 'finalized' | 'latest'
 export const CALL_FRAME_VALIDATION_MODES = ['off', 'observe', 'reject'] as const
 const CALL_FRAME_VIOLATION_SAMPLE_LIMIT = 3
 const SELFDESTRUCT_TRACE_RETRY_ATTEMPTS = 2
+/**
+ * Largest opcode log the built-in selfdestruct recovery reads: about 450k steps at
+ * the ~300 bytes a step with its stack takes. Parsed, a log takes ~1.6x its size in
+ * a V8 heap and ~9x in the Rust verifier, so the same cap keeps a big transaction
+ * well inside both. The `limit` option of the opcode logger cannot bound it: some
+ * clients ignore it and others count something other than steps.
+ */
+export const SELFDESTRUCT_OPCODE_LOG_MAX_BYTES = 128 * 1024 * 1024
 
 /**
  * Controls semantic call-frame consistency checks. Structural requirements needed
@@ -1327,8 +1335,13 @@ export class Rpc {
                 enableReturnData: false,
                 timeout: req.debugTraceTimeout
             }],
-            options
-        )
+            {...options, maxResponseSize: SELFDESTRUCT_OPCODE_LOG_MAX_BYTES}
+        ).catch(err => {
+            if (err instanceof RpcResponseTooLargeError) {
+                throw new Error(`the opcode log exceeds ${err.limit} bytes`)
+            }
+            throw err
+        })
         if (!Array.isArray(log?.structLogs)) {
             throw new Error('the opcode logger answered without steps')
         }

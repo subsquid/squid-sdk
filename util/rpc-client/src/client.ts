@@ -98,6 +98,12 @@ export interface CallOptions<R=any> {
      */
     validateResult?: ResultValidator<R>
     validateError?: ErrorValidator<R>
+    /**
+     * Largest response, in bytes, to read. A larger one fails the call with
+     * {@link RpcResponseTooLargeError} and is not retried. Enforced over HTTP only:
+     * a WebSocket message has already been received whole.
+     */
+    maxResponseSize?: number
 }
 
 
@@ -114,6 +120,7 @@ interface Req {
     reject(error: Error): void
     validateResult?: ResultValidator | undefined
     validateError?: ErrorValidator | undefined
+    maxResponseSize?: number
 }
 
 
@@ -293,6 +300,7 @@ export class RpcClient {
                 reject,
                 validateResult: options?.validateResult,
                 validateError: options?.validateError,
+                maxResponseSize: options?.maxResponseSize,
             })
         })
     }
@@ -337,7 +345,8 @@ export class RpcClient {
                 resolve,
                 reject,
                 validateResult: options?.validateResult,
-                validateError: options?.validateError
+                validateError: options?.validateError,
+                maxResponseSize: options?.maxResponseSize
             })
         })
     }
@@ -401,7 +410,7 @@ export class RpcClient {
         if (Array.isArray(req.call)) {
             let call = req.call
             this.log?.debug({rpcBatchId: [call[0].id, last(call).id]}, 'rpc send')
-            promise = this.con.batchCall(call, req.timeout).then(res => {
+            promise = this.con.batchCall(call, req.timeout, {maxResponseSize: req.maxResponseSize}).then(res => {
                 let result = new Array(res.length)
                 for (let i = 0; i < res.length; i++) {
                     result[i] = this.receiveResult(call[i], res[i], req.validateResult, req.validateError)
@@ -411,7 +420,7 @@ export class RpcClient {
         } else {
             let call = req.call
             this.log?.debug({rpcId: call.id}, 'rpc send')
-            promise = this.con.call(call, req.timeout).then(res => {
+            promise = this.con.call(call, req.timeout, {maxResponseSize: req.maxResponseSize}).then(res => {
                 return this.receiveResult(call, res, req.validateResult, req.validateError)
             })
         }
