@@ -16,7 +16,8 @@ import {
 // Recorded node output, not constructed. `defective/` pairs each transaction as a
 // revm-based node traced it with a complete trace of the same transaction;
 // `recovery/` holds opcode-tracer answers; `builtin/` holds the SELFDESTRUCT steps of
-// built-in opcode logs and prestate answers; `complete/` holds traces that must not
+// built-in opcode logs and prestate answers (`builtin-intact/` with the call tree
+// of a transaction whose frames are correct); `complete/` holds traces that must not
 // be rewritten.
 const FIXTURES = Path.resolve(__dirname, 'fixtures/selfdestruct')
 
@@ -657,6 +658,39 @@ describe('builtinSelfdestructEvents', () => {
         ]}
         expect(() => builtinSelfdestructEvents(root, [], {[VICTIM]: {balance: '0x1'}}))
             .toThrow('the opcode log has 0 SELFDESTRUCT steps for 1 selfdestruct frames')
+    })
+
+    it('starts a contract created in the transaction from zero when the prestate leaves it out', () => {
+        // Recorded from Geth and reth alike: neither names the CREATE2 account, which
+        // was empty before the transaction.
+        let rec = JSON.parse(fs.readFileSync(
+            Path.join(__dirname, 'fixtures/selfdestruct/builtin-intact/26384923-created-in-tx.json'), 'utf-8'
+        ))
+        let frame = rec.callFrame.calls[0].calls[4]
+        expect(frame.type).toBe('SELFDESTRUCT')
+        expect(Object.keys(rec.prestate).map(k => k.toLowerCase())).not.toContain(rec.callFrame.calls[0].to.toLowerCase())
+        let events = builtinSelfdestructEvents(rec.callFrame, rec.steps, rec.prestate)
+        expect(events).toEqual([{
+            traceAddress: [0, 4],
+            account: frame.from.toLowerCase(),
+            beneficiary: frame.to.toLowerCase(),
+            balance: frame.value,
+            preBalance: frame.value
+        }])
+    })
+
+    it('keeps what an unnamed address received before the transaction created a contract at it', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [
+                {type: 'CALL', from: ROUTER, to: OTHER, value: '0x5'},
+                {type: 'CREATE2', from: ROUTER, to: OTHER, value: '0x2', calls: [
+                    {type: 'SELFDESTRUCT', from: OTHER, to: VICTIM, value: '0x7'}
+                ]}
+            ]
+        }
+        let events = builtinSelfdestructEvents(root, [step(VICTIM)], {[ROUTER]: {balance: '0x100'}})
+        expect(events.map(e => e.balance)).toEqual(['0x7'])
     })
 
     it('refuses an executing account the prestate does not name', () => {

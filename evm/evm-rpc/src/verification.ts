@@ -1757,9 +1757,12 @@ export type Prestate = Record<string, {balance?: unknown} | null | undefined>
  * gas, a call or create before the opcode does not report the value or target it
  * moved, or the account selfdestructed to itself earlier in the transaction. Such
  * an earlier opcode keeps an existing contract's balance after Cancun and burns it
- * before, and the fork is not known here. It also throws when a frame that is not
- * `suspects` names another beneficiary than its opcode: the opcode log then did not
- * come from this execution, and the movements it implies cannot be trusted.
+ * before, and the fork is not known here. An account the prestate does not name
+ * starts from zero, as clients leave out only accounts that were empty, but an
+ * executing account must be named unless the transaction created it. It also
+ * throws when a frame that is not `suspects` names another beneficiary than its
+ * opcode: the opcode log then did not come from this execution, and the movements
+ * it implies cannot be trusted.
  */
 export function builtinSelfdestructEvents(
     root: CallFrame,
@@ -1784,10 +1787,22 @@ export function builtinSelfdestructEvents(
     let found: SelfdestructEvent[] = []
     let next = 0
 
+    function named(account: string): boolean {
+        return Object.prototype.hasOwnProperty.call(prestate, prestateKey(account, prestate))
+    }
+
     function balanceOf(account: string): bigint | undefined {
         let known = balances.get(account)
         if (known != null) return known
-        let entry = prestate[account] ?? prestate[prestateKey(account, prestate)]
+        // Clients leave out an account that was empty before the transaction, and a
+        // touched account with anything in it is always named. So an account the
+        // prestate does not name starts from zero, even one funded before it is
+        // created in this transaction.
+        if (!named(account)) {
+            balances.set(account, 0n)
+            return 0n
+        }
+        let entry = prestate[prestateKey(account, prestate)]
         // Only an account object is evidence; the omitted-balance rule needs one.
         if (entry == null || typeof entry !== 'object' || Array.isArray(entry)) return undefined
         // Clients omit a zero balance from a named account.
@@ -1856,7 +1871,9 @@ export function builtinSelfdestructEvents(
             if (!suspect.has(traceAddress.join('/')) && frame.to && frame.to.toLowerCase() !== beneficiary) {
                 throw new Error(`the opcode log sends selfdestruct frame ${traceAddress.join('/')} to ${beneficiary}, but the frame names ${frame.to.toLowerCase()}`)
             }
-            let balance = balanceOf(account)
+            // A contract that existed before the transaction has code, so a prestate
+            // that leaves it out is not one to read balances from.
+            let balance = named(account) || created.has(account) ? balanceOf(account) : undefined
             if (balance == null) {
                 throw new Error(`the prestate does not name ${account}, which executes selfdestruct frame ${traceAddress.join('/')}`)
             }
