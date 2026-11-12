@@ -231,7 +231,8 @@ export class Rpc {
     private consensusAnchorRules: ReadonlySet<ConsensusAnchorRule>
     private consensusAnchorInputsMissingLogged = false
     // HyperEVM: the system transactions any answer has shown for a block hash (see checkHyperliquidSystemTransactions)
-    private systemTransactionEvidence = new Map<string, Set<string>>()
+    // by block hash: transaction hash -> "sender:nonce" where the answer gave it (a body), undefined otherwise (a receipt)
+    private systemTransactionEvidence = new Map<string, Map<string, string | undefined>>()
     private systemTxOracle?: EvmRpcClient
     // The oracle's system transactions of a block hash, as "sender:nonce"; a block's answer never changes
     private systemTxOracleAnswers = new Map<string, Set<string>>()
@@ -385,14 +386,11 @@ export class Rpc {
         await this.addRequestedData(chain, req)
 
         if (utils.hasHyperliquidSystemTransactions) {
+            let answers = oracleAnswers != null ? await oracleAnswers : undefined
             for (let block of chain) {
-                this.checkHyperliquidSystemTransactions(block, utils)
-            }
-        }
-        if (oracleAnswers != null) {
-            let answers = await oracleAnswers
-            for (let block of chain) {
-                this.checkAgainstSystemTxOracle(block, answers.get(block.hash.toLowerCase()), utils)
+                let oracle = answers?.get(block.hash.toLowerCase())
+                this.checkHyperliquidSystemTransactions(block, utils, oracle)
+                if (answers != null) this.checkAgainstSystemTxOracle(block, oracle, utils)
             }
         }
 
@@ -728,16 +726,16 @@ export class Rpc {
      * once an answer has shown a system transaction, only answers that have it are taken. A block
      * whose every answer leaves one out is not caught here.
      */
-    private checkHyperliquidSystemTransactions(block: Block, utils: ChainUtils): void {
+    private checkHyperliquidSystemTransactions(block: Block, utils: ChainUtils, oracle?: Set<string>): void {
         // An answer already found invalid (a receipt of a transaction the body lacks, say) still counts as
         // evidence: what it showed is recorded, only the comparison is skipped.
         let key = block.hash.toLowerCase()
         // Every transaction the body names; a hash-only body names them without telling which are
         // system transactions, so it gives no new evidence but is still held to the earlier evidence.
         let bodyHashes = new Set(block.block.transactions.map(tx => getTxHash(tx).toLowerCase()))
-        let body = new Set<string>()
+        let body = new Map<string, string>()
         for (let tx of block.block.transactions) {
-            if (typeof tx !== 'string' && utils.isHyperliquidSystemTransaction(tx)) body.add(tx.hash.toLowerCase())
+            if (typeof tx !== 'string' && utils.isHyperliquidSystemTransaction(tx)) body.set(tx.hash.toLowerCase(), systemTxKey(tx.from, tx.nonce))
         }
         let receipts: Set<string> | undefined
         let receiptHashes: Set<string> | undefined
@@ -753,7 +751,16 @@ export class Rpc {
         }
 
         let earlier = this.systemTransactionEvidence.get(key)
-        let seen = new Set<string>([...(earlier ?? []), ...body, ...(receipts ?? [])])
+        let seen = new Map<string, string | undefined>(earlier ?? [])
+        for (let hash of receipts ?? []) if (!seen.has(hash)) seen.set(hash, undefined)
+        for (let [hash, txKey] of body) seen.set(hash, txKey)
+        if (oracle != null) {
+            // The oracle is the authority where it answered: a system transaction it does not have is no
+            // evidence, or a corrected answer without it could never pass
+            for (let [hash, txKey] of seen) {
+                if (txKey != null && !oracle.has(txKey)) seen.delete(hash)
+            }
+        }
         this.systemTransactionEvidence.delete(key)
         this.systemTransactionEvidence.set(key, seen)
         if (this.systemTransactionEvidence.size > SYSTEM_TRANSACTION_EVIDENCE_BLOCKS) {
@@ -762,7 +769,7 @@ export class Rpc {
         }
         if (block._isInvalid) return
 
-        for (let hash of seen) {
+        for (let hash of seen.keys()) {
             let from = earlier?.has(hash) ? 'an earlier answer for this block' : body.has(hash) ? 'the block body' : 'eth_getBlockReceipts'
             let missingFrom = !bodyHashes.has(hash) ? 'the block body' : receiptHashes != null && !receiptHashes.has(hash) ? 'the receipts' : undefined
             if (missingFrom == null) continue
@@ -812,7 +819,12 @@ export class Rpc {
             for (let i = 0; i < ask.length; i++) {
                 let txs = results[i]
                 if (!Array.isArray(txs)) continue // the oracle does not know the block (yet)
-                let set = new Set(txs.map(tx => systemTxKey(tx.from, tx.nonce)))
+                let set: Set<string>
+                try {
+                    set = new Set(txs.map(tx => systemTxKey(tx.from, tx.nonce)))
+                } catch {
+                    continue // a malformed answer is no answer, for this block alone
+                }
                 let key = ask[i].toLowerCase()
                 answers.set(key, set)
                 this.systemTxOracleAnswers.set(key, set)

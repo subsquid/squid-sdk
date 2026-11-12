@@ -123,5 +123,22 @@ describe('HyperEVM system transaction oracle', () => {
             vi.useRealTimers()
         }
     })
+
+    it('take a corrected answer after one with a system transaction the oracle rejected', async () => {
+        const {block, receipts, omitting, omittingReceipts} = answers()
+        const {answer} = setUp([])
+        expect((await answer(block, receipts))._errorMessage).toMatch(/the oracle does not$/)
+        expect((await answer(omitting, omittingReceipts))._isInvalid).toBeUndefined()
+    })
+
+    it('skip only the block whose oracle answer is malformed', async () => {
+        const {oracleAnswer} = answers()
+        const oracle = new MockRpcClient()
+        oracle.setFixture('eth_getSystemTxsByBlockHash', ['0xaa'], [{}])
+        oracle.setFixture('eth_getSystemTxsByBlockHash', ['0xbb'], oracleAnswer)
+        const rpc = new Rpc({client: new MockRpcClient() as any, hyperliquidSystemTxOracle: oracle as any})
+        const got: Map<string, Set<string>> = await (rpc as any).askSystemTxOracle([{hash: '0xaa'}, {hash: '0xbb'}])
+        expect([...got.keys()]).toEqual(['0xbb'])
+    })
 })
 
