@@ -1,4 +1,4 @@
-import {describe, expect, it} from 'vitest'
+import {describe, expect, it, vi} from 'vitest'
 import {loadBlock, loadReceipts} from './helpers/fixture-loader'
 import {MockRpcClient} from './helpers/mock-rpc-client'
 import {Rpc} from '../src/rpc'
@@ -99,4 +99,29 @@ describe('HyperEVM system transaction oracle', () => {
         expect(got._isInvalid).toBe(true)
         expect(got.block.transactions.every((tx: unknown) => typeof tx === 'string')).toBe(true)
     })
+
+    it('keep the answers of a batch in which one block errors', async () => {
+        const {oracleAnswer} = answers()
+        const oracle = new MockRpcClient()
+        oracle.setFixture('eth_getSystemTxsByBlockHash', ['0xaa'], oracleAnswer)
+        oracle.setFixture('eth_getSystemTxsByBlockHash', ['0xbb'], {error: {code: -32000, message: 'internal error'}})
+        const rpc = new Rpc({client: new MockRpcClient() as any, hyperliquidSystemTxOracle: oracle as any})
+        const got: Map<string, Set<string>> = await (rpc as any).askSystemTxOracle([{hash: '0xaa'}, {hash: '0xbb'}])
+        expect([...got.keys()]).toEqual(['0xaa'])
+        expect(got.get('0xaa')?.size).toBe(1)
+    })
+
+    it('give up on an oracle that does not answer, at the deadline', async () => {
+        vi.useFakeTimers()
+        try {
+            const oracle = {url: 'ws://oracle', batchCall: () => new Promise(() => {})}
+            const rpc = new Rpc({client: new MockRpcClient() as any, hyperliquidSystemTxOracle: oracle as any})
+            const pending: Promise<Map<string, Set<string>>> = (rpc as any).askSystemTxOracle([{hash: '0xaa'}])
+            await vi.advanceTimersByTimeAsync(25_000)
+            expect((await pending).size).toBe(0)
+        } finally {
+            vi.useRealTimers()
+        }
+    })
 })
+

@@ -304,4 +304,18 @@ describe('--hyperliquid-system-tx-oracle', () => {
         )
         expect(makeDumper().systemTxOracle()).toBeUndefined()
     })
+
+    it('is refused together with --stream-url, whose blocks it would not check', () => {
+        let open = () =>
+            getRawStream(
+                '--stream-url',
+                'nats://localhost:4222',
+                '--stream-dataset',
+                'hyperliquid-mainnet',
+                '--hyperliquid-system-tx-oracle',
+                'https://oracle.example',
+            )
+        expect(open).toThrow(ErrorMessage)
+        expect(open).toThrow('--stream-url does not support --hyperliquid-system-tx-oracle yet')
+    })
 })

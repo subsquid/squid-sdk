@@ -415,6 +415,11 @@ function assertStreamInputs(options: Options): void {
     if (options.withBlockAccessLists) {
         throw new ErrorMessage('--stream-url does not support --with-block-access-lists yet')
     }
+
+    // Streamed blocks do not go through Rpc.getBlockBatch(), where the oracle is asked
+    if (options.hyperliquidSystemTxOracle != null) {
+        throw new ErrorMessage('--stream-url does not support --hyperliquid-system-tx-oracle yet')
+    }
 }
 
 /**

@@ -144,6 +144,8 @@ function systemTxKey(from: string, nonce: Qty | number): string {
 
 const SYSTEM_TX_ORACLE_RETRY_ATTEMPTS = 1
 const SYSTEM_TX_ORACLE_TIMEOUT_MS = 10_000
+// queueing, connecting and every attempt together
+const SYSTEM_TX_ORACLE_DEADLINE_MS = 25_000
 
 // A warning about the system transaction oracle giving no answer, at most this often
 const SYSTEM_TX_ORACLE_WARNING_INTERVAL_MS = 10 * 60 * 1000
@@ -789,11 +791,24 @@ export class Rpc {
         }
         if (ask.length == 0 || this.systemTxOracle == null) return answers
         try {
-            // A bounded budget of its own: a slow or failing oracle must not hold the batch up
-            let results = await this.systemTxOracle.batchCall<{from: string, nonce: Qty}[] | null>(
+            // A bounded budget of its own: a slow or failing oracle must not hold the batch up. The request
+            // timeout counts from dispatch only, so a deadline also covers queueing and connecting (a ws://
+            // oracle reconnects without using up retries); a call past it is left to finish unread.
+            // An error for one block is no answer for that block alone.
+            let call = this.systemTxOracle.batchCall<{from: string, nonce: Qty}[] | null>(
                 ask.map(hash => ({method: 'eth_getSystemTxsByBlockHash', params: [hash]})),
-                {retryAttempts: SYSTEM_TX_ORACLE_RETRY_ATTEMPTS, timeout: SYSTEM_TX_ORACLE_TIMEOUT_MS}
+                {
+                    retryAttempts: SYSTEM_TX_ORACLE_RETRY_ATTEMPTS,
+                    timeout: SYSTEM_TX_ORACLE_TIMEOUT_MS,
+                    validateError: () => null,
+                }
             )
+            let timer: ReturnType<typeof setTimeout> | undefined
+            let deadline = new Promise<never>((_, reject) => {
+                timer = setTimeout(() => reject(new Error('system transaction oracle deadline passed')), SYSTEM_TX_ORACLE_DEADLINE_MS)
+            })
+            call.catch(() => {}) // settles after the deadline unread
+            let results = await Promise.race([call, deadline]).finally(() => clearTimeout(timer))
             for (let i = 0; i < ask.length; i++) {
                 let txs = results[i]
                 if (!Array.isArray(txs)) continue // the oracle does not know the block (yet)

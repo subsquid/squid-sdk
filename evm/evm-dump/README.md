@@ -82,5 +82,5 @@ system transactions are compared with its answer by sender and nonce, the offici
 differently, and a block that lacks one, or has one the oracle does not, is fetched again. The oracle is
 asked while the rest of the block is fetched, once per block hash, with a short timeout; when it gives
 no answer the block is taken without the check, and a warning with a count is logged at most every ten
-minutes.
+minutes. Streamed blocks are not checked yet, so the dumper refuses the option together with `--stream-url`.
 
