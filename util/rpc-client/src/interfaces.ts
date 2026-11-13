@@ -38,8 +38,16 @@ export interface RpcErrorInfo {
 export interface Connection {
     connect(): Promise<void>
     close(err?: Error): void
-    call(req: RpcRequest, timeout?: number): Promise<RpcResponse>
-    batchCall(batch: RpcRequest[], timeout?: number): Promise<RpcResponse[]>
+    call(req: RpcRequest, timeout?: number, options?: ConnectionCallOptions): Promise<RpcResponse>
+    batchCall(batch: RpcRequest[], timeout?: number, options?: ConnectionCallOptions): Promise<RpcResponse[]>
+}
+
+
+export interface ConnectionCallOptions {
+    /**
+     * Largest response, in bytes, to read. Enforced over HTTP only.
+     */
+    maxResponseSize?: number
 }
 
 

@@ -35,6 +35,15 @@ export interface RequestOptions {
     httpTimeout?: number
     abort?: AbortSignal
     stream?: boolean
+    /**
+     * Largest response body, in bytes after decompression, to read. A larger
+     * body fails the request with {@link HttpResponseTooLargeError}.
+     *
+     * Applies to bodies the client reads itself. With `stream: true`, a
+     * successful response's body is handed over unread, and the caller that
+     * consumes it is responsible for its size.
+     */
+    maxResponseSize?: number
 }
 
 
@@ -214,7 +223,8 @@ export class HttpClient {
             signal: options.abort,
             compress: true,
             timeout: options.httpTimeout ?? this.httpTimeout,
-            stream: options.stream
+            stream: options.stream,
+            size: options.maxResponseSize ?? 0
         }
 
         this.handleBasicAuth(req)
@@ -309,7 +319,15 @@ export class HttpClient {
         if (req.stream && res.ok) {
            httpResponse = new HttpResponse(req.id, res.url, res.status, res.headers, res.body, res.body != null)
         } else {
-            let body = await this.handleResponseBody(req, res)
+            let body
+            try {
+                body = await this.handleResponseBody(req, res)
+            } catch(err: any) {
+                if (err instanceof nodeFetch.FetchError && err.type == 'max-size' && req.size) {
+                    throw new HttpResponseTooLargeError(req.size)
+                }
+                throw err
+            }
             httpResponse = new HttpResponse(req.id, res.url, res.status, res.headers, body, false)
         }
         this.afterResponse(req, httpResponse)
@@ -485,6 +503,21 @@ export class GraphqlError extends Error {
 
     get name(): string {
         return 'GraphqlError'
+    }
+}
+
+
+/**
+ * The response body exceeded {@link RequestOptions.maxResponseSize}. Asking again
+ * gets the same body, so this is not a connection error.
+ */
+export class HttpResponseTooLargeError extends Error {
+    constructor(public readonly limit: number) {
+        super(`response body exceeds ${limit} bytes`)
+    }
+
+    get name(): string {
+        return 'HttpResponseTooLargeError'
     }
 }
 

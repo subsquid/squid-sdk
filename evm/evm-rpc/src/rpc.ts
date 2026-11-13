@@ -1,5 +1,5 @@
 import { Logger, createLogger } from '@subsquid/logger'
-import { CallOptions, RetryError, RpcError, RpcProtocolError } from '@subsquid/rpc-client'
+import { CallOptions, RetryError, RpcError, RpcProtocolError, RpcResponseTooLargeError } from '@subsquid/rpc-client'
 import {
     array,
     BYTES,
@@ -44,6 +44,10 @@ import {
     DefectiveSelfdestruct,
     findDefectiveSelfdestructs,
     repairDefectiveSelfdestruct,
+    builtinSelfdestructEvents,
+    type CallFrame,
+    type OpcodeStep,
+    type Prestate,
     SelfdestructEvent,
     selfdestructEvents,
     systemBalanceDeltaFromPrestate,
@@ -57,6 +61,14 @@ export type Commitment = 'finalized' | 'latest'
 export const CALL_FRAME_VALIDATION_MODES = ['off', 'observe', 'reject'] as const
 const CALL_FRAME_VIOLATION_SAMPLE_LIMIT = 3
 const SELFDESTRUCT_TRACE_RETRY_ATTEMPTS = 2
+/**
+ * Largest opcode log the built-in selfdestruct recovery reads: about 450k steps at
+ * the ~300 bytes a step with its stack takes. Parsed, a log takes ~1.6x its size in
+ * a V8 heap and ~9x in the Rust verifier, so the same cap keeps a big transaction
+ * well inside both. The `limit` option of the opcode logger cannot bound it: some
+ * clients ignore it and others count something other than steps.
+ */
+export const SELFDESTRUCT_OPCODE_LOG_MAX_BYTES = 128 * 1024 * 1024
 
 /**
  * Controls semantic call-frame consistency checks. Structural requirements needed
@@ -1187,6 +1199,11 @@ export class Rpc {
         let settled = new Map<number, Set<string>>()
         if (block._isInvalid || block.debugFrames == null) return settled
 
+        // One block-bound prestate trace serves every suspect transaction of the
+        // block, and a failed one is not repeated for each of them.
+        let prestates: Promise<any[]> | undefined
+        let blockPrestates = () => prestates ??= this.traceBlockPrestates(block, req)
+
         for (let i = 0; i < block.debugFrames.length; i++) {
             let frame = block.debugFrames[i]
             let tx = block.block.transactions[i]
@@ -1198,18 +1215,31 @@ export class Rpc {
             let transactionHash = getTxHash(tx)
             let started = Date.now()
             let events: SelfdestructEvent[]
+            // Built-in tracers first: every upstream serves them, while a custom
+            // JS tracer is refused by more and more of them.
+            let method: 'builtin' | 'js' = 'builtin'
+            let builtinRefusal: string | undefined
             try {
-                events = await this.traceSelfdestructs(block, transactionHash, req)
-            } catch (err: any) {
-                this.log.warn({
-                    blockNumber: block.number,
-                    blockHash: block.hash,
-                    transactionHash,
-                    suspectFrames: defects.length,
-                    traceMs: Date.now() - started,
-                    reason: String(err?.message ?? err)
-                }, 'no opcode trace to recover selfdestruct frames from')
-                continue
+                events = await this.traceSelfdestructsBuiltin(
+                    block, i, transactionHash, frame.result, defects.map(d => d.traceAddress), blockPrestates, req
+                )
+            } catch (builtinErr: any) {
+                builtinRefusal = String(builtinErr?.message ?? builtinErr)
+                method = 'js'
+                try {
+                    events = await this.traceSelfdestructs(block, transactionHash, req)
+                } catch (err: any) {
+                    this.log.warn({
+                        blockNumber: block.number,
+                        blockHash: block.hash,
+                        transactionHash,
+                        suspectFrames: defects.length,
+                        traceMs: Date.now() - started,
+                        builtinReason: builtinRefusal,
+                        reason: String(err?.message ?? err)
+                    }, 'no opcode trace to recover selfdestruct frames from')
+                    continue
+                }
             }
             let traceMs = Date.now() - started
 
@@ -1253,11 +1283,116 @@ export class Rpc {
                 recovered,
                 confirmed,
                 refused,
+                method,
+                builtinReason: builtinRefusal,
                 traceMs
             }, 'selfdestruct frames from a revm-based tracer settled by an opcode trace')
         }
 
         return settled
+    }
+
+    /**
+     * Selfdestruct events from built-in tracers only: the opcode logger for the
+     * beneficiary at each SELFDESTRUCT and `prestateTracer` for the balances the
+     * call tree's movements start from (see {@link builtinSelfdestructEvents}).
+     *
+     * The balances are what a repair writes, so the prestate is traced by block
+     * hash and is bound to this block. The opcode log only supplies the beneficiary,
+     * which a repair accepts only when it is the executing account itself; built-in
+     * tracers do not say which block they ran a single transaction in, so the
+     * transaction is looked up before and after it, and a reorg that moved it out of
+     * this block is refused.
+     */
+    private async traceSelfdestructsBuiltin(
+        block: Block,
+        transactionIndex: number,
+        transactionHash: Bytes32,
+        root: CallFrame,
+        suspects: number[][],
+        blockPrestates: () => Promise<any[]>,
+        req: DataRequest
+    ): Promise<SelfdestructEvent[]> {
+        let options = {retryAttempts: SELFDESTRUCT_TRACE_RETRY_ATTEMPTS}
+        // The block-bound prestate comes first: once it has failed for the block,
+        // no transaction of it is worth an opcode trace.
+        let prestates = await blockPrestates()
+        let entry = prestates.find(p => typeof p?.txHash === 'string' && p.txHash.toLowerCase() === transactionHash.toLowerCase())
+            ?? (prestates.every(p => p?.txHash == null) ? prestates[transactionIndex] : undefined)
+        let prestate = entry?.result
+        if (prestate == null || typeof prestate !== 'object' || Array.isArray(prestate)) {
+            throw new Error(`prestateTracer answered without accounts for transaction ${transactionHash}`)
+        }
+
+        await this.expectTransactionInBlock(block, transactionHash)
+
+        let log = await this.call(
+            'debug_traceTransaction',
+            [transactionHash, {
+                disableStorage: true,
+                enableMemory: false,
+                disableStack: false,
+                enableReturnData: false,
+                timeout: req.debugTraceTimeout
+            }],
+            {...options, maxResponseSize: SELFDESTRUCT_OPCODE_LOG_MAX_BYTES}
+        ).catch(err => {
+            if (err instanceof RpcResponseTooLargeError) {
+                throw new Error(`the opcode log exceeds ${err.limit} bytes`)
+            }
+            throw err
+        })
+        if (!Array.isArray(log?.structLogs)) {
+            throw new Error('the opcode logger answered without steps')
+        }
+        let steps: OpcodeStep[] = log.structLogs
+        // The lookups around the trace may reach another backend than the trace
+        // itself, so the opcode log must also agree with the call tree, which is
+        // bound to this block: an execution in another block spends other gas.
+        let rootGas = root.gasUsed == null ? undefined : Number(root.gasUsed)
+        if (rootGas == null || !Number.isSafeInteger(rootGas) || log.gas !== rootGas) {
+            throw new Error(`the opcode log spends ${log.gas} gas, but the call tree reports ${root.gasUsed}`)
+        }
+        if (!!log.failed !== (root.error != null)) {
+            throw new Error(`the opcode log ${log.failed ? 'fails' : 'succeeds'}, but the call tree ${root.error != null ? 'fails' : 'succeeds'}`)
+        }
+
+        await this.expectTransactionInBlock(block, transactionHash)
+
+        return builtinSelfdestructEvents(root, steps, prestate as Prestate, suspects)
+    }
+
+    private async traceBlockPrestates(block: Block, req: DataRequest): Promise<any[]> {
+        let prestates = await this.call(
+            'debug_traceBlockByHash',
+            // Only balances are read: code and storage would only make the answer
+            // bigger than some upstreams are willing to send.
+            [block.hash, {
+                tracer: 'prestateTracer',
+                tracerConfig: {disableCode: true, disableStorage: true},
+                timeout: req.debugTraceTimeout
+            }],
+            {retryAttempts: SELFDESTRUCT_TRACE_RETRY_ATTEMPTS}
+        )
+        if (!Array.isArray(prestates) || prestates.length !== block.block.transactions.length) {
+            throw new Error('prestateTracer answered without a result for each transaction of the block')
+        }
+        return prestates
+    }
+
+    private async expectTransactionInBlock(block: Block, transactionHash: Bytes32): Promise<void> {
+        let tx = await this.call(
+            'eth_getTransactionByHash',
+            [transactionHash],
+            {retryAttempts: SELFDESTRUCT_TRACE_RETRY_ATTEMPTS}
+        )
+        let included = tx?.blockHash
+        if (typeof included !== 'string') {
+            throw new Error(`transaction ${transactionHash} is not included in any block`)
+        }
+        if (included.toLowerCase() !== block.hash.toLowerCase()) {
+            throw new Error(`transaction ${transactionHash} is included in block ${included}, not in ${block.hash}`)
+        }
     }
 
     /**

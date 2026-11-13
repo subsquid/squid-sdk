@@ -1,0 +1,223 @@
+import * as fs from 'node:fs'
+import * as http from 'node:http'
+import type {AddressInfo} from 'node:net'
+import * as Path from 'node:path'
+import {RpcResponseTooLargeError} from '@subsquid/rpc-client'
+import {afterEach, describe, expect, it, vi} from 'vitest'
+import {Rpc, SELFDESTRUCT_OPCODE_LOG_MAX_BYTES} from '../src/rpc'
+import {EvmRpcClient} from '../src/rpc-client'
+import {getChainId, loadBlock, loadDebugFrames} from './helpers/fixture-loader'
+
+// Ethereum Sepolia block 11319411 as served by a provider that drops the payload
+// of the selfdestruct frame in transaction 17, a selfdestruct-to-self.
+const CHAIN = 'ethereum-sepolia'
+const BLOCK = 11319411
+const POISONED_INDEX = 17
+const POISONED_TX = '0xf6c6e39b79667c78858e4c5b924a22d834427d7287e8a3b26219fe5dce180065'
+
+// The SELFDESTRUCT steps of its opcode log and its prestate, recorded from a node
+// that serves both.
+const EVIDENCE = JSON.parse(
+    fs.readFileSync(Path.join(__dirname, 'fixtures', CHAIN, String(BLOCK), 'selfdestruct-builtin.json'), 'utf-8'),
+)
+
+interface Behaviour {
+    /** The block `eth_getTransactionByHash` reports the transaction in. */
+    includedIn?: (blockHash: string) => string
+    prestate?: () => unknown
+    /** The gas the opcode log reports, the call tree's by default. */
+    opcodeGas?: (gasUsed: number) => number
+    /** Refuse the block prestate trace. */
+    prestateRefused?: boolean
+}
+
+interface Upstream {
+    url: string
+    requests: () => string[]
+    close: () => Promise<void>
+}
+
+/**
+ * Serves the recorded block, its malformed call traces and the built-in tracers,
+ * and refuses a custom JS tracer the way a provider with them disabled does.
+ */
+async function startUpstream(behaviour: Behaviour = {}): Promise<Upstream> {
+    let block = loadBlock(CHAIN, BLOCK)
+    let frames = loadDebugFrames(CHAIN, BLOCK, 'malformed')
+    let requests: string[] = []
+
+    let answer = (req: any) => {
+        switch (req.method) {
+            case 'eth_chainId':
+                return {result: getChainId(CHAIN)}
+            case 'eth_getBlockByNumber':
+                return {result: block}
+            case 'debug_traceBlockByNumber':
+                return {result: frames}
+            case 'debug_traceBlockByHash': {
+                requests.push('prestateTracer')
+                // Recovery reads balances only.
+                expect(req.params[1]?.tracerConfig).toEqual({disableCode: true, disableStorage: true})
+                if (behaviour.prestateRefused) return {error: {code: -32000, message: 'response too big'}}
+                return {
+                    result: block.transactions.map((tx: any) => ({
+                        txHash: tx.hash,
+                        result: tx.hash === POISONED_TX ? (behaviour.prestate?.() ?? EVIDENCE.prestate) : {},
+                    })),
+                }
+            }
+            case 'eth_getTransactionByHash': {
+                requests.push('eth_getTransactionByHash')
+                let blockHash = behaviour.includedIn?.(block.hash) ?? block.hash
+                return {result: {hash: req.params[0], blockHash, blockNumber: block.number}}
+            }
+            case 'debug_traceTransaction': {
+                let config = req.params[1] ?? {}
+                if (typeof config.tracer === 'string' && config.tracer.includes('function')) {
+                    requests.push('js')
+                    return {error: {code: -32000, message: 'custom tracer is not permitted'}}
+                }
+                requests.push('opcodeLogger')
+                let gasUsed = Number(frames[POISONED_INDEX].result.gasUsed)
+                let gas = behaviour.opcodeGas?.(gasUsed) ?? gasUsed
+                return {result: {failed: false, gas, returnValue: '', structLogs: EVIDENCE.steps}}
+            }
+            default:
+                return {error: {code: -32601, message: `method ${req.method} not found`}}
+        }
+    }
+
+    let server = http.createServer((request, response) => {
+        let body = ''
+        request.on('data', (chunk) => {
+            body += chunk
+        })
+        request.on('end', () => {
+            let payload = JSON.parse(body)
+            let reply = Array.isArray(payload)
+                ? payload.map((req) => ({jsonrpc: '2.0', id: req.id, ...answer(req)}))
+                : {jsonrpc: '2.0', id: payload.id, ...answer(payload)}
+            response.setHeader('content-type', 'application/json')
+            response.end(JSON.stringify(reply))
+        })
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    let {port} = server.address() as AddressInfo
+
+    return {
+        url: `http://127.0.0.1:${port}`,
+        requests: () => requests,
+        close: () => new Promise((resolve) => server.close(() => resolve())),
+    }
+}
+
+function fetchBlock(url: string, intercept?: (client: EvmRpcClient) => void) {
+    let client = new EvmRpcClient({
+        url,
+        retryAttempts: Number.MAX_SAFE_INTEGER,
+        retrySchedule: [0],
+        retryInternalServerErrors: true,
+        log: null,
+    })
+    intercept?.(client)
+    return new Rpc({client}).getBlockBatch([BLOCK], {
+        transactions: true,
+        traces: true,
+        useDebugTraceBlockByNumber: true,
+    })
+}
+
+describe('selfdestruct recovery from built-in tracers', () => {
+    let upstream: Upstream | undefined
+
+    afterEach(async () => {
+        await upstream?.close()
+        upstream = undefined
+    })
+
+    it('repairs the frame without the custom tracer the upstream refuses', async () => {
+        upstream = await startUpstream()
+
+        let blocks = await fetchBlock(upstream.url)
+
+        expect(blocks[0]._isInvalid).toBeFalsy()
+        // The two recordings come from different providers, which number logs
+        // differently; the selfdestruct frame is what the repair writes.
+        let complete = loadDebugFrames(CHAIN, BLOCK)[POISONED_INDEX].result.calls[0]
+        let repaired = blocks[0].debugFrames![POISONED_INDEX]!.result.calls![0]
+        expect({type: repaired.type, from: repaired.from, to: repaired.to, value: repaired.value}).toEqual({
+            type: complete.type,
+            from: complete.from,
+            to: complete.to,
+            value: complete.value,
+        })
+        expect(upstream.requests()).toEqual([
+            'prestateTracer',
+            'eth_getTransactionByHash',
+            'opcodeLogger',
+            'eth_getTransactionByHash',
+        ])
+    }, 10_000)
+
+    it('refuses a transaction that a reorg moved to another block', async () => {
+        upstream = await startUpstream({
+            includedIn: () => `0x${'ab'.repeat(32)}`,
+        })
+
+        let blocks = await fetchBlock(upstream.url)
+
+        expect(blocks[0]._isInvalid).toBe(true)
+        expect(blocks[0]._errorMessage).toContain(
+            `invalid debug call frames for transaction ${POISONED_TX}: selfdestruct frame 0 has no beneficiary`,
+        )
+        expect(upstream.requests()).not.toContain('opcodeLogger')
+    }, 10_000)
+
+    it('refuses an opcode log that spent other gas than the call tree, as an execution in another block would', async () => {
+        upstream = await startUpstream({opcodeGas: (gas) => gas + 2600})
+
+        let blocks = await fetchBlock(upstream.url)
+
+        expect(blocks[0]._isInvalid).toBe(true)
+        expect(upstream.requests()).toContain('js')
+    }, 10_000)
+
+    it('reads the opcode log under a size cap and falls back when it is larger', async () => {
+        upstream = await startUpstream()
+        let caps: (number | undefined)[] = []
+
+        let blocks = await fetchBlock(upstream.url, (client) => {
+            let call = client.call.bind(client)
+            vi.spyOn(client, 'call').mockImplementation((method: string, params?: any[], options?: any) => {
+                if (method === 'debug_traceTransaction' && params?.[1]?.tracer == null) {
+                    caps.push(options?.maxResponseSize)
+                    return Promise.reject(new RpcResponseTooLargeError(options?.maxResponseSize))
+                }
+                return call(method, params, options)
+            })
+        })
+
+        expect(caps).toEqual([SELFDESTRUCT_OPCODE_LOG_MAX_BYTES])
+        expect(blocks[0]._isInvalid).toBe(true)
+        expect(upstream.requests()).toContain('js')
+    }, 10_000)
+
+    it('skips the opcode trace once the block prestate has failed', async () => {
+        upstream = await startUpstream({prestateRefused: true})
+
+        let blocks = await fetchBlock(upstream.url)
+
+        expect(blocks[0]._isInvalid).toBe(true)
+        expect(upstream.requests()).not.toContain('opcodeLogger')
+        expect(upstream.requests()).toContain('js')
+    }, 10_000)
+
+    it('falls back to the custom tracer when the prestate does not name the account', async () => {
+        upstream = await startUpstream({prestate: () => ({})})
+
+        let blocks = await fetchBlock(upstream.url)
+
+        expect(blocks[0]._isInvalid).toBe(true)
+        expect(upstream.requests()).toContain('js')
+    }, 10_000)
+})

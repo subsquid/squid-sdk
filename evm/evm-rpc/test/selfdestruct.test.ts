@@ -2,6 +2,7 @@ import * as fs from 'fs'
 import * as Path from 'path'
 import {describe, expect, it} from 'vitest'
 import {
+    builtinSelfdestructEvents,
     type CallFrame,
     checkDebugFrameStructure,
     type DefectiveSelfdestruct,
@@ -14,7 +15,9 @@ import {
 
 // Recorded node output, not constructed. `defective/` pairs each transaction as a
 // revm-based node traced it with a complete trace of the same transaction;
-// `recovery/` holds opcode-tracer answers; `complete/` holds traces that must not
+// `recovery/` holds opcode-tracer answers; `builtin/` holds the SELFDESTRUCT steps of
+// built-in opcode logs and prestate answers (`builtin-intact/` with the call tree
+// of a transaction whose frames are correct); `complete/` holds traces that must not
 // be rewritten.
 const FIXTURES = Path.resolve(__dirname, 'fixtures/selfdestruct')
 
@@ -510,5 +513,288 @@ describe('repairDefectiveSelfdestruct', () => {
 
         expect(outcome).toMatchObject({refused: expect.stringContaining('is on top of the call stack')})
         expect(defective).toEqual(before)
+    })
+})
+
+
+describe('builtinSelfdestructEvents', () => {
+    const SENDER = '0x00000000000000000000000000000000000000a1'
+    const ROUTER = '0x00000000000000000000000000000000000000b2'
+    const VICTIM = '0x00000000000000000000000000000000000000c3'
+    const OTHER = '0x00000000000000000000000000000000000000d4'
+
+    function step(beneficiary: string): {op: string, stack: string[]} {
+        return {op: 'SELFDESTRUCT', stack: ['0x' + beneficiary.slice(2).padStart(64, '0')]}
+    }
+
+    // The defective trees were recorded from reth v2.4.0. The opcode steps and the
+    // prestate of a transaction do not depend on the client, so they were recorded
+    // later from a node that serves both.
+    it('repairs each recorded defective frame from built-in tracer evidence alone', () => {
+        let repaired = 0
+        for (let name of fixtureFiles('builtin')) {
+            let evidence = readJson(Path.join(FIXTURES, 'builtin', name))
+            let pair = evidence.network === 'mainnet'
+                ? readJson(Path.join(FIXTURES, 'defective', name))
+                : evidence
+            let defective: CallFrame = clone(pair.defective)
+
+            let defects = findDefectiveSelfdestructs(defective)
+            expect(defects, name).toHaveLength(1)
+
+            let events = builtinSelfdestructEvents(defective, evidence.steps, evidence.prestate)
+            let outcome = repairDefectiveSelfdestruct(defective, defects[0], events)
+            expect(outcome, name).toEqual({repair: 'applied'})
+
+            if (evidence.network === 'mainnet') {
+                expect(defective, name).toEqual(pair.complete)
+            } else {
+                let frame = frameAt(defective, evidence.traceAddress)
+                expect({from: frame.from, to: frame.to, value: BigInt(frame.value!)}, name).toEqual({
+                    from: evidence.complete.from,
+                    to: evidence.complete.to,
+                    value: BigInt(evidence.complete.value)
+                })
+            }
+            expect(findDefectiveSelfdestructs(defective), name).toEqual([])
+            repaired += 1
+        }
+        expect(repaired).toBe(6)
+    })
+
+    it('starts from the prestate and adds the movements before the opcode, the root value included', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x5',
+            calls: [
+                {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x7', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        let events = builtinSelfdestructEvents(root, [step(VICTIM)], {[VICTIM]: {balance: '0x10'}})
+        expect(events).toEqual([{traceAddress: [0, 0], account: VICTIM, beneficiary: VICTIM, balance: '0x17', preBalance: '0x17'}])
+    })
+
+    it('reads an omitted balance of a named account as zero', () => {
+        let root: CallFrame = {type: 'CALL', from: SENDER, to: VICTIM, value: '0x0', calls: [
+            {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+        ]}
+        let events = builtinSelfdestructEvents(root, [step(VICTIM)], {[VICTIM]: {}})
+        expect(events[0].balance).toBe('0x0')
+    })
+
+    it('drops the movements of a failed frame', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [
+                {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x7', error: 'execution reverted'},
+                {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        let events = builtinSelfdestructEvents(root, [step(VICTIM)], {[VICTIM]: {balance: '0x10'}, [ROUTER]: {balance: '0x100'}})
+        expect(events[0].balance).toBe('0x10')
+    })
+
+    it('moves what the opcode sent, not what an earlier frame claims', () => {
+        // The first selfdestruct sends its whole balance to VICTIM, whatever value its
+        // frame reports; the second then sees it.
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [
+                {type: 'CALL', from: ROUTER, to: OTHER, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: OTHER, to: VICTIM, value: '0x1'}
+                ]},
+                {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        let events = builtinSelfdestructEvents(
+            root,
+            [step(VICTIM), step(VICTIM)],
+            {[OTHER]: {balance: '0x20'}, [VICTIM]: {balance: '0x3'}}
+        )
+        expect(events.map(e => e.balance)).toEqual(['0x20', '0x23'])
+    })
+
+    it('runs a DELEGATECALL selfdestruct in the caller', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: VICTIM, value: '0x0',
+            calls: [
+                {type: 'DELEGATECALL', from: VICTIM, to: OTHER, calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        let events = builtinSelfdestructEvents(root, [step(VICTIM)], {[VICTIM]: {balance: '0x9'}, [OTHER]: {balance: '0x1'}})
+        expect(events[0]).toMatchObject({account: VICTIM, beneficiary: VICTIM, balance: '0x9'})
+    })
+
+    it('burns the balance of a contract created in the same transaction', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [
+                {type: 'CREATE', from: ROUTER, to: VICTIM, value: '0x4', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]},
+                {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        let events = builtinSelfdestructEvents(
+            root,
+            [step(VICTIM), step(VICTIM)],
+            {[VICTIM]: {}, [ROUTER]: {balance: '0x100'}}
+        )
+        expect(events.map(e => e.balance)).toEqual(['0x4', '0x0'])
+    })
+
+    it('refuses when the opcode log and the call tree count different selfdestructs', () => {
+        let root: CallFrame = {type: 'CALL', from: SENDER, to: VICTIM, value: '0x0', calls: [
+            {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+        ]}
+        expect(() => builtinSelfdestructEvents(root, [], {[VICTIM]: {balance: '0x1'}}))
+            .toThrow('the opcode log has 0 SELFDESTRUCT steps for 1 selfdestruct frames')
+    })
+
+    it('starts a contract created in the transaction from zero when the prestate leaves it out', () => {
+        // Recorded from Geth and reth alike: neither names the CREATE2 account, which
+        // was empty before the transaction.
+        let rec = JSON.parse(fs.readFileSync(
+            Path.join(__dirname, 'fixtures/selfdestruct/builtin-intact/26384923-created-in-tx.json'), 'utf-8'
+        ))
+        let frame = rec.callFrame.calls[0].calls[4]
+        expect(frame.type).toBe('SELFDESTRUCT')
+        expect(Object.keys(rec.prestate).map(k => k.toLowerCase())).not.toContain(rec.callFrame.calls[0].to.toLowerCase())
+        let events = builtinSelfdestructEvents(rec.callFrame, rec.steps, rec.prestate)
+        expect(events).toEqual([{
+            traceAddress: [0, 4],
+            account: frame.from.toLowerCase(),
+            beneficiary: frame.to.toLowerCase(),
+            balance: frame.value,
+            preBalance: frame.value
+        }])
+    })
+
+    it('keeps what an unnamed address received before the transaction created a contract at it', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [
+                {type: 'CALL', from: ROUTER, to: OTHER, value: '0x5'},
+                {type: 'CREATE2', from: ROUTER, to: OTHER, value: '0x2', calls: [
+                    {type: 'SELFDESTRUCT', from: OTHER, to: VICTIM, value: '0x7'}
+                ]}
+            ]
+        }
+        let events = builtinSelfdestructEvents(root, [step(VICTIM)], {[ROUTER]: {balance: '0x100'}})
+        expect(events.map(e => e.balance)).toEqual(['0x7'])
+    })
+
+    it('reads a prestate keyed by checksummed addresses', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [{type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+            ]}]
+        }
+        let checksummed = '0x00000000000000000000000000000000000000C3'
+        let events = builtinSelfdestructEvents(root, [step(VICTIM)], {[checksummed]: {balance: '0x9'}, [ROUTER]: {}})
+        expect(events.map(e => e.balance)).toEqual(['0x9'])
+    })
+
+    it('refuses an executing account the prestate does not name', () => {
+        let root: CallFrame = {type: 'CALL', from: SENDER, to: VICTIM, value: '0x0', calls: [
+            {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+        ]}
+        expect(() => builtinSelfdestructEvents(root, [step(VICTIM)], {}))
+            .toThrow(`the prestate does not name ${VICTIM}`)
+    })
+
+    it('refuses a prestate entry that is not an account', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [{type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+            ]}]
+        }
+        expect(() => builtinSelfdestructEvents(root, [step(VICTIM)], {[VICTIM]: null as any, [ROUTER]: {}}))
+            .toThrow(`the prestate does not name ${VICTIM}`)
+    })
+
+    it('refuses a selfdestruct that runs in the transaction sender', () => {
+        let root: CallFrame = {type: 'CALL', from: SENDER, to: SENDER, value: '0x0', calls: [
+            {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+        ]}
+        expect(() => builtinSelfdestructEvents(root, [step(SENDER)], {[SENDER]: {balance: '0x1'}}))
+            .toThrow('runs in the transaction sender')
+    })
+
+    it('refuses a second selfdestruct of an account that selfdestructed to itself, whose balance depends on the fork', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: VICTIM, value: '0x0',
+            calls: [
+                {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)},
+                {type: 'CALL', from: VICTIM, to: VICTIM, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        expect(() => builtinSelfdestructEvents(root, [step(VICTIM), step(VICTIM)], {[VICTIM]: {balance: '0x5'}}))
+            .toThrow('selfdestructed to itself earlier in the transaction')
+    })
+
+    it('refuses when a transfer before the opcode reports no value', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [
+                {type: 'CALL', from: ROUTER, to: VICTIM},
+                {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        expect(() => builtinSelfdestructEvents(root, [step(VICTIM)], {[VICTIM]: {balance: '0x10'}, [ROUTER]: {}}))
+            .toThrow('CALL frame 0 reports no value')
+    })
+
+    it('forgets a transfer with no value when the frame that made it fails', () => {
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [
+                {type: 'CALL', from: ROUTER, to: OTHER, value: '0x0', error: 'execution reverted', calls: [
+                    {type: 'CALL', from: OTHER, to: VICTIM}
+                ]},
+                {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        let events = builtinSelfdestructEvents(root, [step(VICTIM)], {[VICTIM]: {balance: '0x10'}, [ROUTER]: {}})
+        expect(events[0].balance).toBe('0x10')
+    })
+
+    it('refuses an opcode log that sends an intact selfdestruct elsewhere than its frame', () => {
+        // An opcode log from another execution would replay A to C instead of A to B,
+        // and the later repair of B would miss what A sent it.
+        let root: CallFrame = {
+            type: 'CALL', from: SENDER, to: ROUTER, value: '0x0',
+            calls: [
+                {type: 'CALL', from: ROUTER, to: OTHER, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: OTHER, to: VICTIM, value: '0x20'}
+                ]},
+                {type: 'CALL', from: ROUTER, to: VICTIM, value: '0x0', calls: [
+                    {type: 'SELFDESTRUCT', from: '0x' + '0'.repeat(40)}
+                ]}
+            ]
+        }
+        let prestate = {[OTHER]: {balance: '0x20'}, [VICTIM]: {balance: '0x3'}}
+        expect(() => builtinSelfdestructEvents(root, [step(SENDER), step(VICTIM)], prestate, [[1, 0]]))
+            .toThrow(`the opcode log sends selfdestruct frame 0/0 to ${SENDER}, but the frame names ${VICTIM}`)
+        // A suspect frame is the one being repaired, so its own claim is not checked.
+        expect(builtinSelfdestructEvents(root, [step(VICTIM), step(VICTIM)], prestate, [[0, 0], [1, 0]])
+            .map(e => e.balance)).toEqual(['0x20', '0x23'])
     })
 })

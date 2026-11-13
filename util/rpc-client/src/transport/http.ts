@@ -1,9 +1,9 @@
-import {FetchRequest, FetchResponse, HttpAgent, HttpClient, HttpClientOptions} from '@subsquid/http-client'
+import {FetchRequest, FetchResponse, HttpAgent, HttpClient, HttpClientOptions, HttpResponseTooLargeError} from '@subsquid/http-client'
 import {Logger} from '@subsquid/logger'
 import {addErrorContext} from '@subsquid/util-internal'
 import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
-import {RpcError, RpcProtocolError} from '../errors'
-import {Connection, RpcErrorInfo, RpcRequest, RpcResponse} from '../interfaces'
+import {RpcError, RpcProtocolError, RpcResponseTooLargeError} from '../errors'
+import {Connection, ConnectionCallOptions, RpcErrorInfo, RpcRequest, RpcResponse} from '../interfaces'
 import {redactRpcUrlsInError} from '../redact'
 
 
@@ -77,14 +77,18 @@ export class HttpConnection implements Connection {
         return Promise.resolve()
     }
 
-    private async post(json: RpcRequest | RpcRequest[], timeout?: number): Promise<any> {
+    private async post(json: RpcRequest | RpcRequest[], timeout?: number, options?: ConnectionCallOptions): Promise<any> {
         try {
             return await this.http.post(this.url, {
                 json,
                 httpTimeout: timeout,
-                retryAttempts: 0
+                retryAttempts: 0,
+                maxResponseSize: options?.maxResponseSize
             })
         } catch (err: any) {
+            if (err instanceof HttpResponseTooLargeError) {
+                throw new RpcResponseTooLargeError(err.limit)
+            }
             // Fetch-level errors quote the request URL verbatim, and RPC URLs
             // routinely carry API keys — scrub before the error escapes the
             // transport (into logs or user-facing stack traces).
@@ -92,8 +96,8 @@ export class HttpConnection implements Connection {
         }
     }
 
-    async call(req: RpcRequest, timeout?: number): Promise<RpcResponse> {
-        let res: RpcResponse = await this.post(req, timeout)
+    async call(req: RpcRequest, timeout?: number, options?: ConnectionCallOptions): Promise<RpcResponse> {
+        let res: RpcResponse = await this.post(req, timeout, options)
         if (req.id !== res.id) {
             // Many endpoints/proxies return a JSON-RPC error envelope with `id: null`
             // (per spec for parse/invalid-request errors, but also commonly for rate
@@ -106,8 +110,8 @@ export class HttpConnection implements Connection {
         return res
     }
 
-    async batchCall(batch: RpcRequest[], timeout?: number): Promise<RpcResponse[]> {
-        let res: RpcResponse[] = await this.post(batch, timeout)
+    async batchCall(batch: RpcRequest[], timeout?: number, options?: ConnectionCallOptions): Promise<RpcResponse[]> {
+        let res: RpcResponse[] = await this.post(batch, timeout, options)
         if (!Array.isArray(res)) {
             // A server that rejects the whole batch (rate limit, oversized request,
             // upstream failure, ...) often replies with a single JSON-RPC error
