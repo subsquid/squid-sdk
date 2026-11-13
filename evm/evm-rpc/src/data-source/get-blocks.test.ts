@@ -65,4 +65,25 @@ describe('getBlocks', () => {
         expect(result).toHaveLength(5)
         expect(result.map(b => b.number)).toEqual([100, 101, 102, 103, 104])
     })
+
+    it('rides out an intermittent provider that stays flaky beyond the old 5-retry budget', async () => {
+        // Provider keeps dropping blocks 103/104 for 7 consecutive rounds (more
+        // than the previous 5-retry window) before finally serving them. With the
+        // enlarged retry budget this recovers instead of crash-looping the dumper.
+        let callCount = 0
+        const rpc = mkRpc(async (numbers: number[]) => {
+            callCount++
+            if (callCount === 1) {
+                return [mkBlock(100), mkBlock(101), mkBlock(102)]
+            }
+            if (callCount <= 7) {
+                return []
+            }
+            return numbers.map(n => mkBlock(n))
+        })
+
+        const result = await getBlocks(rpc, REQ, {from: 100, to: 104})
+        expect(result).toHaveLength(5)
+        expect(result.map(b => b.number)).toEqual([100, 101, 102, 103, 104])
+    })
 })
