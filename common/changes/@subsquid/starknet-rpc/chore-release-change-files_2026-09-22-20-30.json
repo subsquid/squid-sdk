@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/starknet-rpc",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/starknet-rpc"
+}

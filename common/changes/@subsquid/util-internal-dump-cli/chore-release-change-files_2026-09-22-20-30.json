@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-cli"
+}

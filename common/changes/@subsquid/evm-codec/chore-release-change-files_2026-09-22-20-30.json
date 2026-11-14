@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-codec",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/evm-codec"
+}

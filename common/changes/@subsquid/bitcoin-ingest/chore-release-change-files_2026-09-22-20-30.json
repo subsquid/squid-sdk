@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/bitcoin-ingest",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/bitcoin-ingest"
+}
