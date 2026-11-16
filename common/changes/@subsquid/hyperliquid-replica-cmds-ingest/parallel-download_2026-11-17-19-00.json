@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/hyperliquid-replica-cmds-ingest",
+      "comment": "download each archive file as concurrent byte ranges (`--download-concurrency`, default 8), retrying a range that fails or stalls",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/hyperliquid-replica-cmds-ingest"
+}

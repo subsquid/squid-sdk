@@ -6,6 +6,7 @@ import {assertNotNull} from '@subsquid/util-internal'
 import {Block, ReplicaBlock} from '@subsquid/hyperliquid-replica-cmds-data'
 import * as lz4 from 'lz4'
 import assert from 'assert'
+import {Readable} from 'stream'
 
 
 interface RawChunk {
@@ -16,8 +17,18 @@ interface RawChunk {
 }
 
 
+export type ReadStream = (path: string) => Promise<Readable>
+
+
 export class HyperliquidArchive {
-    constructor(private fs: Fs, private log: Logger) { }
+    private readStream: ReadStream
+
+    /**
+     * @param readStream reads a file under the archive root; defaults to `fs.readStream`
+     */
+    constructor(private fs: Fs, private log: Logger, readStream?: ReadStream) {
+        this.readStream = readStream ?? (path => this.fs.readStream(path))
+    }
 
     async *getRawBlocks(range?: Range): AsyncIterable<Block[]> {
         let {from, to} = getRange(range)
@@ -105,7 +116,7 @@ export class HyperliquidArchive {
 
     private async *readFile(path: string): AsyncIterable<Buffer> {
         let decoder = lz4.createDecoderStream()
-        let stream = await this.fs.readStream(path)
+        let stream = await this.readStream(path)
 
         let chunks = []
         for await (let chunk of stream.pipe(decoder)) {
