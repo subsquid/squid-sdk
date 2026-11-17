@@ -99,7 +99,7 @@ export class HyperliquidArchive {
             }
         }
 
-        let count = rawChunk.block - height
+        let count = height - rawChunk.block
         this.log.debug(`found ${count} blocks in ${rawChunk.filename}`)
     }
 
