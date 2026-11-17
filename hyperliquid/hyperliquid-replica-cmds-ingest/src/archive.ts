@@ -6,7 +6,7 @@ import {assertNotNull} from '@subsquid/util-internal'
 import {Block, ReplicaBlock} from '@subsquid/hyperliquid-replica-cmds-data'
 import * as lz4 from 'lz4'
 import assert from 'assert'
-import {Readable} from 'stream'
+import {Readable, pipeline} from 'stream'
 
 
 interface RawChunk {
@@ -117,20 +117,34 @@ export class HyperliquidArchive {
     private async *readFile(path: string): AsyncIterable<Buffer> {
         let decoder = lz4.createDecoderStream()
         let stream = await this.readStream(path)
+        // pipeline() forwards a source error to the decoder, so it rejects the loop below
+        // instead of surfacing as an unhandled 'error' event; the callback only absorbs it
+        pipeline(stream, decoder, () => {})
 
-        let chunks = []
-        for await (let chunk of stream.pipe(decoder)) {
-            let pos = 0
-            for (let i = 0; i < chunk.length; i++) {
-                if (chunk[i] === 10) { // '\n' byte
-                    chunks.push(chunk.subarray(pos, i))
-                    pos = i + 1
-                    yield Buffer.concat(chunks)
-                    chunks = []
-                }
-            }
-            chunks.push(chunk.subarray(pos))
+        try {
+            yield* splitLines(decoder)
+        } finally {
+            // the consumer may stop early (a finite range ends mid-file): release the download
+            stream.destroy()
+            decoder.destroy()
         }
+    }
+}
+
+
+async function* splitLines(input: AsyncIterable<Buffer>): AsyncIterable<Buffer> {
+    let chunks = []
+    for await (let chunk of input) {
+        let pos = 0
+        for (let i = 0; i < chunk.length; i++) {
+            if (chunk[i] === 10) { // '\n' byte
+                chunks.push(chunk.subarray(pos, i))
+                pos = i + 1
+                yield Buffer.concat(chunks)
+                chunks = []
+            }
+        }
+        chunks.push(chunk.subarray(pos))
     }
 }
 

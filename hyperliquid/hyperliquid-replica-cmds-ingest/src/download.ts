@@ -43,10 +43,40 @@ export class ParallelDownloader {
         }))
         let size = head.ContentLength
         if (size == null) throw new Error(`no ContentLength for s3://${bucket}/${key}`)
-        return Readable.from(this.parts(bucket, key, size, head.ETag), {objectMode: false})
+        // stops outstanding requests, bodies and retry waits once the reader is gone or a part failed
+        let cancel = new AbortController()
+        let parts = this.parts(bucket, key, size, head.ETag, cancel)[Symbol.asyncIterator]()
+        let reading = false
+        // Not Readable.from(): its destroy() waits for the part being awaited to settle, which for a
+        // stalled part is minutes away. Here destroy() aborts the outstanding requests at once.
+        return new Readable({
+            async read() {
+                if (reading) return
+                reading = true
+                try {
+                    let {value, done} = await parts.next()
+                    this.push(done ? null : value)
+                } catch (err: any) {
+                    this.destroy(err)
+                } finally {
+                    reading = false
+                }
+            },
+            destroy(err, callback) {
+                cancel.abort(err ?? new Error('download closed'))
+                parts.return?.().catch(() => {})
+                callback(err)
+            }
+        })
     }
 
-    private async *parts(bucket: string, key: string, size: number, etag?: string): AsyncIterable<Buffer> {
+    private async *parts(
+        bucket: string,
+        key: string,
+        size: number,
+        etag: string | undefined,
+        cancel: AbortController
+    ): AsyncIterable<Buffer> {
         let {concurrency, partSize} = this.options
         let count = Math.ceil(size / partSize)
         let inflight: Promise<Buffer>[] = []
@@ -56,7 +86,7 @@ export class ParallelDownloader {
             while (next < count && inflight.length < concurrency) {
                 let start = next * partSize
                 let end = Math.min(size, start + partSize) - 1
-                let p = this.fetchPart(bucket, key, start, end, etag)
+                let p = this.fetchPart(bucket, key, start, end, etag, cancel.signal)
                 // avoid an unhandled rejection while the part waits in the queue
                 p.catch(() => {})
                 inflight.push(p)
@@ -64,42 +94,64 @@ export class ParallelDownloader {
             }
         }
 
-        schedule()
-        while (inflight.length > 0) {
-            let part = await inflight.shift()!
+        try {
             schedule()
-            yield part
+            while (inflight.length > 0) {
+                let part = await inflight.shift()!
+                schedule()
+                yield part
+            }
+        } finally {
+            // a failed part: stop the others without waiting for the stream to close
+            cancel.abort(new Error('download closed'))
         }
     }
 
-    private async fetchPart(bucket: string, key: string, start: number, end: number, etag?: string): Promise<Buffer> {
+    private async fetchPart(
+        bucket: string,
+        key: string,
+        start: number,
+        end: number,
+        etag: string | undefined,
+        signal: AbortSignal
+    ): Promise<Buffer> {
         let {partAttempts} = this.options
         for (let attempt = 1; ; attempt++) {
             try {
-                return await this.fetchPartOnce(bucket, key, start, end, etag)
+                return await this.fetchPartOnce(bucket, key, start, end, etag, signal)
             } catch (err: any) {
-                if (attempt >= partAttempts) throw err
+                if (signal.aborted || attempt >= partAttempts) throw err
                 this.options.log?.warn(
                     `range ${start}-${end} of s3://${bucket}/${key} failed (attempt ${attempt}): ${err?.message ?? err}`
                 )
-                await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+                await sleep(1000 * attempt, signal)
             }
         }
     }
 
-    private async fetchPartOnce(bucket: string, key: string, start: number, end: number, etag?: string): Promise<Buffer> {
+    private async fetchPartOnce(
+        bucket: string,
+        key: string,
+        start: number,
+        end: number,
+        etag: string | undefined,
+        signal: AbortSignal
+    ): Promise<Buffer> {
+        signal.throwIfAborted()
         let abort = new AbortController()
         let body: Readable | undefined
         let timer: NodeJS.Timeout | undefined
+        let stop = (err: unknown) => {
+            abort.abort(err)
+            // the signal covers the request; a body already streaming is torn down here
+            body?.destroy(err instanceof Error ? err : new Error(String(err)))
+        }
         let arm = () => {
             clearTimeout(timer)
-            timer = setTimeout(() => {
-                let err = new Error(`no data for ${this.options.partTimeoutMs} ms`)
-                abort.abort(err)
-                // the signal covers the request; a body already streaming is torn down here
-                body?.destroy(err)
-            }, this.options.partTimeoutMs)
+            timer = setTimeout(() => stop(new Error(`no data for ${this.options.partTimeoutMs} ms`)), this.options.partTimeoutMs)
         }
+        let onCancel = () => stop(signal.reason)
+        signal.addEventListener('abort', onCancel, {once: true})
         arm()
         try {
             let res = await this.options.client.send(new GetObjectCommand({
@@ -124,7 +176,24 @@ export class ParallelDownloader {
             return Buffer.concat(chunks, length)
         } finally {
             clearTimeout(timer)
+            signal.removeEventListener('abort', onCancel)
             body?.destroy()
         }
     }
+}
+
+
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (signal.aborted) return reject(signal.reason)
+        let onAbort = () => {
+            clearTimeout(timer)
+            reject(signal.reason)
+        }
+        let timer = setTimeout(() => {
+            signal.removeEventListener('abort', onAbort)
+            resolve()
+        }, ms)
+        signal.addEventListener('abort', onAbort, {once: true})
+    })
 }
