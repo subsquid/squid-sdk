@@ -454,10 +454,16 @@ describe('RawStreamSource', () => {
         expect(metrics).toMatchObject({stream: 0, rpc: 30, misses: ['not_found']})
     })
 
-    it('leaves RPC only for a stream that has the block RPC has caught up with', async () => {
+    it('walks the stream from the next block once RPC has caught up, though the block RPC caught up with is stale', async () => {
         let chain = makeChain(0, 30)
-        let stream = new FakeStream().putChain(chain.slice(15))
-        let {source, rpc, metrics} = setup(chain, stream)
+
+        // the publisher has added a component at block 11, the frames below it do not carry it
+        let stream = new FakeStream()
+        for (let block of chain) {
+            stream.put(block, Number(block.number) > 10 ? {components: 'logs,statediffs'} : {})
+        }
+
+        let {source, rpc, metrics} = setup(chain, stream, {format: getLineFormat({withStatediffs: true})})
         rpc.head = 10
 
         let received: RawBlock[] = []
@@ -473,10 +479,44 @@ describe('RawStreamSource', () => {
         expect(received).toEqual(chain.slice(1))
         expect(rpc.bodyRequests.map((r) => [r.from, r.to])).toEqual([[1, 30]])
         expect(rpc.openStreams).toBe(0)
-        expect(metrics).toMatchObject({stream: 10, rpc: 20, misses: ['not_found', 'not_found']})
+        expect(metrics).toMatchObject({stream: 20, rpc: 10, misses: ['components']})
+        expect(stream.requests.map((r) => r.number).slice(0, 3)).toEqual([10, 20, 19])
+    })
 
-        // the top of the first walk, then the blocks RPC has caught up with
-        expect(stream.requests.slice(0, 3).map((r) => r.number)).toEqual([10, 10, 20])
+    it('leaves RPC after the retry interval, not at the next catch-up', async () => {
+        vi.useFakeTimers({toFake: ['Date']})
+        try {
+            let chain = makeChain(0, 30)
+            let {source, rpc, metrics, connector} = setup(chain, new FakeStream().putChain(chain), {
+                retryInterval: 60_000,
+            })
+            connector.failure = new Error('connection refused')
+            rpc.head = 10
+
+            let received: RawBlock[] = []
+            for await (let batch of source.getBlocks({from: 1, to: 30}, chain[0].hash)) {
+                received.push(...batch)
+
+                // RPC has caught up within the retry interval and waits, the next finalized step comes after it
+                if (received.length == 10) {
+                    connector.failure = undefined
+                    setTimeout(() => {
+                        vi.setSystemTime(Date.now() + 60_000)
+                        rpc.head = 30
+                    }, 10)
+                }
+            }
+
+            expect(received).toEqual(chain.slice(1))
+            expect(rpc.bodyRequests.map((r) => [r.from, r.to])).toEqual([[1, 30]])
+            expect(rpc.openStreams).toBe(0)
+            expect(connector.connects).toBe(2)
+
+            // only the first batch of the step comes from RPC
+            expect(metrics).toMatchObject({stream: 17, rpc: 13, misses: ['error']})
+        } finally {
+            vi.useRealTimers()
+        }
     })
 
     it('warns about a block that fails a check once', async () => {
@@ -686,9 +726,12 @@ describe('RawStreamSource', () => {
 
         expect(received).toEqual(chain.slice(1))
 
-        // a walk and one attempt to find the block RPC has caught up with fail, the second attempt is answered
+        // the first two walks fail, the third is answered
         expect(metrics).toMatchObject({stream: 20, rpc: 20, misses: ['error', 'error']})
-        expect(rpc.bodyRequests.map((r) => [r.from, r.to])).toEqual([[1, 40]])
+        expect(rpc.bodyRequests.map((r) => [r.from, r.to])).toEqual([
+            [1, 40],
+            [11, 40],
+        ])
 
         // every failed request was made over a connection that has been established all right
         expect(connector.connects).toBe(3)
