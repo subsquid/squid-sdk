@@ -787,7 +787,7 @@ export interface PalletEventMetadataV16 {
 export interface PalletConstantMetadataV16 {
   name: string
   ty: number
-  value: string
+  value: Uint8Array
   docs: string[]
   deprecationInfo: DeprecationInfoV16
 }
