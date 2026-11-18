@@ -207,7 +207,7 @@ describe('HyperEVM system transaction oracle', () => {
             }
         })
 
-        it('mark a block invalid when the oracle gives no answer for it, instead of taking it unchecked', async () => {
+        it('mark a block invalid when the oracle keeps answering that it does not know it', async () => {
             vi.useFakeTimers()
             try {
                 const {block, receipts, oracleAnswer} = answers()
@@ -216,12 +216,49 @@ describe('HyperEVM system transaction oracle', () => {
                 await vi.advanceTimersByTimeAsync(5_000)
                 const got = await pending
                 expect(got._isInvalid).toBe(true)
-                expect(got._errorMessage).toBe('system transaction oracle gave no answer for the block, and it is required')
+                expect(got._errorMessage).toBe('system transaction oracle does not know the block hash')
                 expect(oracle.calls).toBe(4)
             } finally {
                 vi.useRealTimers()
             }
         })
+
+        // fails (the whole call, or with an error for the block) the first `failures` times it is asked
+        class DownOracle extends CountingClient {
+            constructor(private failures: number, private itemError: boolean, answer: unknown) {
+                super()
+                this.setFixture('eth_getSystemTxsByBlockHash', [loadBlock('hyperliquid', BLOCK).hash], answer)
+            }
+            async batchCall(batch: any[], options?: any): Promise<any[]> {
+                if (this.calls < this.failures) {
+                    this.calls += 1
+                    if (!this.itemError) throw new Error('connection refused')
+                    return batch.map(req => options.validateError({code: -32005, message: 'rate limited'}, req))
+                }
+                return super.batchCall(batch, options)
+            }
+        }
+
+        for (const itemError of [false, true]) {
+            it(`wait for an oracle that is unavailable (${itemError ? 'an error for the block' : 'the call fails'}), spending no retries of the block`, async () => {
+                vi.useFakeTimers()
+                try {
+                    const {block, receipts, oracleAnswer} = answers()
+                    // far more failures than the asks a block that the oracle does not know gets
+                    const oracle = new DownOracle(12, itemError, oracleAnswer)
+                    let settled = false
+                    const pending = setUpRequired(oracle).answer(block, receipts).finally(() => (settled = true))
+                    await vi.advanceTimersByTimeAsync(60_000)
+                    expect(settled).toBe(false)
+                    await vi.advanceTimersByTimeAsync(10 * 60_000)
+                    const got = await pending
+                    expect(got._isInvalid).toBeUndefined()
+                    expect(oracle.calls).toBe(13)
+                } finally {
+                    vi.useRealTimers()
+                }
+            })
+        }
 
         it("make the oracle from the chain's official RPC URL, once", async () => {
             const {block, receipts, oracleAnswer} = answers()

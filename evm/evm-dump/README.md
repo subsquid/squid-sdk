@@ -81,8 +81,8 @@ each fetched block to `eth_getSystemTxsByBlockHash` of the chain's official RPC,
 by `--hyperliquid-system-tx-oracle <url>`. The system transactions are compared by sender and nonce, the
 official node signing them differently, and a block that lacks one, or has one the oracle does not, is
 fetched again. The oracle is asked while the rest of the block is fetched, once per block hash, with a
-short timeout. A block it gives no answer for is asked about again a few times, a second apart, then
-fetched again, so the dump waits while the oracle is down; a warning with a count is logged at most every
-ten minutes. `--no-hyperliquid-system-tx-oracle` turns the check off. Streamed blocks are not checked
+short timeout. While the oracle is unavailable the dump waits for it, asking again with a growing pause,
+and logs a warning with a count at most every ten minutes. A block the oracle answers it does not know is
+asked about again a few times, a second apart, then fetched again. `--no-hyperliquid-system-tx-oracle` turns the check off. Streamed blocks are not checked
 yet, so on HyperEVM the dumper refuses `--stream-url` unless the check is off.
 

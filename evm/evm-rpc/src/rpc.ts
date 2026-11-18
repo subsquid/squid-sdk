@@ -159,9 +159,13 @@ const SYSTEM_TX_ORACLE_TIMEOUT_MS = 10_000
 // queueing, connecting and every attempt together
 const SYSTEM_TX_ORACLE_DEADLINE_MS = 25_000
 
-// A required oracle that gave no answer for a block is asked again this many times, this far apart
+// A required oracle that does not know a block is asked again this many times, this far apart
 const SYSTEM_TX_ORACLE_REQUIRED_REASKS = 3
 const SYSTEM_TX_ORACLE_REQUIRED_REASK_INTERVAL_MS = 1_000
+// The longest pause between asks while a required oracle is unavailable
+const SYSTEM_TX_ORACLE_MAX_WAIT_MS = 30_000
+// An oracle error for one block, told apart from the null of a block the oracle does not know
+const ORACLE_ITEM_ERROR = Symbol('oracle item error')
 
 // A warning about the system transaction oracle giving no answer, at most this often
 const SYSTEM_TX_ORACLE_WARNING_INTERVAL_MS = 10 * 60 * 1000
@@ -236,9 +240,11 @@ export interface RpcOptions extends BlockCheckOptions {
      */
     hyperliquidSystemTxOracle?: EvmRpcClient | ((officialRpcUrl: string) => EvmRpcClient)
     /**
-     * HyperEVM only: a block is taken only once the oracle has answered for it. A block it gives no answer
-     * for is asked about again for a while, then marked invalid and fetched again, so a dump waits while
-     * the oracle is down instead of taking blocks unchecked. Without an oracle, getBlockBatch() throws.
+     * HyperEVM only: a block is taken only once the oracle has answered for it. While the oracle is
+     * unavailable (its call fails, or errs for the block) getBlockBatch() waits for it, asking again with a
+     * growing pause, so a dump stalls instead of taking blocks unchecked or spending their retries. A block
+     * the oracle answers it does not know is asked about a few more times, a second apart, then marked
+     * invalid and fetched again. Without an oracle, getBlockBatch() throws.
      */
     requireHyperliquidSystemTxOracle?: boolean
 }
@@ -830,19 +836,46 @@ export class Rpc {
      * answer are asked about again a few times, a second apart (a block the official node has not seen yet).
      */
     private async askSystemTxOracle(blocks: Block[]): Promise<Map<string, Set<string>>> {
-        let answers = await this.askSystemTxOracleOnce(blocks)
+        let {answers, unavailable} = await this.askSystemTxOracleOnce(blocks)
         if (!this.requireSystemTxOracle) return answers
-        for (let attempt = 0; attempt < SYSTEM_TX_ORACLE_REQUIRED_REASKS; attempt++) {
-            let unanswered = blocks.filter(b => !answers.has(b.hash.toLowerCase()))
-            if (unanswered.length == 0) break
-            await wait(SYSTEM_TX_ORACLE_REQUIRED_REASK_INTERVAL_MS)
-            for (let [key, set] of await this.askSystemTxOracleOnce(unanswered)) answers.set(key, set)
+        // A required oracle that is unavailable (its call failed, or erred for the block) is waited for, as
+        // long as it takes: the block is not in question, so its retries are not spent. One that answers
+        // that it does not know the block is asked a few more times, then the block is left without an
+        // answer, invalid: the official node may be a moment behind, or the block not on its chain.
+        let unknownAsks = 0
+        let waits = 0
+        while (true) {
+            let pending = blocks.filter(b => !answers.has(b.hash.toLowerCase()))
+            if (pending.length == 0) break
+            let down = pending.some(b => unavailable.has(b.hash.toLowerCase()))
+            if (down) {
+                this.noteSystemTxOracleUnavailable(pending[0])
+                waits += 1
+            } else if (unknownAsks < SYSTEM_TX_ORACLE_REQUIRED_REASKS) {
+                unknownAsks += 1
+            } else {
+                break
+            }
+            await wait(down
+                ? Math.min(SYSTEM_TX_ORACLE_REQUIRED_REASK_INTERVAL_MS * 2 ** Math.min(waits - 1, 5), SYSTEM_TX_ORACLE_MAX_WAIT_MS)
+                : SYSTEM_TX_ORACLE_REQUIRED_REASK_INTERVAL_MS)
+            let next = await this.askSystemTxOracleOnce(pending)
+            for (let [key, set] of next.answers) answers.set(key, set)
+            unavailable = next.unavailable
         }
         return answers
     }
 
-    private async askSystemTxOracleOnce(blocks: Block[]): Promise<Map<string, Set<string>>> {
+    /**
+     * The oracle's answers by lowercase block hash, and the blocks it was unavailable for: the call
+     * failed, or erred for the block. A block in neither the oracle does not know (yet), or answered for
+     * in a shape that is not a list of transactions.
+     */
+    private async askSystemTxOracleOnce(
+        blocks: Block[]
+    ): Promise<{answers: Map<string, Set<string>>, unavailable: Set<string>}> {
         let answers = new Map<string, Set<string>>()
+        let unavailable = new Set<string>()
         let ask: string[] = []
         for (let block of blocks) {
             let key = block.hash.toLowerCase()
@@ -850,18 +883,18 @@ export class Rpc {
             if (cached) answers.set(key, cached)
             else ask.push(block.hash)
         }
-        if (ask.length == 0 || this.systemTxOracle == null) return answers
+        if (ask.length == 0 || this.systemTxOracle == null) return {answers, unavailable}
         try {
             // A bounded budget of its own: a slow or failing oracle must not hold the batch up. The request
             // timeout counts from dispatch only, so a deadline also covers queueing and connecting (a ws://
             // oracle reconnects without using up retries); a call past it is left to finish unread.
             // An error for one block is no answer for that block alone.
-            let call = this.systemTxOracle.batchCall<{from: string, nonce: Qty}[] | null>(
+            let call = this.systemTxOracle.batchCall<{from: string, nonce: Qty}[] | null | typeof ORACLE_ITEM_ERROR>(
                 ask.map(hash => ({method: 'eth_getSystemTxsByBlockHash', params: [hash]})),
                 {
                     retryAttempts: SYSTEM_TX_ORACLE_RETRY_ATTEMPTS,
                     timeout: SYSTEM_TX_ORACLE_TIMEOUT_MS,
-                    validateError: () => null,
+                    validateError: () => ORACLE_ITEM_ERROR,
                 }
             )
             let timer: ReturnType<typeof setTimeout> | undefined
@@ -871,7 +904,12 @@ export class Rpc {
             call.catch(() => {}) // settles after the deadline unread
             let results = await Promise.race([call, deadline]).finally(() => clearTimeout(timer))
             for (let i = 0; i < ask.length; i++) {
+                let key = ask[i].toLowerCase()
                 let txs = results[i]
+                if (txs === ORACLE_ITEM_ERROR) {
+                    unavailable.add(key)
+                    continue
+                }
                 if (!Array.isArray(txs)) continue // the oracle does not know the block (yet)
                 let set: Set<string>
                 try {
@@ -879,7 +917,6 @@ export class Rpc {
                 } catch {
                     continue // a malformed answer is no answer, for this block alone
                 }
-                let key = ask[i].toLowerCase()
                 answers.set(key, set)
                 this.systemTxOracleAnswers.set(key, set)
                 if (this.systemTxOracleAnswers.size > SYSTEM_TRANSACTION_EVIDENCE_BLOCKS) {
@@ -888,9 +925,27 @@ export class Rpc {
                 }
             }
         } catch (err: any) {
+            for (let hash of ask) unavailable.add(hash.toLowerCase())
             this.log.debug({err, oracle: this.systemTxOracle.url}, 'system transaction oracle failed')
         }
-        return answers
+        return {answers, unavailable}
+    }
+
+    private noteSystemTxOracleUnavailable(block: Block): void {
+        let u = this.systemTxOracleUnavailable
+        u.count += 1
+        u.sinceWarning += 1
+        let now = Date.now()
+        if (u.lastWarning === 0 || now - u.lastWarning >= SYSTEM_TX_ORACLE_WARNING_INTERVAL_MS) {
+            this.log.warn(
+                {oracle: this.systemTxOracle?.url, blockNumber: block.number, blocksSinceLastWarning: u.sinceWarning, blocks: u.count},
+                this.requireSystemTxOracle
+                    ? 'system transaction oracle unavailable; waiting for it'
+                    : 'system transaction oracle gave no answer; blocks taken without the oracle check'
+            )
+            u.sinceWarning = 0
+            u.lastWarning = now
+        }
     }
 
     private checkAgainstSystemTxOracle(block: Block, oracle: Set<string> | undefined, utils: ChainUtils): void {
@@ -898,21 +953,13 @@ export class Rpc {
         if (oracle == null) {
             if (this.requireSystemTxOracle) {
                 block._isInvalid = true
-                block._errorMessage = 'system transaction oracle gave no answer for the block, and it is required'
-            }
-            let u = this.systemTxOracleUnavailable
-            u.count += 1
-            u.sinceWarning += 1
-            let now = Date.now()
-            if (u.lastWarning === 0 || now - u.lastWarning >= SYSTEM_TX_ORACLE_WARNING_INTERVAL_MS) {
+                block._errorMessage = 'system transaction oracle does not know the block hash'
                 this.log.warn(
-                    {oracle: this.systemTxOracle?.url, blockNumber: block.number, blocksSinceLastWarning: u.sinceWarning, blocks: u.count},
-                    this.requireSystemTxOracle
-                        ? 'system transaction oracle gave no answer; blocks fetched again until it does'
-                        : 'system transaction oracle gave no answer; blocks taken without the oracle check'
+                    {rpcEndpoint: this.client.url, oracle: this.systemTxOracle?.url, blockNumber: block.number, blockHash: block.hash},
+                    'system transaction oracle does not know the block hash; block fetched again'
                 )
-                u.sinceWarning = 0
-                u.lastWarning = now
+            } else {
+                this.noteSystemTxOracleUnavailable(block)
             }
             return
         }
