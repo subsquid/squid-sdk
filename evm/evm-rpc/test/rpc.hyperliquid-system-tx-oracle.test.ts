@@ -260,6 +260,64 @@ describe('HyperEVM system transaction oracle', () => {
             })
         }
 
+        it('stop waiting for an unavailable oracle once the batch fails for another reason', async () => {
+            vi.useFakeTimers()
+            try {
+                const {block} = answers()
+                class FailingReceipts extends MockRpcClient {
+                    async batchCall(batch: any[], options?: any): Promise<any[]> {
+                        if (batch.some(req => req.method === 'eth_getBlockReceipts' && req.params?.[0] !== 'latest')) {
+                            throw new Error('source RPC down')
+                        }
+                        return super.batchCall(batch, options)
+                    }
+                }
+                const client = new FailingReceipts()
+                client.setFixture('eth_chainId', undefined, '0x3e7')
+                client.setFixture('eth_getBlockReceipts', ['latest'], [])
+                client.setFixture('eth_getBlockByNumber', [toQty(BLOCK), true], block)
+                const oracle = new DownOracle(Infinity, false, [])
+                const rpc = new Rpc({client: client as any, hyperliquidSystemTxOracle: oracle as any, requireHyperliquidSystemTxOracle: true})
+                const pending = rpc.getBlockBatch([BLOCK], {transactions: true, receipts: true})
+                const failed = expect(pending).rejects.toThrow('source RPC down')
+                await vi.advanceTimersByTimeAsync(1_000)
+                await failed
+                const calls = oracle.calls
+                await vi.advanceTimersByTimeAsync(10 * 60_000)
+                expect(oracle.calls).toBe(calls)
+            } finally {
+                vi.useRealTimers()
+            }
+        })
+
+        it('await a call still queued past its deadline instead of sending another', async () => {
+            vi.useFakeTimers()
+            try {
+                const {block, receipts} = answers()
+                let calls = 0
+                let release: (results: any[]) => void = () => {}
+                const oracle = {
+                    url: 'ws://oracle',
+                    batchCall: () => {
+                        calls += 1
+                        return new Promise<any[]>(resolve => (release = resolve))
+                    },
+                }
+                let settled = false
+                const pending = setUpRequired(oracle).answer(block, receipts).finally(() => (settled = true))
+                await vi.advanceTimersByTimeAsync(5 * 60_000)
+                expect(settled).toBe(false)
+                expect(calls).toBe(1)
+                // the oracle reconnects and the one queued call is answered
+                release([answers().oracleAnswer])
+                await vi.advanceTimersByTimeAsync(60_000)
+                expect((await pending)._isInvalid).toBeUndefined()
+                expect(calls).toBe(1)
+            } finally {
+                vi.useRealTimers()
+            }
+        })
+
         it("make the oracle from the chain's official RPC URL, once", async () => {
             const {block, receipts, oracleAnswer} = answers()
             const urls: string[] = []
