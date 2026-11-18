@@ -922,7 +922,9 @@ export class Rpc {
         // One call at a time: a call still queued past its deadline (a ws:// oracle reconnecting) is awaited
         // again rather than joined by another, which would pile up for the reconnection. What it brings back
         // is cached as it settles.
-        if (this.systemTxOracleCall != null) {
+        // A loop, not a check: concurrent batches wait on the same call, and the first to resume may start
+        // the next one.
+        while (this.systemTxOracleCall != null) {
             let settled = await withDeadline(this.systemTxOracleCall.then(() => true), SYSTEM_TX_ORACLE_DEADLINE_MS).catch(() => false)
             if (!settled) {
                 for (let hash of ask) unavailable.add(hash.toLowerCase())

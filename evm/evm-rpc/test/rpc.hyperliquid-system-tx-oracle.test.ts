@@ -318,6 +318,41 @@ describe('HyperEVM system transaction oracle', () => {
             }
         })
 
+        it('keep one call in flight across concurrent batches', async () => {
+            vi.useFakeTimers()
+            try {
+                let inFlight = 0
+                let most = 0
+                let pending: (() => void)[] = []
+                const oracle = {
+                    url: 'ws://oracle',
+                    batchCall: (batch: any[]) => {
+                        inFlight += 1
+                        most = Math.max(most, inFlight)
+                        return new Promise<any[]>(resolve =>
+                            pending.push(() => {
+                                inFlight -= 1
+                                resolve(batch.map(() => []))
+                            })
+                        )
+                    },
+                }
+                const rpc = new Rpc({client: new MockRpcClient() as any, hyperliquidSystemTxOracle: oracle as any, requireHyperliquidSystemTxOracle: true})
+                const asks = ['0xaa', '0xbb', '0xcc'].map(hash => (rpc as any).askSystemTxOracle([{hash, number: 1}]))
+                await vi.advanceTimersByTimeAsync(2 * 60_000)
+                // the oracle comes back: each queued call is answered as it is the one in flight
+                for (let round = 0; round < 5 && pending.length > 0; round++) {
+                    pending.shift()!()
+                    await vi.advanceTimersByTimeAsync(60_000)
+                }
+                const got: Map<string, Set<string>>[] = await Promise.all(asks)
+                expect(got.map(m => [...m.keys()])).toEqual([['0xaa'], ['0xbb'], ['0xcc']])
+                expect(most).toBe(1)
+            } finally {
+                vi.useRealTimers()
+            }
+        })
+
         it("make the oracle from the chain's official RPC URL, once", async () => {
             const {block, receipts, oracleAnswer} = answers()
             const urls: string[] = []
