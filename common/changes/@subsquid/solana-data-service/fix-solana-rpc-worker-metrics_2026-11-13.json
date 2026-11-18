@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-data-service",
+      "comment": "Export `sqd_chain_rpc_retried_errors_total` for the RPC clients of its worker threads, including closed backfill workers",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-data-service"
+}

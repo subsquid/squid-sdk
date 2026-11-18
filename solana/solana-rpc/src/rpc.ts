@@ -156,6 +156,8 @@ export class Rpc implements RpcApi {
                 return await fn()
             } catch (err: any) {
                 if (!isInternalError(err) || attempt >= this.internalErrorAttempts) throw err
+                // Retried here rather than in the client, so count it there for its metrics.
+                this.client.recordRetriedError('internal')
                 let pause = this.internalErrorBackoffMs[Math.min(attempt, this.internalErrorBackoffMs.length) - 1]
                 this.log.warn(
                     {
@@ -177,6 +179,8 @@ export class Rpc implements RpcApi {
 
         let result = await this.batchCall(batch, {...options, retryAttempts: 0}).catch(err => {
             if (this.client.isConnectionError(err) || err instanceof RpcProtocolError) {
+                // Retried here by splitting the batch, not by the client: count it for its metrics.
+                this.client.recordRetriedError(this.client.getRetryKind(err))
                 this.log.warn(err, 'will retry request with reduced batch')
             } else {
                 throw err

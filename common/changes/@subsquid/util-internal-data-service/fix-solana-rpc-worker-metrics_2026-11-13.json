@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-data-service",
+      "comment": "`RpcMetricsCollector` moved to `@subsquid/rpc-client` and re-exported",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-data-service"
+}
