@@ -14,7 +14,8 @@ import type {
     ModuleMetadataV11,
     ModuleMetadataV12,
     ModuleMetadataV13,
-    ModuleMetadataV9
+    ModuleMetadataV9,
+    PalletMetadataV14
 } from './interfaces'
 import {getOldTypesBundle} from './io'
 import {OldTypeRegistry} from './old/typeRegistry'
@@ -135,10 +136,20 @@ export function getRuntimeDescription(
 }
 
 
+/**
+ * The pallet fields {@link FromV14} reads.
+ *
+ * V15 and V16 converters reuse {@link FromV14} and must hand it their pallets in this shape
+ * without casts, so that a field renamed in a later metadata version fails to compile
+ * instead of silently reading `undefined`.
+ */
+type BasePallet = Pick<PalletMetadataV14, 'name' | 'storage' | 'constants'>
+
+
 class FromV14 {
     constructor(protected metadata: {
         lookup: MetadataV14['lookup'],
-        pallets: MetadataV14['pallets'],
+        pallets: BasePallet[],
         extrinsic: MetadataV14['extrinsic']
     }) {}
 
@@ -445,8 +456,7 @@ class FromV15 {
     constructor(private metadata: MetadataV15) {
         this.base = new FromV14({
             lookup: metadata.lookup,
-            // the private base only needs pallet names/type ids
-            pallets: metadata.pallets as unknown as MetadataV14['pallets'],
+            pallets: metadata.pallets,
             extrinsic: {
                 type: metadata.extrinsic.extraTy,
                 version: metadata.extrinsic.version,
@@ -491,9 +501,11 @@ class FromV16 {
         this.base = new FromV14({
             lookup: metadata.lookup,
             pallets: metadata.pallets.map(p => ({
-                ...p,
+                name: p.name,
+                storage: p.storage,
+                // v16 constants name their type field `ty`
                 constants: p.constants.map(c => ({name: c.name, type: c.ty, value: c.value, docs: c.docs}))
-            })) as unknown as MetadataV14['pallets'],
+            })),
             extrinsic: {
                 type: metadata.extrinsic.callTy,
                 version: 5,

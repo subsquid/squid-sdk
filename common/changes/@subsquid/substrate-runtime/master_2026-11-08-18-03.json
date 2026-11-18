@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-runtime",
-      "comment": "decode constants from v16 metadata",
+      "comment": "Fix decoding of constants from v16 metadata",
       "type": "patch"
     }
   ],
