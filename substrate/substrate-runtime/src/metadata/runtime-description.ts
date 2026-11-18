@@ -490,8 +490,10 @@ class FromV16 {
     constructor(private metadata: MetadataV16) {
         this.base = new FromV14({
             lookup: metadata.lookup,
-            // private base machinery only needs pallet names/type ids
-            pallets: metadata.pallets as unknown as MetadataV14['pallets'],
+            pallets: metadata.pallets.map(p => ({
+                ...p,
+                constants: p.constants.map(c => ({name: c.name, type: c.ty, value: c.value, docs: c.docs}))
+            })) as unknown as MetadataV14['pallets'],
             extrinsic: {
                 type: metadata.extrinsic.callTy,
                 version: 5,

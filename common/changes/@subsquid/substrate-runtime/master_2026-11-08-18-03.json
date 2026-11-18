@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-runtime",
+      "comment": "decode constants from v16 metadata",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-runtime"
+}
