@@ -76,11 +76,13 @@ minutes, with a count.
 ## HyperEVM system transactions
 
 The header of a HyperEVM block commits to none of its system transactions, and endpoints backed by the
-official node leave them out of the body and the receipts alike. `--hyperliquid-system-tx-oracle <url>`
-names an endpoint that serves `eth_getSystemTxsByBlockHash` (the official RPC). Each fetched block's
-system transactions are compared with its answer by sender and nonce, the official node signing them
-differently, and a block that lacks one, or has one the oracle does not, is fetched again. The oracle is
-asked while the rest of the block is fetched, once per block hash, with a short timeout; when it gives
-no answer the block is taken without the check, and a warning with a count is logged at most every ten
-minutes. Streamed blocks are not checked yet, so the dumper refuses the option together with `--stream-url`.
+official node leave them out of the body and the receipts alike. On HyperEVM the dumper therefore holds
+each fetched block to `eth_getSystemTxsByBlockHash` of the chain's official RPC, or of the endpoint named
+by `--hyperliquid-system-tx-oracle <url>`. The system transactions are compared by sender and nonce, the
+official node signing them differently, and a block that lacks one, or has one the oracle does not, is
+fetched again. The oracle is asked while the rest of the block is fetched, once per block hash, with a
+short timeout. A block it gives no answer for is asked about again a few times, a second apart, then
+fetched again, so the dump waits while the oracle is down; a warning with a count is logged at most every
+ten minutes. `--no-hyperliquid-system-tx-oracle` turns the check off. Streamed blocks are not checked
+yet, so on HyperEVM the dumper refuses `--stream-url` unless the check is off.
 

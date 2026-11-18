@@ -11,7 +11,7 @@ import {
     option,
     Validator
 } from '@subsquid/util-internal-validation'
-import { addErrorContext, groupBy, last } from '@subsquid/util-internal'
+import { addErrorContext, groupBy, last, wait } from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     GetBlock,
@@ -159,6 +159,10 @@ const SYSTEM_TX_ORACLE_TIMEOUT_MS = 10_000
 // queueing, connecting and every attempt together
 const SYSTEM_TX_ORACLE_DEADLINE_MS = 25_000
 
+// A required oracle that gave no answer for a block is asked again this many times, this far apart
+const SYSTEM_TX_ORACLE_REQUIRED_REASKS = 3
+const SYSTEM_TX_ORACLE_REQUIRED_REASK_INTERVAL_MS = 1_000
+
 // A warning about the system transaction oracle giving no answer, at most this often
 const SYSTEM_TX_ORACLE_WARNING_INTERVAL_MS = 10 * 60 * 1000
 
@@ -226,10 +230,17 @@ export interface RpcOptions extends BlockCheckOptions {
      * Each block's system transactions are compared with its answer by sender and nonce (the official
      * node signs them differently, so hashes differ), and a block that disagrees is invalid and fetched
      * again. This catches a system transaction left out of the body and the receipts alike, which no
-     * check of a single answer can. When the oracle fails or does not know a block, the block is taken
-     * without this check and a warning is logged, so the dump never waits on the oracle.
+     * check of a single answer can. A function is called once, on HyperEVM only, with the chain's official
+     * RPC URL, and gives the client to use. When the oracle fails or does not know a block, the block is
+     * taken without this check and a warning is logged, unless {@link requireHyperliquidSystemTxOracle}.
      */
-    hyperliquidSystemTxOracle?: EvmRpcClient
+    hyperliquidSystemTxOracle?: EvmRpcClient | ((officialRpcUrl: string) => EvmRpcClient)
+    /**
+     * HyperEVM only: a block is taken only once the oracle has answered for it. A block it gives no answer
+     * for is asked about again for a while, then marked invalid and fetched again, so a dump waits while
+     * the oracle is down instead of taking blocks unchecked. Without an oracle, getBlockBatch() throws.
+     */
+    requireHyperliquidSystemTxOracle?: boolean
 }
 
 
@@ -245,7 +256,10 @@ export class Rpc {
     // HyperEVM: the system transactions any answer has shown for a block hash (see checkHyperliquidSystemTransactions)
     // by block hash: transaction hash -> "sender:nonce" where the answer gave it (a body), undefined otherwise (a receipt)
     private systemTransactionEvidence = new Map<string, Map<string, string | undefined>>()
+    // made on HyperEVM, from the chain's official RPC URL, when the option is a function
+    private makeSystemTxOracle?: (officialRpcUrl: string) => EvmRpcClient
     private systemTxOracle?: EvmRpcClient
+    private requireSystemTxOracle: boolean
     // The oracle's system transactions of a block hash, as "sender:nonce"; a block's answer never changes
     private systemTxOracleAnswers = new Map<string, Set<string>>()
     private systemTxOracleUnavailable = {count: 0, sinceWarning: 0, lastWarning: 0}
@@ -256,7 +270,10 @@ export class Rpc {
 
     constructor(options: RpcOptions) {
         this.client = options.client
-        this.systemTxOracle = options.hyperliquidSystemTxOracle
+        let oracle = options.hyperliquidSystemTxOracle
+        if (typeof oracle == 'function') this.makeSystemTxOracle = oracle
+        else this.systemTxOracle = oracle
+        this.requireSystemTxOracle = options.requireHyperliquidSystemTxOracle ?? false
         this.finalityConfirmation = options.finalityConfirmation
         this.checks = {
             verifyBlockHash: options.verifyBlockHash,
@@ -375,7 +392,7 @@ export class Rpc {
             !!req?.traces && !req.useTraceApi && (await this.getChainUtils()).mayAnswerEmptyCallFrames
         let utils = await this.getChainUtils()
         // The oracle comparison needs each system transaction's sender and nonce
-        let askSystemTxOracle = this.systemTxOracle != null && utils.hasHyperliquidSystemTransactions
+        let askSystemTxOracle = utils.hasHyperliquidSystemTransactions && this.getSystemTxOracle(utils) != null
         let withTransactions =
             transactionsRequested ||
             needsTransactionsForCallFrameValidation ||
@@ -796,11 +813,35 @@ export class Rpc {
         }
     }
 
+    private getSystemTxOracle(utils: ChainUtils): EvmRpcClient | undefined {
+        let url = utils.hyperliquidOfficialRpcUrl
+        if (this.systemTxOracle == null && this.makeSystemTxOracle != null && url != null) {
+            this.systemTxOracle = this.makeSystemTxOracle(url)
+        }
+        if (this.systemTxOracle == null && this.requireSystemTxOracle) {
+            throw new Error('HyperEVM: a system transaction oracle is required, and none is configured')
+        }
+        return this.systemTxOracle
+    }
+
     /**
      * The system transactions of each block as the oracle has them, by lowercase block hash; a block the
-     * oracle failed on, or does not know, has none.
+     * oracle failed on, or does not know, has none. When the oracle is required, the blocks without an
+     * answer are asked about again a few times, a second apart (a block the official node has not seen yet).
      */
     private async askSystemTxOracle(blocks: Block[]): Promise<Map<string, Set<string>>> {
+        let answers = await this.askSystemTxOracleOnce(blocks)
+        if (!this.requireSystemTxOracle) return answers
+        for (let attempt = 0; attempt < SYSTEM_TX_ORACLE_REQUIRED_REASKS; attempt++) {
+            let unanswered = blocks.filter(b => !answers.has(b.hash.toLowerCase()))
+            if (unanswered.length == 0) break
+            await wait(SYSTEM_TX_ORACLE_REQUIRED_REASK_INTERVAL_MS)
+            for (let [key, set] of await this.askSystemTxOracleOnce(unanswered)) answers.set(key, set)
+        }
+        return answers
+    }
+
+    private async askSystemTxOracleOnce(blocks: Block[]): Promise<Map<string, Set<string>>> {
         let answers = new Map<string, Set<string>>()
         let ask: string[] = []
         for (let block of blocks) {
@@ -855,6 +896,10 @@ export class Rpc {
     private checkAgainstSystemTxOracle(block: Block, oracle: Set<string> | undefined, utils: ChainUtils): void {
         if (block._isInvalid) return
         if (oracle == null) {
+            if (this.requireSystemTxOracle) {
+                block._isInvalid = true
+                block._errorMessage = 'system transaction oracle gave no answer for the block, and it is required'
+            }
             let u = this.systemTxOracleUnavailable
             u.count += 1
             u.sinceWarning += 1
@@ -862,7 +907,9 @@ export class Rpc {
             if (u.lastWarning === 0 || now - u.lastWarning >= SYSTEM_TX_ORACLE_WARNING_INTERVAL_MS) {
                 this.log.warn(
                     {oracle: this.systemTxOracle?.url, blockNumber: block.number, blocksSinceLastWarning: u.sinceWarning, blocks: u.count},
-                    'system transaction oracle gave no answer; blocks taken without the oracle check'
+                    this.requireSystemTxOracle
+                        ? 'system transaction oracle gave no answer; blocks fetched again until it does'
+                        : 'system transaction oracle gave no answer; blocks taken without the oracle check'
                 )
                 u.sinceWarning = 0
                 u.lastWarning = now

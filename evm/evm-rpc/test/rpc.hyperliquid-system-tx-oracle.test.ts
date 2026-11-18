@@ -154,5 +154,99 @@ describe('HyperEVM system transaction oracle', () => {
         expect((await answer(omitting, receipts))._isInvalid).toBe(true)
         expect((await answer(omitting, omittingReceipts))._isInvalid).toBeUndefined()
     })
-})
 
+    describe('when the oracle is required', () => {
+        function setUpRequired(oracle: unknown, chainId = '0x3e7', verify = true) {
+            const client = new MockRpcClient()
+            client.setFixture('eth_chainId', undefined, chainId)
+            client.setFixture('eth_getBlockReceipts', ['latest'], [])
+            const rpc = new Rpc({
+                client: client as any,
+                hyperliquidSystemTxOracle: oracle as any,
+                requireHyperliquidSystemTxOracle: true,
+                // another chain hashes the system transaction into the roots, which this block's header does not
+                verifyTxRoot: verify,
+                verifyReceiptsRoot: verify,
+                verifyLogsBloom: verify,
+                checkLogIndex: true,
+            })
+            const answer = (body: any, receipts: any[]) => {
+                client.setFixture('eth_getBlockByNumber', [toQty(BLOCK), true], body)
+                client.setFixture('eth_getBlockReceipts', [toQty(BLOCK)], receipts)
+                return rpc.getBlockBatch([BLOCK], {transactions: true, receipts: true}).then(blocks => blocks[0])
+            }
+            return {answer}
+        }
+
+        // answers null (a block the official node has not seen yet) the first `misses` times it is asked
+        class LateOracle extends CountingClient {
+            constructor(private misses: number, answer: unknown) {
+                super()
+                this.setFixture('eth_getSystemTxsByBlockHash', [loadBlock('hyperliquid', BLOCK).hash], answer)
+            }
+            async batchCall(batch: any[], options?: any): Promise<any[]> {
+                if (this.calls < this.misses) {
+                    this.calls += 1
+                    return batch.map(() => null)
+                }
+                return super.batchCall(batch, options)
+            }
+        }
+
+        it('ask again for a block the oracle does not know yet, and take it once it answers', async () => {
+            vi.useFakeTimers()
+            try {
+                const {block, receipts, oracleAnswer} = answers()
+                const oracle = new LateOracle(2, oracleAnswer)
+                const pending = setUpRequired(oracle).answer(block, receipts)
+                await vi.advanceTimersByTimeAsync(5_000)
+                expect((await pending)._isInvalid).toBeUndefined()
+                expect(oracle.calls).toBe(3)
+            } finally {
+                vi.useRealTimers()
+            }
+        })
+
+        it('mark a block invalid when the oracle gives no answer for it, instead of taking it unchecked', async () => {
+            vi.useFakeTimers()
+            try {
+                const {block, receipts, oracleAnswer} = answers()
+                const oracle = new LateOracle(Infinity, oracleAnswer)
+                const pending = setUpRequired(oracle).answer(block, receipts)
+                await vi.advanceTimersByTimeAsync(5_000)
+                const got = await pending
+                expect(got._isInvalid).toBe(true)
+                expect(got._errorMessage).toBe('system transaction oracle gave no answer for the block, and it is required')
+                expect(oracle.calls).toBe(4)
+            } finally {
+                vi.useRealTimers()
+            }
+        })
+
+        it("make the oracle from the chain's official RPC URL, once", async () => {
+            const {block, receipts, oracleAnswer} = answers()
+            const urls: string[] = []
+            const factory = (url: string) => {
+                urls.push(url)
+                const oracle = new MockRpcClient()
+                oracle.setFixture('eth_getSystemTxsByBlockHash', [block.hash], oracleAnswer)
+                return oracle
+            }
+            const {answer} = setUpRequired(factory)
+            expect((await answer(block, receipts))._isInvalid).toBeUndefined()
+            expect((await answer(block, receipts))._isInvalid).toBeUndefined()
+            expect(urls).toEqual(['https://rpc.hyperliquid.xyz/evm'])
+        })
+
+        it('throw on HyperEVM without an oracle, and ignore the requirement on other chains', async () => {
+            const {block, receipts} = answers()
+            await expect(setUpRequired(undefined).answer(block, receipts)).rejects.toThrow(
+                'HyperEVM: a system transaction oracle is required, and none is configured',
+            )
+            const factory = vi.fn()
+            const got = await setUpRequired(factory, '0x1', false).answer(block, receipts)
+            expect(got._isInvalid).toBeUndefined()
+            expect(factory).not.toHaveBeenCalled()
+        })
+    })
+})

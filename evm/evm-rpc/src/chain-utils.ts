@@ -161,6 +161,13 @@ export class ChainUtils {
         return this.isHyperliquidMainnet || this.isHyperliquidTestnet
     }
 
+    /** HyperEVM: the official RPC, which serves `eth_getSystemTxsByBlockHash`. */
+    get hyperliquidOfficialRpcUrl(): string | undefined {
+        if (this.isHyperliquidMainnet) return 'https://rpc.hyperliquid.xyz/evm'
+        if (this.isHyperliquidTestnet) return 'https://rpc.hyperliquid-testnet.xyz/evm'
+        return undefined
+    }
+
     isHyperliquidSystemTransaction(tx: Transaction): boolean {
         return this.hasHyperliquidSystemTransactions && isHyperliquidSystemTx(tx)
     }
