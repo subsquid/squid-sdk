@@ -77,17 +77,18 @@ function* mapDebugFrame(
     transactionIndex: number,
     debugFrameResult: {result: rpc.DebugFrame}
 ): Iterable<Trace> {
-    if (debugFrameResult.result.type.toUpperCase() == 'STOP') {
-        assert(!debugFrameResult.result.calls?.length)
-        return
-    }
-
     // Scroll nodes return a structurally empty call frame ({"type": "", "from": "", ...}, or the
     // equivalent `{}` result) for failed L1 message transactions (tx type 126, L1MessageTx):
     // the geth callTracer has no call frame to reconstruct for them.
     // https://github.com/scroll-tech/go-ethereum/issues/1170
     // Treat an empty/missing top-level frame type as "trace is not available".
+    // This must come before any use of the type.
     if (!debugFrameResult.result.type) {
+        return
+    }
+
+    if (debugFrameResult.result.type.toUpperCase() == 'STOP') {
+        assert(!debugFrameResult.result.calls?.length)
         return
     }
 

@@ -125,6 +125,37 @@ describe('PascalCase debug frame', () => {
             }
         ])
     })
+
+    it('maps nested PascalCase call kinds to lowercase call types', () => {
+        let block = blockWithFrame({
+            type: 'Call',
+            from: '0xb31fb3fd1b61e571a9709bc59413950e1abc9926',
+            to: CONTRACT,
+            gas: '0x0',
+            gasUsed: '0x0',
+            input: '0x',
+            calls: [
+                {type: 'DelegateCall', from: CONTRACT, to: CONTRACT, gas: '0x0', gasUsed: '0x0', input: '0x'},
+                {type: 'StaticCall', from: CONTRACT, to: CONTRACT, gas: '0x0', gasUsed: '0x0', input: '0x'},
+            ]
+        } as unknown as rpc.DebugFrame)
+
+        expect(mapRpcBlock(block, {withTraces: true}).traces?.map(t => (t.action as any).callType)).toEqual([
+            'call', 'delegatecall', 'staticcall'
+        ])
+    })
+})
+
+
+describe('debug frame without a type', () => {
+    // Scroll answers `{}` (or `{"type": ""}`) for failed L1 message transactions.
+    it.each([
+        ['missing', {}],
+        ['empty', {type: ''}],
+    ])('yields no traces when the type is %s', (_, frame) => {
+        let block = blockWithFrame(frame as unknown as rpc.DebugFrame)
+        expect(mapRpcBlock(block, {withTraces: true}).traces).toEqual([])
+    })
 })
 
 
