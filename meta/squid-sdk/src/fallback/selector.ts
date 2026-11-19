@@ -10,8 +10,13 @@ import {SourceHealth} from './health'
 export class Selector {
     constructor(private health: SourceHealth[]) {}
 
-    pickForFailover(): number | undefined {
+    /**
+     * `skip` excludes sources already exhausted in the current failover sweep, so a source whose
+     * cooldown expires while a later one is still timing out can't restart the sweep from the top.
+     */
+    pickForFailover(skip?: ReadonlySet<number>): number | undefined {
         for (let i = 0; i < this.health.length; i++) {
+            if (skip?.has(i)) continue
             let s = this.health[i].state
             if (s === 'healthy' || s === 'unknown') return i
         }

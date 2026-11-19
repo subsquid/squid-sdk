@@ -1,6 +1,18 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Thu, 27 Aug 2026 13:59:40 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 4.17.0
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Minor changes
+
+- Count retried errors by kind: `getRetryKind()` and `retriedErrors` in `getMetrics()`
+
+### Patches
+
+- Retry Cloudflare origin errors (HTTP 520-524) like other gateway errors
+- Retry HTTP 500 whose body is not a JSON-RPC response, which comes from a proxy in front of the node rather than from the node. A failed response labeled as JSON whose body does not parse now surfaces as an HTTP error with the status, not as a parse error
 
 ## 4.16.1
 Thu, 27 Aug 2026 13:59:40 GMT

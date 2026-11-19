@@ -4,7 +4,8 @@ import {
     Receipt,
     TraceTransactionReplay,
     DebugStateDiffResult,
-    DebugFrameResult
+    DebugFrameResult,
+    BlockAccessList
 } from './rpc-data'
 
 
@@ -24,6 +25,7 @@ export interface Block {
     traceReplays?: TraceTransactionReplay[]
     debugStateDiffs?: (DebugStateDiffResult | undefined)[]
     debugFrames?: (DebugFrameResult | undefined)[]
+    blockAccessList?: BlockAccessList
     _isInvalid?: boolean
     _errorMessage?: string
 }
@@ -35,6 +37,10 @@ export interface DataRequest {
     receipts?: boolean
     traces?: boolean
     stateDiffs?: boolean
+    /**
+     * Fetch EIP-7928 block access lists for blocks whose header commits to one
+     */
+    blockAccessLists?: boolean
     useDebugApiForStateDiffs?: boolean
     useDebugTraceBlockByNumber?: boolean
     useTraceApi?: boolean

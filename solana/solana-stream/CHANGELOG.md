@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-stream
 
-This log was last generated on Thu, 27 Aug 2026 13:59:40 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 1.3.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- allow selecting the new transactionConfig field of a transaction
 
 ## 1.2.1
 Thu, 27 Aug 2026 13:59:40 GMT

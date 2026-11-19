@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-cli",
+      "comment": "Read the RPC metrics from an overridable `rpcMetrics()` source, so dumpers whose requests go through other clients report those",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-cli"
+}

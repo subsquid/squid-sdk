@@ -1,6 +1,27 @@
 # Change Log - @subsquid/solana-rpc
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Wed, 11 Nov 2026 19:54:14 GMT and should not be manually modified.
+
+## 1.1.2
+Wed, 11 Nov 2026 19:54:14 GMT
+
+### Patches
+
+- On a reorg, report up to 100 blocks of the new chain below the fork in `ForkException.previousBlocks`, as the Portal does, so the batch processor can roll back to the last shared block instead of failing with "Unable to process fork"
+
+## 1.1.1
+Wed, 11 Nov 2026 17:34:29 GMT
+
+### Patches
+
+- retry transient `-32603 Service overloaded` getBlock responses through the RPC backoff instead of terminating ingestion; retry `-32603 Internal error` a bounded number of times, with a warning per retry, before failing
+
+## 1.1.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- request Solana v1 transactions (maxSupportedTransactionVersion: 1) in getBlock batches and blockSubscribe, so block fetching no longer fails with -32015 once the v1 transaction format is active
 
 ## 1.0.0
 Mon, 11 May 2026 05:34:26 GMT

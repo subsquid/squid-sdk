@@ -2,6 +2,18 @@
   "name": "@subsquid/typeorm-config",
   "entries": [
     {
+      "version": "4.2.1",
+      "tag": "@subsquid/typeorm-config_v4.2.1",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Update dependency ranges: typeorm ^0.3.31 (peer)"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.2.0",
       "tag": "@subsquid/typeorm-config_v4.2.0",
       "date": "Fri, 10 Jul 2026 07:08:47 GMT",

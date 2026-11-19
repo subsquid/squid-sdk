@@ -1,11 +1,20 @@
 import {createLogger} from '@subsquid/logger'
-import {CALL_FRAME_VALIDATION_MODES, type CallFrameValidationMode} from '@subsquid/evm-rpc'
+import {
+    CALL_FRAME_VALIDATION_MODES,
+    type CallFrameValidationMode,
+    CONSENSUS_ANCHOR_VALIDATION_MODES,
+    type ConsensusAnchorRule,
+    type ConsensusAnchorValidationMode,
+    DEFAULT_CONSENSUS_ANCHOR_RULES,
+    parseConsensusAnchorRules
+} from '@subsquid/evm-rpc'
 import {runProgram} from '@subsquid/util-internal'
 import {nat, positiveInt, positiveReal, Url} from '@subsquid/util-internal-commander'
 import {
     type Block,
     type BlockStream,
     type DataSource,
+    RpcMetricsCollector,
     runDataService,
     type StreamRequest
 } from '@subsquid/util-internal-data-service'
@@ -52,6 +61,24 @@ runProgram(async () => {
             .choices([...CALL_FRAME_VALIDATION_MODES])
             .default('off')
     )
+    program.addOption(
+        new Option(
+            '--consensus-anchor-validation <mode>',
+            'Check debug call frames and state diffs against receipt status, gasUsed and fees; ' +
+                'reject marks a failing block invalid so it is fetched again, and requires --verify-receipts-root, ' +
+                    '--verify-tx-root, --verify-tx-sender and the cumulative gas check'
+        )
+            .choices([...CONSENSUS_ANCHOR_VALIDATION_MODES])
+            .default('off')
+    )
+    program.addOption(
+        new Option(
+            '--consensus-anchor-rules <list>',
+            'Comma-separated consensus anchor rules: status, gas, system-gas, system-fee'
+        )
+            .argParser(parseConsensusAnchorRules)
+            .default([...DEFAULT_CONSENSUS_ANCHOR_RULES], DEFAULT_CONSENSUS_ANCHOR_RULES.join(','))
+    )
     program.option('--skip-log-index-check', 'Do not check log indices within a block are sequential')
     program.option('--skip-cumulative-gas-used-check', 'Do not check cumulativeGasUsed consistency across transactions')
     program.option('--use-gas-used-for-receipts-root', 'Use gasUsed instead of cumulativeGasUsed for receipts root calculation')
@@ -83,6 +110,8 @@ runProgram(async () => {
         verifyWithdrawalsRoot?: boolean
         verifyLogsBloom?: boolean
         callFrameValidation: CallFrameValidationMode
+        consensusAnchorValidation: ConsensusAnchorValidationMode
+        consensusAnchorRules: ConsensusAnchorRule[]
         skipLogIndexCheck?: boolean
         skipCumulativeGasUsedCheck?: boolean
         useGasUsedForReceiptsRoot?: boolean
@@ -93,6 +122,29 @@ runProgram(async () => {
     // misconfiguration is a CLI error rather than a worker crash.
     if (args.callFrameValidation === 'reject' && !(args.verifyTxRoot && args.verifyTxSender)) {
         program.error('--call-frame-validation reject requires --verify-tx-root and --verify-tx-sender')
+    }
+    if (
+        args.consensusAnchorValidation === 'reject' &&
+        !(
+            args.verifyReceiptsRoot &&
+            (!args.skipCumulativeGasUsedCheck || args.useGasUsedForReceiptsRoot) &&
+            args.verifyTxRoot &&
+            args.verifyTxSender
+        )
+    ) {
+        program.error(
+            '--consensus-anchor-validation reject requires --verify-receipts-root, --verify-tx-root, ' +
+                '--verify-tx-sender and the cumulative gas check (no --skip-cumulative-gas-used-check)'
+        )
+    }
+
+    if (
+        args.consensusAnchorValidation !== 'off' &&
+        (!args.withTraces || !args.withReceipts || args.useTraceApi)
+    ) {
+        program.error(
+            '--consensus-anchor-validation requires --with-traces and --with-receipts, and does not support --use-trace-api'
+        )
     }
 
     let dataSourceOptions: DataSourceOptions = {
@@ -117,12 +169,16 @@ runProgram(async () => {
         verifyWithdrawalsRoot: args.verifyWithdrawalsRoot,
         verifyLogsBloom: args.verifyLogsBloom,
         callFrameValidation: args.callFrameValidation,
+        consensusAnchorValidation: args.consensusAnchorValidation,
+        consensusAnchorRules: args.consensusAnchorRules,
         skipLogIndexCheck: args.skipLogIndexCheck,
         skipCumulativeGasUsedCheck: args.skipCumulativeGasUsedCheck,
         useGasUsedForReceiptsRoot: args.useGasUsedForReceiptsRoot
     }
 
+    let rpcMetrics = new RpcMetricsCollector()
     let mainWorker = new WorkerClient(dataSourceOptions)
+    rpcMetrics.add(mainWorker)
     let service: Awaited<ReturnType<typeof runDataService>> | undefined
     let dataSource: DataSource<Block> = {
         getHead() {
@@ -133,11 +189,13 @@ runProgram(async () => {
         },
         async *getFinalizedStream(req: StreamRequest): BlockStream<Block> {
             let worker = new WorkerClient(dataSourceOptions)
+            rpcMetrics.add(worker)
             service?.metrics.incActiveWorkers()
             try {
                 yield* worker.getFinalizedStream(req)
             } finally {
                 service?.metrics.decActiveWorkers()
+                await rpcMetrics.remove(worker)
                 worker.close()
             }
         },
@@ -152,7 +210,14 @@ runProgram(async () => {
         port: args.port,
         autoAdjustFinalizedHead: args.autoAdjustFinalizedHead
     })
+    service.metrics.setRpcMetricsSource(() => rpcMetrics.collect())
 
     log.info(`listening on port ${service.port}`)
-    return waitForInterruption(service)
+
+    let server = service
+    return new Promise((resolve, reject) => {
+        waitForInterruption(server).then(resolve, reject)
+        // ingestion that fails before the first block is not restarted
+        server.started.catch(reject)
+    })
 }, err => log.fatal(err))

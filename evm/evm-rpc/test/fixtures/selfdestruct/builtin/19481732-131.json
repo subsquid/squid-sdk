@@ -1,0 +1,22 @@
+{
+  "network": "mainnet",
+  "transactionHash": "0x833a78e6ac9466865d9c8e5311b1820b12d5c0b103466bcdbf8b3db058a849e3",
+  "client": "reth/v2.11.0-b9abbcc/x86_64-unknown-linux-gnu",
+  "note": "SELFDESTRUCT steps of the recorded opcode log (stack top only) and the prestate of the accounts in the call tree",
+  "steps": [
+    {
+      "op": "SELFDESTRUCT",
+      "stack": [
+        "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de"
+      ]
+    }
+  ],
+  "prestate": {
+    "0x6550f9a4bd878a384625f62ad5aab1fe7c3412de": {
+      "balance": "0x0"
+    },
+    "0xb4f1e5db68512f06d378b5e02e7ebbe7d2c705ef": {
+      "balance": "0x2d0bd87ad628499"
+    }
+  }
+}

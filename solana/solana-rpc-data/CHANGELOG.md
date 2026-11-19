@@ -1,6 +1,20 @@
 # Change Log - @subsquid/solana-rpc-data
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 1.1.1
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- Keep vote-account management transactions (Withdraw, Authorize, UpdateCommission) when vote transactions are excluded
+
+## 1.1.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- accept the transactionConfig field of Solana v1 transaction messages in the raw RPC block schema
 
 ## 1.0.0
 Mon, 11 May 2026 05:34:26 GMT

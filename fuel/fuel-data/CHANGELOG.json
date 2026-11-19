@@ -2,6 +2,18 @@
   "name": "@subsquid/fuel-data",
   "entries": [
     {
+      "version": "1.1.7",
+      "tag": "@subsquid/fuel-data_v1.1.7",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Update dependency ranges: @subsquid/http-client ^1.9.0 (peer)"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.6",
       "tag": "@subsquid/fuel-data_v1.1.6",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

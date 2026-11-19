@@ -27,6 +27,7 @@ all_images=(
     "hyperliquid/hyperliquid-fills-ingest"
     "hyperliquid/hyperliquid-replica-cmds-ingest"
     "hyperliquid/hyperliquid-replica-cmds-data-service"
+    "util/raw-archive-recompress"
 )
 
 if [ ${#images[@]} -eq 0 ]; then

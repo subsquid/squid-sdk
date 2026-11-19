@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/squid-sdk",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Umbrella package for the Squid SDK: data sources and utilities exposed as subpaths",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -227,18 +227,18 @@
   "dependencies": {
     "@subsquid/batch-processor": "^1.1.0",
     "@subsquid/evm-objects": "^0.0.3",
-    "@subsquid/evm-stream": "^0.1.4",
+    "@subsquid/evm-stream": "^0.1.5",
     "@subsquid/fuel-stream": "^1.2.0",
     "@subsquid/http-client": "^1.9.0",
     "@subsquid/logger": "^1.6.0",
-    "@subsquid/portal-client": "^0.7.0",
-    "@subsquid/rpc-client": "^4.16.1",
-    "@subsquid/solana-stream": "^1.2.1",
-    "@subsquid/typeorm-store": "^1.9.2",
+    "@subsquid/portal-client": "^0.8.0",
+    "@subsquid/rpc-client": "^4.17.0",
+    "@subsquid/solana-stream": "^1.3.0",
+    "@subsquid/typeorm-store": "^1.9.3",
     "@subsquid/util-internal": "^3.3.1",
     "@subsquid/util-internal-data-source": "^0.0.0",
     "@subsquid/util-internal-hex": "^1.2.3",
-    "@subsquid/util-internal-json": "^1.2.4",
+    "@subsquid/util-internal-json": "^1.2.5",
     "@subsquid/util-internal-processor-tools": "^4.4.0",
     "@subsquid/util-internal-range": "^0.3.0",
     "@subsquid/util-internal-validation": "^0.9.0",
@@ -246,10 +246,10 @@
     "prom-client": "^14.2.0"
   },
   "peerDependencies": {
-    "@subsquid/evm-normalization": "^0.0.6",
-    "@subsquid/evm-rpc": "^0.1.0",
-    "@subsquid/solana-rpc": "^1.0.0",
-    "@subsquid/solana-normalization": "^1.0.0"
+    "@subsquid/evm-normalization": "^0.2.0",
+    "@subsquid/evm-rpc": "^0.3.2",
+    "@subsquid/solana-rpc": "^1.1.2",
+    "@subsquid/solana-normalization": "^1.1.0"
   },
   "peerDependenciesMeta": {
     "@subsquid/evm-normalization": {
@@ -266,14 +266,15 @@
     }
   },
   "devDependencies": {
-    "@subsquid/big-decimal": "^1.0.0",
-    "@subsquid/evm-normalization": "^0.0.6",
-    "@subsquid/evm-rpc": "^0.1.0",
-    "@types/node": "^24.0.0",
-    "typeorm": "^0.3.17",
+    "@subsquid/big-decimal": "^1.0.1",
+    "@subsquid/evm-normalization": "^0.2.0",
+    "@subsquid/evm-rpc": "^0.3.2",
+    "@types/node": "^24.13.6",
+    "typeorm": "^0.3.31",
     "typescript": "5.5.4",
     "vitest": "4.1.5",
-    "@subsquid/solana-rpc": "^1.0.0",
-    "@subsquid/solana-normalization": "^1.0.0"
+    "@subsquid/solana-rpc": "^1.1.2",
+    "@subsquid/solana-normalization": "^1.1.0",
+    "@subsquid/util-internal-testing": "^0.0.0"
   }
 }

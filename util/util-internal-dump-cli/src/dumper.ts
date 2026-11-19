@@ -1,9 +1,11 @@
 import {createLogger, Logger} from '@subsquid/logger'
-import {RpcClient} from '@subsquid/rpc-client'
+import {RpcClient, type RpcMetrics} from '@subsquid/rpc-client'
 import {assertNotNull, def, last, runProgram, Throttler, waitDrain} from '@subsquid/util-internal'
 import {
     ArchiveLayout,
     checkShorHashMatch,
+    Compression,
+    COMPRESSIONS,
     getBlockNumber,
     getParentBlockNumber,
     RawBlock
@@ -12,7 +14,7 @@ import {FileOrUrl, nat, positiveInt, positiveReal, Url} from '@subsquid/util-int
 import {printTimeInterval, Progress} from '@subsquid/util-internal-counters'
 import {createFs, Fs} from '@subsquid/util-internal-fs'
 import {assertRange, printRange, Range, rangeEnd} from '@subsquid/util-internal-range'
-import {Command} from 'commander'
+import {Command, Option} from 'commander'
 import {EventEmitter} from 'events'
 import {PrometheusServer} from './prometheus'
 
@@ -27,6 +29,8 @@ export interface DumperOptions {
     lastBlock?: number
     chunkSize: number
     topDirSize: number
+    compression: Compression
+    compressionLevel?: number
     metrics?: number
     maxCacheSize?: number
 }
@@ -52,13 +56,32 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         this.timestampCache.set(blockHeight, this.getBlockTimestamp(block));
     }
 
-    protected abstract getBlocks(range: Range): AsyncIterable<B[]>
+    /**
+     * @param prevHash hash of the already archived block right below the range, when there is one.
+     * It can be a short hash, compare it with `checkShorHashMatch()`.
+     */
+    protected abstract getBlocks(range: Range, prevHash?: string): AsyncIterable<B[]>
 
     protected abstract getLastFinalizedBlockNumber(): Promise<number>
 
     protected abstract getParentBlockHash(block: B): string
-    protected abstract getBlockTimestamp(block: B): number
 
+    /**
+     * The block with the given number as the destination archive holds it.
+     * Undefined without a destination, or when the archive does not hold the block.
+     */
+    protected async getArchivedBlock(number: number): Promise<B | undefined> {
+        if (this.options().dest == null) return undefined
+        let archive = new ArchiveLayout(this.destination(), {topDirSize: this.options().topDirSize})
+        for await (let chunk of archive.getDataChunks({from: number, to: number})) {
+            for await (let blocks of archive.readRawChunk<B>(chunk)) {
+                for (let block of blocks) {
+                    if (getBlockNumber(block) === number) return block
+                }
+            }
+        }
+        return undefined
+    }
     protected abstract getBlockTimestamp(block: B): number
 
     protected setUpProgram(program: Command): void {}
@@ -92,6 +115,12 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         this.setUpProgram(program)
         program.option('--chunk-size <MB>', 'Data chunk size in megabytes', positiveInt, this.getDefaultChunkSize())
         program.option('--top-dir-size <number>', 'Number of items in a top level dir', positiveInt, this.getDefaultTopDirSize())
+        program.addOption(
+            new Option('--compression <codec>', 'Compression of data chunks')
+                .choices(COMPRESSIONS)
+                .default('gzip')
+        )
+        program.option('--compression-level <number>', 'Compression level (default: 9 for zstd, 6 for gzip)', nat)
         program.option('--max-cache-size <number>', 'Maximum number of blocks to keep in memory cache', positiveInt, this.getDefaultCacheSize())
         program.option('--metrics <port>', 'Enable prometheus metrics server', nat)
         return program
@@ -151,19 +180,28 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         return true
     }
 
+    /**
+     * Called before anything is dumped, so that a bad combination of options is reported right away
+     */
+    protected validateOptions(): void {}
+
     @def
     protected eventEmitter(): EventEmitter {
         return new EventEmitter()
     }
 
+    /**
+     * The metrics of the RPC clients this dumper's requests go through, for the metrics server. By
+     * default that is {@link rpc}; a dumper that sends its requests through other clients - for
+     * example in worker threads - must report theirs instead, or its RPC metrics stay at zero.
+     */
+    protected rpcMetrics(): () => Promise<RpcMetrics[]> {
+        return async () => [this.rpc().getMetrics()]
+    }
+
     @def
     protected prometheus() {
-        let server = new PrometheusServer(
-            this.options().metrics ?? 0,
-            () => this.getLastFinalizedBlockNumber(),
-            this.rpc(),
-            this.log().child('prometheus')
-        )
+        let server = new PrometheusServer(this.options().metrics ?? 0, this.rpcMetrics())
         this.eventEmitter().on('S3FsOperation', (op: string) => server.incS3Requests(op))
         return server
     }
@@ -175,7 +213,11 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
         }
         assertRange(range)
 
-        let head = new Throttler(() => this.getLastFinalizedBlockNumber(), 60_000)
+        let head = new Throttler(async () => {
+            let height = await this.getLastFinalizedBlockNumber()
+            this.prometheus().setChainHeight(height)
+            return height
+        }, 60_000)
         let headNumber = await head.get()
 
         let progress = new Progress({
@@ -192,7 +234,7 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
             )
         }, 5000)
 
-        for await (let blocks of this.getBlocks(range)) {
+        for await (let blocks of this.getBlocks(range, prevShortHash)) {
             if (from && prevShortHash != null && this.validateChainContinuity()) {
                 let fst = blocks[0]
                 if (
@@ -239,7 +281,9 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
 
     run(): void {
         runProgram(async () => {
-            let {dest, chunkSize, metrics} = this.options()
+            let {dest, chunkSize, compression, compressionLevel, metrics} = this.options()
+            this.validateOptions()
+
             let prometheus = this.prometheus()
 
             if (metrics != null) {
@@ -263,10 +307,13 @@ export abstract class Dumper<B extends RawBlock, O extends DumperOptions = Dumpe
                 let archive = new ArchiveLayout(this.destination(), {
                     topDirSize: this.options().topDirSize
                 })
+                prometheus.setCompression(compression)
                 await archive.appendRawBlocks({
                     blocks: (nextBlock, prevHash) => this.ingest(nextBlock, prevHash),
                     range: this.range(),
                     chunkSize: chunkSize * 1024 * 1024,
+                    compression,
+                    compressionLevel,
                     onSuccessWrite: ctx => {
                         const blockHeight = ctx.blockRange.to.number;
                         prometheus.setLastWrittenBlock(blockHeight);

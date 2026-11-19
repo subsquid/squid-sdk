@@ -1,13 +1,24 @@
 import {createLogger} from '@subsquid/logger'
 import {concurrentMap, last} from '@subsquid/util-internal'
-import {ForkException} from '@subsquid/util-internal-data-source'
+import {type BlockRef, ForkException} from '@subsquid/util-internal-data-source'
 import {splitRange} from '@subsquid/util-internal-range'
 import assert from 'node:assert'
+import type {Commitment, RpcApi} from '../rpc'
 import {getBlockRef} from '../util'
 import {getBlocks} from './fetch'
 import type {IngestBatch, IngestOptions} from './ingest'
 
 const log = createLogger('sqd:solana-rpc:chain-fixer')
+
+/**
+ * Blocks of the new chain reported below a fork, ending at the new parent - the depth the Portal's
+ * hot-block service reports in its fork responses. The consumer rolls back to the newest of its
+ * blocks that is also in the list; the batch processor keeps only some of its unfinalized blocks,
+ * so a list that just reaches the fork point is often not enough.
+ */
+const FORK_PREVIOUS_BLOCKS = 100
+/** Slots searched for those blocks: room for half of them to be skipped. */
+const FORK_PREVIOUS_SLOT_SPAN = 2 * FORK_PREVIOUS_BLOCKS
 
 export function ensureContinuity(
     ingest: IngestOptions,
@@ -55,7 +66,7 @@ export class ChainFixer {
         for await (let batch of upstream) {
             removeOverlaps(batch)
 
-            let {head, tail} = this.acceptBatch(batch)
+            let {head, tail} = await this.acceptBatch(batch)
 
             if (head) {
                 yield head
@@ -77,7 +88,7 @@ export class ChainFixer {
             gapLog.debug('got a gap')
 
             for await (let missingBatch of this.fetch(this.from, to)) {
-                let {head, tail} = this.acceptBatch(missingBatch)
+                let {head, tail} = await this.acceptBatch(missingBatch)
 
                 if (head) {
                     yield head
@@ -94,7 +105,7 @@ export class ChainFixer {
 
             if (batch.blocks[0].block.previousBlockhash === this.parentHash) {
                 gapLog.debug('gap filled')
-                let {head, tail} = this.acceptBatch(batch)
+                let {head, tail} = await this.acceptBatch(batch)
                 if (head) {
                     yield head
                 }
@@ -142,10 +153,10 @@ export class ChainFixer {
         )
     }
 
-    private acceptBatch(batch: IngestBatch): {
+    private async acceptBatch(batch: IngestBatch): Promise<{
         head?: IngestBatch
         tail?: IngestBatch
-    } {
+    }> {
         // find a boundary of blocks below this.from
         let offset = 0
         while (offset < batch.blocks.length && batch.blocks[offset].slot < this.from) {
@@ -160,12 +171,16 @@ export class ChainFixer {
                     this.parentHash &&
                     this.parentHash !== b.block.previousBlockhash
                 )
-                    throw new ForkException(b.slot, this.parentHash, [
-                        {
-                            number: b.block.parentSlot,
-                            hash: b.block.previousBlockhash,
-                        },
-                    ])
+                    throw new ForkException(
+                        b.slot,
+                        this.parentHash,
+                        await getForkPreviousBlocks(
+                            this.ingest.rpc,
+                            this.ingest.commitment,
+                            b.block.parentSlot,
+                            b.block.previousBlockhash,
+                        ),
+                    )
                 this.from = b.slot + 1
                 this.parentHash = b.block.blockhash
             } else {
@@ -188,6 +203,66 @@ export class ChainFixer {
         }
         return {}
     }
+}
+
+/**
+ * The new chain below a block whose parent did not match: from its parent (`parentSlot`,
+ * `previousBlockhash`) downwards along parent links, in ascending order, as
+ * `ForkException.previousBlocks` expects.
+ *
+ * A consumer can only roll back to a block that is in both its chain and this list. Reporting just
+ * the parent - at the slot of the consumer's replaced head, with a different hash by definition -
+ * left the batch processor nothing in common, and every reorg ended in "Unable to process fork".
+ *
+ * Slots can be skipped, so the chain is followed through `parentSlot` rather than read as a range,
+ * and it stops at the first link that does not hold: a node switching branches can still answer
+ * some slots from the old one.
+ */
+export async function getForkPreviousBlocks(
+    rpc: RpcApi,
+    commitment: Commitment,
+    parentSlot: number,
+    parentHash: string,
+): Promise<BlockRef[]> {
+    // Each block's parent link vouches for the block below it, so the walk always ends with that
+    // link - even where the node has no header for it, or answers from the old branch.
+    let expected: BlockRef = {number: parentSlot, hash: parentHash}
+    let chain: BlockRef[] = []
+
+    let slots: number[] = []
+    try {
+        slots = await rpc.getBlocks(commitment, Math.max(0, parentSlot - FORK_PREVIOUS_SLOT_SPAN + 1), parentSlot)
+    } catch (err: any) {
+        log.warn({err, parentSlot}, 'could not list the slots below a fork; reporting its parent only')
+    }
+
+    // The newest listed slots, top-down, in one request for their headers.
+    let candidates = slots
+        .filter((s) => s <= parentSlot)
+        .sort((a, b) => b - a)
+        .slice(0, FORK_PREVIOUS_BLOCKS)
+    let headers = candidates.length
+        ? await rpc.getBlockBatch(candidates, {
+              commitment,
+              transactionDetails: 'none',
+              rewards: false,
+              maxSupportedTransactionVersion: 0,
+          })
+        : []
+
+    for (let i = 0; i < candidates.length; i++) {
+        let slot = candidates[i]
+        if (slot > expected.number) continue // a sibling slot, not on this chain
+        if (slot < expected.number) break // the expected parent slot is missing
+        let header = headers[i]
+        if (header == null || header === 'skipped' || header.blockhash !== expected.hash) break
+        chain.push(expected)
+        // Genesis names its own slot as its parent: there is no block below it to vouch for.
+        if (header.parentSlot >= slot) return chain.reverse()
+        expected = {number: header.parentSlot, hash: header.previousBlockhash}
+    }
+    chain.push(expected)
+    return chain.reverse()
 }
 
 export function removeOverlaps(batch: IngestBatch): void {

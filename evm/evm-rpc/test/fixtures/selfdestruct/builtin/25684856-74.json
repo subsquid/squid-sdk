@@ -1,0 +1,79 @@
+{
+  "network": "mainnet",
+  "transactionHash": "0x1cb214807fb5fb5125d12bc88a6621e677c251df3d25b280c0c629719b604bc5",
+  "client": "reth/v2.11.0-b9abbcc/x86_64-unknown-linux-gnu",
+  "note": "SELFDESTRUCT steps of the recorded opcode log (stack top only) and the prestate of the accounts in the call tree",
+  "steps": [
+    {
+      "op": "SELFDESTRUCT",
+      "stack": [
+        "0x737523b47e6b92b9494de0e6e4bc5c10c730cfb3"
+      ]
+    }
+  ],
+  "prestate": {
+    "0x0000000000000000000000000000000000000001": {
+      "balance": "0x31887c7f5dcb65428"
+    },
+    "0x03f7f3b8da875881206655d8099b9dacf721f1ef": {
+      "balance": "0x0"
+    },
+    "0x131c220c18874e32abbe945eb8aa998b84f63625": {
+      "balance": "0x0"
+    },
+    "0x41675c099f32341bf84bfc5382af534df5c7461a": {
+      "balance": "0x3e871b540c000"
+    },
+    "0x41713516b6a8f7a9e01806a4510f7cffb79677fe": {
+      "balance": "0x0"
+    },
+    "0x4f1c53f096533c04d8157efb6bca3eb22ddc6360": {
+      "balance": "0x0"
+    },
+    "0x6e500d3c8e294870cb1379c32aa0cea613a8f721": {
+      "balance": "0x367c73ae8d2fa"
+    },
+    "0x720ef97bf835699fcf07591952cd2b132d63a6c0": {
+      "balance": "0x0"
+    },
+    "0x737523b47e6b92b9494de0e6e4bc5c10c730cfb3": {
+      "balance": "0x0"
+    },
+    "0x747beaee139fba4a89fa71bebb5f21231530292b": {
+      "balance": "0x0"
+    },
+    "0x765aee75dfdd8f70132538c9f9b261a4ab592d04": {
+      "balance": "0x0"
+    },
+    "0x7eb9a40c39c0b8b2ef1ecb11a0238198915aa037": {
+      "balance": "0xa9f639fe0e000"
+    },
+    "0x823ca839da344da59d517b84ce3bab9ffc9f54ee": {
+      "balance": "0x0"
+    },
+    "0x846bbe1925047023651de7ec289f329c24ded3a8": {
+      "balance": "0x0"
+    },
+    "0x891dee0483ebaa922e274ddd2ebbaa2d33468a38": {
+      "balance": "0x0"
+    },
+    "0x966ec191ed9e026cb6f7e22bb2a284bad6a2838d": {
+      "balance": "0x0"
+    },
+    "0xadf5a8db090627b153ef0c5726ccfdc1c7aed7bd": {
+      "balance": "0x0"
+    },
+    "0xaf0dffac1ce85c3fce4c2bf50073251f615eefc4": {
+      "balance": "0x0"
+    },
+    "0xc3dc853dd716bd5754f421ef94fdcbac3902ab32": {
+      "balance": "0x0"
+    },
+    "0xe97980f1d43c4cd4f1eef0277a2dea7ddbc2cd13": {
+      "balance": "0x0"
+    },
+    "0xfaf2c3db614e9d38fe05edc634848be7ff0542b9": {
+      "balance": "0x0"
+    }
+  }
+}

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-json
 
-This log was last generated on Tue, 23 Jun 2026 17:42:56 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 1.2.5
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- Pass JSON.rawJSON values through toJSON unchanged
 
 ## 1.2.4
 Tue, 23 Jun 2026 17:42:56 GMT

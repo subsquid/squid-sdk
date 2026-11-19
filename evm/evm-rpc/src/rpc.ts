@@ -1,5 +1,5 @@
 import { Logger, createLogger } from '@subsquid/logger'
-import { CallOptions, RetryError, RpcError, RpcProtocolError } from '@subsquid/rpc-client'
+import { CallOptions, RetryError, RpcError, RpcProtocolError, RpcResponseTooLargeError } from '@subsquid/rpc-client'
 import {
     array,
     BYTES,
@@ -8,9 +8,10 @@ import {
     NAT,
     nullable,
     object,
+    option,
     Validator
 } from '@subsquid/util-internal-validation'
-import { addErrorContext, assertNotNull, groupBy, last } from '@subsquid/util-internal'
+import { addErrorContext, groupBy, last } from '@subsquid/util-internal'
 import assert from 'assert'
 import {
     GetBlock,
@@ -21,32 +22,172 @@ import {
     DebugStateDiffResult,
     DebugFrameResult,
     TraceReplayTraces,
+    TraceTransactionReplay,
     getTraceTransactionReplayValidator,
+    BlockAccessList,
     Transaction,
     Log
 } from './rpc-data'
 import { Block, DataRequest, Qty, Bytes, Bytes32 } from './types'
 import { qty2Int, toQty, getTxHash } from './util'
+import { BlockCheckOptions, checkBlockHeader, checkBlockLogs, checkBlockReceipts } from './block-checks'
 import { ChainUtils } from './chain-utils'
 import { EvmRpcClient } from './rpc-client'
 import {
     checkCallFrameTree,
+    checkConsensusAnchors,
     checkDebugFrameStructure,
-    isBloomSuperset,
-    logsBloom
+    CONSENSUS_ANCHOR_RULES,
+    type ConsensusAnchorInput,
+    type ConsensusAnchorRule,
+    type ConsensusAnchorViolation,
+    DefectiveSelfdestruct,
+    findDefectiveSelfdestructs,
+    repairDefectiveSelfdestruct,
+    builtinSelfdestructEvents,
+    type CallFrame,
+    type OpcodeStep,
+    type Prestate,
+    SelfdestructEvent,
+    selfdestructEvents,
+    systemBalanceDeltaFromPrestate,
+    systemBalanceDeltaFromReplay,
 } from './verification'
+import { SELFDESTRUCT_TRACER } from './selfdestruct-tracer'
 import { RpcErrorInfo } from '@subsquid/rpc-client/lib/interfaces'
 
 
 export type Commitment = 'finalized' | 'latest'
 export const CALL_FRAME_VALIDATION_MODES = ['off', 'observe', 'reject'] as const
 const CALL_FRAME_VIOLATION_SAMPLE_LIMIT = 3
+const SELFDESTRUCT_TRACE_RETRY_ATTEMPTS = 2
+/**
+ * Largest opcode log the built-in selfdestruct recovery reads: about 450k steps at
+ * the ~300 bytes a step with its stack takes. Parsed, a log takes ~1.6x its size in
+ * a V8 heap and ~9x in the Rust verifier, so the same cap keeps a big transaction
+ * well inside both. The `limit` option of the opcode logger cannot bound it: some
+ * clients ignore it and others count something other than steps.
+ */
+export const SELFDESTRUCT_OPCODE_LOG_MAX_BYTES = 128 * 1024 * 1024
 
 /**
  * Controls semantic call-frame consistency checks. Structural requirements needed
  * by normalization are enforced independently in every mode.
  */
 export type CallFrameValidationMode = (typeof CALL_FRAME_VALIDATION_MODES)[number]
+
+
+export const CONSENSUS_ANCHOR_VALIDATION_MODES = ['off', 'observe', 'reject'] as const
+
+/**
+ * Controls the checks of debug call frames and state diffs against receipt status,
+ * receipt gasUsed and transaction fees: `off` skips them, `observe` logs one bounded
+ * violation summary per block and accepts it, `reject` marks the block invalid so it
+ * is fetched again.
+ */
+export type ConsensusAnchorValidationMode = (typeof CONSENSUS_ANCHOR_VALIDATION_MODES)[number]
+
+export { CONSENSUS_ANCHOR_RULES, type ConsensusAnchorRule }
+
+// For checks of blocks that did not come through `Rpc`, such as a dumper's streamed blocks
+export {
+    checkConsensusAnchors,
+    type ConsensusAnchorInput,
+    type ConsensusAnchorViolation,
+    systemBalanceDeltaFromPrestate,
+    systemBalanceDeltaFromReplay,
+}
+
+/**
+ * Why the receipts of a block do not match its body transaction for transaction, or undefined when they do
+ */
+function findReceiptMismatch(block: Block, receipts: Receipt[], utils: ChainUtils): string | undefined {
+    let bodyHashes = new Set(block.block.transactions.map(tx => getTxHash(tx).toLowerCase()))
+    let foreign = receipts.find(receipt => !bodyHashes.has(receipt.transactionHash.toLowerCase()))
+    if (foreign != null) {
+        return utils.isHyperliquidSystemReceipt(foreign)
+            ? `system transaction mismatch: eth_getBlockReceipts has system transaction ${foreign.transactionHash}, the block body does not`
+            : `eth_getBlockReceipts has a receipt of transaction ${foreign.transactionHash}, which is not in the block body`
+    }
+    let receiptHashes = new Set(receipts.map(receipt => receipt.transactionHash.toLowerCase()))
+    for (let tx of block.block.transactions) {
+        if (receiptHashes.has(getTxHash(tx).toLowerCase())) continue
+        return typeof tx !== 'string' && utils.isHyperliquidSystemTransaction(tx)
+            ? `system transaction mismatch: the block body has system transaction ${tx.hash}, eth_getBlockReceipts does not`
+            : `got invalid number of receipts from eth_getBlockReceipts`
+    }
+    if (utils.hasHyperliquidSystemTransactions) {
+        // Log indices count the logs of every transaction, system ones included. Receipts whose logs do not
+        // run 0, 1, 2, ... lost some transaction's logs: an answer that dropped a system transaction from
+        // both the body and the receipts, without renumbering the rest.
+        let indices = receipts.flatMap(receipt => receipt.logs.map(log => qty2Int(log.logIndex))).sort((a, b) => a - b)
+        let gap = indices.findIndex((index, i) => index !== i)
+        if (gap >= 0) {
+            return `system transaction mismatch: the receipt logs skip log index ${gap}, an answer left out a transaction's logs`
+        }
+    }
+    return undefined
+}
+
+/**
+ * Why the logs of a block do not fit its body, or undefined when they do
+ */
+function findLogMismatch(block: Block, logs: Log[], utils: ChainUtils): string | undefined {
+    let bodyHashes = new Set(block.block.transactions.map(tx => getTxHash(tx).toLowerCase()))
+    let foreign = logs.find(log => !bodyHashes.has(log.transactionHash.toLowerCase()))
+    if (foreign != null) {
+        return utils.hasHyperliquidSystemTransactions
+            ? `system transaction mismatch: eth_getLogs has a log of transaction ${foreign.transactionHash}, the block body does not`
+            : `eth_getLogs has a log of transaction ${foreign.transactionHash}, which is not in the block body`
+    }
+    if (utils.hasHyperliquidSystemTransactions) {
+        let indices = logs.map(log => qty2Int(log.logIndex)).sort((a, b) => a - b)
+        let gap = indices.findIndex((index, i) => index !== i)
+        if (gap >= 0) {
+            return `system transaction mismatch: eth_getLogs skips log index ${gap}, an answer left out a transaction's logs`
+        }
+    }
+    return undefined
+}
+
+function systemTxKey(from: string, nonce: Qty | number): string {
+    return `${from.toLowerCase()}:${BigInt(nonce)}`
+}
+
+const SYSTEM_TX_ORACLE_RETRY_ATTEMPTS = 1
+const SYSTEM_TX_ORACLE_TIMEOUT_MS = 10_000
+// queueing, connecting and every attempt together
+const SYSTEM_TX_ORACLE_DEADLINE_MS = 25_000
+
+// A warning about the system transaction oracle giving no answer, at most this often
+const SYSTEM_TX_ORACLE_WARNING_INTERVAL_MS = 10 * 60 * 1000
+
+// How many blocks' worth of HyperEVM system transaction evidence Rpc keeps
+const SYSTEM_TRANSACTION_EVIDENCE_BLOCKS = 10_000
+
+export const DEFAULT_CONSENSUS_ANCHOR_RULES: readonly ConsensusAnchorRule[] = ['status', 'gas']
+
+/** Parses a comma-separated rule list such as `status,gas,system-gas,system-fee`. */
+export function parseConsensusAnchorRules(list: string): ConsensusAnchorRule[] {
+    let rules = list.split(',').map(r => r.trim()).filter(r => r.length > 0)
+    for (let rule of rules) {
+        if (!(CONSENSUS_ANCHOR_RULES as readonly string[]).includes(rule)) {
+            throw new Error(
+                `unknown consensus anchor rule "${rule}", expected one of: ${CONSENSUS_ANCHOR_RULES.join(', ')}`
+            )
+        }
+    }
+    if (rules.length === 0) throw new Error('consensus anchor rule list is empty')
+    return rules as ConsensusAnchorRule[]
+}
+
+const CONSENSUS_ANCHOR_VIOLATION_SAMPLE_LIMIT = 3
+
+
+interface ConsensusAnchorViolationSample extends ConsensusAnchorViolation {
+    transactionIndex: number
+    transactionHash: Bytes32
+}
 
 
 interface CallFrameViolationSample {
@@ -56,41 +197,58 @@ interface CallFrameViolationSample {
 }
 
 
-export interface RpcOptions {
+export interface RpcOptions extends BlockCheckOptions {
     client: EvmRpcClient,
     finalityConfirmation?: number
-    verifyBlockHash?: boolean
-    verifyExtDataHash?: boolean
-    verifyTxSender?: boolean
-    verifyTxRoot?: boolean
-    verifyReceiptsRoot?: boolean
-    verifyWithdrawalsRoot?: boolean
-    verifyLogsBloom?: boolean
+    /**
+     * Check fetched block access lists against the `blockAccessListHash`
+     * header field. Proves the list belongs to the block only together with
+     * `verifyBlockHash`.
+     */
+    verifyBlockAccessListHash?: boolean
     /**
      * `off` skips semantic checks, `observe` logs one bounded violation summary
      * per block while accepting it, and `reject` marks violations invalid.
      * `reject` requires transaction root and sender verification.
      */
     callFrameValidation?: CallFrameValidationMode
-    checkLogIndex?: boolean
-    checkCumulativeGasUsed?: boolean
+    /**
+     * Checks debug call frames and state diffs against receipts, see
+     * {@link ConsensusAnchorValidationMode}. Needs receipts and debug call frames
+     * in the data request; the `system-fee` rule also needs state diffs.
+     */
+    consensusAnchorValidation?: ConsensusAnchorValidationMode
+    /** Rules to apply, {@link DEFAULT_CONSENSUS_ANCHOR_RULES} by default. */
+    consensusAnchorRules?: readonly ConsensusAnchorRule[]
     useGasUsedForReceiptsRoot?: boolean
+    /**
+     * HyperEVM only: an endpoint that serves `eth_getSystemTxsByBlockHash` (the official RPC does).
+     * Each block's system transactions are compared with its answer by sender and nonce (the official
+     * node signs them differently, so hashes differ), and a block that disagrees is invalid and fetched
+     * again. This catches a system transaction left out of the body and the receipts alike, which no
+     * check of a single answer can. When the oracle fails or does not know a block, the block is taken
+     * without this check and a warning is logged, so the dump never waits on the oracle.
+     */
+    hyperliquidSystemTxOracle?: EvmRpcClient
 }
 
 
 export class Rpc {
     private client: EvmRpcClient
     private finalityConfirmation?: number
-    private verifyBlockHash?: boolean
-    private verifyExtDataHash?: boolean
-    private verifyTxSender?: boolean
-    private verifyTxRoot?: boolean
-    private verifyReceiptsRoot?: boolean
-    private verifyWithdrawalsRoot?: boolean
-    private verifyLogsBloom?: boolean
+    private checks: BlockCheckOptions
+    private verifyBlockAccessListHash?: boolean
     private callFrameValidation: CallFrameValidationMode
-    private checkLogIndex?: boolean
-    private checkCumulativeGasUsed?: boolean
+    private consensusAnchorValidation: ConsensusAnchorValidationMode
+    private consensusAnchorRules: ReadonlySet<ConsensusAnchorRule>
+    private consensusAnchorInputsMissingLogged = false
+    // HyperEVM: the system transactions any answer has shown for a block hash (see checkHyperliquidSystemTransactions)
+    // by block hash: transaction hash -> "sender:nonce" where the answer gave it (a body), undefined otherwise (a receipt)
+    private systemTransactionEvidence = new Map<string, Map<string, string | undefined>>()
+    private systemTxOracle?: EvmRpcClient
+    // The oracle's system transactions of a block hash, as "sender:nonce"; a block's answer never changes
+    private systemTxOracleAnswers = new Map<string, Set<string>>()
+    private systemTxOracleUnavailable = {count: 0, sinceWarning: 0, lastWarning: 0}
     private useGasUsedForReceiptsRoot?: boolean
     private log: Logger
     private receiptsMethod?: GetReceiptsMethod
@@ -98,14 +256,20 @@ export class Rpc {
 
     constructor(options: RpcOptions) {
         this.client = options.client
+        this.systemTxOracle = options.hyperliquidSystemTxOracle
         this.finalityConfirmation = options.finalityConfirmation
-        this.verifyBlockHash = options.verifyBlockHash
-        this.verifyExtDataHash = options.verifyExtDataHash
-        this.verifyTxSender = options.verifyTxSender
-        this.verifyTxRoot = options.verifyTxRoot
-        this.verifyReceiptsRoot = options.verifyReceiptsRoot
-        this.verifyWithdrawalsRoot = options.verifyWithdrawalsRoot
-        this.verifyLogsBloom = options.verifyLogsBloom
+        this.checks = {
+            verifyBlockHash: options.verifyBlockHash,
+            verifyExtDataHash: options.verifyExtDataHash,
+            verifyTxSender: options.verifyTxSender,
+            verifyTxRoot: options.verifyTxRoot,
+            verifyReceiptsRoot: options.verifyReceiptsRoot,
+            verifyWithdrawalsRoot: options.verifyWithdrawalsRoot,
+            verifyLogsBloom: options.verifyLogsBloom,
+            checkLogIndex: options.checkLogIndex,
+            checkCumulativeGasUsed: options.checkCumulativeGasUsed
+        }
+        this.verifyBlockAccessListHash = options.verifyBlockAccessListHash
         this.callFrameValidation = options.callFrameValidation ?? 'off'
         if (!CALL_FRAME_VALIDATION_MODES.includes(this.callFrameValidation)) {
             throw new Error(`unsupported callFrameValidation mode: ${this.callFrameValidation}`)
@@ -115,8 +279,38 @@ export class Rpc {
                 "callFrameValidation 'reject' requires verifyTxRoot and verifyTxSender"
             )
         }
-        this.checkLogIndex = options.checkLogIndex
-        this.checkCumulativeGasUsed = options.checkCumulativeGasUsed
+        this.consensusAnchorValidation = options.consensusAnchorValidation ?? 'off'
+        if (!CONSENSUS_ANCHOR_VALIDATION_MODES.includes(this.consensusAnchorValidation)) {
+            throw new Error(`unsupported consensusAnchorValidation mode: ${this.consensusAnchorValidation}`)
+        }
+        let rules = options.consensusAnchorRules ?? DEFAULT_CONSENSUS_ANCHOR_RULES
+        if (rules.length === 0) {
+            // An empty rule set would let enabled validation accept every block.
+            throw new Error('consensusAnchorRules is empty')
+        }
+        for (let rule of rules) {
+            if (!CONSENSUS_ANCHOR_RULES.includes(rule)) {
+                throw new Error(`unknown consensus anchor rule: ${rule}`)
+            }
+        }
+        this.consensusAnchorRules = new Set(rules)
+        // Receipts and transactions are only anchors once checked against what the block
+        // commits to: the receipts root (gasUsed through cumulativeGasUsed, unless gasUsed
+        // is what the root encodes), the transactions root and the senders.
+        if (
+            this.consensusAnchorValidation === 'reject' &&
+            !(
+                options.verifyReceiptsRoot &&
+                (options.checkCumulativeGasUsed || options.useGasUsedForReceiptsRoot) &&
+                options.verifyTxRoot &&
+                options.verifyTxSender
+            )
+        ) {
+            throw new Error(
+                "consensusAnchorValidation 'reject' requires verifyReceiptsRoot, checkCumulativeGasUsed " +
+                    '(or useGasUsedForReceiptsRoot), verifyTxRoot and verifyTxSender'
+            )
+        }
         this.useGasUsedForReceiptsRoot = options.useGasUsedForReceiptsRoot
         this.log = createLogger('sqd:evm-rpc')
     }
@@ -175,8 +369,18 @@ export class Rpc {
         let needsTransactionsForCallFrameValidation =
             !!req?.traces &&
             !req.useTraceApi &&
-            this.callFrameValidation !== 'off'
-        let withTransactions = transactionsRequested || needsTransactionsForCallFrameValidation
+            (this.callFrameValidation !== 'off' || this.consensusAnchorValidation !== 'off')
+        // Whether an empty call frame is legitimate depends on the transaction type.
+        let needsTransactionsForEmptyCallFrames =
+            !!req?.traces && !req.useTraceApi && (await this.getChainUtils()).mayAnswerEmptyCallFrames
+        let utils = await this.getChainUtils()
+        // The oracle comparison needs each system transaction's sender and nonce
+        let askSystemTxOracle = this.systemTxOracle != null && utils.hasHyperliquidSystemTransactions
+        let withTransactions =
+            transactionsRequested ||
+            needsTransactionsForCallFrameValidation ||
+            needsTransactionsForEmptyCallFrames ||
+            askSystemTxOracle
         let blocks = await this.getBlocks(numbers, withTransactions)
 
         let chain: Block[] = []
@@ -188,7 +392,27 @@ export class Rpc {
             chain.push(block)
         }
 
+        // asked while the rest of the block data is fetched, so it adds no latency of its own
+        let oracleAnswers = askSystemTxOracle ? this.askSystemTxOracle(chain) : undefined
+
         await this.addRequestedData(chain, req)
+
+        if (utils.hasHyperliquidSystemTransactions) {
+            let answers = oracleAnswers != null ? await oracleAnswers : undefined
+            for (let block of chain) {
+                let oracle = answers?.get(block.hash.toLowerCase())
+                this.checkHyperliquidSystemTransactions(block, utils, oracle)
+                if (answers != null) this.checkAgainstSystemTxOracle(block, oracle, utils)
+            }
+        }
+
+        // Receipts, call frames and state diffs arrive from separate requests, so the
+        // checks that compare them run once all of them are attached.
+        if (req != null && this.consensusAnchorValidation !== 'off') {
+            for (let block of chain) {
+                this.validateConsensusAnchors(block, req)
+            }
+        }
 
         if (!transactionsRequested && withTransactions) {
             for (let block of chain) {
@@ -197,6 +421,15 @@ export class Rpc {
         }
 
         return chain
+    }
+
+    /**
+     * Block headers by number, one entry per requested number (`null` where the node has no block).
+     * Unlike {@link getBlockBatch}, the result is not truncated at a parent-hash mismatch, so a caller
+     * can link the blocks from the top instead (see `EvmRpcDataSource.ensureContinuity`).
+     */
+    getBlockHeaders(numbers: number[]): Promise<(Block | null)[]> {
+        return this.getBlocks(numbers, false)
     }
 
     private async getBlocks(numbers: number[], withTransactions: boolean): Promise<(Block | null)[]> {
@@ -236,43 +469,7 @@ export class Rpc {
     }
 
     private async mapBlock(block: GetBlock, withTransactions: boolean, utils: ChainUtils): Promise<Block> {
-
-        if (this.verifyBlockHash) {
-            let blockHash = utils.calculateBlockHash(block)
-            assert.equal(block.hash, blockHash, 'failed to verify block hash')
-        }
-
-        if (this.verifyExtDataHash && block.extDataHash != null) {
-            let extDataHash = utils.calculateExtDataHash(block)
-            assert.equal(block.extDataHash, extDataHash, 'failed to verify extData hash')
-        }
-
-        if (this.verifyTxRoot && withTransactions) {
-            let txRoot = await utils.calculateTransactionsRoot(block)
-            assert.equal(block.transactionsRoot, txRoot, 'failed to verify transactions root')
-        }
-
-        if (this.verifyTxSender && withTransactions) {
-            for (let tx of block.transactions) {
-                let transaction = tx as Transaction
-                try {
-                    let sender = utils.recoverTxSender(transaction)
-                    if (sender == null) continue
-                    assert.equal(transaction.from, sender, 'failed to verify transaction sender')
-                } catch (err: any) {
-                    throw addErrorContext(err, {
-                        transactionIndex: qty2Int(transaction.transactionIndex),
-                        transactionHash: transaction.hash
-                    })
-                }
-            }
-        }
-
-        if (this.verifyWithdrawalsRoot && block.withdrawalsRoot != null) {
-            let withdrawals = assertNotNull(block.withdrawals)
-            let withdrawalsRoot = await utils.calculateWithdrawalsRoot(withdrawals)
-            assert.equal(block.withdrawalsRoot, withdrawalsRoot, 'failed to verify withdrawals root')
-        }
+        await checkBlockHeader(block, withTransactions, utils, this.checks)
 
         return {
             number: qty2Int(block.number),
@@ -296,7 +493,53 @@ export class Rpc {
             subtasks.push(this.addTraces(blocks, req))
         }
 
+        if (req?.blockAccessLists) {
+            subtasks.push(this.addBlockAccessLists(blocks))
+        }
+
         await Promise.all(subtasks)
+    }
+
+    private async addBlockAccessLists(blocks: Block[]) {
+        // Only blocks from Amsterdam on commit to an access list. Asking reth
+        // for an earlier block makes it re-execute the block, which fails
+        // outside its state history, so pre-fork blocks are never requested.
+        blocks = blocks.filter(block => block.block.blockAccessListHash != null)
+        if (blocks.length == 0) return
+
+        let call = blocks.map(block => ({
+            method: 'eth_getBlockAccessListByBlockHash',
+            params: [block.hash]
+        }))
+
+        // A null (pruned, or an upstream that does not have the block yet)
+        // marks the block invalid rather than retrying the call: the shared
+        // client may retry without bound, while an invalid block is retried
+        // a bounded number of times and then fails with this reason.
+        let validateAccessList = getResultValidator(BlockAccessList)
+        let results = await this.reduceBatchOnRetry<BlockAccessList | null>(call, {
+            validateResult: result => result === null ? null : validateAccessList(result)
+        })
+
+        let utils = await this.getChainUtils()
+        for (let i = 0; i < blocks.length; i++) {
+            let block = blocks[i]
+            let accessList = results[i]
+            if (accessList == null) {
+                block._isInvalid = true
+                block._errorMessage = 'block access list is not available (pruned or not yet served by the provider)'
+                continue
+            }
+            if (this.verifyBlockAccessListHash) {
+                let hash = utils.calculateBlockAccessListHash(accessList)
+                if (hash !== block.block.blockAccessListHash) {
+                    block._isInvalid = true
+                    block._errorMessage = 'block access list does not match blockAccessListHash'
+                    continue
+                }
+            }
+            block.blockAccessList = accessList
+        }
     }
 
     private async addLogs(blocks: Block[]) {
@@ -327,18 +570,17 @@ export class Rpc {
                 this.fixLogIndexes(logs)
             }
 
-            try {
-                if (this.checkLogIndex) {
-                    let logIndex = 0
-                    for (let log of logs) {
-                        assert.equal(qty2Int(log.logIndex), logIndex++, 'unexpected log index in eth_getLogs response')
-                    }
-                }
+            // As with receipts: a log of a transaction the body lacks fails an assertion in the logs bloom
+            // check, so the answers disagree and the block is fetched again, unchecked
+            let mismatch = findLogMismatch(block, logs, utils)
+            if (mismatch != null) {
+                block._isInvalid = true
+                block._errorMessage = mismatch
+                continue
+            }
 
-                if (this.verifyLogsBloom) {
-                    let logsBloom = utils.calculateLogsBloom(block.block, logs)
-                    assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
-                }
+            try {
+                checkBlockLogs(block.block, logs, utils, this.checks, 'unexpected log index in eth_getLogs response')
             } catch (err: any) {
                 throw addErrorContext(err, {
                     blockNumber: block.number,
@@ -386,8 +628,8 @@ export class Rpc {
             params: [block.block.number]
         }))
 
-        let results = await this.reduceBatchOnRetry<(Receipt | null)[] | null | typeof RESPONSE_TOO_BIG>(call, {
-            validateResult: getResultValidator(nullable(array(nullable(Receipt)))),
+        let results = await this.reduceBatchOnRetry<Receipt[] | null | typeof RESPONSE_TOO_BIG>(call, {
+            validateResult: getResultValidator(nullable(array(Receipt))),
             validateError: info => {
                 if (info.message.includes('invalid block height')) throw new RetryError() // Hyperliquid
                 if (isResponseTooBig(info)) return RESPONSE_TOO_BIG
@@ -398,44 +640,19 @@ export class Rpc {
         let utils = await this.getChainUtils()
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
-            let rawReceipts = results[i]
-            if (rawReceipts == RESPONSE_TOO_BIG) {
+            let receipts = results[i]
+            if (receipts == RESPONSE_TOO_BIG) {
                 this.log.warn({
                     blockNumber: block.number,
                     blockHash: block.hash,
                     transactionCount: block.block.transactions.length
                 }, 'block receipts response too big, fetching receipts per transaction')
-                rawReceipts = await this.getReceiptsByTransaction(block)
+                receipts = await this.getReceiptsByTransaction(block)
             }
-            if (rawReceipts == null) {
+            if (receipts == null) {
                 block._isInvalid = true
                 block._errorMessage = 'eth_getBlockReceipts returned null'
                 continue
-            }
-
-            // Some RPCs occasionally return null entries inside the receipts
-            // array (e.g. dRPC for Cronos). Drop them here — length-mismatch follow-ups
-            // (phantom-tx handling, per-tx recovery, final invalidity check)
-            // will decide how to deal with the missing ones.
-            let nullCount = 0
-            let receipts: Receipt[] = []
-            for (let r of rawReceipts) {
-                if (r == null) {
-                    nullCount++
-                } else {
-                    receipts.push(r)
-                }
-            }
-            if (nullCount > 0) {
-                this.log.warn(
-                    {
-                        rpcEndpoint: this.client.url,
-                        blockNumber: block.number,
-                        blockHash: block.hash,
-                        nullCount
-                    },
-                    'eth_getBlockReceipts returned null entries in the receipts array - stripping them'
-                )
             }
 
             if (utils.isHederaMainnet) {
@@ -453,23 +670,20 @@ export class Rpc {
                 }
             }
 
-            // Handle Cronos (Ethermint) phantom transactions BEFORE any verification.
-            // Phantom txs are stripped from both block.block.transactions and receipts,
-            // so that subsequent checks (bloom, receipts root, count) see a consistent view.
-            // Only runs on blocks affected by the Ethermint bug window — past that cutoff
-            // the chain is fixed and mismatches would indicate a real problem.
-            let phantomTxHashes: Bytes32[] = []
-            if (utils.isCronosEthermintBugBlock(block.block.number) && !block._isInvalid) {
-                phantomTxHashes = await this.handleCronosPhantomTransactions(block, receipts)
-                if (block.block.transactions.length !== receipts.length) {
-                    // Any tx still missing a receipt after phantom handling genuinely
-                    // executed (nonce advanced) but was omitted by eth_getBlockReceipts
-                    // — fall back to eth_getTransactionReceipt per tx.
-                    await this.recoverMissingCronosReceipts(block, receipts)
-                }
-            }
-
             block.receipts = receipts
+            if (block._isInvalid) continue
+
+            // The body and the receipts must name the same transactions before the receipts are checked:
+            // a receipt of a transaction the body lacks fails an assertion in the logs bloom check, and a
+            // transaction without its receipt shifts the log indices, and either stops the process. The two
+            // answers disagree, so the block is fetched again instead, unchecked. On HyperEVM this is a
+            // system transaction one of the answers left out.
+            let mismatch = findReceiptMismatch(block, receipts, utils)
+            if (mismatch != null) {
+                block._isInvalid = true
+                block._errorMessage = mismatch
+                continue
+            }
 
             let logs = []
             for (let receipt of receipts) {
@@ -481,48 +695,14 @@ export class Rpc {
             }
 
             try {
-                if (this.checkLogIndex) {
-                    let logIndex = 0
-                    for (let log of logs) {
-                        assert.equal(qty2Int(log.logIndex), logIndex++, 'unexpected log index in receipt logs')
-                    }
-                }
-
-                if (this.checkCumulativeGasUsed) {
-                    let prevCumulativeGasUsed = 0n
-                    for (let receipt of receipts) {
-                        let cumulativeGasUsed = BigInt(receipt.cumulativeGasUsed)
-                        // This assertion used to fire bare ("0n == 77629n") with no
-                        // hint of the failing data — name the receipt so it is
-                        // identifiable from a single log line.
-                        assert.equal(
-                            cumulativeGasUsed,
-                            prevCumulativeGasUsed + BigInt(receipt.gasUsed),
-                            `cumulativeGasUsed mismatch at receipt of tx ${receipt.transactionHash}`
-                        )
-                        prevCumulativeGasUsed = cumulativeGasUsed
-                    }
-                }
-
-                if (this.verifyLogsBloom) {
-                    let computed = utils.calculateLogsBloom(block.block, logs)
-                    if (computed !== block.block.logsBloom) {
-                        if (utils.isCronosEthermintBugBlock(block.block.number)) {
-                            // Cronos blocks may have extra bits in the header bloom from
-                            // leaked pre-revert logs. Try to verify those extras via tracing.
-                            await this.verifyCronosLeakedLogsBloom(
-                                block, logs, computed, phantomTxHashes, receipts
-                            )
-                        } else {
-                            assert.equal(block.block.logsBloom, computed, 'failed to verify logs bloom')
-                        }
-                    }
-                }
-
-                if (this.verifyReceiptsRoot) {
-                    let root = await utils.calculateReceiptsRoot(block.block, receipts)
-                    assert.equal(block.block.receiptsRoot, root, 'failed to verify receipts root')
-                }
+                await checkBlockReceipts(
+                    block.block,
+                    receipts,
+                    logs,
+                    utils,
+                    this.checks,
+                    'unexpected log index in receipt logs'
+                )
             } catch (err: any) {
                 throw addErrorContext(err, {
                     blockNumber: block.number,
@@ -551,376 +731,161 @@ export class Rpc {
     }
 
     /**
-     * Handles "phantom transactions" in Cronos (Ethermint) blocks.
-     *
-     * Due to bugs in the Ethermint EVM module, some transactions included in
-     * CometBFT blocks had no real effect on the EVM state. Such a tx can appear
-     * in one of two forms as seen over JSON-RPC:
-     *   1. The tx has no receipt at all (e.g. block 0x198d, 0x20189).
-     *   2. The tx has a receipt with status=0x0 and no logs, but its pre-revert
-     *      logs leak into the block's logsBloom (e.g. block 0x10a77).
-     * In both cases the sender's nonce was NOT advanced by the tx, and the same
-     * tx hash may be re-included by CometBFT later — possibly in a subsequent
-     * block or even later within the same block — where it actually executes.
-     * (related Ethermint fix: https://github.com/evmos/ethermint/pull/809)
-     *
-     * Detection uses `eth_getTransactionCount(sender, blockNumber)` as ground truth.
-     * A tx is a candidate phantom if it has no receipt or a status=0x0 receipt.
-     * For each candidate:
-     *   - If `candidate.nonce >= nonceAfter` → the nonce was never consumed,
-     *     so the candidate is definitely phantom.
-     *   - Otherwise the nonce was consumed by some tx in this block. If another
-     *     tx from the same sender with the same nonce has a status=0x1 receipt,
-     *     that one consumed the nonce and the candidate is phantom (re-inclusion
-     *     within the same block). If all txs sharing that nonce are candidates,
-     *     we can't tell which one is phantom — refuse to strip.
-     *   - Otherwise the candidate itself consumed the nonce — it is a normal
-     *     execution failure (revert, out-of-gas, etc.), not a phantom.
-     *
-     * Phantoms are removed from both `block.block.transactions` and the `receipts`
-     * array; remaining tx and receipt indices (including log transactionIndex) are
-     * renumbered to be contiguous.
+     * HyperEVM's system transactions are not committed to by the header, and RPC endpoints drop them
+     * from some answers (the body, the receipts, or both), so no single answer proves one missing.
+     * What this catches: a body and receipts that disagree on them, and an answer without one that an
+     * earlier answer for the same block hash had. Such a block is marked invalid and fetched again;
+     * once an answer has shown a system transaction, only answers that have it are taken. A block
+     * whose every answer leaves one out is not caught here.
      */
-    private async handleCronosPhantomTransactions(block: Block, receipts: Receipt[]): Promise<Bytes32[]> {
-        let transactions = block.block.transactions as Transaction[]
-        let receiptByHash = new Map(receipts.map(r => [r.transactionHash, r]))
-
-        // Collect candidates: txs with no receipt or a status=0x0 receipt.
-        let candidates: Transaction[] = []
-        for (let tx of transactions) {
-            let receipt = receiptByHash.get(tx.hash)
-            if (receipt == null || receiptStatus(receipt) === 0) {
-                candidates.push(tx)
+    private checkHyperliquidSystemTransactions(block: Block, utils: ChainUtils, oracle?: Set<string>): void {
+        // An answer already found invalid (a receipt of a transaction the body lacks, say) still counts as
+        // evidence: what it showed is recorded, only the comparison is skipped.
+        let key = block.hash.toLowerCase()
+        // Every transaction the body names; a hash-only body names them without telling which are
+        // system transactions, so it gives no new evidence but is still held to the earlier evidence.
+        let bodyHashes = new Set(block.block.transactions.map(tx => getTxHash(tx).toLowerCase()))
+        let body = new Map<string, string>()
+        for (let tx of block.block.transactions) {
+            if (typeof tx !== 'string' && utils.isHyperliquidSystemTransaction(tx)) body.set(tx.hash.toLowerCase(), systemTxKey(tx.from, tx.nonce))
+        }
+        let receipts: Set<string> | undefined
+        let receiptHashes: Set<string> | undefined
+        if (block.receipts != null) {
+            receipts = new Set()
+            receiptHashes = new Set()
+            for (let receipt of block.receipts) {
+                // A receipt of another block is no evidence about this one
+                if (receipt.blockHash.toLowerCase() !== key) continue
+                receiptHashes.add(receipt.transactionHash.toLowerCase())
+                if (utils.isHyperliquidSystemReceipt(receipt)) receipts.add(receipt.transactionHash.toLowerCase())
             }
         }
 
-        if (candidates.length === 0) return []
-
-        // Fetch nonceAfter once per unique sender.
-        let uniqueSenders = Array.from(new Set(candidates.map(tx => tx.from)))
-        let nonceResults: Qty[] = await this.batchCall(uniqueSenders.map(sender => ({
-            method: 'eth_getTransactionCount',
-            params: [sender, block.block.number]
-        })))
-        let nonceAfterBySender = new Map<Bytes, number>()
-        for (let i = 0; i < uniqueSenders.length; i++) {
-            nonceAfterBySender.set(uniqueSenders[i], qty2Int(nonceResults[i]))
-        }
-
-        // Group all txs by (sender, nonce) so we can detect multi-tx-per-nonce cases.
-        let txsBySenderNonce = new Map<string, Transaction[]>()
-        for (let tx of transactions) {
-            let key = `${tx.from}:${qty2Int(tx.nonce)}`
-            let list = txsBySenderNonce.get(key)
-            if (list == null) {
-                list = []
-                txsBySenderNonce.set(key, list)
-            }
-            list.push(tx)
-        }
-
-        let phantomHashes = new Set<string>()
-        for (let candidate of candidates) {
-            let nonceAfter = nonceAfterBySender.get(candidate.from)!
-            let txNonce = qty2Int(candidate.nonce)
-
-            if (txNonce >= nonceAfter) {
-                // Nonce not consumed at this block — definitely phantom.
-                phantomHashes.add(candidate.hash)
-                continue
-            }
-
-            // Nonce was consumed — but by which tx?
-            let sameNonceTxs = txsBySenderNonce.get(`${candidate.from}:${txNonce}`)!
-            let successfulCompeter = sameNonceTxs.some(tx => {
-                if (tx.hash === candidate.hash) return false
-                let receipt = receiptByHash.get(tx.hash)
-                return receipt != null && receiptStatus(receipt) === 1
-            })
-
-            if (successfulCompeter) {
-                // Another tx from same sender with same nonce succeeded — candidate is phantom.
-                phantomHashes.add(candidate.hash)
-                continue
-            }
-
-            let sharedWithOtherCandidate = sameNonceTxs.some(tx => {
-                if (tx.hash === candidate.hash) return false
-                let receipt = receiptByHash.get(tx.hash)
-                return receipt == null || receiptStatus(receipt) === 0
-            })
-
-            if (sharedWithOtherCandidate) {
-                // Multiple candidates share this nonce and none has a status=0x1 receipt —
-                // can't unambiguously decide which one is phantom.
-                this.log.warn(
-                    {
-                        cronosFix: true,
-                        rpcEndpoint: this.client.url,
-                        blockNumber: block.number,
-                        transactionHash: candidate.hash,
-                        sender: candidate.from,
-                        nonce: candidate.nonce
-                    },
-                    'Cronos fix: multiple phantom candidates share the same nonce - refusing to strip (block will fail validation)'
-                )
-                return []
-            }
-
-            // Candidate.nonce < nonceAfter and no other tx shares this nonce —
-            // candidate consumed the nonce itself, so it's a real execution
-            // failure (revert / OOG / etc.), not a phantom.
-        }
-
-        if (phantomHashes.size === 0) return []
-
-        this.log.warn(
-            {
-                cronosFix: true,
-                rpcEndpoint: this.client.url,
-                blockNumber: block.number,
-                phantomTxHashes: Array.from(phantomHashes)
-            },
-            'Cronos fix: stripping phantom Ethermint transactions (no nonce consumption) from block'
-        )
-
-        // Strip phantom txs from block.block.transactions and renumber indices.
-        block.block.transactions = transactions.filter(tx => !phantomHashes.has(tx.hash))
-        for (let i = 0; i < block.block.transactions.length; i++) {
-            let tx = block.block.transactions[i] as Transaction
-            tx.transactionIndex = toQty(i)
-        }
-
-        // Strip phantom receipts from the receipts array (mutate in place so
-        // callers sharing the reference observe the change).
-        let keptReceipts = receipts.filter(r => !phantomHashes.has(r.transactionHash))
-        receipts.length = 0
-        receipts.push(...keptReceipts)
-
-        // Renumber receipt.transactionIndex and contained log.transactionIndex
-        // to match the new tx positions.
-        let txIndexByHash = new Map<string, number>()
-        for (let i = 0; i < block.block.transactions.length; i++) {
-            let tx = block.block.transactions[i] as Transaction
-            txIndexByHash.set(tx.hash, i)
-        }
-        for (let receipt of receipts) {
-            let newIdx = txIndexByHash.get(receipt.transactionHash)
-            if (newIdx == null) continue
-            receipt.transactionIndex = toQty(newIdx)
-            for (let log of receipt.logs) {
-                log.transactionIndex = toQty(newIdx)
+        let earlier = this.systemTransactionEvidence.get(key)
+        let seen = new Map<string, string | undefined>(earlier ?? [])
+        for (let hash of receipts ?? []) if (!seen.has(hash)) seen.set(hash, undefined)
+        for (let [hash, txKey] of body) seen.set(hash, txKey)
+        if (oracle != null) {
+            // The oracle is the authority where it answered: only the system transactions it confirms stay
+            // evidence, or a corrected answer could never pass. Receipt-only evidence (no sender:nonce) goes
+            // too; the body is held to the oracle and the receipts to the body, so nothing is lost.
+            for (let [hash, txKey] of seen) {
+                if (txKey == null || !oracle.has(txKey)) seen.delete(hash)
             }
         }
-
-        return Array.from(phantomHashes)
-    }
-
-    /**
-     * Recovers receipts for Cronos (Ethermint) transactions that were omitted
-     * by eth_getBlockReceipts but actually executed (nonce advanced).
-     *
-     * We've observed this on Cronos mainnet block 0x10a78 — eth_getBlockReceipts
-     * consistently omits the receipt for tx 0xc453d4... but the tx did execute
-     * (contract deployed, nonce advanced). On some Cronos RPC providers
-     * eth_getTransactionReceipt returns the receipt in this case (dRPC, sometimes);
-     * on others it also returns null (Chainstack).
-     *
-     * If eth_getTransactionReceipt returns a valid receipt pinned to this block,
-     * we splice it into the receipts array in tx-position order and renumber
-     * receipt / log transactionIndex values to match. Otherwise we throw — the
-     * data is simply unavailable from this RPC and the caller should retry later
-     * (e.g. via a service restart).
-     */
-    private async recoverMissingCronosReceipts(block: Block, receipts: Receipt[]): Promise<void> {
-        let transactions = block.block.transactions as Transaction[]
-        let receiptHashes = new Set(receipts.map(r => r.transactionHash))
-
-        let missingTxs: Transaction[] = []
-        for (let tx of transactions) {
-            if (!receiptHashes.has(tx.hash)) {
-                missingTxs.push(tx)
-            }
+        this.systemTransactionEvidence.delete(key)
+        this.systemTransactionEvidence.set(key, seen)
+        if (this.systemTransactionEvidence.size > SYSTEM_TRANSACTION_EVIDENCE_BLOCKS) {
+            let oldest = this.systemTransactionEvidence.keys().next().value
+            if (oldest != null) this.systemTransactionEvidence.delete(oldest)
         }
+        if (block._isInvalid) return
 
-        if (missingTxs.length === 0) return
-
-        this.log.warn(
-            {
-                cronosFix: true,
-                rpcEndpoint: this.client.url,
-                blockNumber: block.number,
-                missingTxHashes: missingTxs.map(tx => tx.hash)
-            },
-            'Cronos fix: receipts missing from eth_getBlockReceipts - falling back to eth_getTransactionReceipt for recovery'
-        )
-
-        let recoveredResults = await this.batchCall(
-            missingTxs.map(tx => ({
-                method: 'eth_getTransactionReceipt',
-                params: [tx.hash]
-            })),
-            { validateResult: getResultValidator(nullable(Receipt)) }
-        )
-
-        for (let i = 0; i < missingTxs.length; i++) {
-            let tx = missingTxs[i]
-            let recovered = recoveredResults[i]
-
-            if (recovered == null) {
-                throw addErrorContext(
-                    new Error('Cronos fix: failed to recover missing receipt via eth_getTransactionReceipt - RPC returned null'),
-                    {
-                        cronosFix: true,
-                        rpcEndpoint: this.client.url,
-                        blockNumber: block.number,
-                        transactionHash: tx.hash
-                    }
-                )
-            }
-
-            if (recovered.blockHash !== block.block.hash) {
-                throw addErrorContext(
-                    new Error(`Cronos fix: recovered receipt belongs to a different block (got blockHash=${recovered.blockHash})`),
-                    {
-                        cronosFix: true,
-                        rpcEndpoint: this.client.url,
-                        blockNumber: block.number,
-                        transactionHash: tx.hash
-                    }
-                )
-            }
-
-            receipts.push(recovered)
-        }
-
-        // Sort receipts by tx position in the block and renumber transactionIndex
-        // (on both receipts and their logs) to match.
-        let txIndexByHash = new Map<string, number>()
-        for (let i = 0; i < transactions.length; i++) {
-            txIndexByHash.set(transactions[i].hash, i)
-        }
-        receipts.sort((a, b) =>
-            txIndexByHash.get(a.transactionHash)! - txIndexByHash.get(b.transactionHash)!
-        )
-        for (let receipt of receipts) {
-            let idx = txIndexByHash.get(receipt.transactionHash)!
-            receipt.transactionIndex = toQty(idx)
-            for (let log of receipt.logs) {
-                log.transactionIndex = toQty(idx)
-            }
+        for (let hash of seen.keys()) {
+            let from = earlier?.has(hash) ? 'an earlier answer for this block' : body.has(hash) ? 'the block body' : 'eth_getBlockReceipts'
+            let missingFrom = !bodyHashes.has(hash) ? 'the block body' : receiptHashes != null && !receiptHashes.has(hash) ? 'the receipts' : undefined
+            if (missingFrom == null) continue
+            block._isInvalid = true
+            block._errorMessage = `system transaction mismatch: ${hash} is in ${from} but not in ${missingFrom}`
+            this.log.warn(
+                {rpcEndpoint: this.client.url, blockNumber: block.number, blockHash: block.hash, transactionHash: hash, from, missingFrom},
+                'HyperEVM system transaction missing from an answer; block fetched again'
+            )
+            return
         }
     }
 
     /**
-     * Verifies a Cronos (Ethermint) block whose header logsBloom does not match
-     * the bloom computed from the visible receipt logs.
-     *
-     * Due to an Ethermint EVM-module bug, phantom and reverted transactions on
-     * Cronos could "leak" their pre-revert logs into the block's logsBloom even
-     * though those logs never appear in any receipt. In that scenario the
-     * header bloom contains *more* bits than the bloom computed from receipts.
-     * To accept a block in that state we must prove:
-     *   1. The header bloom is a superset of the bloom we computed from the
-     *      receipts' logs — i.e. our receipts don't contain spurious logs the
-     *      node didn't account for.
-     *   2. Every extra bit in the header bloom can be attributed to logs that
-     *      *would have been emitted* by phantom or reverted transactions in
-     *      this block, as reconstructed by `debug_traceTransaction` with the
-     *      callTracer + withLog option (which captures logs from every call
-     *      frame, including reverted ones).
-     * If either condition fails the data is inconsistent with the block header
-     * in a way we can't explain via the known Ethermint bug — throw rather
-     * than silently accept it.
+     * The system transactions of each block as the oracle has them, by lowercase block hash; a block the
+     * oracle failed on, or does not know, has none.
      */
-    private async verifyCronosLeakedLogsBloom(
-        block: Block,
-        logs: Log[],
-        computed: string,
-        phantomTxHashes: Bytes32[],
-        receipts: Receipt[]
-    ): Promise<void> {
-        let errorContext = {
-            cronosFix: true,
-            rpcEndpoint: this.client.url,
-            blockNumber: block.number,
-            blockHash: block.hash,
-            headerBloom: block.block.logsBloom,
-            computedBloom: computed
+    private async askSystemTxOracle(blocks: Block[]): Promise<Map<string, Set<string>>> {
+        let answers = new Map<string, Set<string>>()
+        let ask: string[] = []
+        for (let block of blocks) {
+            let key = block.hash.toLowerCase()
+            let cached = this.systemTxOracleAnswers.get(key)
+            if (cached) answers.set(key, cached)
+            else ask.push(block.hash)
         }
-
-        if (!isBloomSuperset(block.block.logsBloom, computed)) {
-            throw addErrorContext(
-                new Error('Cronos fix: bloom computed from receipt logs has bits not present in the header bloom - refusing to accept (receipts likely contain spurious logs)'),
-                errorContext
-            )
-        }
-
-        // Collect transactions whose logs could have leaked into the header
-        // bloom: phantom txs (stripped) and reverted txs (status = 0x0).
-        let leakedTxHashes = new Set<Bytes32>(phantomTxHashes)
-        for (let receipt of receipts) {
-            if (receiptStatus(receipt) === 0) {
-                leakedTxHashes.add(receipt.transactionHash)
-            }
-        }
-
-        if (leakedTxHashes.size === 0) {
-            throw addErrorContext(
-                new Error('Cronos fix: header logs bloom has extra bits but no phantom or reverted transactions were found to explain them - refusing to accept'),
-                errorContext
-            )
-        }
-
-        // Reconstruct the logs of leaked txs via debug_traceTransaction.
-        // callTracer with withLog=true emits a `logs` array on every frame it
-        // visits, including frames that later reverted.
-        let traceCall = Array.from(leakedTxHashes).map(hash => ({
-            method: 'debug_traceTransaction',
-            params: [hash, {
-                tracer: 'callTracer',
-                tracerConfig: {
-                    onlyTopCall: false,
-                    withLog: true
-                }
-            }]
-        }))
-
-        let traceResults: any[]
+        if (ask.length == 0 || this.systemTxOracle == null) return answers
         try {
-            traceResults = await this.batchCall(traceCall)
-        } catch (err: any) {
-            throw addErrorContext(
-                new Error(`Cronos fix: failed to reconstruct leaked logs via debug_traceTransaction: ${err.message}`),
-                {...errorContext, leakedTxHashes: Array.from(leakedTxHashes)}
-            )
-        }
-
-        let tracedLogs: {address: Bytes, topics: Bytes[]}[] = []
-        for (let result of traceResults) {
-            collectFrameLogs(result, tracedLogs)
-        }
-
-        let combinedBloom = logsBloom([...logs, ...tracedLogs] as Log[])
-        if (combinedBloom !== block.block.logsBloom) {
-            throw addErrorContext(
-                new Error('Cronos fix: traced logs from phantom/reverted transactions do not fully explain the extra bits in the header logs bloom - refusing to accept'),
+            // A bounded budget of its own: a slow or failing oracle must not hold the batch up. The request
+            // timeout counts from dispatch only, so a deadline also covers queueing and connecting (a ws://
+            // oracle reconnects without using up retries); a call past it is left to finish unread.
+            // An error for one block is no answer for that block alone.
+            let call = this.systemTxOracle.batchCall<{from: string, nonce: Qty}[] | null>(
+                ask.map(hash => ({method: 'eth_getSystemTxsByBlockHash', params: [hash]})),
                 {
-                    ...errorContext,
-                    leakedTxHashes: Array.from(leakedTxHashes),
-                    tracedLogCount: tracedLogs.length,
-                    combinedBloom
+                    retryAttempts: SYSTEM_TX_ORACLE_RETRY_ATTEMPTS,
+                    timeout: SYSTEM_TX_ORACLE_TIMEOUT_MS,
+                    validateError: () => null,
                 }
             )
+            let timer: ReturnType<typeof setTimeout> | undefined
+            let deadline = new Promise<never>((_, reject) => {
+                timer = setTimeout(() => reject(new Error('system transaction oracle deadline passed')), SYSTEM_TX_ORACLE_DEADLINE_MS)
+            })
+            call.catch(() => {}) // settles after the deadline unread
+            let results = await Promise.race([call, deadline]).finally(() => clearTimeout(timer))
+            for (let i = 0; i < ask.length; i++) {
+                let txs = results[i]
+                if (!Array.isArray(txs)) continue // the oracle does not know the block (yet)
+                let set: Set<string>
+                try {
+                    set = new Set(txs.map(tx => systemTxKey(tx.from, tx.nonce)))
+                } catch {
+                    continue // a malformed answer is no answer, for this block alone
+                }
+                let key = ask[i].toLowerCase()
+                answers.set(key, set)
+                this.systemTxOracleAnswers.set(key, set)
+                if (this.systemTxOracleAnswers.size > SYSTEM_TRANSACTION_EVIDENCE_BLOCKS) {
+                    let oldest = this.systemTxOracleAnswers.keys().next().value
+                    if (oldest != null) this.systemTxOracleAnswers.delete(oldest)
+                }
+            }
+        } catch (err: any) {
+            this.log.debug({err, oracle: this.systemTxOracle.url}, 'system transaction oracle failed')
         }
+        return answers
+    }
 
+    private checkAgainstSystemTxOracle(block: Block, oracle: Set<string> | undefined, utils: ChainUtils): void {
+        if (block._isInvalid) return
+        if (oracle == null) {
+            let u = this.systemTxOracleUnavailable
+            u.count += 1
+            u.sinceWarning += 1
+            let now = Date.now()
+            if (u.lastWarning === 0 || now - u.lastWarning >= SYSTEM_TX_ORACLE_WARNING_INTERVAL_MS) {
+                this.log.warn(
+                    {oracle: this.systemTxOracle?.url, blockNumber: block.number, blocksSinceLastWarning: u.sinceWarning, blocks: u.count},
+                    'system transaction oracle gave no answer; blocks taken without the oracle check'
+                )
+                u.sinceWarning = 0
+                u.lastWarning = now
+            }
+            return
+        }
+        let body = new Set<string>()
+        for (let tx of block.block.transactions) {
+            if (typeof tx !== 'string' && utils.isHyperliquidSystemTransaction(tx)) body.add(systemTxKey(tx.from, tx.nonce))
+        }
+        let missing = [...oracle].find(key => !body.has(key))
+        let extra = [...body].find(key => !oracle.has(key))
+        if (missing == null && extra == null) return
+        // Asked again on the retry: a disagreeing answer could be the oracle's own (a block it has not fully
+        // indexed yet), and a cached one would keep rejecting correct bodies
+        this.systemTxOracleAnswers.delete(block.hash.toLowerCase())
+        block._isInvalid = true
+        block._errorMessage = missing != null
+            ? `system transaction mismatch: the oracle has system transaction ${missing} (sender:nonce), the block body does not`
+            : `system transaction mismatch: the block body has system transaction ${extra} (sender:nonce), the oracle does not`
         this.log.warn(
-            {
-                ...errorContext,
-                leakedTxHashes: Array.from(leakedTxHashes),
-                tracedLogCount: tracedLogs.length
-            },
-            'Cronos fix: header logs bloom mismatch explained by leaked logs from phantom/reverted transactions (verified via debug_traceTransaction)'
+            {rpcEndpoint: this.client.url, oracle: this.systemTxOracle?.url, blockNumber: block.number, blockHash: block.hash, missing, extra},
+            'HyperEVM system transactions differ from the oracle; block fetched again'
         )
     }
 
@@ -948,10 +913,21 @@ export class Rpc {
         for (let block of blocks) {
             let receipts = receiptsByBlock.get(block.hash) || []
             let logs = receipts.flatMap(r => r.logs)
+            // Attached even when the answer is rejected below: the receipts it did return are evidence of
+            // the block's HyperEVM system transactions (see checkHyperliquidSystemTransactions)
+            block.receipts = receipts
 
             if (receipts.length !== block.block.transactions.length) {
                 block._isInvalid = true
                 block._errorMessage = 'failed to get receipts for all transactions'
+                continue
+            }
+
+            // As on the by-block path: an answer whose receipts and body disagree is fetched again, unchecked
+            let mismatch = findReceiptMismatch(block, receipts, utils)
+            if (mismatch != null) {
+                block._isInvalid = true
+                block._errorMessage = mismatch
                 continue
             }
 
@@ -960,35 +936,7 @@ export class Rpc {
             }
 
             try {
-                if (this.checkLogIndex) {
-                    let logIndex = 0
-                    for (let log of logs) {
-                        assert.equal(qty2Int(log.logIndex), logIndex++)
-                    }
-                }
-
-                if (this.checkCumulativeGasUsed) {
-                    let prevCumulativeGasUsed = 0n
-                    for (let receipt of receipts) {
-                        let cumulativeGasUsed = BigInt(receipt.cumulativeGasUsed)
-                        assert.equal(
-                            cumulativeGasUsed,
-                            prevCumulativeGasUsed + BigInt(receipt.gasUsed),
-                            `cumulativeGasUsed mismatch at receipt of tx ${receipt.transactionHash}`
-                        )
-                        prevCumulativeGasUsed = cumulativeGasUsed
-                    }
-                }
-
-                if (this.verifyLogsBloom) {
-                    let logsBloom = utils.calculateLogsBloom(block.block, logs)
-                    assert.equal(block.block.logsBloom, logsBloom, 'failed to verify logs bloom')
-                }
-
-                if (this.verifyReceiptsRoot) {
-                    let root = await utils.calculateReceiptsRoot(block.block, receipts)
-                    assert.equal(block.block.receiptsRoot, root, 'failed to verify receipts root')
-                }
+                await checkBlockReceipts(block.block, receipts, logs, utils, this.checks)
             } catch (err: any) {
                 throw addErrorContext(err, {
                     blockNumber: block.number,
@@ -997,8 +945,6 @@ export class Rpc {
                     rpcMethod: 'receipts validation (eth_getTransactionReceipt path)'
                 })
             }
-
-            block.receipts = receipts
         }
     }
 
@@ -1192,9 +1138,7 @@ export class Rpc {
             }
         })
 
-        let validateFrameResult = getResultValidator(array(DebugFrameResult))
-
-        let results = await this.reduceBatchOnRetry<DebugFrameResult[] | null | typeof RESPONSE_TOO_BIG>(call, {
+        let results = await this.reduceBatchOnRetry<MaybeEmptyDebugFrameResult[] | null | typeof RESPONSE_TOO_BIG>(call, {
             validateResult: result => {
                 if (Array.isArray(result)) {
                     // Moonbeam quirk
@@ -1204,7 +1148,7 @@ export class Rpc {
                         }
                     }
                 }
-                return validateFrameResult(result)
+                return validateMaybeEmptyFrameResults(result)
             },
             validateError: info => {
                 if (info.message.includes('not found')) return null
@@ -1231,23 +1175,286 @@ export class Rpc {
                 block._isInvalid = true
                 block._errorMessage = "failed to get debug call frames for a block"
             } else if (block.block.transactions.length === frames.length) {
-                block.debugFrames = frames
+                block.debugFrames = this.dropEmptyDebugFrames(block, frames, utils)
             } else {
-                block.debugFrames = this.matchDebugTrace('debug call frame', block, frames, utils)
+                let matched = this.matchDebugTrace('debug call frame', block, frames, utils)
+                block.debugFrames = this.dropEmptyDebugFrames(block, matched, utils)
             }
-            this.validateDebugFrames(block)
+            let settled = await this.recoverSelfdestructFrames(block, req)
+            this.validateDebugFrames(block, settled)
         }
     }
 
-    private async getDebugFramesByTransaction(block: Block, traceConfig: unknown): Promise<DebugFrameResult[]> {
+    /**
+     * Puts what the opcode-level tracer saw into the frames the call tracer left
+     * defective. Only a block that would otherwise be rejected pays for this, and
+     * an upstream that will not run the tracer leaves the frames as they are, for
+     * validation to reject.
+     *
+     * Returns the trace addresses an opcode trace settled, per transaction index:
+     * a frame the trace confirms is left as it stands, so validation has to be
+     * told not to suspect it again.
+     */
+    private async recoverSelfdestructFrames(block: Block, req: DataRequest): Promise<Map<number, Set<string>>> {
+        let settled = new Map<number, Set<string>>()
+        if (block._isInvalid || block.debugFrames == null) return settled
+
+        // One block-bound prestate trace serves every suspect transaction of the
+        // block, and a failed one is not repeated for each of them.
+        let prestates: Promise<any[]> | undefined
+        let blockPrestates = () => prestates ??= this.traceBlockPrestates(block, req)
+
+        for (let i = 0; i < block.debugFrames.length; i++) {
+            let frame = block.debugFrames[i]
+            let tx = block.block.transactions[i]
+            if (frame == null || tx == null) continue
+
+            let defects = findDefectiveSelfdestructs(frame.result)
+            if (defects.length === 0) continue
+
+            let transactionHash = getTxHash(tx)
+            let started = Date.now()
+            let events: SelfdestructEvent[]
+            // Built-in tracers first: every upstream serves them, while a custom
+            // JS tracer is refused by more and more of them.
+            let method: 'builtin' | 'js' = 'builtin'
+            let builtinRefusal: string | undefined
+            try {
+                events = await this.traceSelfdestructsBuiltin(
+                    block, i, transactionHash, frame.result, defects.map(d => d.traceAddress), blockPrestates, req
+                )
+            } catch (builtinErr: any) {
+                builtinRefusal = String(builtinErr?.message ?? builtinErr)
+                method = 'js'
+                try {
+                    events = await this.traceSelfdestructs(block, transactionHash, req)
+                } catch (err: any) {
+                    this.log.warn({
+                        blockNumber: block.number,
+                        blockHash: block.hash,
+                        transactionHash,
+                        suspectFrames: defects.length,
+                        traceMs: Date.now() - started,
+                        builtinReason: builtinRefusal,
+                        reason: String(err?.message ?? err)
+                    }, 'no opcode trace to recover selfdestruct frames from')
+                    continue
+                }
+            }
+            let traceMs = Date.now() - started
+
+            let settledHere = new Set<string>()
+            settled.set(i, settledHere)
+            let recovered = 0
+            let confirmed = 0
+            let refused = 0
+
+            for (let defect of defects) {
+                let traceAddress = defect.traceAddress.join('/')
+                let outcome = repairDefectiveSelfdestruct(frame.result, defect, events)
+
+                if ('refused' in outcome) {
+                    refused += 1
+                    this.log.warn({
+                        blockNumber: block.number,
+                        transactionHash,
+                        traceAddress,
+                        reason: outcome.refused
+                    }, 'cannot recover this selfdestruct frame')
+                    continue
+                }
+
+                settledHere.add(traceAddress)
+                if (outcome.repair === 'applied') {
+                    recovered += 1
+                } else {
+                    confirmed += 1
+                }
+            }
+
+            // One line per affected transaction: how often an upstream misreports
+            // selfdestructs, and what asking the opcode tracer costs, are read from here.
+            this.log.warn({
+                rpcEndpoint: this.client.url,
+                blockNumber: block.number,
+                blockHash: block.hash,
+                transactionHash,
+                suspectFrames: defects.length,
+                recovered,
+                confirmed,
+                refused,
+                method,
+                builtinReason: builtinRefusal,
+                traceMs
+            }, 'selfdestruct frames from a revm-based tracer settled by an opcode trace')
+        }
+
+        return settled
+    }
+
+    /**
+     * Selfdestruct events from built-in tracers only: the opcode logger for the
+     * beneficiary at each SELFDESTRUCT and `prestateTracer` for the balances the
+     * call tree's movements start from (see {@link builtinSelfdestructEvents}).
+     *
+     * The balances are what a repair writes, so the prestate is traced by block
+     * hash and is bound to this block. The opcode log only supplies the beneficiary,
+     * which a repair accepts only when it is the executing account itself; built-in
+     * tracers do not say which block they ran a single transaction in, so the
+     * transaction is looked up before and after it, and a reorg that moved it out of
+     * this block is refused.
+     */
+    private async traceSelfdestructsBuiltin(
+        block: Block,
+        transactionIndex: number,
+        transactionHash: Bytes32,
+        root: CallFrame,
+        suspects: number[][],
+        blockPrestates: () => Promise<any[]>,
+        req: DataRequest
+    ): Promise<SelfdestructEvent[]> {
+        let options = {retryAttempts: SELFDESTRUCT_TRACE_RETRY_ATTEMPTS}
+        // The block-bound prestate comes first: once it has failed for the block,
+        // no transaction of it is worth an opcode trace.
+        let prestates = await blockPrestates()
+        let entry = prestates.find(p => typeof p?.txHash === 'string' && p.txHash.toLowerCase() === transactionHash.toLowerCase())
+            ?? (prestates.every(p => p?.txHash == null) ? prestates[transactionIndex] : undefined)
+        let prestate = entry?.result
+        if (prestate == null || typeof prestate !== 'object' || Array.isArray(prestate)) {
+            throw new Error(`prestateTracer answered without accounts for transaction ${transactionHash}`)
+        }
+
+        await this.expectTransactionInBlock(block, transactionHash)
+
+        let log = await this.call(
+            'debug_traceTransaction',
+            [transactionHash, {
+                disableStorage: true,
+                enableMemory: false,
+                disableStack: false,
+                enableReturnData: false,
+                timeout: req.debugTraceTimeout
+            }],
+            {...options, maxResponseSize: SELFDESTRUCT_OPCODE_LOG_MAX_BYTES}
+        ).catch(err => {
+            if (err instanceof RpcResponseTooLargeError) {
+                throw new Error(`the opcode log exceeds ${err.limit} bytes`)
+            }
+            throw err
+        })
+        if (!Array.isArray(log?.structLogs)) {
+            throw new Error('the opcode logger answered without steps')
+        }
+        let steps: OpcodeStep[] = log.structLogs
+        // The lookups around the trace may reach another backend than the trace
+        // itself, so the opcode log must also agree with the call tree, which is
+        // bound to this block: an execution in another block spends other gas.
+        let rootGas = root.gasUsed == null ? undefined : Number(root.gasUsed)
+        if (rootGas == null || !Number.isSafeInteger(rootGas) || log.gas !== rootGas) {
+            throw new Error(`the opcode log spends ${log.gas} gas, but the call tree reports ${root.gasUsed}`)
+        }
+        if (!!log.failed !== (root.error != null)) {
+            throw new Error(`the opcode log ${log.failed ? 'fails' : 'succeeds'}, but the call tree ${root.error != null ? 'fails' : 'succeeds'}`)
+        }
+
+        await this.expectTransactionInBlock(block, transactionHash)
+
+        return builtinSelfdestructEvents(root, steps, prestate as Prestate, suspects)
+    }
+
+    private async traceBlockPrestates(block: Block, req: DataRequest): Promise<any[]> {
+        let prestates = await this.call(
+            'debug_traceBlockByHash',
+            // Only balances are read: code and storage would only make the answer
+            // bigger than some upstreams are willing to send.
+            [block.hash, {
+                tracer: 'prestateTracer',
+                tracerConfig: {disableCode: true, disableStorage: true},
+                timeout: req.debugTraceTimeout
+            }],
+            {retryAttempts: SELFDESTRUCT_TRACE_RETRY_ATTEMPTS}
+        )
+        if (!Array.isArray(prestates) || prestates.length !== block.block.transactions.length) {
+            throw new Error('prestateTracer answered without a result for each transaction of the block')
+        }
+        return prestates
+    }
+
+    private async expectTransactionInBlock(block: Block, transactionHash: Bytes32): Promise<void> {
+        let tx = await this.call(
+            'eth_getTransactionByHash',
+            [transactionHash],
+            {retryAttempts: SELFDESTRUCT_TRACE_RETRY_ATTEMPTS}
+        )
+        let included = tx?.blockHash
+        if (typeof included !== 'string') {
+            throw new Error(`transaction ${transactionHash} is not included in any block`)
+        }
+        if (included.toLowerCase() !== block.hash.toLowerCase()) {
+            throw new Error(`transaction ${transactionHash} is included in block ${included}, not in ${block.hash}`)
+        }
+    }
+
+    /**
+     * One `debug_traceTransaction` with {@link SELFDESTRUCT_TRACER}.
+     *
+     * A transaction hash does not name a block: the same transaction can be
+     * re-included by a reorg, where its balance at the opcode differs while its
+     * call path does not. The tracer therefore reports the block and transaction
+     * it actually ran, and an answer that does not name this block is refused
+     * rather than copied into it.
+     */
+    private async traceSelfdestructs(
+        block: Block,
+        transactionHash: Bytes32,
+        req: DataRequest
+    ): Promise<SelfdestructEvent[]> {
+        let answer = await this.call(
+            'debug_traceTransaction',
+            [transactionHash, {tracer: SELFDESTRUCT_TRACER, timeout: req.debugTraceTimeout}],
+            // The client may retry without limit, and an upstream that times out on
+            // this tracer does so every time: recovery must give up and let
+            // validation reject the block.
+            {retryAttempts: SELFDESTRUCT_TRACE_RETRY_ATTEMPTS}
+        )
+
+        let tracedBlock = answer?.blockHash
+        if (typeof tracedBlock !== 'string') {
+            throw new Error('the tracer answered without a block hash')
+        }
+        if (tracedBlock.toLowerCase() !== block.hash.toLowerCase()) {
+            throw new Error(`the tracer ran the transaction in block ${tracedBlock}, not in ${block.hash}`)
+        }
+
+        let tracedTransaction = answer.txHash
+        if (typeof tracedTransaction !== 'string') {
+            throw new Error('the tracer answered without a transaction hash')
+        }
+        if (tracedTransaction.toLowerCase() !== transactionHash.toLowerCase()) {
+            throw new Error(`the tracer ran transaction ${tracedTransaction}, not ${transactionHash}`)
+        }
+
+        if (!Array.isArray(answer.evs)) {
+            throw new Error('the tracer answered without an event stream')
+        }
+
+        return selfdestructEvents(answer.evs)
+    }
+
+    private async getDebugFramesByTransaction(
+        block: Block,
+        traceConfig: unknown
+    ): Promise<MaybeEmptyDebugFrameResult[]> {
         let txHashes = block.block.transactions.map(getTxHash)
         let call = txHashes.map(txHash => ({
             method: 'debug_traceTransaction',
             params: [txHash, traceConfig]
         }))
 
+        let validateFrame = getResultValidator(DebugFrame)
+
         let results = await this.reduceBatchOnRetry(call, {
-            validateResult: getResultValidator(DebugFrame)
+            validateResult: result => (isEmptyFrame(result) ? null : validateFrame(result))
         })
 
         return results.map((result, i) => ({
@@ -1256,7 +1463,46 @@ export class Rpc {
         }))
     }
 
-    private validateDebugFrames(block: Block): void {
+    /**
+     * Turns the empty call frames of a block into missing ones where the chain is known to
+     * answer `{}` for the transaction, and rejects the block on any other empty frame.
+     */
+    private dropEmptyDebugFrames(
+        block: Block,
+        frames: (MaybeEmptyDebugFrameResult | undefined)[],
+        utils: ChainUtils
+    ): (DebugFrameResult | undefined)[] | undefined {
+        let out: (DebugFrameResult | undefined)[] = new Array(frames.length)
+        for (let i = 0; i < frames.length; i++) {
+            let frame = frames[i]
+            if (frame == null) continue
+            if (frame.result != null) {
+                out[i] = frame as DebugFrameResult
+                continue
+            }
+            let tx = block.block.transactions[i]
+            let transactionHash = tx == null ? undefined : getTxHash(tx)
+            // A frame labelled with another transaction must not vanish before validateDebugFrames() sees the label.
+            if (
+                transactionHash != null &&
+                frame.txHash != null &&
+                frame.txHash.toLowerCase() !== transactionHash.toLowerCase()
+            ) {
+                block._isInvalid = true
+                block._errorMessage =
+                    `invalid debug call frames for transaction ${transactionHash}: ` +
+                    `response is labelled with transaction ${frame.txHash}`
+                return undefined
+            }
+            if (tx != null && utils.allowsEmptyCallFrame(tx)) continue
+            block._isInvalid = true
+            block._errorMessage = `empty debug call frame for transaction ${transactionHash ?? i}`
+            return undefined
+        }
+        return out
+    }
+
+    private validateDebugFrames(block: Block, settled: Map<number, Set<string>>): void {
         if (block._isInvalid || block.debugFrames == null) return
 
         let violatingTransactionCount = 0
@@ -1277,11 +1523,21 @@ export class Rpc {
                 return
             }
 
+            // A selfdestruct frame that repeats an earlier transfer is structurally
+            // sound, so it is judged here, in every semantic-validation mode.
+            let settledHere = settled.get(i)
+            let defective = findDefectiveSelfdestructs(frame.result).filter(
+                defect => !settledHere?.has(defect.traceAddress.join('/'))
+            )
             let structuralViolation = checkDebugFrameStructure(frame.result)
-            if (structuralViolation) {
+            if (structuralViolation || defective.length > 0) {
+                this.warnDefectiveSelfdestructs(block, i, transactionHash, defective)
+
+                let violation = structuralViolation ?? 'a selfdestruct frame does not match the opcode'
                 block._isInvalid = true
                 block._errorMessage =
-                    `invalid debug call frames for transaction ${transactionHash}: ${structuralViolation}`
+                    `invalid debug call frames for transaction ${transactionHash}: ${violation}` +
+                    describeDefectiveSelfdestructs(defective)
                 return
             }
 
@@ -1331,6 +1587,178 @@ export class Rpc {
                 },
                 `debug call frame consistency violations observed in ${transactionSummary}; block accepted`
             )
+        }
+    }
+
+    /**
+     * Checks each transaction's debug call frames, and its state diff when one was
+     * fetched, against the receipt (see {@link ConsensusAnchorValidationMode}).
+     */
+    private validateConsensusAnchors(block: Block, req: DataRequest): void {
+        if (block._isInvalid || block.number === 0) return
+        // The trace-API path has no debug call frames to check; the CLIs refuse to combine it
+        // with consensus anchor validation. A request without traces falls through to the
+        // missing-input handling below, so it is never accepted as checked.
+        if (req.useTraceApi) return
+        if (!req.traces || block.debugFrames == null || block.receipts == null) {
+            if (this.consensusAnchorValidation === 'reject') {
+                // A configuration that cannot be checked must not pass blocks as checked.
+                throw new Error('consensus anchor validation needs receipts and debug call frames in the data request')
+            }
+            if (!this.consensusAnchorInputsMissingLogged) {
+                this.consensusAnchorInputsMissingLogged = true
+                this.log.warn(
+                    {blockNumber: block.number},
+                    'consensus anchor validation needs receipts and debug call frames; checks skipped'
+                )
+            }
+            return
+        }
+
+        let receipts = new Map<string, Receipt>()
+        for (let receipt of block.receipts) {
+            receipts.set(receipt.transactionHash.toLowerCase(), receipt)
+        }
+
+        let replayDiffs: Map<string, TraceTransactionReplay> | undefined
+        if (block.traceReplays != null && req.stateDiffs && !req.useDebugApiForStateDiffs) {
+            replayDiffs = new Map()
+            for (let replay of block.traceReplays) {
+                if (replay.transactionHash) replayDiffs.set(replay.transactionHash.toLowerCase(), replay)
+            }
+        }
+        let debugDiffs = req.stateDiffs && req.useDebugApiForStateDiffs ? block.debugStateDiffs : undefined
+
+        let violatingTransactionCount = 0
+        let samples: ConsensusAnchorViolationSample[] = []
+
+        for (let i = 0; i < block.block.transactions.length; i++) {
+            let tx = block.block.transactions[i]
+            if (typeof tx === 'string') {
+                throw new Error('consensus anchor validation needs full transaction objects')
+            }
+            let frame = block.debugFrames[i]
+            let transactionHash = tx.hash
+            let receipt = receipts.get(transactionHash.toLowerCase())
+            if (receipt == null) {
+                // The receipts checks reject a block whose receipts do not cover every
+                // transaction, so this is not expected; never let it pass silently.
+                block._isInvalid = true
+                block._errorMessage = `consensus anchor validation found no receipt for transaction ${transactionHash}`
+                return
+            }
+
+            // `null`: state diffs were requested, but there is none for this transaction.
+            let systemBalanceDelta: bigint | null | undefined = req.stateDiffs ? null : undefined
+            if (replayDiffs != null) {
+                let replay = replayDiffs.get(transactionHash.toLowerCase())
+                if (replay?.stateDiff != null) systemBalanceDelta = systemBalanceDeltaFromReplay(replay.stateDiff)
+            } else if (debugDiffs != null) {
+                let diff = debugDiffs[i]
+                // A diff labelled with another transaction is not this transaction's diff.
+                if (diff != null && (diff.txHash == null || diff.txHash.toLowerCase() === transactionHash.toLowerCase())) {
+                    systemBalanceDelta = systemBalanceDeltaFromPrestate(diff.result)
+                }
+            }
+
+            let violations = checkConsensusAnchors(
+                {
+                    miner: block.block.miner,
+                    transaction: tx,
+                    receipt: {
+                        status: receipt.status != null ? qty2Int(receipt.status) : undefined,
+                        gasUsed: receipt.gasUsed,
+                        effectiveGasPrice: receipt.effectiveGasPrice,
+                        blobGasUsed: receipt.blobGasUsed,
+                        blobGasPrice: receipt.blobGasPrice
+                    },
+                    root: frame?.result,
+                    systemBalanceDelta
+                },
+                this.consensusAnchorRules
+            )
+            if (violations.length === 0) continue
+
+            if (this.consensusAnchorValidation === 'reject') {
+                let v = violations[0]
+                this.log.warn(
+                    {
+                        rpcEndpoint: this.client.url,
+                        blockNumber: block.number,
+                        blockHash: block.hash,
+                        transactionIndex: i,
+                        transactionHash,
+                        violations
+                    },
+                    'consensus anchor violation; block rejected'
+                )
+                block._isInvalid = true
+                block._errorMessage =
+                    `consensus anchor violation (${v.rule}) for transaction ${transactionHash}: ` +
+                    `expected ${v.expected}, got ${v.actual}`
+                return
+            }
+
+            violatingTransactionCount += 1
+            for (let v of violations) {
+                if (samples.length < CONSENSUS_ANCHOR_VIOLATION_SAMPLE_LIMIT) {
+                    samples.push({transactionIndex: i, transactionHash, ...v})
+                }
+            }
+        }
+
+        if (violatingTransactionCount > 0) {
+            let label = violatingTransactionCount === 1 ? 'transaction' : 'transactions'
+            this.log.warn(
+                {
+                    rpcEndpoint: this.client.url,
+                    blockNumber: block.number,
+                    blockHash: block.hash,
+                    consensusAnchorValidation: this.consensusAnchorValidation,
+                    violatingTransactionCount,
+                    violationSamples: samples
+                },
+                `consensus anchor violations observed in ${violatingTransactionCount} ${label}; block accepted`
+            )
+        }
+    }
+
+    // An affected upstream answers the same way on every re-acquisition, so this
+    // repeats until the block is served by a tracer without the defect.
+    private warnDefectiveSelfdestructs(
+        block: Block,
+        transactionIndex: number,
+        transactionHash: Bytes32,
+        found: DefectiveSelfdestruct[]
+    ): void {
+        for (let frame of found) {
+            let context = {
+                rpcEndpoint: this.client.url,
+                blockNumber: block.number,
+                blockHash: block.hash,
+                transactionIndex,
+                transactionHash,
+                traceAddress: frame.traceAddress.join('/'),
+                executor: frame.executor ?? 'unknown'
+            }
+
+            if (frame.defect.kind === 'incomplete') {
+                this.log.warn(
+                    context,
+                    'incomplete selfdestruct frame from a revm-based tracer: ' +
+                        'beneficiary and balance are missing, block rejected'
+                )
+            } else {
+                this.log.warn(
+                    {
+                        ...context,
+                        reportedFrom: frame.defect.reportedFrom,
+                        reportedTo: frame.defect.reportedTo
+                    },
+                    'selfdestruct frame from a revm-based tracer repeats an earlier transfer: ' +
+                        'its parties and balance are unreliable, block rejected'
+                )
+            }
         }
     }
 
@@ -1419,6 +1847,8 @@ export class Rpc {
 
         let result = await this.batchCall(batch, { ...options, retryAttempts: 0 }).catch(err => {
             if (this.isBatchRetryableError(err)) {
+                // Retried here by splitting the batch, not by the client: count it for its metrics.
+                this.client.recordRetriedError(this.client.getRetryKind(err))
                 this.log.warn(err, 'will retry request with reduced batch')
             } else {
                 throw err
@@ -1435,7 +1865,7 @@ export class Rpc {
         return pack.flat()
     }
 
-    private async getChainUtils(): Promise<ChainUtils> {
+    async getChainUtils(): Promise<ChainUtils> {
         if (this.chainUtils) return this.chainUtils
         let chainId: Qty = await this.call('eth_chainId')
         return this.chainUtils = new ChainUtils(chainId, {
@@ -1475,12 +1905,58 @@ type GetReceiptsMethod = 'eth_getTransactionReceipt' | 'eth_getBlockReceipts'
 function getResultValidator<V extends Validator>(validator: V): (result: unknown) => GetSrcType<V> {
     return function (result: unknown) {
         let err = validator.validate(result)
-        if (err) {
-            throw new DataValidationError(`server returned unexpected result: ${err.toString()}`)
-        } else {
-            return result as any
+        if (err == null) return result as any
+
+        let message = `server returned unexpected result: ${err.toString()}`
+
+        // Not malformed data but no data: a null from a backend that lags the head,
+        // or a proxy's error text put into `result` (no EVM value is a non-hex string).
+        let noData = result === null || (typeof result == 'string' && !result.startsWith('0x'))
+        if (noData) {
+            // TODO: this draws on the client's shared retry budget, unbounded in evm-dump, so a node
+            // that never has the data (pruned history) stalls instead of failing. Fine for now;
+            // cap no-data retries per request if it bites.
+            throw new RetryError(message)
         }
+
+        throw new DataValidationError(message)
     }
+}
+
+
+// A call frame with no fields at all, `{}`, as opposed to a malformed one.
+function isEmptyFrame(value: unknown): boolean {
+    return value != null && typeof value == 'object' && !Array.isArray(value) && isEmpty(value)
+}
+
+
+// `result: null` stands for an empty call frame, see isEmptyFrame()
+interface MaybeEmptyDebugFrameResult {
+    result: DebugFrame | null
+    txHash?: Bytes | null
+}
+
+
+const validateDebugFrameResults = getResultValidator(array(DebugFrameResult))
+const validateEmptyDebugFrameLabels = getResultValidator(array(object({txHash: option(BYTES)})))
+
+
+/**
+ * Validates a block's call frames, keeping an empty one (`{}`) as `result: null`
+ * for dropEmptyDebugFrames() to judge. Anything else, a JSON `null` included,
+ * must pass the full frame schema.
+ */
+function validateMaybeEmptyFrameResults(result: unknown): MaybeEmptyDebugFrameResult[] {
+    if (!Array.isArray(result) || !result.some(isEmptyFrameResult)) return validateDebugFrameResults(result)
+    let frames = validateDebugFrameResults(result.filter(f => !isEmptyFrameResult(f)))
+    validateEmptyDebugFrameLabels(result.filter(isEmptyFrameResult))
+    let next = 0
+    return result.map(f => (isEmptyFrameResult(f) ? {result: null, txHash: f.txHash} : frames[next++]))
+}
+
+
+function isEmptyFrameResult(item: any): boolean {
+    return item != null && isEmptyFrame(item.result)
 }
 
 
@@ -1505,33 +1981,18 @@ function isResponseTooBig(err: RpcErrorInfo): boolean {
 }
 
 
-// Used only on post-Byzantium chains (Cronos fix paths), where receipts
-// always carry a status flag rather than a pre-EIP-658 post-state root.
-function receiptStatus(receipt: Receipt): number {
-    return qty2Int(assertNotNull(receipt.status, 'receipt.status is missing'))
-}
+function describeDefectiveSelfdestructs(found: DefectiveSelfdestruct[]): string {
+    if (found.length === 0) return ''
 
+    let frames = found.map(frame => {
+        let path = frame.traceAddress.join('/')
+        let executor = frame.executor ?? 'an unknown account'
+        if (frame.defect.kind === 'incomplete') {
+            return `frame ${path} is incomplete, executed by ${executor}`
+        }
+        let {reportedFrom, reportedTo} = frame.defect
+        return `frame ${path} repeats the transfer ${reportedFrom} -> ${reportedTo}, executed by ${executor}`
+    })
 
-/**
- * Recursively collects `logs` arrays from a callTracer frame and all its
- * nested sub-call frames. Only `address` and `topics` are needed by
- * `logsBloom`, but we preserve whatever shape the RPC returned (untyped).
- */
-function collectFrameLogs(
-    frame: any,
-    out: {address: Bytes, topics: Bytes[]}[]
-): void {
-    if (frame == null || typeof frame !== 'object') return
-    if (Array.isArray(frame.logs)) {
-        for (let log of frame.logs) {
-            if (log != null && typeof log === 'object' && typeof log.address === 'string' && Array.isArray(log.topics)) {
-                out.push({address: log.address, topics: log.topics})
-            }
-        }
-    }
-    if (Array.isArray(frame.calls)) {
-        for (let sub of frame.calls) {
-            collectFrameLogs(sub, out)
-        }
-    }
+    return ` (selfdestruct from a revm-based tracer: ${frames.join('; ')})`
 }

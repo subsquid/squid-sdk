@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-xxhash
 
-This log was last generated on Fri, 01 Dec 2023 16:55:51 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 1.2.3
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- Update dependency ranges: xxhash-wasm ^1.1.0
 
 ## 1.2.2
 Fri, 01 Dec 2023 16:55:51 GMT

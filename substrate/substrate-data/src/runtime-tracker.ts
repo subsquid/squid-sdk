@@ -1,4 +1,4 @@
-import {Hash, Prev, PrevItem, Rpc, runtimeVersionEquals, RuntimeVersionId} from '@subsquid/substrate-data-raw'
+import {Bytes, Hash, Prev, PrevItem, Rpc, runtimeVersionEquals, RuntimeVersionId} from '@subsquid/substrate-data-raw'
 import {Runtime} from '@subsquid/substrate-runtime'
 import {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {annotateAsyncError} from '@subsquid/util-internal'
@@ -87,9 +87,23 @@ export class RuntimeTracker<B extends WithRuntime> {
             this.rpc.getMetadata(ref.hash)
         ])
         if (runtimeVersion == null || metadata == null) return undefined
-        let runtime = new Runtime(runtimeVersion, metadata, this.typesBundle, this.rpc.client)
+        let metadataV16 = await this.getV16Metadata(ref)
+        let runtime = new Runtime(runtimeVersion, metadata, this.typesBundle, this.rpc.client, metadataV16)
         this.prev.set(ref.height, runtime)
         return {height: ref.height, value: runtime}
+    }
+
+    /**
+     * Get a v16 metadata blob which describes transaction extension
+     * pipelines of new extrinsics.
+     *
+     * `Metadata_metadata_at_version` runtime call returns an RPC error
+     * instead, when requested version is not served or on a too-old runtime.
+     */
+    private async getV16Metadata(ref: HashAndHeight): Promise<Bytes | undefined> {
+        return this.rpc.client.call('state_call', ['Metadata_metadata_at_version', '0x10000000', ref.hash])
+            .then(stripOpaqueMetadataOption)
+            .catch(() => undefined)
     }
 
     private async getParent(ref: HashAndHeight): Promise<HashAndHeight | null> {
@@ -118,4 +132,32 @@ function getRefCtx(ref: HashAndHeight) {
         blockHeight: ref.height,
         blockHash: ref.hash
     }
+}
+
+
+/**
+ * Unwrap the `Option<OpaqueMetadata>` envelope of the
+ * `Metadata_metadata_at_version` runtime call result into
+ * a prefixed metadata blob.
+ */
+function stripOpaqueMetadataOption(result: string): string | undefined {
+    let data = Buffer.from(result.slice(2), 'hex')
+    if (data.length < 1) return undefined
+    if (data[0] == 0) return undefined
+    if (data[0] != 1) {
+        // not an Option wrapper, a bare metadata blob
+        return result
+    }
+    // skip option flag + compact length
+    let mode = data[1] & 0b11
+    if (mode == 0) {
+        return '0x' + data.subarray(2).toString('hex')
+    }
+    if (mode == 1) {
+        return '0x' + data.subarray(3).toString('hex')
+    }
+    if (mode == 2) {
+        return '0x' + data.subarray(5).toString('hex')
+    }
+    return undefined
 }

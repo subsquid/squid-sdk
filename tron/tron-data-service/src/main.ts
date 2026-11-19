@@ -75,5 +75,11 @@ runProgram(async () => {
     })
 
     log.info(`listening on port ${service.port}`)
-    return waitForInterruption(service)
+
+    let server = service
+    return new Promise((resolve, reject) => {
+        waitForInterruption(server).then(resolve, reject)
+        // ingestion that fails before the first block is not restarted
+        server.started.catch(reject)
+    })
 }, err => log.fatal(err))

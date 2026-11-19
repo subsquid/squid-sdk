@@ -61,7 +61,7 @@ export type EIP7702Authorization = GetSrcType<typeof EIP7702Authorization>
 export const FrontierEIP7702Authorization = object({
     chain_id: NAT,
     address: BYTES,
-    nonce: SMALL_QTY,
+    nonce: QTY,
     signature: object({
         odd_y_parity: BOOLEAN,
         r: BYTES,
@@ -183,7 +183,7 @@ export type TempoSignatureObject = TempoPrimitiveSignature | TempoKeychainSignat
 export const TempoSignedAuthorization = object({
     chainId: QTY,
     address: BYTES,
-    nonce: SMALL_QTY,
+    nonce: QTY,
     signature: TempoSignatureObject,
 })
 
@@ -258,7 +258,9 @@ export const Transaction = object({
     input: option(BYTES),
     maxFeePerGas: option(QTY),
     maxPriorityFeePerGas: option(QTY),
-    nonce: SMALL_QTY,
+    // Tempo 0x76 transactions carry a full uint64 nonce (paired with nonceKey for AA)
+    // that can exceed the JS safe-integer range, so validate it as a wide QTY.
+    nonce: QTY,
     v: option(QTY),
     r: option(BYTES),
     s: option(BYTES),
@@ -290,6 +292,9 @@ export const Transaction = object({
     retryData: option(BYTES),
     sourceHash: option(BYTES),
     mint: option(QTY),
+    // Scroll L1 message (type 0x7e)
+    queueIndex: option(QTY),
+    sender: option(BYTES),
     // Stable 0x3f transaction field
     timeoutTimestamp: option(QTY),
     // Tempo 0x76 transaction fields
@@ -620,6 +625,56 @@ export const DebugFrameResult = object({
 export type DebugFrameResult = GetSrcType<typeof DebugFrameResult>
 
 
+// Block access list (EIP-7928) as returned by `eth_getBlockAccessListByBlockHash`.
+// `index` is the block access index: 0 for pre-execution system calls,
+// 1..n for transactions, n+1 for post-execution system operations.
+// https://eips.ethereum.org/EIPS/eip-7928
+export const BlockAccessListChange = object({
+    index: SMALL_QTY,
+    value: QTY
+})
+
+
+export type BlockAccessListChange = GetSrcType<typeof BlockAccessListChange>
+
+
+export const BlockAccessListCodeChange = object({
+    index: SMALL_QTY,
+    code: BYTES
+})
+
+
+export type BlockAccessListCodeChange = GetSrcType<typeof BlockAccessListCodeChange>
+
+
+export const BlockAccessListSlotChanges = object({
+    key: QTY,
+    changes: array(BlockAccessListChange)
+})
+
+
+export type BlockAccessListSlotChanges = GetSrcType<typeof BlockAccessListSlotChanges>
+
+
+export const BlockAccessListAccount = object({
+    address: BYTES,
+    storageChanges: array(BlockAccessListSlotChanges),
+    storageReads: array(QTY),
+    balanceChanges: array(BlockAccessListChange),
+    nonceChanges: array(BlockAccessListChange),
+    codeChanges: array(BlockAccessListCodeChange)
+})
+
+
+export type BlockAccessListAccount = GetSrcType<typeof BlockAccessListAccount>
+
+
+export const BlockAccessList = array(BlockAccessListAccount)
+
+
+export type BlockAccessList = GetSrcType<typeof BlockAccessList>
+
+
 export const GetBlock = object({
     number: SMALL_QTY,
     hash: BYTES,
@@ -651,6 +706,10 @@ export const GetBlock = object({
     withdrawals: option(array(Withdrawal)),
     withdrawalsRoot: option(BYTES),
     requestsHash: option(BYTES),
+    // https://eips.ethereum.org/EIPS/eip-7928
+    blockAccessListHash: option(BYTES),
+    // https://eips.ethereum.org/EIPS/eip-7843
+    slotNumber: option(QTY),
     l1BlockNumber: option(SMALL_QTY),
     // Tempo-specific block header fields
     // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/header.rs

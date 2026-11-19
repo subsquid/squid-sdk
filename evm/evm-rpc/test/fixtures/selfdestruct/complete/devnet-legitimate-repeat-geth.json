@@ -1,0 +1,60 @@
+{
+  "network": "devnet",
+  "scenario": "legitimate-repeat",
+  "note": "a genuine selfdestruct whose payload repeats an earlier transfer of the same amount",
+  "client": "Geth/v1.17.5-stable",
+  "transactionHash": "0xa7931e8978fed50148a09a87795794293f0352dc79c5c866c2c813ac772836ac",
+  "traceAddress": [
+    1
+  ],
+  "trace": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x493e0",
+    "gasUsed": "0x90a1",
+    "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "gas": "0x40695",
+        "gasUsed": "0x0",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "value": "0x1",
+        "type": "CALL"
+      },
+      {
+        "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+        "gas": "0x0",
+        "gasUsed": "0x0",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "value": "0x1",
+        "type": "SELFDESTRUCT"
+      }
+    ],
+    "value": "0x0",
+    "type": "CALL"
+  },
+  "blockHash": "0x070cdf28d5e5c5336c37e2f77d31ff1be44b0508031676944d369b708465bb12",
+  "events": [
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "sd",
+      "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+      "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "bal": "0x1"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    }
+  ]
+}

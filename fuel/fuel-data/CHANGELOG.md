@@ -1,6 +1,13 @@
 # Change Log - @subsquid/fuel-data
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 1.1.7
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- Update dependency ranges: @subsquid/http-client ^1.9.0 (peer)
 
 ## 1.1.6
 Mon, 11 May 2026 05:34:26 GMT

@@ -1,6 +1,20 @@
 # Change Log - @subsquid/util-internal-fs
 
-This log was last generated on Thu, 25 Jul 2024 11:48:18 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 0.2.2
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- Propagate requestPayer to child filesystems created by S3Fs.cd() and to the list/delete requests in S3Fs.delete(); update dependency ranges: @aws-sdk/client-s3 ^3.1136.0
+
+## 0.2.1
+Mon, 14 Sep 2026 10:49:58 GMT
+
+### Patches
+
+- `LocalFs.readStream()` rejects on a missing file
 
 ## 0.2.0
 Thu, 25 Jul 2024 11:48:18 GMT

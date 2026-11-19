@@ -1,0 +1,27 @@
+{
+  "network": "devnet",
+  "scenario": "out-of-gas",
+  "client": "Geth/v1.17.5-stable-9621c6ad/linux-arm64/go1.26.5",
+  "transactionHash": "0xde6e7d706840769a72e32d7d31f544253635a64b91da420c7daa5a796d232236",
+  "trace": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x493e0",
+    "gasUsed": "0x698d",
+    "to": "0x0165878a594ca255338adfa4d48449f69242eb8f",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0x0165878a594ca255338adfa4d48449f69242eb8f",
+        "gas": "0xbb8",
+        "gasUsed": "0xbb8",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "error": "out of gas",
+        "value": "0x0",
+        "type": "CALL"
+      }
+    ],
+    "value": "0xde0b6b3a7640000",
+    "type": "CALL"
+  }
+}

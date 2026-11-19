@@ -1,6 +1,20 @@
 # Change Log - @subsquid/evm-processor
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Wed, 11 Nov 2026 17:34:29 GMT and should not be manually modified.
+
+## 1.30.3
+Wed, 11 Nov 2026 17:34:29 GMT
+
+### Patches
+
+- retry on "cannot query unfinalized data" error from eth_getBlockByHash and debug_traceBlockByHash
+
+## 1.30.2
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- for block headers with `settledHeight` (Avalanche C-Chain Helicon, mainnet and Fuji), where `logsBloom` commits to settled blocks rather than the block's own logs, confirm an empty `eth_getLogs` result with tx receipts instead of the logs bloom check, and retry the `failed to get logs for block` error of `eth_getLogs` for accepted, but not yet executed blocks
 
 ## 1.30.1
 Mon, 11 May 2026 05:34:26 GMT

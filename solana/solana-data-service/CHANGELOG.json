@@ -2,6 +2,32 @@
   "name": "@subsquid/solana-data-service",
   "entries": [
     {
+      "version": "0.0.8",
+      "tag": "@subsquid/solana-data-service_v0.0.8",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Keep vote-account management transactions (Withdraw, Authorize, UpdateCommission) when vote transactions are excluded"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.16.1` to `4.17.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc-data\" from `^1.1.0` to `1.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-data-service\" from `^0.1.1` to `0.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-json\" from `^1.2.4` to `1.2.5`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.7",
       "tag": "@subsquid/solana-data-service_v0.0.7",
       "date": "Wed, 08 Jul 2026 22:11:26 GMT",

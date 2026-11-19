@@ -1,4 +1,4 @@
-import {RpcClientOptions} from '@subsquid/rpc-client'
+import {redactRpcUrl, RpcClientOptions, RpcMetrics, RpcMetricsCollector, RpcMetricsSource} from '@subsquid/rpc-client'
 import {GetBlock} from '@subsquid/solana-rpc-data'
 import {Client, createWorker} from '@subsquid/util-internal-worker-thread'
 import assert from 'node:assert'
@@ -21,7 +21,7 @@ export type RemoteRpcOptions = Pick<
 }
 
 
-export class RemoteRpc implements RpcApi {
+export class RemoteRpc implements RpcApi, RpcMetricsSource {
     private worker: Client
 
     constructor(options: RemoteRpcOptions) {
@@ -48,21 +48,52 @@ export class RemoteRpc implements RpcApi {
         return this.worker.call('getBlockBatch', [slots, options])
     }
 
+    /** Metrics of the RPC client inside the worker thread. */
+    getRpcMetrics(): Promise<RpcMetrics> {
+        return this.worker.call('getRpcMetrics', [])
+    }
+
     close(): void {
         this.worker.close()
     }
 }
 
 
-export class RemoteRpcPool implements RpcApi {
+export class RemoteRpcPool implements RpcApi, RpcMetricsSource {
     private workers: RemoteRpc[] = []
     private turn = 0
+    private metrics = new RpcMetricsCollector()
+    private url: string
 
     constructor(workers: number, workerOptions: RemoteRpcOptions) {
         assert(workers > 0)
+        // the label the workers' clients use: normalized, with credentials removed
+        this.url = redactRpcUrl(workerOptions.url)
         for (let i = 0; i < workers; i++) {
-            this.workers.push(new RemoteRpc(workerOptions))
+            let worker = new RemoteRpc(workerOptions)
+            this.workers.push(worker)
+            this.metrics.add(worker)
         }
+    }
+
+    /**
+     * Metrics of all the pool's RPC clients combined. They live in worker threads, so this is what
+     * a metrics exporter has to read: a client created next to the pool sees none of its requests.
+     */
+    async getRpcMetrics(): Promise<RpcMetrics> {
+        // All workers share one endpoint, so the collector yields at most one entry.
+        let [merged] = await this.metrics.collect()
+        return (
+            merged ?? {
+                url: this.url,
+                requestsServed: 0,
+                connectionErrors: 0,
+                notificationsReceived: 0,
+                avg_response_time: 0,
+                avgResponseTime: 0,
+                retriedErrors: {},
+            }
+        )
     }
 
     getLatestBlockhash(commitment: Commitment, minContextSlot?: number): Promise<LatestBlockhash> {

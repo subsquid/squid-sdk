@@ -4,6 +4,6 @@ import {startServer} from './worker'
 
 const options = getServerArguments<DataSourceOptions>()
 
-const source = createMainDataSource(options)
+const {source, getRpcMetrics} = createMainDataSource(options)
 
-startServer(source)
+startServer(source, getRpcMetrics)

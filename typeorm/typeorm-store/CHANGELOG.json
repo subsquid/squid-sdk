@@ -2,6 +2,26 @@
   "name": "@subsquid/typeorm-store",
   "entries": [
     {
+      "version": "1.9.3",
+      "tag": "@subsquid/typeorm-store_v1.9.3",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Update dependency ranges: typeorm ^0.3.31 (peer)"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^4.2.0` to `4.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/big-decimal\" from `^1.0.0` to `1.0.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.9.2",
       "tag": "@subsquid/typeorm-store_v1.9.2",
       "date": "Thu, 30 Jul 2026 15:44:58 GMT",

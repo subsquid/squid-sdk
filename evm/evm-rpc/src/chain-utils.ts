@@ -1,8 +1,9 @@
 import {assertNotNull} from '@subsquid/util-internal'
-import {GetBlock, Log, Receipt, Transaction, Withdrawal} from './rpc-data'
-import {Qty} from './types'
+import {BlockAccessList, GetBlock, Log, Receipt, Transaction, Withdrawal} from './rpc-data'
+import {Bytes32, Qty} from './types'
 import {
     avalancheBlockHash,
+    blockAccessListHash,
     blockHash,
     extDataHash,
     tempoBlockHash,
@@ -11,6 +12,7 @@ import {
     recoverTxSender,
     transactionsRoot,
     calculateStateSyncTxHash,
+    transactionHash,
     withdrawalsRoot
 } from './verification'
 import {getTxHash, qty2Int} from './util'
@@ -41,6 +43,9 @@ export class ChainUtils {
     public readonly isHederaMainnet: boolean
     public readonly isAvalancheMainnet: boolean
     public readonly isAvalancheTestnet: boolean
+    public readonly isScroll: boolean
+    /** The call tracer may answer `{}` for some transactions, see {@link allowsEmptyCallFrame} */
+    public readonly mayAnswerEmptyCallFrames: boolean
     public readonly isPolygonBased: boolean
     public readonly useGasUsedForReceiptsRoot: boolean
 
@@ -61,7 +66,9 @@ export class ChainUtils {
         this.isHederaMainnet = chainId == '0x127'
         this.isAvalancheMainnet = chainId == '0xa86a'
         this.isAvalancheTestnet = chainId == '0xa869'
+        this.isScroll = chainId == '0x82750' || chainId == '0x8274f' // Chain ID 534352 (mainnet) or 534351 (sepolia)
         this.isPolygonBased = this.isPolygonMainnet || this.isPolygonAmoy || this.isShibariumMainnet
+        this.mayAnswerEmptyCallFrames = this.isScroll
         this.useGasUsedForReceiptsRoot = options?.useGasUsedForReceiptsRoot ?? false
     }
 
@@ -73,6 +80,20 @@ export class ChainUtils {
      */
     isCronosEthermintBugBlock(blockNumber: Qty): boolean {
         return this.isCronosMainnet && qty2Int(blockNumber) < CRONOS_ETHERMINT_BUG_LAST_BLOCK
+    }
+
+    /**
+     * True when the call tracer is known to answer `{}` for the transaction, so that an
+     * empty call frame means "no execution to trace" rather than a broken response.
+     *
+     * Scroll's l2geth does this for an L1 message (type 0x7e) that fails before execution,
+     * e.g. scroll-mainnet tx 0xe398628cd2ea5c83d50b0e46e729caaf436f17a1adb3ddfb3a04837cc1f4dab5
+     * in block 35441201.
+     */
+    allowsEmptyCallFrame(tx: Transaction | Bytes32): boolean {
+        // A bare hash says nothing about the transaction; Rpc fetches full objects on such chains
+        if (typeof tx == 'string') return false
+        return this.isScroll && tx.type == '0x7e' && tx.queueIndex != null
     }
 
     calculateBlockHash(block: GetBlock) {
@@ -96,6 +117,16 @@ export class ChainUtils {
     }
 
     calculateTransactionsRoot(block: GetBlock) {
+        let transactions = this.getRootTransactions(block)
+        if (transactions == null) return block.transactionsRoot
+
+        return transactionsRoot(transactions)
+    }
+
+    /**
+     * Transactions the transactions root covers, `undefined` when the root of the block can't be calculated
+     */
+    getRootTransactions(block: GetBlock): Transaction[] | undefined {
         let transactions = block.transactions as Transaction[]
 
         if (this.isPolygonBased) {
@@ -105,7 +136,7 @@ export class ChainUtils {
                 if (tx.type == '0x7f') {
                     // PIP-74 tx type requires extra data that can't be obtained from rpc
                     // so for now blocks that contain this tx type aren't verified
-                    return block.transactionsRoot
+                    return undefined
                 }
 
                 if (tx.hash != stateSyncTxHash) {
@@ -119,7 +150,27 @@ export class ChainUtils {
             transactions = transactions.filter(tx => !isHyperliquidSystemTx(tx))
         }
 
-        return transactionsRoot(transactions)
+        return transactions
+    }
+
+    /**
+     * HyperEVM's system transactions, which move assets from HyperCore. The header commits to none of
+     * them, so nothing in a block proves one missing; see {@link Rpc} for how a dropped one is caught.
+     */
+    get hasHyperliquidSystemTransactions(): boolean {
+        return this.isHyperliquidMainnet || this.isHyperliquidTestnet
+    }
+
+    isHyperliquidSystemTransaction(tx: Transaction): boolean {
+        return this.hasHyperliquidSystemTransactions && isHyperliquidSystemTx(tx)
+    }
+
+    isHyperliquidSystemReceipt(receipt: Receipt): boolean {
+        return this.hasHyperliquidSystemTransactions && isHyperliquidSystemReceipt(receipt)
+    }
+
+    calculateTransactionHash(tx: Transaction) {
+        return transactionHash(tx)
     }
 
     calculateLogsBloom(block: GetBlock, logs: Log[]) {
@@ -164,6 +215,10 @@ export class ChainUtils {
 
     calculateWithdrawalsRoot(withdrawals: Withdrawal[]) {
         return withdrawalsRoot(withdrawals)
+    }
+
+    calculateBlockAccessListHash(accessList: BlockAccessList) {
+        return blockAccessListHash(accessList)
     }
 
     recoverTxSender(transaction: Transaction) {

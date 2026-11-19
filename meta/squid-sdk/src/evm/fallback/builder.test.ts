@@ -62,6 +62,23 @@ describe('EvmFallbackDataSourceBuilder', () => {
         expect(rpcCalls[0]).not.toHaveProperty('name')
     })
 
+    it('defaults a 30 s request timeout on rpc sources, keeping an explicit value (incl. 0)', () => {
+        rpcCalls.length = 0
+
+        new EvmFallbackDataSourceBuilder()
+            .setDownstreamSources([
+                {type: 'rpc', url: 'https://a.example'},
+                {type: 'rpc', url: 'https://b.example', requestTimeout: 5_000, retryAttempts: 1},
+                {type: 'rpc', url: 'https://c.example', requestTimeout: 0},
+            ])
+            .setCapabilityProbe(false)
+            .build()
+
+        expect(rpcCalls.map((c) => c.requestTimeout)).toEqual([30_000, 5_000, 0])
+        expect(rpcCalls[1].retryAttempts).toBe(1)
+        expect(rpcCalls[0]).not.toHaveProperty('retryAttempts')
+    })
+
     it('applies setBlockRange across the whole shared query', () => {
         rpcCalls.length = 0
 

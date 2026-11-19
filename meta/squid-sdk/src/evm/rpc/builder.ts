@@ -27,6 +27,20 @@ export interface EvmRpcOptions {
     method?: RpcMethodOptions
     capacity?: number
     rateLimit?: number
+    /**
+     * Per-request timeout (ms) for the JSON-RPC client. A request that exceeds it errors instead of
+     * waiting forever — which also frees the client's `capacity` slot it occupies. `0` disables the
+     * timeout. Defaults to no timeout for a standalone source, and to `30_000` for an `rpc` source
+     * built by the fallback builder (where a hung request must surface as an error to fail over).
+     */
+    requestTimeout?: number
+    /**
+     * How many times the client retries a request that failed with a connection-class error
+     * (including a timeout) before rejecting it. Defaults to `0`. In a fallback, keep it small:
+     * failing over to the next source *is* the retry, and a large value turns a hung endpoint back
+     * into a silent stall inside the client.
+     */
+    retryAttempts?: number
     strideSize?: number
     strideConcurrency?: number
 }
@@ -49,6 +63,8 @@ export function evmRpcStream<F extends FieldSelection>(config: EvmRpcStreamConfi
         url: config.url,
         capacity: config.capacity,
         rateLimit: config.rateLimit,
+        requestTimeout: config.requestTimeout,
+        retryAttempts: config.retryAttempts,
     })
     const rpc = new Rpc({client, ...settings.rpc})
 

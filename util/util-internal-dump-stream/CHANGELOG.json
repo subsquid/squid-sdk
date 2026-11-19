@@ -1,0 +1,22 @@
+{
+  "name": "@subsquid/util-internal-dump-stream",
+  "entries": [
+    {
+      "version": "0.1.0",
+      "tag": "@subsquid/util-internal-dump-stream_v0.1.0",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "chain independent reader of raw block streams for dumpers, extracted from `@subsquid/evm-dump`: NATS JetStream direct reads from one server or a list of the servers of a cluster, message checks, parent link walks with RPC fallback, `--stream-*` options and stream metrics. A chain supplies its line format, block verifier and RPC source"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^2.1.0` to `2.2.0`"
+          }
+        ]
+      }
+    }
+  ]
+}

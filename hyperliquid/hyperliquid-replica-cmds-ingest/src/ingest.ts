@@ -1,16 +1,22 @@
 import {S3Client} from '@aws-sdk/client-s3'
 import {addErrorContext} from '@subsquid/util-internal'
 import {Command, FileOrUrl, Ingest, IngestOptions, Range} from '@subsquid/util-internal-ingest-cli'
+import {positiveInt} from '@subsquid/util-internal-commander'
 import {toJSON} from '@subsquid/util-internal-json'
 import {def} from '@subsquid/util-internal'
 import {S3Fs} from '@subsquid/util-internal-fs'
 import {mapRawBlock, Block} from '@subsquid/hyperliquid-replica-cmds-normalization'
 import {HyperliquidArchive} from './archive'
+import {ParallelDownloader} from './download'
 
 
 interface HyperliquidIngestOptions extends IngestOptions {
     hlArchive: string
+    downloadConcurrency: number
 }
+
+
+const PART_SIZE = 16 * 1024 * 1024
 
 
 export class HyperliquidIngest extends Ingest<HyperliquidIngestOptions> {
@@ -25,6 +31,7 @@ export class HyperliquidIngest extends Ingest<HyperliquidIngestOptions> {
     protected setUpProgram(program: Command) {
         program.description('Data ingestion tool for Hyperliquid')
             .requiredOption('--hl-archive <url>', 'Hyperliquid archive url', FileOrUrl(['s3:']))
+            .option('--download-concurrency <n>', 'byte ranges of one archive file fetched at once', positiveInt, 8)
     }
 
     @def
@@ -38,7 +45,20 @@ export class HyperliquidIngest extends Ingest<HyperliquidIngestOptions> {
             client,
             requestPayer: 'requester'
         })
-        return new HyperliquidArchive(fs, log)
+        let downloader = new ParallelDownloader({
+            client,
+            requestPayer: 'requester',
+            concurrency: this.options().downloadConcurrency,
+            partSize: PART_SIZE,
+            partTimeoutMs: 120_000,
+            partAttempts: 5,
+            log
+        })
+        let readStream = (path: string) => {
+            let [bucket, ...key] = fs.abs(path).slice('s3://'.length).split('/')
+            return downloader.readStream(bucket, key.join('/'))
+        }
+        return new HyperliquidArchive(fs, log, readStream)
     }
 
     protected async *getBlocks(range: Range): AsyncIterable<object[]> {
@@ -64,3 +84,4 @@ export class HyperliquidIngest extends Ingest<HyperliquidIngestOptions> {
         return block.header.height
     }
 }
+

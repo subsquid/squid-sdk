@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-dump",
+      "comment": "Report the RPC metrics of the worker-thread clients its requests go through; they read zero before",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/solana-dump"
+}

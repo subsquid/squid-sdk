@@ -44,6 +44,20 @@ export class RpcConnectionError extends Error {
 
 
 /**
+ * The response exceeded {@link CallOptions.maxResponseSize}
+ */
+export class RpcResponseTooLargeError extends Error {
+    constructor(public readonly limit: number) {
+        super(`response exceeds ${limit} bytes`)
+    }
+
+    get name(): string {
+        return 'RpcResponseTooLargeError'
+    }
+}
+
+
+/**
  * This error can be thrown from `CallOptions.validateResult()` to invoke built-in
  * retry machinery
  */

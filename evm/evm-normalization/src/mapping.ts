@@ -27,7 +27,9 @@ import {
     TraceSelfdestructAction,
     StateDiff,
     TraceCreateResult,
-    TraceCallResult
+    TraceCallResult,
+    RawJSON,
+    Uint64
 } from './data'
 import {RawBlock} from './raw'
 
@@ -35,6 +37,26 @@ import {RawBlock} from './raw'
 function safeQty2Int(qty: string): number | undefined {
     let i = parseInt(qty, 16)
     return Number.isSafeInteger(i) ? i : undefined
+}
+
+
+const UINT64_MAX = 0xffffffffffffffffn
+
+// JSON.rawJSON (Node 21+) is missing from the TypeScript 5.5 lib.
+const rawJSON: (text: string) => RawJSON = (JSON as any).rawJSON
+
+
+// The archive writer reads these fields as a plain u64, so a value above 2^53
+// must reach it as a number, not as the string that a bigint serializes to.
+function qty2Uint64(qty: string): Uint64 {
+    let value = BigInt(qty)
+    assert(value <= UINT64_MAX)
+
+    if (value <= Number.MAX_SAFE_INTEGER) {
+        return Number(value)
+    }
+
+    return rawJSON(value.toString())
 }
 
 
@@ -57,6 +79,15 @@ function* mapDebugFrame(
 ): Iterable<Trace> {
     if (debugFrameResult.result.type.toUpperCase() == 'STOP') {
         assert(!debugFrameResult.result.calls?.length)
+        return
+    }
+
+    // Scroll nodes return a structurally empty call frame ({"type": "", "from": "", ...}, or the
+    // equivalent `{}` result) for failed L1 message transactions (tx type 126, L1MessageTx):
+    // the geth callTracer has no call frame to reconstruct for them.
+    // https://github.com/scroll-tech/go-ethereum/issues/1170
+    // Treat an empty/missing top-level frame type as "trace is not available".
+    if (!debugFrameResult.result.type) {
         return
     }
 
@@ -523,7 +554,7 @@ function mapTempoSignedAuthorization(src: rpc.TempoSignedAuthorization): TempoSi
     return {
         chainId: src.chainId,
         address: src.address.toLowerCase(),
-        nonce: qty2Int(src.nonce),
+        nonce: qty2Uint64(src.nonce),
         signature: mapTempoSignature(src.signature),
     }
 }
@@ -579,11 +610,26 @@ function mapTempoFeePayerSignature(src: {v: string, r: string, s: string}): Temp
 }
 
 
+// Some nodes leave `yParity` out of typed transactions. For the EIP-2930, EIP-1559, EIP-4844
+// and EIP-7702 envelopes `v` is the y-parity itself, so it is taken from there. Legacy
+// transactions have no y-parity field, and other types (system, deposit, chain-specific) are
+// left as the node returned them.
+const V_IS_Y_PARITY_TYPES = new Set([1, 2, 3, 4])
+
+
+function mapYParity(src: rpc.Transaction): number | undefined {
+    if (src.yParity) return qty2Int(src.yParity)
+    if (src.type == null || src.v == null || !V_IS_Y_PARITY_TYPES.has(qty2Int(src.type))) return undefined
+    let v = qty2Int(src.v)
+    return v === 0 || v === 1 ? v : undefined
+}
+
+
 function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transaction {
     return {
         transactionIndex: qty2Int(src.transactionIndex),
         hash: src.hash,
-        nonce: qty2Int(src.nonce),
+        nonce: qty2Uint64(src.nonce),
         from: src.from.toLowerCase(),
         to: src.to ? src.to.toLowerCase() : undefined,
         input: src.input ?? undefined,
@@ -596,7 +642,7 @@ function mapTransaction(src: rpc.Transaction, receipt?: rpc.Receipt): Transactio
         v: src.v ?? undefined,
         r: src.r ?? undefined,
         s: src.s ?? undefined,
-        yParity: src.yParity ? qty2Int(src.yParity) : undefined,
+        yParity: mapYParity(src),
         accessList: src.accessList?.map(mapAccessListItem),
         chainId: src.chainId ? safeQty2Int(src.chainId) : undefined,
         maxFeePerBlobGas: src.maxFeePerBlobGas ?? undefined,

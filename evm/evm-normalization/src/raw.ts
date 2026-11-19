@@ -6,7 +6,8 @@ import {
     TraceTransactionReplay,
     Block,
     DebugFrameResult,
-    DebugStateDiffResult
+    DebugStateDiffResult,
+    BlockAccessList
 } from '@subsquid/evm-rpc'
 import {assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
@@ -24,6 +25,7 @@ export type RawBlock = GetBlock & {
     transactions: RawTransaction[]
     logs_?: Log[]
     unknownTraceReplays_?: TraceTransactionReplay[]
+    blockAccessList_?: BlockAccessList
 }
 
 
@@ -39,6 +41,10 @@ export function toRawBlock(block: Block): RawBlock {
     if (block.logs) {
         assert(block.receipts == null)
         rawBlock.logs_ = block.logs
+    }
+
+    if (block.blockAccessList) {
+        rawBlock.blockAccessList_ = block.blockAccessList
     }
 
     if (block.receipts) {

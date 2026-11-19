@@ -2,6 +2,26 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "4.17.0",
+      "tag": "@subsquid/rpc-client_v4.17.0",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Count retried errors by kind: `getRetryKind()` and `retriedErrors` in `getMetrics()`"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Retry Cloudflare origin errors (HTTP 520-524) like other gateway errors"
+          },
+          {
+            "comment": "Retry HTTP 500 whose body is not a JSON-RPC response, which comes from a proxy in front of the node rather than from the node. A failed response labeled as JSON whose body does not parse now surfaces as an HTTP error with the status, not as a parse error"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.16.1",
       "tag": "@subsquid/rpc-client_v4.16.1",
       "date": "Thu, 27 Aug 2026 13:59:40 GMT",

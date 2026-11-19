@@ -1,6 +1,11 @@
 # Change Log - @subsquid/evm-stream
 
-This log was last generated on Thu, 27 Aug 2026 13:59:40 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 0.1.5
+Mon, 14 Sep 2026 10:05:38 GMT
+
+_Version update only_
 
 ## 0.1.4
 Thu, 27 Aug 2026 13:59:40 GMT

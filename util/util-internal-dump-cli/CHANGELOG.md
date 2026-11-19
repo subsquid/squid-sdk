@@ -1,6 +1,26 @@
 # Change Log - @subsquid/util-internal-dump-cli
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 2.2.0
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Minor changes
+
+- `Dumper.getArchivedBlock()`: read a block back from the destination archive
+- pass the hash of the last archived block to `getBlocks()`, let a dumper register its own counters and check its options through `validateOptions()` before the dump starts
+
+### Patches
+
+- Report `sqd_dump_chain_height` from the head the ingest loop polls, so `/metrics` no longer waits on the RPC endpoint
+- Export `sqd_chain_rpc_retried_errors_total` by kind
+
+## 2.1.0
+Mon, 14 Sep 2026 10:49:58 GMT
+
+### Minor changes
+
+- add `--compression` and `--compression-level` options
 
 ## 2.0.0
 Mon, 11 May 2026 05:34:26 GMT

@@ -1,0 +1,52 @@
+{
+  "network": "devnet",
+  "defect": "stale-entry",
+  "scenario": "direct-with-value",
+  "traceAddress": [
+    0
+  ],
+  "defectiveClient": "anvil/v1.0.0",
+  "defectiveTransactionHash": "0xfe7e3cd11c6f13a78e17c5f79517f2f46b425bade1505a8c03a30090a2e88368",
+  "completeClient": "Geth/v1.17.5-stable-9621c6ad/linux-arm64/go1.26.5",
+  "completeTransactionHash": "0xfa03ceab100652aa3bdd6f38fcaab230c84507e98bf240b4e89c5f54980d2256",
+  "defective": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x441d8",
+    "gasUsed": "0x6592",
+    "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "gas": "0x0",
+        "gasUsed": "0x0",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "value": "0xde0b6b3a7640000",
+        "type": "SELFDESTRUCT"
+      }
+    ],
+    "value": "0xde0b6b3a7640000",
+    "type": "CALL"
+  },
+  "complete": {
+    "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "gas": "0x493e0",
+    "gasUsed": "0x6592",
+    "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+    "input": "0x",
+    "calls": [
+      {
+        "from": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "gas": "0x0",
+        "gasUsed": "0x0",
+        "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+        "input": "0x",
+        "value": "0xde0b6b3a7640001",
+        "type": "SELFDESTRUCT"
+      }
+    ],
+    "value": "0xde0b6b3a7640000",
+    "type": "CALL"
+  }
+}

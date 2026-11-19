@@ -1,6 +1,13 @@
 # Change Log - @subsquid/graphql-server
 
-This log was last generated on Fri, 10 Jul 2026 07:08:47 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 4.12.2
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- Update dependency ranges: @graphql-tools/merge ^9.2.4, @graphql-tools/utils ^10.11.0, @graphql-tools/schema ^10.1.1, dotenv ^16.6.1, express ^4.22.3, graphql ^15.10.3, graphql-ws ^5.16.2, pg ^8.23.0, ws ^8.21.3; peer class-validator ^0.14.4, typeorm ^0.3.31
 
 ## 4.12.1
 Fri, 10 Jul 2026 07:08:47 GMT

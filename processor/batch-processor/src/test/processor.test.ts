@@ -624,19 +624,10 @@ describe('Processor', () => {
     // fork-deep.test.ts.
     it.todo('groupSize > 1 mid-group baseHead')
 
-    // Deep EVM reorg end-to-end is still unverified on this layer. The
-    // deep-reorg test above feeds a synthetic ForkException with a complete
-    // previousBlocks history, so it exercises findRollbackIndex in isolation
-    // but not the real chain-specific datasource behavior: ensureContinuity
-    // in EvmRpcDataSource decides what previousBlocks payload to actually
-    // throw, and any N-block reorg will fire one ForkException per fork-
-    // point mismatch. A true end-to-end test would wire a mock EVM RPC (not
-    // a ProgrammableSource) through EvmRpcDataSource and into Processor +
-    // TypeormDatabase, then assert the final state is correct and the
-    // processor survives the full reorg cycle without hitting the
-    // 'Unable to process fork' guard for cases where the fork-point IS in
-    // our chain. Needs the full integration harness — deferred.
-    it.todo('deep EVM reorg end-to-end: EvmRpcDataSource + Processor + TypeormDatabase')
+    // The ForkException tests above feed synthetic `previousBlocks`, so they verify findRollbackIndex
+    // against *this* side's idea of the payload only. What a real RPC source puts there is checked
+    // end to end - MockEvmRpc + EvmRpcDataSource + Processor + a rolling-back hot database - in
+    // meta/squid-sdk/src/evm/rpc/reorg.test.ts (#631: every RPC reorg ended in 'Unable to process fork').
 
     // coldIngest over-fetch + empty split. These test the internals of
     // util-internal-ingest-tools/cold.ts, below the Processor boundary.

@@ -1,4 +1,3 @@
-import {createReadStream} from 'fs'
 import * as fs from 'fs/promises'
 import * as Path from 'path'
 import {Readable} from 'stream'
@@ -70,8 +69,9 @@ export class LocalFs implements Fs {
     }
 
     async readStream(path: string): Promise<Readable> {
-        let item = this.abs(path)
-        return createReadStream(item)
+        // open before returning, so that a missing file rejects here, as it does on S3
+        let handle = await fs.open(this.abs(path))
+        return handle.createReadStream()
     }
 
     async readFile(path: string): Promise<Uint8Array>

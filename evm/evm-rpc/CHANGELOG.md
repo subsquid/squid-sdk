@@ -1,6 +1,54 @@
 # Change Log - @subsquid/evm-rpc
 
-This log was last generated on Thu, 30 Jul 2026 15:44:58 GMT and should not be manually modified.
+This log was last generated on Wed, 11 Nov 2026 19:54:14 GMT and should not be manually modified.
+
+## 0.3.2
+Wed, 11 Nov 2026 19:54:14 GMT
+
+### Patches
+
+- On a reorg, report up to 100 blocks of the new chain below the fork in `ForkException.previousBlocks`, as the Portal does, so the batch processor can roll back to the last shared block instead of failing with "Unable to process fork"
+
+## 0.3.1
+Wed, 11 Nov 2026 17:34:29 GMT
+
+### Patches
+
+- bind an opcode-traced selfdestruct to its own `SELFDESTRUCT` frame whichever the client reports first, so a genuine selfdestruct traced by newer reth is confirmed instead of rejected
+
+## 0.3.0
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Minor changes
+
+- Verify Amsterdam headers (blockAccessListHash, slotNumber) and optionally fetch and verify EIP-7928 block access lists; a block that stays invalid on the finalized polling path now fails the stream instead of stalling it
+- export `ChainUtils` and the block checks of `Rpc` (`checkBlockHeader()`, `checkBlockLogs()`, `checkBlockReceipts()`, `checkStoredDebugFrame()`), make `Rpc.getChainUtils()` public. Add `ChainUtils.getRootTransactions()` and `ChainUtils.calculateTransactionHash()`
+- Validate debug call frames and state diffs against receipt status, gasUsed and transaction fees (--consensus-anchor-validation, --consensus-anchor-rules)
+
+### Patches
+
+- Validate transaction nonce as a wide quantity so Tempo 0x76 uint64 nonces no longer crash the dumper
+- consensus anchors: the `gas` rule skips a zero-priced transaction whose receipt reports no gas (HyperEVM HyperCore system transactions)
+- disable cronos specific logic
+- export `checkConsensusAnchors` and the system-address balance helpers, for checks of blocks that did not come through `Rpc`
+- accept the empty call frame Scroll returns for an L1 message that fails before execution, rejecting empty frames everywhere else with a clear error; verify the transactions root of blocks with Scroll L1 messages
+- Classify retried errors as rate_limit, transient, internal or no_result for metrics
+- Retry transient provider and proxy errors: rate limits under code -32429, error text or null in place of a result, and upstream-unavailable or block-not-yet-available messages
+- recover selfdestruct call frames misreported by revm-based tracers with an opcode-level trace, and reject the block when they cannot be recovered
+- Retry transaction pre-check failures (insufficient funds, nonce too low or high, intrinsic gas too low) returned while tracing a mined block, under any code or proxy cause
+- Accept a nonce above 2^53 in Tempo AA and Frontier EIP-7702 authorizations
+
+## 0.2.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- Make the head poll interval configurable through `EvmRpcDataSourceOptions.headPollInterval`. Defaults to the previous hard-coded 100ms.
+- expose Avalanche block header fields on GetBlock, verify block hashes and the extDataHash commitment
+
+### Patches
+
+- fall back to per-transaction debug tracing and receipts when a block response is too large
 
 ## 0.1.0
 Thu, 30 Jul 2026 15:44:58 GMT

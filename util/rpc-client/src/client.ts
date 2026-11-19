@@ -79,6 +79,10 @@ export interface RpcMetrics {
     connectionErrors: number
     notificationsReceived: number
     avgResponseTime: number
+    /**
+     * Retried errors by {@link RpcClient.getRetryKind}
+     */
+    retriedErrors: Record<string, number>
 }
 
 
@@ -94,6 +98,12 @@ export interface CallOptions<R=any> {
      */
     validateResult?: ResultValidator<R>
     validateError?: ErrorValidator<R>
+    /**
+     * Largest response, in bytes, to read. A larger one fails the call with
+     * {@link RpcResponseTooLargeError} and is not retried. Enforced over HTTP only:
+     * a WebSocket message has already been received whole.
+     */
+    maxResponseSize?: number
 }
 
 
@@ -110,6 +120,7 @@ interface Req {
     reject(error: Error): void
     validateResult?: ResultValidator | undefined
     validateError?: ErrorValidator | undefined
+    maxResponseSize?: number
 }
 
 
@@ -134,6 +145,7 @@ export class RpcClient {
     private schedulingScheduled = false
     private connectionErrorsInRow = 0
     private connectionErrors = 0
+    private retriedErrors: Record<string, number> = {}
     private requestsServed = 0
     private notificationsReceived = 0
     private totalResponseTime = 0
@@ -212,6 +224,7 @@ export class RpcClient {
             // FIXME: only one of these metrics should remain; decide which to keep
             avg_response_time: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
             avgResponseTime: this.requestsServed > 0 ? this.totalResponseTime / this.requestsServed : 0,
+            retriedErrors: {...this.retriedErrors},
         }
     }
 
@@ -287,6 +300,7 @@ export class RpcClient {
                 reject,
                 validateResult: options?.validateResult,
                 validateError: options?.validateError,
+                maxResponseSize: options?.maxResponseSize,
             })
         })
     }
@@ -331,7 +345,8 @@ export class RpcClient {
                 resolve,
                 reject,
                 validateResult: options?.validateResult,
-                validateError: options?.validateError
+                validateError: options?.validateError,
+                maxResponseSize: options?.maxResponseSize
             })
         })
     }
@@ -395,7 +410,7 @@ export class RpcClient {
         if (Array.isArray(req.call)) {
             let call = req.call
             this.log?.debug({rpcBatchId: [call[0].id, last(call).id]}, 'rpc send')
-            promise = this.con.batchCall(call, req.timeout).then(res => {
+            promise = this.con.batchCall(call, req.timeout, {maxResponseSize: req.maxResponseSize}).then(res => {
                 let result = new Array(res.length)
                 for (let i = 0; i < res.length; i++) {
                     result[i] = this.receiveResult(call[i], res[i], req.validateResult, req.validateError)
@@ -405,7 +420,7 @@ export class RpcClient {
         } else {
             let call = req.call
             this.log?.debug({rpcId: call.id}, 'rpc send')
-            promise = this.con.call(call, req.timeout).then(res => {
+            promise = this.con.call(call, req.timeout, {maxResponseSize: req.maxResponseSize}).then(res => {
                 return this.receiveResult(call, res, req.validateResult, req.validateError)
             })
         }
@@ -422,6 +437,7 @@ export class RpcClient {
             if (this.isConnectionError(err)) {
                 if (req.retryAttempts > 0) {
                     req.retryAttempts -= 1
+                    this.countRetriedError(err)
                     this.enqueue(req)
                 } else {
                     req.reject(err)
@@ -453,6 +469,7 @@ export class RpcClient {
             } catch(err: any) {
                 if (this.closed) return
                 if (err instanceof RpcConnectionError) {
+                    this.countRetriedError(err)
                     this.backoff(err)
                 } else {
                     throw err
@@ -544,12 +561,60 @@ export class RpcClient {
                 case 502:
                 case 503:
                 case 504:
+                // Cloudflare: the edge is up, the origin behind it failed or timed out
+                case 520:
+                case 521:
+                case 522:
+                case 523:
+                case 524:
                     return true
+                // Bitcoin Core and others answer ordinary JSON-RPC errors with a 500.
+                // Any other body comes from a proxy in front of the node failing.
+                case 500:
+                    return !isJsonRpcResponseBody(err.response.body)
                 default:
                     return false
             }
         }
         return false
+    }
+
+    /**
+     * Coarse class of an error {@link isConnectionError} accepted, for metrics.
+     */
+    getRetryKind(err: Error): string {
+        if (err instanceof HttpError) {
+            switch(err.response.status) {
+                case 429:
+                    return 'rate_limit'
+                case 408:
+                case 504:
+                case 524:
+                    return 'timeout'
+                default:
+                    return 'http'
+            }
+        }
+        if (isRateLimitError(err)) return 'rate_limit'
+        if (err instanceof HttpTimeoutError) return 'timeout'
+        if (isExecutionTimeoutError(err) || isRequestTimedOutError(err)) return 'timeout'
+        if (err instanceof RpcConnectionError || isHttpConnectionError(err)) return 'connection'
+        if (err instanceof RetryError) return 'retry'
+        return 'other'
+    }
+
+    /**
+     * Count a retry made on top of this client - by code that catches an error the client did not
+     * retry itself and calls again - so that `retriedErrors` in {@link getMetrics} covers it too.
+     * `kind` is the label it is counted under, as returned by {@link getRetryKind} for the client's
+     * own retries.
+     */
+    recordRetriedError(kind: string): void {
+        this.retriedErrors[kind] = (this.retriedErrors[kind] ?? 0) + 1
+    }
+
+    private countRetriedError(err: Error): void {
+        this.recordRetriedError(this.getRetryKind(err))
     }
 
     reset(reason?: RpcConnectionError): void {
@@ -605,5 +670,34 @@ function isExecutionTimeoutError(err: unknown): boolean {
 
 function isRequestTimedOutError(err: unknown): boolean {
     return err instanceof RpcError && /request.*timed out/i.test(err.message)
+}
+
+
+function isJsonRpcResponseBody(body: unknown): boolean {
+    let json = parseJson(body)
+    let responses = Array.isArray(json) ? json : [json]
+    return responses.some(isJsonRpcResponse)
+}
+
+
+// JSON-RPC 1.0 responses, Bitcoin Core's among them, have no `jsonrpc` member,
+// only `id`. A bare `error` object, with neither, comes from a proxy.
+function isJsonRpcResponse(value: unknown): boolean {
+    if (value == null || typeof value != 'object') return false
+
+    let hasEnvelope = 'jsonrpc' in value || 'id' in value
+    let hasOutcome = 'result' in value || 'error' in value
+    return hasEnvelope && hasOutcome
+}
+
+
+// JSON sent under a non-JSON content type arrives as text or bytes.
+function parseJson(body: unknown): unknown {
+    if (typeof body != 'string' && !Buffer.isBuffer(body)) return body
+    try {
+        return JSON.parse(body.toString())
+    } catch {
+        return undefined
+    }
 }
 

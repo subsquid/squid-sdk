@@ -1,6 +1,14 @@
-import {type CallFrameValidationMode, Rpc, EvmRpcDataSource, EvmRpcClient} from '@subsquid/evm-rpc'
+import {
+    type CallFrameValidationMode,
+    type ConsensusAnchorRule,
+    type ConsensusAnchorValidationMode,
+    Rpc,
+    EvmRpcDataSource,
+    EvmRpcClient
+} from '@subsquid/evm-rpc'
 import type {Block, DataSource} from '@subsquid/util-internal-data-service'
 import {createLogger} from '@subsquid/logger'
+import type {RpcMetrics} from '@subsquid/rpc-client'
 import {Mapping} from './mapping'
 
 
@@ -30,13 +38,21 @@ export interface DataSourceOptions {
     verifyWithdrawalsRoot?: boolean
     verifyLogsBloom?: boolean
     callFrameValidation?: CallFrameValidationMode
+    consensusAnchorValidation?: ConsensusAnchorValidationMode
+    consensusAnchorRules?: ConsensusAnchorRule[]
     skipLogIndexCheck?: boolean
     skipCumulativeGasUsedCheck?: boolean
     useGasUsedForReceiptsRoot?: boolean
 }
 
 
-export function createDataSource(options: DataSourceOptions): DataSource<Block> {
+export interface DataSourceSetup {
+    source: DataSource<Block>
+    getRpcMetrics(): RpcMetrics
+}
+
+
+export function createDataSource(options: DataSourceOptions): DataSourceSetup {
     let httpRpcClient = new EvmRpcClient({
         url: options.httpRpc,
         maxBatchCallSize: options.httpRpcMaxBatchCallSize,
@@ -58,6 +74,8 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         verifyWithdrawalsRoot: options.verifyWithdrawalsRoot,
         verifyLogsBloom: options.verifyLogsBloom,
         callFrameValidation: options.callFrameValidation,
+        consensusAnchorValidation: options.consensusAnchorValidation,
+        consensusAnchorRules: options.consensusAnchorRules,
         checkLogIndex: !options.skipLogIndexCheck,
         checkCumulativeGasUsed: !options.skipCumulativeGasUsedCheck,
         useGasUsedForReceiptsRoot: options.useGasUsedForReceiptsRoot
@@ -78,8 +96,12 @@ export function createDataSource(options: DataSourceOptions): DataSource<Block> 
         strideSize: options.httpRpcStrideSize,
         strideConcurrency: options.httpRpcStrideConcurrency
     })
-    return new Mapping(rpcSource, {
+    let source = new Mapping(rpcSource, {
         withTraces: options.withTraces,
         withStateDiffs: options.withStatediffs,
     })
+    return {
+        source,
+        getRpcMetrics: () => httpRpcClient.getMetrics()
+    }
 }

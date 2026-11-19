@@ -3,6 +3,6 @@ import {createSecondaryDataSource, DataSourceOptions} from './setup'
 import {startServer} from './worker'
 
 const options = getServerArguments<DataSourceOptions>();
-const source = createSecondaryDataSource(options)
+const {source, getRpcMetrics} = createSecondaryDataSource(options)
 
-startServer(source)
+startServer(source, getRpcMetrics)

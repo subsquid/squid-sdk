@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Wed, 22 Apr 2026 07:00:43 GMT and should not be manually modified.
+This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+
+## 4.5.0
+Mon, 14 Sep 2026 10:05:38 GMT
+
+### Minor changes
+
+- report version and transaction extension values of v5 general extrinsics, extract tips from them and fetch a v16 metadata via the `Metadata_metadata_at_version` runtime call
 
 ## 4.4.6
 Wed, 22 Apr 2026 07:00:43 GMT

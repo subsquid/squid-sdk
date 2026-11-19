@@ -2,6 +2,18 @@
   "name": "@subsquid/util-internal-json",
   "entries": [
     {
+      "version": "1.2.5",
+      "tag": "@subsquid/util-internal-json_v1.2.5",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Pass JSON.rawJSON values through toJSON unchanged"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.2.4",
       "tag": "@subsquid/util-internal-json_v1.2.4",
       "date": "Tue, 23 Jun 2026 17:42:56 GMT",

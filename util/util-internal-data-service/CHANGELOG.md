@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-data-service
 
-This log was last generated on Wed, 08 Jul 2026 22:11:26 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 0.1.2
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- Export `sqd_hotblocks_ingestion_restarts_total` and `sqd_chain_rpc_retried_errors_total`, with `RpcMetricsCollector` to read RPC clients in worker threads
 
 ## 0.1.1
 Wed, 08 Jul 2026 22:11:26 GMT

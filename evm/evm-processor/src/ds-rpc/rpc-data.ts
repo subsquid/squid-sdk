@@ -63,6 +63,9 @@ export const GetBlockWithTransactions = object({
     hash: BYTES,
     parentHash: BYTES,
     logsBloom: BYTES,
+    // Avalanche C-Chain since Helicon (ACP-194). Only used as a presence marker:
+    // such headers' logsBloom does not describe the block's own logs
+    settledHeight: option(QTY),
     transactions: array(Transaction)
 })
 
@@ -72,6 +75,9 @@ export const GetBlockNoTransactions = object({
     hash: BYTES,
     parentHash: BYTES,
     logsBloom: BYTES,
+    // Avalanche C-Chain since Helicon (ACP-194). Only used as a presence marker:
+    // such headers' logsBloom does not describe the block's own logs
+    settledHeight: option(QTY),
     transactions: array(BYTES)
 })
 
@@ -81,6 +87,11 @@ export interface GetBlock {
     hash: Bytes32
     parentHash: Bytes32
     logsBloom: Bytes
+    /**
+     * Avalanche C-Chain since Helicon (ACP-194): header `logsBloom` and `receiptsRoot`
+     * commit to the blocks settled since the previous header, not to the block itself
+     */
+    settledHeight?: Qty | null
     transactions: Bytes32[] | Transaction[]
 }
 

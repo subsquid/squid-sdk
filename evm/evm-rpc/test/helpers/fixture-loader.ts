@@ -1,4 +1,4 @@
-import { GetBlock, Receipt } from '../../src/rpc-data'
+import { BlockAccessList, GetBlock, Receipt } from '../../src/rpc-data'
 import * as fs from 'fs'
 import * as Path from 'path'
 
@@ -20,6 +20,9 @@ const CHAIN_IDS: Record<string, string> = {
     'base-mainnet': '0x2105',
     'ethereum-sepolia': '0xaa36a7',
     'avalanche-testnet': '0xa869',
+    'geth-dev': '0x539',
+    anvil: '0x7a69',
+    scroll: '0x82750',
 }
 
 
@@ -87,6 +90,24 @@ export function loadDebugFrames(chain: string, blockNumber: number, variant?: st
         throw new Error(`Fixture not found: ${path}`)
     }
     return JSON.parse(fs.readFileSync(path, 'utf-8'))
+}
+
+
+/**
+ * Loads a captured `eth_getBlockAccessListByBlockHash` response (EIP-7928).
+ */
+export function loadBlockAccessList(chain: string, blockNumber: number): BlockAccessList {
+    const path = Path.join(FIXTURES_DIR, chain, blockNumber.toString(), 'block-access-list.json')
+    if (!fs.existsSync(path)) {
+        throw new Error(`Fixture not found: ${path}`)
+    }
+    return JSON.parse(fs.readFileSync(path, 'utf-8'))
+}
+
+
+export function hasBlockAccessList(chain: string, blockNumber: number): boolean {
+    const path = Path.join(FIXTURES_DIR, chain, blockNumber.toString(), 'block-access-list.json')
+    return fs.existsSync(path)
 }
 
 

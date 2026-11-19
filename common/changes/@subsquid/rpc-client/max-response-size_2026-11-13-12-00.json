@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/rpc-client",
+      "comment": "add `CallOptions.maxResponseSize` (HTTP only): a larger response fails the call with `RpcResponseTooLargeError` and is not retried",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/rpc-client"
+}

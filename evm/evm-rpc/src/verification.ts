@@ -23,6 +23,8 @@ import {
     Log,
     Receipt,
     Withdrawal,
+    BlockAccessList,
+    BlockAccessListChange,
 } from './rpc-data'
 import {qty2Int} from './util'
 import {Bytes20, Bytes32, Qty} from './types'
@@ -191,6 +193,16 @@ function ethereumHeaderFields(block: GetBlock) {
     // https://eips.ethereum.org/EIPS/eip-7685
     if (block.requestsHash) {
         fields.push(decodeHex(block.requestsHash))
+    }
+
+    // https://eips.ethereum.org/EIPS/eip-7928
+    if (block.blockAccessListHash) {
+        fields.push(decodeHex(block.blockAccessListHash))
+    }
+
+    // https://eips.ethereum.org/EIPS/eip-7843
+    if (block.slotNumber) {
+        fields.push(BigInt(block.slotNumber))
     }
 
     return fields
@@ -421,6 +433,18 @@ function encodeTransaction(tx: Transaction): Buffer {
         // https://github.com/tempoxyz/tempo/blob/main/crates/primitives/src/transaction/tempo_transaction.rs
         let payload = RLP.encode(encodeTempoTransactionFields(tx))
         return Buffer.concat([Buffer.from([0x76]), Buffer.from(payload)])
+    } else if (tx.type == '0x7e' && tx.queueIndex != null) {
+        // Scroll L1 message, which shares the type byte with OP deposits
+        // https://github.com/scroll-tech/go-ethereum/blob/develop/core/types/l1_message_tx.go
+        let payload = RLP.encode([
+            BigInt(tx.queueIndex),
+            BigInt(tx.gas),
+            tx.to ? decodeHex(tx.to) : Buffer.alloc(0),
+            BigInt(assertNotNull(tx.value, 'tx.value is missing')),
+            decodeHex(assertNotNull(tx.input, 'tx.input is missing')),
+            decodeHex(assertNotNull(tx.sender, 'tx.sender is missing'))
+        ])
+        return Buffer.concat([Buffer.from([0x7e]), Buffer.from(payload)])
     } else if (tx.type == '0x7e') {
         // https://github.com/ethereum-optimism/optimism/blob/9ff3ebb3983be52c3ca189423ae7b4aec94e0fde/specs/deposits.md#the-deposited-transaction-type
         let payload = RLP.encode([
@@ -743,6 +767,14 @@ export async function transactionsRoot(transactions: Transaction[]) {
     }
 
     return toHex(trie.root())
+}
+
+
+/**
+ * The hash of a transaction is the hash of the same encoding the transactions root covers
+ */
+export function transactionHash(tx: Transaction): Bytes32 {
+    return toHex(keccak256(encodeTransaction(tx)))
 }
 
 
@@ -1106,14 +1138,62 @@ export async function withdrawalsRoot(withdrawals: Withdrawal[]) {
 }
 
 
-// Debug tracers serialize call kinds with inconsistent casing across node
-// implementations (geth `CALL`, some tracers `call`, zkSync-era `Call`), so every
-// membership test below compares the canonical upper-cased form.
-function canonicalFrameType(type: string): string {
-    return type.toUpperCase()
+function encodeBlockAccessListChanges(changes: BlockAccessListChange[]) {
+    return changes.map(change => [BigInt(change.index), BigInt(change.value)])
 }
 
-const CALL_FRAME_TYPES = new Set([
+
+/**
+ * `keccak256(rlp(block_access_list))`, the value committed to by the
+ * `blockAccessListHash` header field. Storage keys and values are encoded
+ * as integers, accounts and changes keep the order the RPC returns them in.
+ *
+ * https://eips.ethereum.org/EIPS/eip-7928
+ */
+export function blockAccessListHash(accessList: BlockAccessList): Bytes32 {
+    let accounts = accessList.map(account => [
+        decodeHex(account.address),
+        account.storageChanges.map(slot => [
+            BigInt(slot.key),
+            encodeBlockAccessListChanges(slot.changes)
+        ]),
+        account.storageReads.map(key => BigInt(key)),
+        encodeBlockAccessListChanges(account.balanceChanges),
+        encodeBlockAccessListChanges(account.nonceChanges),
+        account.codeChanges.map(change => [BigInt(change.index), decodeHex(change.code)])
+    ])
+    return toHex(keccak256(RLP.encode(accounts)))
+}
+
+
+/**
+ * A set of debug call-frame types that matches case-insensitively.
+ *
+ * Tracers spell call kinds differently: geth `CALL`, some tracers `call` or `delegateCall`,
+ * zkSync-era nodes `Call`. Every frame-type test goes through one of these sets (or
+ * {@link isStopFrameType}), so no comparison can depend on the casing.
+ */
+class FrameTypeSet {
+    private types: Set<string>
+
+    constructor(types: Iterable<string>) {
+        this.types = new Set(Array.from(types, t => t.toUpperCase()))
+    }
+
+    has(type: string): boolean {
+        return this.types.has(type.toUpperCase())
+    }
+
+    [Symbol.iterator](): IterableIterator<string> {
+        return this.types[Symbol.iterator]()
+    }
+}
+
+function isStopFrameType(type: string): boolean {
+    return type.toUpperCase() === 'STOP'
+}
+
+const CALL_FRAME_TYPES = new FrameTypeSet([
     'CALL',
     'CALLCODE',
     'DELEGATECALL',
@@ -1123,13 +1203,13 @@ const CALL_FRAME_TYPES = new Set([
 
 // INVALID is a top-level execution outcome, not a nested-only call kind: unlike
 // DELEGATECALL/STATICCALL/CALLCODE it can legitimately appear as a root frame.
-const ROOT_CALL_FRAME_TYPES = new Set(['CALL', 'INVALID'])
-const CREATE_FRAME_TYPES = new Set([
+const ROOT_CALL_FRAME_TYPES = new FrameTypeSet(['CALL', 'INVALID'])
+const CREATE_FRAME_TYPES = new FrameTypeSet([
     'CREATE',
     'CREATE2'
 ])
-const SELFDESTRUCT_FRAME_TYPES = new Set(['SELFDESTRUCT'])
-const MAPPABLE_FRAME_TYPES = new Set([
+const SELFDESTRUCT_FRAME_TYPES = new FrameTypeSet(['SELFDESTRUCT'])
+const MAPPABLE_FRAME_TYPES = new FrameTypeSet([
     ...CALL_FRAME_TYPES,
     ...CREATE_FRAME_TYPES,
     ...SELFDESTRUCT_FRAME_TYPES
@@ -1140,8 +1220,10 @@ export interface CallFrame {
     type: string
     from: Bytes20
     to?: Bytes20 | null
+    value?: Qty | null
     input?: string | null
     output?: string | null
+    error?: string | null
     gasUsed?: string | null
     calls?: CallFrame[] | null
 }
@@ -1160,18 +1242,17 @@ export function checkDebugFrameStructure(root: CallFrame): string | undefined {
 
 function checkFrameStructure(frame: CallFrame, traceAddress: number[]): string | undefined {
     let label = frameLabel(traceAddress)
-    let type = canonicalFrameType(frame.type)
 
     // Normalization treats a root STOP result as an empty trace list. The same
     // type nested in a tree has no mapper representation.
-    if (type === 'STOP' && traceAddress.length === 0) {
+    if (isStopFrameType(frame.type) && traceAddress.length === 0) {
         if (frame.calls?.length) {
             return 'root STOP frame has subcalls'
         }
         return
     }
 
-    if (!MAPPABLE_FRAME_TYPES.has(type)) {
+    if (!MAPPABLE_FRAME_TYPES.has(frame.type)) {
         return `${label} has unsupported type ${frame.type}`
     }
 
@@ -1183,14 +1264,14 @@ function checkFrameStructure(frame: CallFrame, traceAddress: number[]): string |
         return `${label} has invalid to address ${frame.to}`
     }
 
-    if (CALL_FRAME_TYPES.has(type)) {
+    if (CALL_FRAME_TYPES.has(frame.type)) {
         if (frame.to == null) {
             return `${callFrameLabel(traceAddress)} has no target`
         }
         if (frame.input == null) {
             return `${callFrameLabel(traceAddress)} has no input`
         }
-    } else if (CREATE_FRAME_TYPES.has(type)) {
+    } else if (CREATE_FRAME_TYPES.has(frame.type)) {
         if (frame.input == null) {
             return `${createFrameLabel(traceAddress)} has no init code`
         }
@@ -1199,7 +1280,7 @@ function checkFrameStructure(frame: CallFrame, traceAddress: number[]): string |
         if ((frame.to || frame.output) && !frame.gasUsed) {
             return `${createFrameLabel(traceAddress)} has a result but no gas used`
         }
-    } else if (SELFDESTRUCT_FRAME_TYPES.has(type) && frame.to == null) {
+    } else if (SELFDESTRUCT_FRAME_TYPES.has(frame.type) && frame.to == null) {
         return `${selfdestructFrameLabel(traceAddress)} has no beneficiary`
     }
 
@@ -1226,18 +1307,18 @@ export function checkCallFrameTree(
 ): string | undefined {
     // A root STOP maps to an empty trace list, so there is nothing to agree with the
     // transaction about. The structural check owns this shape.
-    if (canonicalFrameType(root.type) === 'STOP') return
+    if (isStopFrameType(root.type)) return
 
     if (!sameAddress(root.from, tx.from)) {
         return `root frame is executed by ${root.from}, but the transaction is sent by ${tx.from}`
     }
 
     if (tx.to == null) {
-        if (!CREATE_FRAME_TYPES.has(canonicalFrameType(root.type))) {
+        if (!CREATE_FRAME_TYPES.has(root.type)) {
             return `root frame has type ${root.type}, but the transaction creates a contract`
         }
     } else {
-        if (!ROOT_CALL_FRAME_TYPES.has(canonicalFrameType(root.type))) {
+        if (!ROOT_CALL_FRAME_TYPES.has(root.type)) {
             return `root frame has type ${root.type}, but the transaction calls ${tx.to}`
         }
         if (!sameAddress(root.to, tx.to)) {
@@ -1263,14 +1344,14 @@ function checkSubcalls(parent: CallFrame, traceAddress: number[]): string | unde
             return `frame ${at.join('/')} is executed by ${call.from}, but ${executor} is on top of the call stack`
         }
 
-        if (SELFDESTRUCT_FRAME_TYPES.has(canonicalFrameType(call.type)) && call.to == null) {
+        if (SELFDESTRUCT_FRAME_TYPES.has(call.type) && call.to == null) {
             return `${selfdestructFrameLabel(at)} has no beneficiary`
         }
 
         // An unknown child type cannot define the execution context for its own
         // children. Keep validating independent ancestors and siblings, but leave
         // that subtree to the structural validator.
-        if (!MAPPABLE_FRAME_TYPES.has(canonicalFrameType(call.type))) continue
+        if (!MAPPABLE_FRAME_TYPES.has(call.type)) continue
 
         let violation = checkSubcalls(call, at)
         if (violation) return violation
@@ -1278,8 +1359,865 @@ function checkSubcalls(parent: CallFrame, traceAddress: number[]): string | unde
 }
 
 
+/**
+ * Rules that check a debug trace or a state diff against data the block commits to:
+ *
+ * - `status`: the receipt status agrees with the root frame's error.
+ * - `gas`: the root frame's gasUsed equals the receipt's (regular transactions).
+ * - `system-gas`: a system transaction (sent by the block miner at zero gas price)
+ *   whose root frame executed nothing while the receipt says gas was used.
+ * - `system-fee`: the balance change of the system address in the state diff equals
+ *   the transaction fee plus the value frames moved to or from it. This holds on
+ *   chains that credit fees to the system address during each transaction (BSC).
+ *
+ * A transaction that executed differently from the chain leaves a different footprint
+ * in these values, so a trace or state diff from such an execution fails them.
+ */
+export const CONSENSUS_ANCHOR_RULES = ['status', 'gas', 'system-gas', 'system-fee'] as const
+
+export type ConsensusAnchorRule = (typeof CONSENSUS_ANCHOR_RULES)[number]
+
+export const SYSTEM_ADDRESS = '0xfffffffffffffffffffffffffffffffffffffffe'
+
+
+export interface ConsensusAnchorViolation {
+    rule: ConsensusAnchorRule
+    expected: string
+    actual: string
+}
+
+
+
+export interface ConsensusAnchorInput {
+    /** Block miner (coinbase). */
+    miner: Bytes20
+    transaction: {
+        from: Bytes20
+        to?: Bytes20 | null
+        gasPrice?: Qty | null
+        input?: string | null
+        accessList?: AccessListItem[] | null
+        authorizationList?: EIP7702AuthorizationItem[] | null
+    }
+    receipt: {
+        status?: number | null
+        gasUsed: Qty
+        effectiveGasPrice?: Qty | null
+        blobGasUsed?: Qty | null
+        blobGasPrice?: Qty | null
+    }
+    /** Root call frame; `undefined` when the trace has none for the transaction. */
+    root: CallFrame | undefined
+    /**
+     * Balance change of {@link SYSTEM_ADDRESS} in the transaction's state diff. An account
+     * the diff leaves out changed by zero. `undefined` when state diffs were not fetched
+     * (the `system-fee` rule does not apply), `null` when they were but the transaction
+     * has none (a `system-fee` violation).
+     */
+    systemBalanceDelta?: bigint | null
+}
+
+
+/**
+ * Checks one transaction's root call frame (and state diff, when given) against its
+ * receipt. Returns every violated rule among `rules`.
+ */
+export function checkConsensusAnchors(
+    input: ConsensusAnchorInput,
+    rules: ReadonlySet<ConsensusAnchorRule>
+): ConsensusAnchorViolation[] {
+    let {miner, transaction, receipt, root} = input
+    let violations: ConsensusAnchorViolation[] = []
+
+    // An absent gas price is not a zero one.
+    let isSystem =
+        sameAddress(transaction.from, miner) &&
+        transaction.gasPrice != null &&
+        toBigInt(transaction.gasPrice) === 0n
+
+    // A transaction that pays nothing and whose receipt reports no gas has no gas anchor: the
+    // receipt does not measure its execution. HyperEVM's HyperCore system transactions are such
+    // (gas price 0, not sent by the miner, receipt gasUsed 0 while the root frame uses gas).
+    let hasGasAnchor =
+        isSystem ||
+        transaction.gasPrice == null ||
+        toBigInt(transaction.gasPrice) !== 0n ||
+        BigInt(receipt.gasUsed) !== 0n
+
+    // A missing call frame, or a root STOP, carries no execution to compare. Accepting it
+    // would let any trace pass by being replaced with one, so the first selected rule
+    // that applies to this transaction reports it.
+    if (root == null || isStopFrameType(root.type)) {
+        let applicable: ConsensusAnchorRule[] = [
+            ...(receipt.status != null ? ['status' as const] : []),
+            ...(isSystem ? ['system-gas' as const] : hasGasAnchor ? ['gas' as const] : []),
+            ...(input.systemBalanceDelta !== undefined ? ['system-fee' as const] : [])
+        ]
+        let rule = applicable.find(r => rules.has(r))
+        if (rule) {
+            violations.push({
+                rule,
+                expected: 'a call or create root frame',
+                actual: root == null ? 'no call frame' : 'root STOP frame'
+            })
+        }
+        return violations
+    }
+
+    let receiptGasUsed = BigInt(receipt.gasUsed)
+    let rootGasUsed = root.gasUsed != null ? toBigInt(root.gasUsed) : undefined
+
+    if ((rules.has('gas') && !isSystem && hasGasAnchor) || (rules.has('system-gas') && isSystem)) {
+        if (rootGasUsed == null) {
+            violations.push({
+                rule: isSystem ? 'system-gas' : 'gas',
+                expected: 'root gasUsed',
+                actual: 'root frame without gasUsed'
+            })
+        }
+    }
+
+    if (rules.has('status') && receipt.status != null) {
+        let failed = !!root.error
+        if (failed === (receipt.status === 1)) {
+            violations.push({
+                rule: 'status',
+                expected: receipt.status === 1 ? 'root frame without error' : 'root frame with error',
+                actual: failed ? `root frame error "${root.error}"` : 'root frame without error'
+            })
+        }
+    }
+
+    if (rules.has('gas') && !isSystem && hasGasAnchor && rootGasUsed != null && rootGasUsed !== receiptGasUsed) {
+        violations.push({
+            rule: 'gas',
+            expected: `root gasUsed ${receiptGasUsed}`,
+            actual: `root gasUsed ${rootGasUsed}`
+        })
+    }
+
+    // Contract creations are left out: their intrinsic gas depends on fork rules for initcode,
+    // and system transactions are calls.
+    if (rules.has('system-gas') && isSystem && rootGasUsed != null && transaction.to != null) {
+        // The receipt of a system transaction is not an exact anchor for the execution
+        // gas, so only a root frame that executed nothing at all is suspect.
+        let intrinsic = intrinsicGasOfCall(transaction)
+        if (rootGasUsed <= intrinsic && receiptGasUsed > intrinsic) {
+            violations.push({
+                rule: 'system-gas',
+                expected: `execution beyond intrinsic gas (receipt gasUsed ${receiptGasUsed})`,
+                actual: `root gasUsed ${rootGasUsed}`
+            })
+        }
+    }
+
+    if (rules.has('system-fee') && input.systemBalanceDelta === null) {
+        violations.push({
+            rule: 'system-fee',
+            expected: 'a state diff for the transaction',
+            actual: 'no state diff'
+        })
+    } else if (rules.has('system-fee') && input.systemBalanceDelta !== undefined) {
+        let price = toBigInt(receipt.effectiveGasPrice ?? transaction.gasPrice)
+        let fee = receiptGasUsed * price + toBigInt(receipt.blobGasUsed) * toBigInt(receipt.blobGasPrice)
+        let expected = fee + systemValueFlow(root)
+        if (expected !== input.systemBalanceDelta) {
+            violations.push({
+                rule: 'system-fee',
+                expected: `system address balance change ${expected}`,
+                actual: `system address balance change ${input.systemBalanceDelta}`
+            })
+        }
+    }
+
+    return violations
+}
+
+
+/**
+ * Net value the frames of a call tree move to {@link SYSTEM_ADDRESS}. A frame that
+ * failed, or has a failed ancestor, moves nothing.
+ */
+export function systemValueFlow(root: CallFrame): bigint {
+    let flow = 0n
+    let visit = (frame: CallFrame, parentFailed: boolean) => {
+        let failed = parentFailed || !!frame.error
+        if (!failed) {
+            let value = toBigInt(frame.value)
+            if (value !== 0n) {
+                if (SELFDESTRUCT_FRAME_TYPES.has(frame.type)) {
+                    if (sameAddress(frame.to, SYSTEM_ADDRESS)) flow += value
+                } else if (VALUE_TRANSFER_FRAME_TYPES.has(frame.type)) {
+                    if (sameAddress(frame.to, SYSTEM_ADDRESS)) flow += value
+                    if (sameAddress(frame.from, SYSTEM_ADDRESS)) flow -= value
+                }
+            }
+        }
+        for (let call of frame.calls || []) {
+            visit(call, failed)
+        }
+    }
+    visit(root, false)
+    return flow
+}
+
+
+// Frames whose value leaves the caller. DELEGATECALL, STATICCALL and CALLCODE
+// move no value to their target.
+const VALUE_TRANSFER_FRAME_TYPES = new FrameTypeSet(['CALL', ...CREATE_FRAME_TYPES])
+
+
+/** Balance change of {@link SYSTEM_ADDRESS} in a `trace_replayBlockTransactions` state diff. */
+export function systemBalanceDeltaFromReplay(
+    stateDiff: Record<string, {balance?: unknown}> | null | undefined
+): bigint {
+    let diff = findAccount(stateDiff, SYSTEM_ADDRESS)?.balance
+    if (diff == null || typeof diff !== 'object') return 0n // absent or '=' (unchanged)
+    if ('*' in diff) {
+        let change = (diff as {'*': {from: Qty; to: Qty}})['*']
+        return toBigInt(change.to) - toBigInt(change.from)
+    }
+    if ('+' in diff) return toBigInt((diff as {'+': Qty})['+'])
+    if ('-' in diff) return -toBigInt((diff as {'-': Qty})['-'])
+    return 0n
+}
+
+
+/**
+ * Balance change of {@link SYSTEM_ADDRESS} in a `prestateTracer` diff-mode result.
+ * A balance the post state leaves out did not change; an account the pre state
+ * leaves out started from zero.
+ */
+export function systemBalanceDeltaFromPrestate(diff: {
+    pre: Record<string, {balance?: Qty | null}>
+    post: Record<string, {balance?: Qty | null}>
+}): bigint {
+    let post = findAccount(diff.post, SYSTEM_ADDRESS)
+    if (post?.balance == null) return 0n
+    let pre = findAccount(diff.pre, SYSTEM_ADDRESS)
+    return toBigInt(post.balance) - toBigInt(pre?.balance)
+}
+
+
+function findAccount<T>(accounts: Record<string, T> | null | undefined, address: string): T | undefined {
+    if (accounts == null) return undefined
+    if (address in accounts) return accounts[address]
+    for (let key in accounts) {
+        if (key.toLowerCase() === address) return accounts[key]
+    }
+    return undefined
+}
+
+
+/**
+ * Intrinsic gas of a message call: the base cost, calldata at 4 gas per zero byte and 16 per
+ * other byte (EIP-2028), access lists (EIP-2930) and authorizations (EIP-7702).
+ */
+export function intrinsicGasOfCall(transaction: {
+    input?: string | null
+    accessList?: AccessListItem[] | null
+    authorizationList?: EIP7702AuthorizationItem[] | null
+}): bigint {
+    let gas = 21000n
+    let input = transaction.input
+    if (input != null && input.length > 2) {
+        for (let i = 2; i + 1 < input.length; i += 2) {
+            gas += input[i] === '0' && input[i + 1] === '0' ? 4n : 16n
+        }
+    }
+    for (let item of transaction.accessList ?? []) {
+        let storageKeys = 'storageKeys' in item ? item.storageKeys : item.storage_keys
+        gas += 2400n + 1900n * BigInt(storageKeys.length)
+    }
+    gas += 25000n * BigInt((transaction.authorizationList ?? []).length)
+    return gas
+}
+
+
+function toBigInt(value: string | null | undefined): bigint {
+    if (value == null || value === '' || value === '0x') return 0n
+    return BigInt(value)
+}
+
+
+/**
+ * One `SELFDESTRUCT` as an opcode-level tracer saw it, bound to the call path
+ * its frame occupies.
+ */
+export interface SelfdestructEvent {
+    traceAddress: number[]
+    account: Bytes20
+    beneficiary: Bytes20
+    balance: Qty
+    /**
+     * Balance observed at the preceding balance-preserving opcode in this frame.
+     */
+    preBalance?: Qty
+}
+
+
+/**
+ * Rebuilds call paths from a tracer stream of `enter`, `exit` and `sd` items.
+ *
+ * The frames a call tree holds are entered in execution order, so counting
+ * entries per depth yields the same trace addresses the tree uses. Items that
+ * do not parse are skipped: a short or malformed stream simply yields fewer
+ * events, and the caller rejects what it cannot bind.
+ *
+ * One opcode can reach the stream twice: as its `sd` step and as the
+ * `SELFDESTRUCT` frame the client enters for it, which is the frame the call
+ * tree holds. Clients differ in the order: Geth steps first, while newer reth
+ * enters and exits the frame and steps after executing the opcode. An `sd`
+ * therefore shares its index with a `SELFDESTRUCT` frame directly next to it,
+ * on either side. Only an `enter` that names its type can pair; an untyped one
+ * takes a new index, so the `sd` keeps its own and a genuine sibling call
+ * before it is never mistaken for its frame.
+ */
+export function selfdestructEvents(stream: unknown[]): SelfdestructEvent[] {
+    let path: number[] = []
+    let children: number[] = [0]
+    let found: SelfdestructEvent[] = []
+
+    // What the previous item left that the next one may pair with: an `sd`
+    // awaiting its frame (`sd`), a `SELFDESTRUCT` frame just entered (`entered`),
+    // or one that closed with nothing inside, awaiting its `sd` (`frame`).
+    let pending: {kind: 'sd' | 'entered' | 'frame', index: number} | undefined
+
+    for (let item of stream) {
+        if (item == null || typeof item !== 'object') continue
+        let rec = item as Record<string, unknown>
+        let previous = pending
+        pending = undefined
+
+        switch (rec.t) {
+            case 'enter': {
+                let selfdestructFrame = isSelfdestructFrameType(rec.type)
+                if (selfdestructFrame && previous?.kind === 'sd') {
+                    path.push(previous.index)
+                    children.push(0)
+                    break
+                }
+                let index = children[children.length - 1]++
+                path.push(index)
+                children.push(0)
+                if (selfdestructFrame) {
+                    pending = {kind: 'entered', index}
+                }
+                break
+            }
+            case 'exit':
+                if (path.length > 0) {
+                    let index = path.pop()!
+                    children.pop()
+                    if (previous?.kind === 'entered' && previous.index === index) {
+                        pending = {kind: 'frame', index}
+                    }
+                }
+                break
+            case 'sd': {
+                let index = previous?.kind === 'frame'
+                    ? previous.index
+                    : children[children.length - 1]++
+                if (previous?.kind !== 'frame') {
+                    pending = {kind: 'sd', index}
+                }
+
+                let {from, to, bal, preBalance} = rec
+                if (typeof from !== 'string' || typeof to !== 'string' || typeof bal !== 'string') {
+                    continue
+                }
+
+                found.push({
+                    traceAddress: [...path, index],
+                    account: from.toLowerCase(),
+                    beneficiary: to.toLowerCase(),
+                    balance: bal,
+                    preBalance: typeof preBalance === 'string' ? preBalance : undefined
+                })
+                break
+            }
+        }
+    }
+
+    return found
+}
+
+
+/**
+ * One step of a built-in opcode logger answer (`debug_traceTransaction` without a
+ * tracer): only the opcode and the stack are read.
+ */
+export interface OpcodeStep {
+    op?: unknown
+    stack?: unknown
+}
+
+
+/**
+ * A `prestateTracer` answer: the state of each touched account before the
+ * transaction ran.
+ */
+export type Prestate = Record<string, {balance?: unknown} | null | undefined>
+
+
+/**
+ * Selfdestruct events rebuilt from built-in tracers only, for upstreams that refuse
+ * a custom JS tracer.
+ *
+ * The frames come from the call tree; what a revm-based call tracer may get wrong
+ * about them comes from elsewhere:
+ *
+ * - the frame of each opcode: the k-th SELFDESTRUCT step of the opcode log is the
+ *   k-th selfdestruct frame of the call tree in execution order, which holds
+ *   whatever order a client invokes its tracer hooks in;
+ * - the executing account: the enclosing frame's call context, as for
+ *   {@link findDefectiveSelfdestructs};
+ * - the beneficiary: the top of the stack at the opcode;
+ * - the balance at the opcode: the prestate balance plus every value movement
+ *   before the frame in execution order, without the movements of failed frames.
+ *   Selfdestructs move what the opcode evidence says they moved, not what their
+ *   frames claim.
+ *
+ * Throws, so that validation rejects the block, when the evidence does not bind:
+ * the step and frame counts differ, the prestate does not name an executing
+ * account, that account is the transaction sender, whose balance also pays for
+ * gas, a call or create before the opcode does not report the value or target it
+ * moved, or the account selfdestructed to itself earlier in the transaction. Such
+ * an earlier opcode keeps an existing contract's balance after Cancun and burns it
+ * before, and the fork is not known here. An account the prestate does not name
+ * starts from zero, as clients leave out only accounts that were empty, but an
+ * executing account must be named unless the transaction created it. It also
+ * throws when a frame that is not `suspects` names another beneficiary than its
+ * opcode: the opcode log then did not come from this execution, and the movements
+ * it implies cannot be trusted.
+ */
+export function builtinSelfdestructEvents(
+    root: CallFrame,
+    steps: OpcodeStep[],
+    prestate: Prestate,
+    suspects: number[][] = []
+): SelfdestructEvent[] {
+    let suspect = new Set(suspects.map(path => path.join('/')))
+    let opcodes = steps.filter(step => step.op === 'SELFDESTRUCT' || step.op === 'SUICIDE')
+    let frames = selfdestructFrameCount(root)
+    if (opcodes.length !== frames) {
+        throw new Error(`the opcode log has ${opcodes.length} SELFDESTRUCT steps for ${frames} selfdestruct frames`)
+    }
+
+    let sender = root.from?.toLowerCase()
+    let balances = new Map<string, bigint>()
+    let created = new Set<string>()
+    // Accounts whose balance after an earlier opcode depends on the fork.
+    let unknown = new Set<string>()
+    let incomplete: string | undefined
+    let journal: (() => void)[] = []
+    let found: SelfdestructEvent[] = []
+    let next = 0
+
+    // Clients key the prestate lowercase or checksummed.
+    let accounts = new Map<string, unknown>()
+    for (let key of Object.keys(prestate)) {
+        accounts.set(key.toLowerCase(), prestate[key])
+    }
+
+    function named(account: string): boolean {
+        return accounts.has(account)
+    }
+
+    function balanceOf(account: string): bigint | undefined {
+        let known = balances.get(account)
+        if (known != null) return known
+        // Clients leave out an account that was empty before the transaction, and a
+        // touched account with anything in it is always named. So an account the
+        // prestate does not name starts from zero, even one funded before it is
+        // created in this transaction.
+        if (!named(account)) {
+            balances.set(account, 0n)
+            return 0n
+        }
+        let entry: any = accounts.get(account)
+        // Only an account object is evidence; the omitted-balance rule needs one.
+        if (entry == null || typeof entry !== 'object' || Array.isArray(entry)) return undefined
+        // Clients omit a zero balance from a named account.
+        let balance = entry.balance
+        if (balance != null && typeof balance !== 'string') return undefined
+        let value = balance ? BigInt(balance) : 0n
+        balances.set(account, value)
+        return value
+    }
+
+    function setBalance(account: string, value: bigint): void {
+        let previous = balances.get(account)
+        balances.set(account, value)
+        journal.push(() => {
+            if (previous == null) {
+                balances.delete(account)
+            } else {
+                balances.set(account, previous)
+            }
+        })
+    }
+
+    function move(from: string, to: string, value: bigint): void {
+        if (value === 0n || from === to) return
+        let fromBalance = balanceOf(from)
+        if (fromBalance != null) setBalance(from, fromBalance - value)
+        let toBalance = balanceOf(to)
+        if (toBalance != null) setBalance(to, toBalance + value)
+    }
+
+    function markUnknown(account: string): void {
+        if (unknown.has(account)) return
+        unknown.add(account)
+        journal.push(() => unknown.delete(account))
+    }
+
+    function markCreated(account: string): void {
+        if (created.has(account)) return
+        created.add(account)
+        journal.push(() => created.delete(account))
+    }
+
+    function visit(frame: CallFrame, traceAddress: number[], executor: string | undefined): void {
+        let checkpoint = journal.length
+        let type = frame.type.toUpperCase()
+
+        if (SELFDESTRUCT_FRAME_TYPES.has(type)) {
+            let step = opcodes[next++]
+            let account = executor
+            if (account == null) {
+                throw new Error(`no executing account for selfdestruct frame ${traceAddress.join('/')}`)
+            }
+            if (account === sender) {
+                throw new Error(`selfdestruct frame ${traceAddress.join('/')} runs in the transaction sender, whose balance pays for gas`)
+            }
+            if (incomplete != null) {
+                throw new Error(`${incomplete}, so the balance at selfdestruct frame ${traceAddress.join('/')} is unknown`)
+            }
+            if (unknown.has(account)) {
+                throw new Error(`${account} selfdestructed to itself earlier in the transaction, so its balance at frame ${traceAddress.join('/')} depends on the fork`)
+            }
+            let beneficiary = stackTopAddress(step.stack)
+            if (beneficiary == null) {
+                throw new Error(`the SELFDESTRUCT step of frame ${traceAddress.join('/')} has no beneficiary on its stack`)
+            }
+            if (!suspect.has(traceAddress.join('/')) && frame.to && frame.to.toLowerCase() !== beneficiary) {
+                throw new Error(`the opcode log sends selfdestruct frame ${traceAddress.join('/')} to ${beneficiary}, but the frame names ${frame.to.toLowerCase()}`)
+            }
+            // A contract that existed before the transaction has code, so a prestate
+            // that leaves it out is not one to read balances from.
+            let balance = named(account) || created.has(account) ? balanceOf(account) : undefined
+            if (balance == null) {
+                throw new Error(`the prestate does not name ${account}, which executes selfdestruct frame ${traceAddress.join('/')}`)
+            }
+            let qty: Qty = '0x' + balance.toString(16)
+            found.push({traceAddress, account, beneficiary, balance: qty, preBalance: qty})
+
+            if (beneficiary !== account) {
+                move(account, beneficiary, balance)
+            } else if (created.has(account)) {
+                // A contract created in this transaction burns its balance.
+                setBalance(account, 0n)
+            } else {
+                markUnknown(account)
+            }
+        } else {
+            let from = frame.from?.toLowerCase()
+            let to = frame.to?.toLowerCase()
+            let moves = type === 'CALL' || CREATE_FRAME_TYPES.has(frame.type)
+            if (moves && incomplete == null && (frame.value == null || !to)) {
+                incomplete = `${frame.type} frame ${traceAddress.join('/') || 'root'} reports no ${frame.value == null ? 'value' : 'target'}`
+                // A failed frame takes its unknown transfer with it.
+                journal.push(() => { incomplete = undefined })
+            }
+            if (CREATE_FRAME_TYPES.has(frame.type) && to) {
+                markCreated(to)
+            }
+            let value = frame.value ? BigInt(frame.value) : 0n
+            if (value > 0n && from && to && moves) {
+                move(from, to, value)
+            }
+            let childExecutor = isContextPreserving(frame.type) ? from : to
+            let calls = frame.calls ?? []
+            for (let i = 0; i < calls.length; i++) {
+                visit(calls[i], [...traceAddress, i], childExecutor)
+            }
+        }
+
+        if (frame.error != null) {
+            while (journal.length > checkpoint) {
+                journal.pop()!()
+            }
+        }
+    }
+
+    visit(root, [], undefined)
+    return found
+}
+
+
+function selfdestructFrameCount(frame: CallFrame): number {
+    let count = SELFDESTRUCT_FRAME_TYPES.has(frame.type.toUpperCase()) ? 1 : 0
+    for (let child of frame.calls ?? []) {
+        count += selfdestructFrameCount(child)
+    }
+    return count
+}
+
+
+/**
+ * The address on top of an opcode log stack. Clients print stack words with or
+ * without `0x` and with or without leading zeros.
+ */
+function stackTopAddress(stack: unknown): Bytes20 | undefined {
+    if (!Array.isArray(stack) || stack.length === 0) return undefined
+    let top = stack[stack.length - 1]
+    if (typeof top !== 'string') return undefined
+    let hex = top.startsWith('0x') || top.startsWith('0X') ? top.slice(2) : top
+    if (!/^[0-9a-fA-F]*$/.test(hex) || hex.length > 64) return undefined
+    return ('0x' + hex.padStart(40, '0').slice(-40)).toLowerCase()
+}
+
+
+/**
+ * The key a prestate answer uses for an account: clients key it lowercase or
+ * checksummed.
+ */
+function isSelfdestructFrameType(type: unknown): boolean {
+    return typeof type === 'string' && SELFDESTRUCT_FRAME_TYPES.has(type.toUpperCase())
+}
+
+
+/**
+ * What a revm-based tracer gets wrong about an existing contract's post-Cancun
+ * selfdestruct-to-self.
+ *
+ * That opcode moves nothing and so records no journal entry, while the tracer
+ * builds the frame from the most recent journal entry of the whole transaction
+ * (bluealloy/revm#3834). Either nothing is there to read, or an earlier entry is:
+ * a balance transfer or an earlier selfdestruct, made by any account in any frame.
+ * The reverse cannot happen: a selfdestruct that sends funds to another account
+ * records its own entry. Matching parties alone do not confirm a self-targeting
+ * frame's balance: older versions also journal self-calls, whose amounts can
+ * differ from the account's balance.
+ *
+ * - `incomplete`: no entry to read, `from` is zero, `to` and `value` are unset.
+ * - `stale-entry`: an earlier entry was read instead, so the frame repeats a value
+ *   movement that already happened in this transaction.
+ */
+export type SelfdestructDefect =
+    | {kind: 'incomplete'}
+    | {kind: 'stale-entry', reportedFrom: Bytes20, reportedTo: Bytes20}
+
+
+export interface DefectiveSelfdestruct {
+    traceAddress: number[]
+    /**
+     * The account executing the opcode, per the enclosing frame's call context.
+     * `undefined` when the tree does not name it.
+     */
+    executor?: Bytes20
+    defect: SelfdestructDefect
+}
+
+
+/**
+ * `applied`: the frame now carries what the opcode did.
+ * `confirmed`: the frame already did — a genuine selfdestruct that happens to
+ * repeat an earlier movement.
+ */
+export type SelfdestructRepair = 'applied' | 'confirmed'
+
+
+interface Movement {
+    from: string
+    to: string
+    value: string
+}
+
+
+/**
+ * Finds selfdestruct frames that a revm-based tracer may have built from the
+ * wrong journal entry.
+ *
+ * Suspicion is not proof: a frame that repeats an earlier movement can also be
+ * genuine, which only an opcode-level trace can tell ({@link repairDefectiveSelfdestruct}).
+ */
+export function findDefectiveSelfdestructs(root: CallFrame): DefectiveSelfdestruct[] {
+    let found: DefectiveSelfdestruct[] = []
+    let moved: Movement[] = []
+
+    recordMovement(root, moved)
+    collectDefectiveSelfdestructs(root, [], moved, found)
+    return found
+}
+
+
+// A call moves funds only when it carries a value, but a selfdestruct records
+// its entry whatever the balance was, and a later defective frame can repeat it.
+function recordMovement(frame: CallFrame, moved: Movement[]): void {
+    if (!frame.to || frame.value == null) return
+
+    let recordsEntry = SELFDESTRUCT_FRAME_TYPES.has(frame.type)
+    let zeroValue = frame.value === '0x0' || frame.value === '0x'
+    if (!recordsEntry && zeroValue) return
+
+    moved.push({
+        from: frame.from.toLowerCase(),
+        to: frame.to.toLowerCase(),
+        value: frame.value
+    })
+}
+
+
+function repeatsMovement(frame: CallFrame, moved: Movement[]): boolean {
+    if (frame.to == null || frame.value == null) return false
+
+    let from = frame.from.toLowerCase()
+    let to = frame.to.toLowerCase()
+    return moved.some(m => m.from === from && m.to === to && m.value === frame.value)
+}
+
+
+// Movements live as long as the frame that made them: a frame that fails is
+// undone on exit, its own transfer and every entry made under it, so what its
+// children could repeat, nothing after it can. revm drops the journal entries of
+// a reverted checkpoint the same way. The usual shape is a plain value call to a
+// receiver that rejects it, followed by a selfdestruct to the same receiver that
+// forces the value in: genuine, because the call moved nothing.
+function collectDefectiveSelfdestructs(
+    parent: CallFrame,
+    traceAddress: number[],
+    moved: Movement[],
+    found: DefectiveSelfdestruct[]
+): void {
+    let executor = isContextPreserving(parent.type) ? parent.from : parent.to
+    if (executor != null && !isAddress(executor)) {
+        executor = undefined
+    }
+
+    let calls = parent.calls ?? []
+    for (let i = 0; i < calls.length; i++) {
+        let child = calls[i]
+        let at = [...traceAddress, i]
+        let checkpoint = moved.length
+
+        if (SELFDESTRUCT_FRAME_TYPES.has(child.type)) {
+            // The frame's own payload is not evidence about itself, so it joins
+            // the movements only after it has been judged.
+            let defect = selfdestructDefect(child, moved)
+            if (defect) {
+                found.push({
+                    traceAddress: at,
+                    executor: executor?.toLowerCase(),
+                    defect
+                })
+            }
+            recordMovement(child, moved)
+        } else {
+            recordMovement(child, moved)
+            collectDefectiveSelfdestructs(child, at, moved, found)
+        }
+
+        if (child.error != null) {
+            moved.length = checkpoint
+        }
+    }
+}
+
+
+function selfdestructDefect(frame: CallFrame, moved: Movement[]): SelfdestructDefect | undefined {
+    if (isZeroAddress(frame.from) && frame.to == null && frame.value == null) {
+        return {kind: 'incomplete'}
+    }
+
+    if (repeatsMovement(frame, moved)) {
+        return {
+            kind: 'stale-entry',
+            reportedFrom: frame.from.toLowerCase(),
+            reportedTo: (frame.to ?? '').toLowerCase()
+        }
+    }
+}
+
+
+/**
+ * Settles a suspect frame against what an opcode-level tracer saw.
+ *
+ * A preceding balance-preserving opcode supplies the pre-selfdestruct balance
+ * even when the tracer's step callback runs after execution. Without that
+ * snapshot, a zero balance cannot distinguish a burn from an existing empty
+ * account, so that ambiguity is refused when the parties already match; a payload
+ * with different parties is the known no-op defect and can use the unchanged
+ * balance. Selfdestructs sending elsewhere have their own journal entry, so
+ * matching parties suffice to confirm their original payload.
+ *
+ * Returns the outcome, or why the frame cannot be settled. A refused frame is
+ * left untouched.
+ */
+export function repairDefectiveSelfdestruct(
+    root: CallFrame,
+    defect: DefectiveSelfdestruct,
+    events: SelfdestructEvent[]
+): {repair: SelfdestructRepair} | {refused: string} {
+    let path = defect.traceAddress.join('/')
+
+    let matching = events.filter(e => e.traceAddress.join('/') === path)
+    if (matching.length !== 1) {
+        return {refused: `the tracer reports no single selfdestruct at ${path}`}
+    }
+    let event = matching[0]
+
+    if (defect.executor != null && !sameAddress(event.account, defect.executor)) {
+        return {
+            refused: `the tracer attributes ${path} to ${event.account}, ` +
+                `but ${defect.executor} is on top of the call stack`
+        }
+    }
+
+    let frame = frameAt(root, defect.traceAddress)
+    if (frame == null) {
+        return {refused: `${frameLabel(defect.traceAddress)} is not in the call tree`}
+    }
+
+    let selfTarget = sameAddress(event.account, event.beneficiary)
+    let namesTheOpcode = sameAddress(frame.from, event.account) && sameAddress(frame.to, event.beneficiary)
+    let balance = event.preBalance ?? event.balance
+    let balanceAgrees = frame.value === balance
+    if (namesTheOpcode && (!selfTarget || balanceAgrees)) {
+        return {repair: 'confirmed'}
+    }
+
+    if (!selfTarget) {
+        return {refused: `${path} sends to ${event.beneficiary}, so its balance at the opcode is unknown`}
+    }
+
+    let mayFollowBurn = event.preBalance == null && event.balance === '0x0'
+    if (namesTheOpcode && mayFollowBurn) {
+        return {
+            refused: `${path} has no balance observation before selfdestruct; ` +
+                'a zero balance may follow a burn'
+        }
+    }
+
+    frame.from = event.account
+    frame.to = event.beneficiary
+    frame.value = balance
+    return {repair: 'applied'}
+}
+
+
+function frameAt(root: CallFrame, traceAddress: number[]): CallFrame | undefined {
+    let frame: CallFrame | undefined = root
+    for (let index of traceAddress) {
+        frame = frame?.calls?.[index]
+    }
+    return frame
+}
+
+
 function isContextPreserving(type: string): boolean {
-    switch(canonicalFrameType(type)) {
+    switch(type.toUpperCase()) {
         case 'DELEGATECALL':
         case 'CALLCODE':
             return true
@@ -1313,6 +2251,11 @@ function selfdestructFrameLabel(traceAddress: number[]): string {
 
 function isAddress(value: string): boolean {
     return /^0x[0-9a-fA-F]{40}$/.test(value)
+}
+
+
+function isZeroAddress(value: string): boolean {
+    return /^0x0{40}$/.test(value)
 }
 
 

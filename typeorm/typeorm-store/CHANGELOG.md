@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-store
 
-This log was last generated on Thu, 30 Jul 2026 15:44:58 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 1.9.3
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- Update dependency ranges: typeorm ^0.3.31 (peer)
 
 ## 1.9.2
 Thu, 30 Jul 2026 15:44:58 GMT

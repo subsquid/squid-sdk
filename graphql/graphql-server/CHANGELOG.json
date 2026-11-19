@@ -2,6 +2,29 @@
   "name": "@subsquid/graphql-server",
   "entries": [
     {
+      "version": "4.12.2",
+      "tag": "@subsquid/graphql-server_v4.12.2",
+      "date": "Tue, 10 Nov 2026 07:49:45 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Update dependency ranges: @graphql-tools/merge ^9.2.4, @graphql-tools/utils ^10.11.0, @graphql-tools/schema ^10.1.1, dotenv ^16.6.1, express ^4.22.3, graphql ^15.10.3, graphql-ws ^5.16.2, pg ^8.23.0, ws ^8.21.3; peer class-validator ^0.14.4, typeorm ^0.3.31"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/openreader\" from `^5.5.1` to `5.5.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/typeorm-config\" from `^4.2.0` to `4.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/big-decimal\" from `^1.0.0` to `1.0.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.12.1",
       "tag": "@subsquid/graphql-server_v4.12.1",
       "date": "Fri, 10 Jul 2026 07:08:47 GMT",

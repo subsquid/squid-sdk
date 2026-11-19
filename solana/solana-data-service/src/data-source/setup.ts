@@ -1,3 +1,4 @@
+import type {RpcMetrics} from '@subsquid/rpc-client'
 import {Block as RpcBlock, RemoteRpcOptions, RemoteRpcPool, RpcApi, SolanaRpcDataSource} from '@subsquid/solana-rpc'
 import {Block, DataSource} from '@subsquid/util-internal-data-service'
 import {GeyserDataSource} from './geyser-data-source'
@@ -17,7 +18,14 @@ export interface DataSourceOptions {
 }
 
 
-export function createMainDataSource(options: DataSourceOptions): DataSource<Block> {
+/** A data source together with the metrics of the RPC clients (in worker threads) it fetches through. */
+export interface DataSourceSetup {
+    source: DataSource<Block>
+    getRpcMetrics(): Promise<RpcMetrics>
+}
+
+
+export function createMainDataSource(options: DataSourceOptions): DataSourceSetup {
     let rpc = new RemoteRpcPool(options.httpRpcWorkers, createRpcOptions(options))
 
     let rpcDataSource = createSolanaRpcDataSource(rpc, options)
@@ -32,14 +40,14 @@ export function createMainDataSource(options: DataSourceOptions): DataSource<Blo
         raw = new GeyserDataSource(rpcDataSource, geyser)
     }
 
-    return new Mapping(raw, !!options.votes)
+    return {source: new Mapping(raw, !!options.votes), getRpcMetrics: () => rpc.getRpcMetrics()}
 }
 
 
-export function createSecondaryDataSource(options: DataSourceOptions): DataSource<Block> {
+export function createSecondaryDataSource(options: DataSourceOptions): DataSourceSetup {
     let rpc = new RemoteRpcPool(options.httpRpcWorkers, createRpcOptions(options))
     let raw = createSolanaRpcDataSource(rpc, options)
-    return new Mapping(raw, !!options.votes)
+    return {source: new Mapping(raw, !!options.votes), getRpcMetrics: () => rpc.getRpcMetrics()}
 }
 
 

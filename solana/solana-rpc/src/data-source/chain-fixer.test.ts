@@ -1,6 +1,7 @@
 import {describe, expect, it} from 'vitest'
 import type {Block} from '../types'
-import {ChainFixer, limitUpperBoundary, removeOverlaps} from './chain-fixer'
+import type {RpcApi} from '../rpc'
+import {ChainFixer, getForkPreviousBlocks, limitUpperBoundary, removeOverlaps} from './chain-fixer'
 import type {IngestBatch, IngestOptions} from './ingest'
 
 // Minimal Solana block stub. ChainFixer internals read slot, block.blockhash,
@@ -216,3 +217,106 @@ describe('ChainFixer.fillGap', () => {
     it.todo('fillGap recursion fills a 2-level nested gap (depth=1 → depth=2) via fetched sub-batches')
     it.todo('fillGap at depth=3 succeeds when the gap closes (boundary case — depth=3 is allowed)')
 })
+
+
+describe('getForkPreviousBlocks', () => {
+    // A node's chain after a reorg, as {slot, blockhash, parentSlot, previousBlockhash} headers.
+    type Header = {slot: number; blockhash: string; parentSlot: number; previousBlockhash: string}
+
+    function chain(...slots: number[]): Header[] {
+        return slots.map((slot, i) => ({
+            slot,
+            blockhash: `h${slot}`,
+            parentSlot: i === 0 ? slot - 1 : slots[i - 1],
+            previousBlockhash: i === 0 ? `h${slot - 1}` : `h${slots[i - 1]}`,
+        }))
+    }
+
+    function stubRpc(headers: Header[], opts: {listed?: number[]; failListing?: boolean} = {}) {
+        const bySlot = new Map(headers.map((h) => [h.slot, h]))
+        const calls = {getBlocks: [] as [number, number][], getBlockBatch: [] as number[][]}
+        const rpc = {
+            async getBlocks(_c: string, start: number, end: number) {
+                calls.getBlocks.push([start, end])
+                if (opts.failListing) throw new Error('getBlocks failed')
+                return (opts.listed ?? headers.map((h) => h.slot)).filter((s) => s >= start && s <= end)
+            },
+            async getBlockBatch(slots: number[]) {
+                calls.getBlockBatch.push(slots)
+                return slots.map((s) => bySlot.get(s) ?? null)
+            },
+        } as unknown as RpcApi
+        return {rpc, calls}
+    }
+
+    it('follows parent slots across skipped slots, ending with the link the lowest header vouches for', async () => {
+        // Slots 11, 12, 15, 16 (13, 14 skipped); the fork is at 17 with parent 16.
+        const {rpc} = stubRpc(chain(11, 12, 15, 16))
+
+        expect(await getForkPreviousBlocks(rpc, 'confirmed', 16, 'h16')).toEqual([
+            {number: 10, hash: 'h10'},
+            {number: 11, hash: 'h11'},
+            {number: 12, hash: 'h12'},
+            {number: 15, hash: 'h15'},
+            {number: 16, hash: 'h16'},
+        ])
+    })
+
+    it('ignores sibling slots that are not on the parent chain', async () => {
+        const headers = chain(11, 12, 15, 16)
+        headers.push({slot: 14, blockhash: 'h14x', parentSlot: 12, previousBlockhash: 'h12'}) // listed, not a parent
+        const {rpc} = stubRpc(headers, {listed: [11, 12, 14, 15, 16]})
+
+        const prev = await getForkPreviousBlocks(rpc, 'confirmed', 16, 'h16')
+        expect(prev.map((b) => b.number)).toEqual([10, 11, 12, 15, 16])
+    })
+
+    it('still reports a block it has no header for, when its child vouches for it', async () => {
+        // No header for 15; block 16 names it as its parent.
+        const {rpc} = stubRpc(chain(11, 12, 15, 16).filter((h) => h.slot !== 15), {listed: [11, 12, 15, 16]})
+
+        expect(await getForkPreviousBlocks(rpc, 'confirmed', 16, 'h16')).toEqual([
+            {number: 15, hash: 'h15'},
+            {number: 16, hash: 'h16'},
+        ])
+    })
+
+    it('reports genesis once when the lookback reaches it', async () => {
+        // Genesis (slot 0) names itself as its parent, with a hash of its own.
+        const headers: Header[] = [
+            {slot: 0, blockhash: 'h0', parentSlot: 0, previousBlockhash: 'h-genesis-parent'},
+            ...chain(1, 2, 3),
+        ]
+        headers[1].previousBlockhash = 'h0'
+        const {rpc} = stubRpc(headers)
+
+        expect(await getForkPreviousBlocks(rpc, 'confirmed', 3, 'h3')).toEqual([
+            {number: 0, hash: 'h0'},
+            {number: 1, hash: 'h1'},
+            {number: 2, hash: 'h2'},
+            {number: 3, hash: 'h3'},
+        ])
+    })
+
+    it('reports the parent alone when the slots cannot be listed', async () => {
+        const {rpc} = stubRpc([], {failListing: true})
+
+        expect(await getForkPreviousBlocks(rpc, 'confirmed', 16, 'h16')).toEqual([{number: 16, hash: 'h16'}])
+    })
+
+    it('reports the 100 blocks below the fork, as the Portal does, in one header request', async () => {
+        const slots = Array.from({length: 150}, (_, i) => 1000 + 2 * i) // every other slot skipped
+        const {rpc, calls} = stubRpc(chain(...slots))
+        const top = slots[slots.length - 1]
+
+        const prev = await getForkPreviousBlocks(rpc, 'confirmed', top, `h${top}`)
+
+        // 100 headers, plus the block the lowest of them vouches for.
+        expect(prev).toHaveLength(101)
+        expect(prev[prev.length - 1]).toEqual({number: top, hash: `h${top}`})
+        expect(calls.getBlocks).toEqual([[top - 199, top]])
+        expect(calls.getBlockBatch).toHaveLength(1)
+        expect(calls.getBlockBatch[0]).toHaveLength(100)
+    })
+})
+

@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.5.0",
+      "tag": "@subsquid/substrate-data_v4.5.0",
+      "date": "Mon, 14 Sep 2026 10:05:38 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "report version and transaction extension values of v5 general extrinsics, extract tips from them and fetch a v16 metadata via the `Metadata_metadata_at_version` runtime call"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^2.0.1` to `2.1.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^2.0.1` to `2.1.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.4.6",
       "tag": "@subsquid/substrate-data_v4.4.6",
       "date": "Wed, 22 Apr 2026 07:00:43 GMT",

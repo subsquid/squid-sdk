@@ -1,3 +1,5 @@
+export * from './block-checks'
+export * from './chain-utils'
 export * from './data-source'
 export * from './rpc'
 export * from './rpc-client'

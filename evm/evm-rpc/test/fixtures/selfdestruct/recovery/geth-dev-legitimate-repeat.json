@@ -1,0 +1,32 @@
+{
+  "network": "devnet",
+  "blockHash": "0x553434bf45614f388c3d4f5e660c29612e37ec64643aa5744f61d93dbd2b226e",
+  "transactionHash": "0xa7931e8978fed50148a09a87795794293f0352dc79c5c866c2c813ac772836ac",
+  "transactionIndex": 0,
+  "traceAddress": [
+    1
+  ],
+  "frame": "legitimate",
+  "client": "Geth/v1.17.5-stable",
+  "events": [
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    },
+    {
+      "t": "sd",
+      "from": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+      "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "bal": "0x1",
+      "preBalance": "0x1"
+    },
+    {
+      "t": "enter"
+    },
+    {
+      "t": "exit"
+    }
+  ]
+}

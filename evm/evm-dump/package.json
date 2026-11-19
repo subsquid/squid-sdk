@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/evm-dump",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Data archiving tool for EVM-based chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid.git",
@@ -8,7 +8,7 @@
     "access": "public"
   },
   "bin": {
-    "solana-dump": "./bin/run.js"
+    "evm-dump": "./bin/run.js"
   },
   "files": [
     "bin",
@@ -16,16 +16,21 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run"
   },
   "dependencies": {
-    "@subsquid/evm-rpc": "^0.1.0",
-    "@subsquid/evm-normalization": "^0.0.6",
+    "@subsquid/evm-rpc": "^0.3.2",
+    "@subsquid/evm-normalization": "^0.2.0",
     "@subsquid/util-internal": "^3.3.1",
-    "@subsquid/util-internal-dump-cli": "^2.0.0"
+    "@subsquid/util-internal-dump-cli": "^2.2.0",
+    "@subsquid/util-internal-dump-stream": "^0.1.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "typescript": "5.5.4"
+    "@nats-io/jetstream": "^3.4.0",
+    "@nats-io/transport-node": "^3.4.0",
+    "@types/node": "^24.13.6",
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }

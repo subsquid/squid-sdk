@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "HyperEVM: a body and receipts that disagree on a system transaction, or an answer without one an earlier answer for the block had, mark the block invalid and fetch it again; a receipt of a transaction missing from the body no longer throws from the logs bloom check",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}

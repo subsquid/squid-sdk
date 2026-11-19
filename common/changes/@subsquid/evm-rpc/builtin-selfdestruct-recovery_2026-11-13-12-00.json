@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-rpc",
+      "comment": "recover selfdestruct frames misreported by revm-based tracers from built-in tracers (opcode logger and `prestateTracer`) first, so upstreams that refuse a custom JS tracer no longer leave such a block rejected; the JS tracer remains the fallback",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-rpc"
+}

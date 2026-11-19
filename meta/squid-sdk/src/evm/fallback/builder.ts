@@ -11,6 +11,12 @@ import {FallbackDataSource, type RankedSource} from '../../fallback/fallback'
 import type {FallbackPolicy} from '../../fallback/policy'
 import {loadRpcStream} from './load-rpc-stream'
 
+/**
+ * Default per-request timeout for `rpc` fallback members (the legacy `EvmBatchProcessor` default).
+ * Stays below the fallback's `activeHeadTimeoutMs` default, so the client's own error fires first.
+ */
+const DEFAULT_FALLBACK_RPC_REQUEST_TIMEOUT_MS = 30_000
+
 const evmBlockRef = (b: Block<any>): BlockRef => ({number: b.header.number, hash: b.header.hash})
 
 /** A SQD Network Portal source — the same options as `DataSourceBuilder#setPortal` (`url`, …). */
@@ -69,7 +75,9 @@ export class EvmFallbackDataSourceBuilder<F extends FieldSelection = {}> extends
      *
      * - `{type: 'portal', url}` — a SQD Network Portal dataset (same options as `DataSourceBuilder#setPortal`).
      * - `{type: 'rpc', url, network?}` — a JSON-RPC endpoint; set `network` to a known slug/chainId to
-     *   enable block validation + trace/debug method tuning ({@link EvmRpcSourceConfig}).
+     *   enable block validation + trace/debug method tuning ({@link EvmRpcSourceConfig}). Requests
+     *   time out after 30 s by default (`requestTimeout`; `0` disables), so a hung endpoint errors and
+     *   fails over instead of stalling.
      * - `{type: 'custom', buildSource}` — the escape hatch ({@link EvmCustomSourceConfig}).
      *
      * `name` is optional on each entry and defaults to `` `${type}-${index}` `` in metrics/logs.
@@ -126,7 +134,11 @@ export class EvmFallbackDataSourceBuilder<F extends FieldSelection = {}> extends
                 let {type, name, ...options} = cfg
                 assert(options.url, "rpc fallback source requires a 'url' (the JSON-RPC endpoint)")
                 // Lazy: this is the only point that touches the optional @subsquid/evm-rpc peer.
-                return loadRpcStream().evmRpcStream({...options, fields, requests})
+                // Unlike a standalone RPC source, a fallback member must never wait forever on a
+                // request: a hung request would never error (so never fail over) and would hold one of
+                // the client's capacity slots for good. Default a request timeout unless set explicitly.
+                let requestTimeout = options.requestTimeout ?? DEFAULT_FALLBACK_RPC_REQUEST_TIMEOUT_MS
+                return loadRpcStream().evmRpcStream({...options, requestTimeout, fields, requests})
             }
             case 'custom':
                 return cfg.buildSource(fields, requests)

@@ -46,6 +46,19 @@ export interface FallbackPolicy {
      */
     headPollTimeoutMs?: number | null
     /**
+     * Time-box the *active* source's `getHead()` / `getFinalizedHead()`, which the processor awaits
+     * before every batch. Without it, a source that accepts the connection but never responds stalls
+     * the processor forever and never fails over. A timeout counts as a liveness failure, so the
+     * source is retried and failed over after `livenessFailThreshold` consecutive timeouts.
+     *
+     * Deliberately separate from (and much larger than) `headPollTimeoutMs`: the active source's head
+     * request queues behind its own in-flight batch requests, so a tight bound would fail over a
+     * healthy-but-busy source. Keep it above the source client's own worst case — for an RPC source,
+     * `requestTimeout × (retryAttempts + 1)` — so the client's error normally fires first.
+     * `60_000` ms by default; `null` disables the guard.
+     */
+    activeHeadTimeoutMs?: number | null
+    /**
      * Blocks ahead of the indexing frontier (last committed height) a capability probe targets, so
      * it verifies the source can serve the data it is *about* to read. `16` by default.
      */
@@ -71,6 +84,7 @@ export interface ResolvedPolicy {
     freshnessTickMs: number
     headTtlMs: number
     headPollTimeoutMs: number | null
+    activeHeadTimeoutMs: number | null
     capabilityLookahead: number
     capabilityTipMargin: number
     clock: () => number
@@ -88,6 +102,7 @@ export const DEFAULT_POLICY: ResolvedPolicy = {
     freshnessTickMs: 1000,
     headTtlMs: 5000,
     headPollTimeoutMs: 500,
+    activeHeadTimeoutMs: 60_000,
     capabilityLookahead: 16,
     capabilityTipMargin: 16,
     clock: () => Date.now(),
@@ -110,6 +125,7 @@ export function resolvePolicy(p?: FallbackPolicy): ResolvedPolicy {
         freshnessTickMs: p?.freshnessTickMs ?? DEFAULT_POLICY.freshnessTickMs,
         headTtlMs: p?.headTtlMs ?? DEFAULT_POLICY.headTtlMs,
         headPollTimeoutMs: orDefault(p?.headPollTimeoutMs, DEFAULT_POLICY.headPollTimeoutMs),
+        activeHeadTimeoutMs: orDefault(p?.activeHeadTimeoutMs, DEFAULT_POLICY.activeHeadTimeoutMs),
         capabilityLookahead: p?.capabilityLookahead ?? DEFAULT_POLICY.capabilityLookahead,
         capabilityTipMargin: p?.capabilityTipMargin ?? DEFAULT_POLICY.capabilityTipMargin,
         clock: p?.clock ?? DEFAULT_POLICY.clock,

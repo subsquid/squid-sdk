@@ -1,6 +1,6 @@
 import {Command, Option} from 'commander'
 
-export {getShortHash, formatBlockNumber} from '@subsquid/util-internal-archive-layout'
+export {checkShorHashMatch, getShortHash, formatBlockNumber} from '@subsquid/util-internal-archive-layout'
 export {Fs} from '@subsquid/util-internal-fs'
 export * from '@subsquid/util-internal-commander'
 export * from '@subsquid/util-internal-range'

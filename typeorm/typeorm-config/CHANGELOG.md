@@ -1,6 +1,13 @@
 # Change Log - @subsquid/typeorm-config
 
-This log was last generated on Fri, 10 Jul 2026 07:08:47 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 4.2.1
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- Update dependency ranges: typeorm ^0.3.31 (peer)
 
 ## 4.2.0
 Fri, 10 Jul 2026 07:08:47 GMT

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-typegen
 
-This log was last generated on Mon, 26 Jan 2026 19:17:25 GMT and should not be manually modified.
+This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+
+## 0.9.2
+Tue, 10 Nov 2026 07:49:45 GMT
+
+### Patches
+
+- Update dependency ranges: @solana/addresses ^6.10.0, @solanafm/explorer-kit-idls ^1.1.4
 
 ## 0.9.1
 Mon, 26 Jan 2026 19:17:25 GMT
