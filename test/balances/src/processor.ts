@@ -8,7 +8,7 @@ import {events} from './types'
 
 
 const processor = new SubstrateBatchProcessor()
-    .setGateway('https://v2.archive.subsquid.io/network/kusama')
+    .setPortal('https://portal.sqd.dev/datasets/kusama')
     .setRpcEndpoint(process.env.KUSAMA_NODE_WS || 'wss://kusama-rpc.polkadot.io')
     .setFields({
         block: {

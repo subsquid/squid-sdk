@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-processor",
+      "comment": "Fetch finalized blocks from an SQD Portal dataset with `.setPortal()`. The SQD Network v2 archive (gateway) is no longer supported: `.setGateway()`, `.setArchive()`, `.setDataSource()` and the `GatewaySettings`, `ArchiveSettings` and `DataSource` types are removed",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/substrate-processor"
+}

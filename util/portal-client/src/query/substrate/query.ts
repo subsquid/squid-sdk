@@ -14,8 +14,12 @@ export interface ItemQuery {
     evmLogs?: EvmLogRequest[]
     ethereumTransactions?: EthereumTransactRequest[]
     contractsEvents?: ContractsContractEmittedRequest[]
-    gearMessagesQueued?: GearMessageQueuedRequest[]
+    /**
+     * Note: the portal matches these requests against `Gear.UserMessageEnqueued` events.
+     */
+    gearMessagesEnqueued?: GearMessageEnqueuedRequest[]
     gearUserMessagesSent?: GearUserMessageSentRequest[]
+    reviveContractEmitted?: ReviveContractEmittedRequest[]
 }
 
 export interface EventRelations {
@@ -40,6 +44,10 @@ export interface CallRequest extends CallRelations {
 
 export interface EvmLogRequest extends EventRelations {
     address?: Bytes[]
+    topic0?: Bytes[]
+    topic1?: Bytes[]
+    topic2?: Bytes[]
+    topic3?: Bytes[]
 }
 
 export interface EthereumTransactRequest extends CallRelations {
@@ -48,13 +56,21 @@ export interface EthereumTransactRequest extends CallRelations {
 }
 
 export interface ContractsContractEmittedRequest extends EventRelations {
-    address?: Bytes[]
+    contractAddress?: Bytes[]
 }
 
-export interface GearMessageQueuedRequest extends EventRelations {
+export interface GearMessageEnqueuedRequest extends EventRelations {
     programId?: Bytes[]
 }
 
 export interface GearUserMessageSentRequest extends EventRelations {
     programId?: Bytes[]
+}
+
+export interface ReviveContractEmittedRequest extends EventRelations {
+    contract?: Bytes[]
+    topic0?: Bytes[]
+    topic1?: Bytes[]
+    topic2?: Bytes[]
+    topic3?: Bytes[]
 }

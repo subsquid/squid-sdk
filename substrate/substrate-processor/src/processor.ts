@@ -12,13 +12,13 @@ import {
     PolkadotjsTypesBundle
 } from '@subsquid/substrate-runtime/lib/metadata/old/typesBundle-polkadotjs'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
-import {ArchiveClient} from '@subsquid/util-internal-archive-client'
 import {Batch, Database, getOrGenerateSquidId, PrometheusServer, Runner} from '@subsquid/util-internal-processor-tools'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
 import {cast} from '@subsquid/util-internal-validation'
 import assert from 'assert'
+import {PortalClient} from '@subsquid/portal-client'
 import {Chain} from './chain'
-import {SubstrateArchive} from './ds-archive'
+import {SubstratePortal} from './ds-portal'
 import {RpcDataSource} from './ds-rpc'
 import {Block, FieldSelection} from './interfaces/data'
 import {
@@ -83,40 +83,36 @@ export interface RpcDataIngestionSettings {
 }
 
 
-export interface GatewaySettings {
+export interface PortalSettings {
     /**
-     * Subsquid Network Gateway url
+     * SQD Portal dataset URL
+     *
+     * @example 'https://portal.sqd.dev/datasets/polkadot'
      */
     url: string
     /**
-     * Subsquid Network API key. Defaults to SQD_API_KEY.
+     * HTTP headers sent with every portal request
      */
-    apiKey?: string
+    headers?: Record<string, string>
     /**
-     * Request timeout in ms
+     * Request timeout in `ms`
      */
     requestTimeout?: number
-}
-
-
-/**
- * @deprecated
- */
-export type ArchiveSettings = GatewaySettings
-
-
-/**
- * @deprecated
- */
-export interface DataSource {
     /**
-     * Subsquid archive endpoint URL
+     * Number of retries of a failed portal request.
+     *
+     * Retried forever by default.
      */
-    archive?: string
+    retryAttempts?: number
     /**
-     * Chain node RPC endpoint URL
+     * How often to poll the portal for new finalized blocks
+     * once the processor caught up with it, in `ms`.
+     *
+     * Only relevant when RPC data ingestion is disabled.
+     *
+     * @default 5000
      */
-    chain: string | RpcEndpointSettings
+    headPollInterval?: number
 }
 
 
@@ -165,7 +161,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private fields?: FieldSelection
     private blockRange?: Range
     private finalityConfirmation?: number
-    private archive?: GatewaySettings
+    private portal?: PortalSettings
     private rpcEndpoint?: RpcEndpointSettings
     private rpcIngestSettings?: RpcDataIngestionSettings
     private typesBundle?: OldTypesBundle | OldSpecsBundle
@@ -173,27 +169,20 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     private running = false
 
     /**
-     * @deprecated Use {@link .setGateway()}
-     */
-    setArchive(url: string | GatewaySettings): this {
-        return this.setGateway(url)
-    }
-
-    /**
-     * Set Subsquid Network Gateway endpoint (ex Archive).
+     * Set SQD Portal dataset endpoint.
      *
-     * Subsquid Network allows to get data from finalized blocks up to
-     * infinite times faster and more efficient than via regular RPC.
+     * Portal serves finalized blocks many times faster and more efficiently than regular RPC.
+     * Blocks above the portal's finalized head are fetched from the chain RPC endpoint.
      *
      * @example
-     * processor.setGateway('https://v2.archive.subsquid.io/network/kusama')
+     * processor.setPortal('https://portal.sqd.dev/datasets/kusama')
      */
-    setGateway(url: string | GatewaySettings): this {
+    setPortal(url: string | PortalSettings): this {
         this.assertNotRunning()
         if (typeof url == 'string') {
-            this.archive = {url}
+            this.portal = {url}
         } else {
-            this.archive = url
+            this.portal = url
         }
         return this
     }
@@ -222,34 +211,10 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     }
 
     /**
-     * Sets blockchain data source.
-     *
-     * @example
-     * processor.setDataSource({
-     *     archive: 'https://v2.archive.subsquid.io/network/kusama',
-     *     chain: 'https://kusama-rpc.polkadot.io'
-     * })
-     *
-     * @deprecated Use separate {@link .setGateway()} and {@link .setRpcEndpoint()} methods
-     * to specify data sources.
-     */
-    setDataSource(src: DataSource): this {
-        this.assertNotRunning()
-        if (src.archive) {
-            this.setGateway(src.archive)
-        } else {
-            this.archive = undefined
-        }
-        if (src.chain) {
-            this.setRpcEndpoint(src.chain)
-        } else {
-            this.rpcEndpoint = undefined
-        }
-        return this
-    }
-
-    /**
      * Set up RPC data ingestion settings
+     *
+     * When RPC data ingestion is disabled, the processor only handles
+     * finalized blocks served by the portal (see {@link .setPortal()}).
      */
     setRpcDataIngestionSettings(settings: RpcDataIngestionSettings): this {
         this.assertNotRunning()
@@ -268,7 +233,7 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     }
 
     /**
-     * Never use RPC endpoint for data ingestion.
+     * Never use RPC endpoint for data ingestion, only process finalized blocks served by the portal.
      *
      * @deprecated This is the same as `.setRpcDataIngestionSettings({disabled: true})`
      */
@@ -511,31 +476,32 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
     }
 
     @def
-    private getArchiveDataSource(): SubstrateArchive {
-        let options = assertNotNull(this.archive)
+    private getPortalDataSource(): SubstratePortal {
+        let options = assertNotNull(this.portal)
 
-        let log = this.getLogger().child('archive')
+        let log = this.getLogger().child('portal', {portalUrl: options.url})
 
         let http = new HttpClient({
-            headers: {
-                'x-squid-id': this.getSquidId()
-            },
             agent: new HttpAgent({
                 keepAlive: true
             }),
+            httpTimeout: options.requestTimeout,
+            retryAttempts: options.retryAttempts ?? Number.MAX_SAFE_INTEGER,
             log
         })
 
-        return new SubstrateArchive({
-            client: new ArchiveClient({
-                http,
+        return new SubstratePortal({
+            client: new PortalClient({
                 url: options.url,
-                apiKey: options.apiKey,
-                queryTimeout: options.requestTimeout,
-                log
+                http
             }),
             rpc: this.getChainRpcClient(),
-            typesBundle: this.typesBundle
+            typesBundle: this.typesBundle,
+            headers: {
+                ...options.headers,
+                'x-squid-id': this.getSquidId()
+            },
+            headPollInterval: options.headPollInterval
         })
     }
 
@@ -627,16 +593,16 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
             if (this.rpcEndpoint == null) {
                 throw new Error('Chain RPC endpoint is always required. Use .setRpcEndpoint() to specify it.')
             }
-            if (this.rpcIngestSettings?.disabled && this.archive == null) {
+            if (this.rpcIngestSettings?.disabled && this.portal == null) {
                 throw new Error(
-                    'Archive is required when RPC data ingestion is disabled. ' +
-                    'Use .setArchive() to specify it.'
+                    'Portal is required when RPC data ingestion is disabled. ' +
+                    'Use .setPortal() to specify it.'
                 )
             }
             return new Runner({
                 database,
                 requests: this.getBatchRequests(),
-                archive: this.archive == null ? undefined : this.getArchiveDataSource(),
+                archive: this.portal == null ? undefined : this.getPortalDataSource(),
                 hotDataSource: this.rpcIngestSettings?.disabled ? undefined : this.getRpcDataSource(),
                 allBlocksAreFinal: this.finalityConfirmation === 0,
                 process: (s, b) => this.processBatch(s, b as any, handler),

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "substrate: align item requests with the portal: `contractsEvents[].contractAddress`, `gearMessagesEnqueued` (was `gearMessagesQueued`), `reviveContractEmitted`, `evmLogs[].topic0..3`",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}
