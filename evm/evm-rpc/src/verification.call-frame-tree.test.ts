@@ -38,6 +38,22 @@ describe('checkDebugFrameStructure', () => {
         expect(checkDebugFrameStructure(INTACT)).toBeUndefined()
     })
 
+    // zkSync-era nodes (e.g. zklink-nova) serialize call kinds in PascalCase.
+    it('accepts PascalCase frame types', () => {
+        expect(checkDebugFrameStructure({
+            type: 'Call',
+            from: SENDER,
+            to: CONTRACT,
+            input: '0x',
+            calls: [{
+                type: 'DelegateCall',
+                from: CONTRACT,
+                to: CONTRACT,
+                input: '0x'
+            }]
+        })).toBeUndefined()
+    })
+
     it('requires targets and inputs for call frames', () => {
         expect(checkDebugFrameStructure({
             type: 'CALL',
@@ -164,6 +180,14 @@ describe('checkCallFrameTree', () => {
 
     it('accepts a root frame that halted on an invalid opcode', () => {
         let root: CallFrame = {type: 'INVALID', from: SENDER, to: CONTRACT, input: '0x'}
+
+        expect(checkDebugFrameStructure(root)).toBeUndefined()
+        expect(checkCallFrameTree(TX, root)).toBeUndefined()
+    })
+
+    // zkSync-era `Call` root frame - both gates must agree it is a valid call root.
+    it('accepts a PascalCase root call frame', () => {
+        let root: CallFrame = {type: 'Call', from: SENDER, to: CONTRACT, input: '0x'}
 
         expect(checkDebugFrameStructure(root)).toBeUndefined()
         expect(checkCallFrameTree(TX, root)).toBeUndefined()

@@ -1166,23 +1166,50 @@ export function blockAccessListHash(accessList: BlockAccessList): Bytes32 {
 }
 
 
-const CALL_FRAME_TYPES = new Set([
-    'CALL', 'call',
+/**
+ * A set of debug call-frame types that matches case-insensitively.
+ *
+ * Tracers spell call kinds differently: geth `CALL`, some tracers `call` or `delegateCall`,
+ * zkSync-era nodes `Call`. Every frame-type test goes through one of these sets (or
+ * {@link isStopFrameType}), so no comparison can depend on the casing.
+ */
+class FrameTypeSet {
+    private types: Set<string>
+
+    constructor(types: Iterable<string>) {
+        this.types = new Set(Array.from(types, t => t.toUpperCase()))
+    }
+
+    has(type: string): boolean {
+        return this.types.has(type.toUpperCase())
+    }
+
+    [Symbol.iterator](): IterableIterator<string> {
+        return this.types[Symbol.iterator]()
+    }
+}
+
+function isStopFrameType(type: string): boolean {
+    return type.toUpperCase() === 'STOP'
+}
+
+const CALL_FRAME_TYPES = new FrameTypeSet([
+    'CALL',
     'CALLCODE',
-    'DELEGATECALL', 'delegateCall',
+    'DELEGATECALL',
     'STATICCALL',
     'INVALID'
 ])
 
 // INVALID is a top-level execution outcome, not a nested-only call kind: unlike
 // DELEGATECALL/STATICCALL/CALLCODE it can legitimately appear as a root frame.
-const ROOT_CALL_FRAME_TYPES = new Set(['CALL', 'call', 'INVALID'])
-const CREATE_FRAME_TYPES = new Set([
-    'CREATE', 'create',
+const ROOT_CALL_FRAME_TYPES = new FrameTypeSet(['CALL', 'INVALID'])
+const CREATE_FRAME_TYPES = new FrameTypeSet([
+    'CREATE',
     'CREATE2'
 ])
-const SELFDESTRUCT_FRAME_TYPES = new Set(['SELFDESTRUCT'])
-const MAPPABLE_FRAME_TYPES = new Set([
+const SELFDESTRUCT_FRAME_TYPES = new FrameTypeSet(['SELFDESTRUCT'])
+const MAPPABLE_FRAME_TYPES = new FrameTypeSet([
     ...CALL_FRAME_TYPES,
     ...CREATE_FRAME_TYPES,
     ...SELFDESTRUCT_FRAME_TYPES
@@ -1218,7 +1245,7 @@ function checkFrameStructure(frame: CallFrame, traceAddress: number[]): string |
 
     // Normalization treats a root STOP result as an empty trace list. The same
     // type nested in a tree has no mapper representation.
-    if (frame.type === 'STOP' && traceAddress.length === 0) {
+    if (isStopFrameType(frame.type) && traceAddress.length === 0) {
         if (frame.calls?.length) {
             return 'root STOP frame has subcalls'
         }
@@ -1280,7 +1307,7 @@ export function checkCallFrameTree(
 ): string | undefined {
     // A root STOP maps to an empty trace list, so there is nothing to agree with the
     // transaction about. The structural check owns this shape.
-    if (root.type === 'STOP') return
+    if (isStopFrameType(root.type)) return
 
     if (!sameAddress(root.from, tx.from)) {
         return `root frame is executed by ${root.from}, but the transaction is sent by ${tx.from}`
@@ -1420,7 +1447,7 @@ export function checkConsensusAnchors(
     // A missing call frame, or a root STOP, carries no execution to compare. Accepting it
     // would let any trace pass by being replaced with one, so the first selected rule
     // that applies to this transaction reports it.
-    if (root == null || root.type === 'STOP') {
+    if (root == null || isStopFrameType(root.type)) {
         let applicable: ConsensusAnchorRule[] = [
             ...(receipt.status != null ? ['status' as const] : []),
             ...(isSystem ? ['system-gas' as const] : hasGasAnchor ? ['gas' as const] : []),
@@ -1537,7 +1564,7 @@ export function systemValueFlow(root: CallFrame): bigint {
 
 // Frames whose value leaves the caller. DELEGATECALL, STATICCALL and CALLCODE
 // move no value to their target.
-const VALUE_TRANSFER_FRAME_TYPES = new Set(['CALL', 'call', ...CREATE_FRAME_TYPES])
+const VALUE_TRANSFER_FRAME_TYPES = new FrameTypeSet(['CALL', ...CREATE_FRAME_TYPES])
 
 
 /** Balance change of {@link SYSTEM_ADDRESS} in a `trace_replayBlockTransactions` state diff. */
@@ -2190,9 +2217,8 @@ function frameAt(root: CallFrame, traceAddress: number[]): CallFrame | undefined
 
 
 function isContextPreserving(type: string): boolean {
-    switch(type) {
+    switch(type.toUpperCase()) {
         case 'DELEGATECALL':
-        case 'delegateCall':
         case 'CALLCODE':
             return true
         default:
