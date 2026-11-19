@@ -154,5 +154,229 @@ describe('HyperEVM system transaction oracle', () => {
         expect((await answer(omitting, receipts))._isInvalid).toBe(true)
         expect((await answer(omitting, omittingReceipts))._isInvalid).toBeUndefined()
     })
-})
 
+    describe('when the oracle is required', () => {
+        function setUpRequired(oracle: unknown, chainId = '0x3e7', verify = true) {
+            const client = new MockRpcClient()
+            client.setFixture('eth_chainId', undefined, chainId)
+            client.setFixture('eth_getBlockReceipts', ['latest'], [])
+            const rpc = new Rpc({
+                client: client as any,
+                hyperliquidSystemTxOracle: oracle as any,
+                requireHyperliquidSystemTxOracle: true,
+                // another chain hashes the system transaction into the roots, which this block's header does not
+                verifyTxRoot: verify,
+                verifyReceiptsRoot: verify,
+                verifyLogsBloom: verify,
+                checkLogIndex: true,
+            })
+            const answer = (body: any, receipts: any[]) => {
+                client.setFixture('eth_getBlockByNumber', [toQty(BLOCK), true], body)
+                client.setFixture('eth_getBlockReceipts', [toQty(BLOCK)], receipts)
+                return rpc.getBlockBatch([BLOCK], {transactions: true, receipts: true}).then(blocks => blocks[0])
+            }
+            return {answer}
+        }
+
+        // answers null (a block the official node has not seen yet) the first `misses` times it is asked
+        class LateOracle extends CountingClient {
+            constructor(private misses: number, answer: unknown) {
+                super()
+                this.setFixture('eth_getSystemTxsByBlockHash', [loadBlock('hyperliquid', BLOCK).hash], answer)
+            }
+            async batchCall(batch: any[], options?: any): Promise<any[]> {
+                if (this.calls < this.misses) {
+                    this.calls += 1
+                    return batch.map(() => null)
+                }
+                return super.batchCall(batch, options)
+            }
+        }
+
+        it('ask again for a block the oracle does not know yet, and take it once it answers', async () => {
+            vi.useFakeTimers()
+            try {
+                const {block, receipts, oracleAnswer} = answers()
+                const oracle = new LateOracle(2, oracleAnswer)
+                const pending = setUpRequired(oracle).answer(block, receipts)
+                await vi.advanceTimersByTimeAsync(5_000)
+                expect((await pending)._isInvalid).toBeUndefined()
+                expect(oracle.calls).toBe(3)
+            } finally {
+                vi.useRealTimers()
+            }
+        })
+
+        it('mark a block invalid when the oracle keeps answering that it does not know it', async () => {
+            vi.useFakeTimers()
+            try {
+                const {block, receipts, oracleAnswer} = answers()
+                const oracle = new LateOracle(Infinity, oracleAnswer)
+                const pending = setUpRequired(oracle).answer(block, receipts)
+                await vi.advanceTimersByTimeAsync(5_000)
+                const got = await pending
+                expect(got._isInvalid).toBe(true)
+                expect(got._errorMessage).toBe('system transaction oracle does not know the block hash')
+                expect(oracle.calls).toBe(4)
+            } finally {
+                vi.useRealTimers()
+            }
+        })
+
+        // fails (the whole call, or with an error for the block) the first `failures` times it is asked
+        class DownOracle extends CountingClient {
+            constructor(private failures: number, private itemError: boolean, answer: unknown) {
+                super()
+                this.setFixture('eth_getSystemTxsByBlockHash', [loadBlock('hyperliquid', BLOCK).hash], answer)
+            }
+            async batchCall(batch: any[], options?: any): Promise<any[]> {
+                if (this.calls < this.failures) {
+                    this.calls += 1
+                    if (!this.itemError) throw new Error('connection refused')
+                    return batch.map(req => options.validateError({code: -32005, message: 'rate limited'}, req))
+                }
+                return super.batchCall(batch, options)
+            }
+        }
+
+        for (const itemError of [false, true]) {
+            it(`wait for an oracle that is unavailable (${itemError ? 'an error for the block' : 'the call fails'}), spending no retries of the block`, async () => {
+                vi.useFakeTimers()
+                try {
+                    const {block, receipts, oracleAnswer} = answers()
+                    // far more failures than the asks a block that the oracle does not know gets
+                    const oracle = new DownOracle(12, itemError, oracleAnswer)
+                    let settled = false
+                    const pending = setUpRequired(oracle).answer(block, receipts).finally(() => (settled = true))
+                    await vi.advanceTimersByTimeAsync(60_000)
+                    expect(settled).toBe(false)
+                    await vi.advanceTimersByTimeAsync(10 * 60_000)
+                    const got = await pending
+                    expect(got._isInvalid).toBeUndefined()
+                    expect(oracle.calls).toBe(13)
+                } finally {
+                    vi.useRealTimers()
+                }
+            })
+        }
+
+        it('stop waiting for an unavailable oracle once the batch fails for another reason', async () => {
+            vi.useFakeTimers()
+            try {
+                const {block} = answers()
+                class FailingReceipts extends MockRpcClient {
+                    async batchCall(batch: any[], options?: any): Promise<any[]> {
+                        if (batch.some(req => req.method === 'eth_getBlockReceipts' && req.params?.[0] !== 'latest')) {
+                            throw new Error('source RPC down')
+                        }
+                        return super.batchCall(batch, options)
+                    }
+                }
+                const client = new FailingReceipts()
+                client.setFixture('eth_chainId', undefined, '0x3e7')
+                client.setFixture('eth_getBlockReceipts', ['latest'], [])
+                client.setFixture('eth_getBlockByNumber', [toQty(BLOCK), true], block)
+                const oracle = new DownOracle(Infinity, false, [])
+                const rpc = new Rpc({client: client as any, hyperliquidSystemTxOracle: oracle as any, requireHyperliquidSystemTxOracle: true})
+                const pending = rpc.getBlockBatch([BLOCK], {transactions: true, receipts: true})
+                const failed = expect(pending).rejects.toThrow('source RPC down')
+                await vi.advanceTimersByTimeAsync(1_000)
+                await failed
+                const calls = oracle.calls
+                await vi.advanceTimersByTimeAsync(10 * 60_000)
+                expect(oracle.calls).toBe(calls)
+            } finally {
+                vi.useRealTimers()
+            }
+        })
+
+        it('await a call still queued past its deadline instead of sending another', async () => {
+            vi.useFakeTimers()
+            try {
+                const {block, receipts} = answers()
+                let calls = 0
+                let release: (results: any[]) => void = () => {}
+                const oracle = {
+                    url: 'ws://oracle',
+                    batchCall: () => {
+                        calls += 1
+                        return new Promise<any[]>(resolve => (release = resolve))
+                    },
+                }
+                let settled = false
+                const pending = setUpRequired(oracle).answer(block, receipts).finally(() => (settled = true))
+                await vi.advanceTimersByTimeAsync(5 * 60_000)
+                expect(settled).toBe(false)
+                expect(calls).toBe(1)
+                // the oracle reconnects and the one queued call is answered
+                release([answers().oracleAnswer])
+                await vi.advanceTimersByTimeAsync(60_000)
+                expect((await pending)._isInvalid).toBeUndefined()
+                expect(calls).toBe(1)
+            } finally {
+                vi.useRealTimers()
+            }
+        })
+
+        it('keep one call in flight across concurrent batches', async () => {
+            vi.useFakeTimers()
+            try {
+                let inFlight = 0
+                let most = 0
+                let pending: (() => void)[] = []
+                const oracle = {
+                    url: 'ws://oracle',
+                    batchCall: (batch: any[]) => {
+                        inFlight += 1
+                        most = Math.max(most, inFlight)
+                        return new Promise<any[]>(resolve =>
+                            pending.push(() => {
+                                inFlight -= 1
+                                resolve(batch.map(() => []))
+                            })
+                        )
+                    },
+                }
+                const rpc = new Rpc({client: new MockRpcClient() as any, hyperliquidSystemTxOracle: oracle as any, requireHyperliquidSystemTxOracle: true})
+                const asks = ['0xaa', '0xbb', '0xcc'].map(hash => (rpc as any).askSystemTxOracle([{hash, number: 1}]))
+                await vi.advanceTimersByTimeAsync(2 * 60_000)
+                // the oracle comes back: each queued call is answered as it is the one in flight
+                for (let round = 0; round < 5 && pending.length > 0; round++) {
+                    pending.shift()!()
+                    await vi.advanceTimersByTimeAsync(60_000)
+                }
+                const got: Map<string, Set<string>>[] = await Promise.all(asks)
+                expect(got.map(m => [...m.keys()])).toEqual([['0xaa'], ['0xbb'], ['0xcc']])
+                expect(most).toBe(1)
+            } finally {
+                vi.useRealTimers()
+            }
+        })
+
+        it("make the oracle from the chain's official RPC URL, once", async () => {
+            const {block, receipts, oracleAnswer} = answers()
+            const urls: string[] = []
+            const factory = (url: string) => {
+                urls.push(url)
+                const oracle = new MockRpcClient()
+                oracle.setFixture('eth_getSystemTxsByBlockHash', [block.hash], oracleAnswer)
+                return oracle
+            }
+            const {answer} = setUpRequired(factory)
+            expect((await answer(block, receipts))._isInvalid).toBeUndefined()
+            expect((await answer(block, receipts))._isInvalid).toBeUndefined()
+            expect(urls).toEqual(['https://rpc.hyperliquid.xyz/evm'])
+        })
+
+        it('throw on HyperEVM without an oracle, and ignore the requirement on other chains', async () => {
+            const {block, receipts} = answers()
+            await expect(setUpRequired(undefined).answer(block, receipts)).rejects.toThrow(
+                'HyperEVM: a system transaction oracle is required, and none is configured',
+            )
+            const factory = vi.fn()
+            const got = await setUpRequired(factory, '0x1', false).answer(block, receipts)
+            expect(got._isInvalid).toBeUndefined()
+            expect(factory).not.toHaveBeenCalled()
+        })
+    })
+})

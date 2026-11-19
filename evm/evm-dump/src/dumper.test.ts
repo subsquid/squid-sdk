@@ -298,11 +298,32 @@ describe('--hyperliquid-system-tx-oracle', () => {
         process.argv = argv
     })
 
-    it('gives Rpc an oracle client for the url, and none without the option', () => {
+    it('gives Rpc an oracle client for the url, a maker for the official RPC by default, and none when off', () => {
         expect(makeDumper('--hyperliquid-system-tx-oracle', 'https://oracle.example').systemTxOracle()?.url).toMatch(
             /^https:\/\/oracle\.example\/?$/,
         )
-        expect(makeDumper().systemTxOracle()).toBeUndefined()
+        let make = makeDumper().systemTxOracle()
+        expect(typeof make).toBe('function')
+        expect(make('https://official.example').url).toMatch(/^https:\/\/official\.example\/?$/)
+        expect(makeDumper('--no-hyperliquid-system-tx-oracle').systemTxOracle()).toBeUndefined()
+    })
+
+    it('requires the oracle unless it is turned off', () => {
+        expect(makeDumper().evmRpc().requireSystemTxOracle).toBe(true)
+        expect(makeDumper('--no-hyperliquid-system-tx-oracle').evmRpc().requireSystemTxOracle).toBe(false)
+    })
+
+    it('refuses a HyperEVM stream unless the oracle is turned off', async () => {
+        let hyperliquid = {getChainUtils: async () => ({hasHyperliquidSystemTransactions: true})}
+        let dumper = makeDumper()
+        dumper.evmRpc = () => hyperliquid
+        await expect(dumper.assertStreamChain()).rejects.toThrow('pass --no-hyperliquid-system-tx-oracle')
+        let off = makeDumper('--no-hyperliquid-system-tx-oracle')
+        off.evmRpc = () => hyperliquid
+        await expect(off.assertStreamChain()).resolves.toBeUndefined()
+        let other = makeDumper()
+        other.evmRpc = () => ({getChainUtils: async () => ({hasHyperliquidSystemTransactions: false})})
+        await expect(other.assertStreamChain()).resolves.toBeUndefined()
     })
 
     it('is refused together with --stream-url, whose blocks it would not check', () => {

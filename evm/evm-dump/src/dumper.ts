@@ -60,7 +60,8 @@ interface Options extends DumperOptions, StreamOptions {
     skipCumulativeGasUsedCheck?: boolean
     useGasUsedForReceiptsRoot?: boolean
     deriveTotalDifficulty?: boolean
-    hyperliquidSystemTxOracle?: string
+    // a URL, false for --no-hyperliquid-system-tx-oracle, undefined for the chain's official RPC
+    hyperliquidSystemTxOracle?: string | false
     parentTotalDifficulty?: bigint
 }
 
@@ -145,9 +146,14 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         )
         program.option(
             '--hyperliquid-system-tx-oracle <url>',
-            'HyperEVM: an endpoint that serves eth_getSystemTxsByBlockHash (the official RPC). Each block is held ' +
-                'to its system transactions, compared by sender and nonce, and fetched again when it lacks one; ' +
-                'when the oracle gives no answer the block is taken without this check and a warning is logged',
+            'HyperEVM: the endpoint that serves eth_getSystemTxsByBlockHash, the official RPC of the chain by ' +
+                'default. Each block is held to its system transactions, compared by sender and nonce, and fetched ' +
+                'again when it lacks one or has one too many, or when the oracle gives no answer for it',
+        )
+        program.option(
+            '--no-hyperliquid-system-tx-oracle',
+            'HyperEVM: take blocks without asking the oracle. A provider that leaves a system transaction out of ' +
+                'the body and the receipts alike, and renumbers the logs, then goes undetected',
         )
         program.option(
             '--derive-total-difficulty',
@@ -214,11 +220,13 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
     }
 
     @def
-    private systemTxOracle(): EvmRpcClient | undefined {
-        let url = this.options().hyperliquidSystemTxOracle
-        if (url == null) return undefined
-        // its own small budget; Rpc bounds each oracle call further, so the oracle never holds the dump up
-        return new EvmRpcClient({url, capacity: 2, requestTimeout: 10_000, retryAttempts: 1})
+    private systemTxOracle(): EvmRpcClient | ((officialRpcUrl: string) => EvmRpcClient) | undefined {
+        let option = this.options().hyperliquidSystemTxOracle
+        if (option === false) return undefined
+        // its own small budget; Rpc bounds each oracle call further and asks again for a block without an answer
+        let client = (url: string) => new EvmRpcClient({url, capacity: 2, requestTimeout: 10_000, retryAttempts: 1})
+        // Rpc calls this on HyperEVM only, with the chain's official RPC
+        return option == null ? client : client(option)
     }
 
     @def
@@ -226,6 +234,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         return new Rpc({
             client: this.rpc(),
             hyperliquidSystemTxOracle: this.systemTxOracle(),
+            requireHyperliquidSystemTxOracle: this.options().hyperliquidSystemTxOracle !== false,
             finalityConfirmation: this.options().finalityConfirmation,
             verifyBlockHash: this.options().verifyBlockHash,
             verifyExtDataHash: this.options().verifyExtDataHash,
@@ -394,9 +403,22 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         }
     }
 
+    // The oracle is on by default on HyperEVM, and streamed blocks are not held to it
+    @def
+    private async assertStreamChain(): Promise<void> {
+        if (this.options().hyperliquidSystemTxOracle === false) return
+        if ((await this.evmRpc().getChainUtils()).hasHyperliquidSystemTransactions) {
+            throw new ErrorMessage(
+                '--stream-url does not hold HyperEVM blocks to the system transaction oracle yet: ' +
+                    'pass --no-hyperliquid-system-tx-oracle to take streamed blocks without it',
+            )
+        }
+    }
+
     private async *getSourceBlocks(range: Range, prevHash?: string): AsyncIterable<RawBlock[]> {
         let stream = this.rawStream()
         if (stream) {
+            await this.assertStreamChain()
             yield* stream.getBlocks(range, prevHash)
             return
         }
@@ -417,7 +439,7 @@ function assertStreamInputs(options: Options): void {
     }
 
     // Streamed blocks do not go through Rpc.getBlockBatch(), where the oracle is asked
-    if (options.hyperliquidSystemTxOracle != null) {
+    if (typeof options.hyperliquidSystemTxOracle == 'string') {
         throw new ErrorMessage('--stream-url does not support --hyperliquid-system-tx-oracle yet')
     }
 }
