@@ -34,6 +34,7 @@ import { BlockCheckOptions, checkBlockHeader, checkBlockLogs, checkBlockReceipts
 import { ChainUtils } from './chain-utils'
 import { EvmRpcClient } from './rpc-client'
 import {
+    calldataFloorGas,
     checkCallFrameTree,
     checkConsensusAnchors,
     checkDebugFrameStructure,
@@ -418,6 +419,9 @@ export class Rpc {
         // Whether an empty call frame is legitimate depends on the transaction type.
         let needsTransactionsForEmptyCallFrames =
             !!req?.traces && !req.useTraceApi && (await this.getChainUtils()).mayAnswerEmptyCallFrames
+        // A stand-in call frame is built from the transaction's gas limit, input and target
+        let needsTransactionsForCalldataFloorStubs =
+            !!req?.traces && !req.useTraceApi && !!req.stubCalldataFloorFailures
         let utils = await this.getChainUtils()
         // The oracle comparison needs each system transaction's sender and nonce
         let askSystemTxOracle = utils.hasHyperliquidSystemTransactions && this.getSystemTxOracle(utils) != null
@@ -425,6 +429,7 @@ export class Rpc {
             transactionsRequested ||
             needsTransactionsForCallFrameValidation ||
             needsTransactionsForEmptyCallFrames ||
+            needsTransactionsForCalldataFloorStubs ||
             askSystemTxOracle
         let blocks = await this.getBlocks(numbers, withTransactions)
 
@@ -1288,7 +1293,9 @@ export class Rpc {
             }
         })
 
-        let results = await this.reduceBatchOnRetry<MaybeEmptyDebugFrameResult[] | null | typeof RESPONSE_TOO_BIG>(call, {
+        let results = await this.reduceBatchOnRetry<
+            MaybeEmptyDebugFrameResult[] | null | typeof RESPONSE_TOO_BIG | typeof TRACE_FAILED
+        >(call, {
             validateResult: result => {
                 if (Array.isArray(result)) {
                     // Moonbeam quirk
@@ -1304,6 +1311,9 @@ export class Rpc {
                 if (info.message.includes('not found')) return null
                 if (info.message.includes('cannot query unfinalized data')) return null // Avalanche
                 if (isResponseTooBig(info)) return RESPONSE_TOO_BIG
+                // Traced again per transaction, which tells the transactions the node cannot trace
+                // from the ones it can
+                if (req.stubCalldataFloorFailures && isServerSideTraceError(info)) return TRACE_FAILED
                 throw new RpcError(info)
             }
         })
@@ -1318,7 +1328,14 @@ export class Rpc {
                     blockHash: block.hash,
                     transactionCount: block.block.transactions.length
                 }, 'call frame response too big, tracing per transaction')
-                frames = await this.getDebugFramesByTransaction(block, traceConfig)
+                frames = await this.getDebugFramesByTransaction(block, traceConfig, req)
+            } else if (frames == TRACE_FAILED) {
+                this.log.warn({
+                    blockNumber: block.number,
+                    blockHash: block.hash,
+                    transactionCount: block.block.transactions.length
+                }, 'block trace failed on the server, tracing per transaction')
+                frames = await this.getDebugFramesByTransaction(block, traceConfig, req)
             }
 
             if (frames == null) {
@@ -1593,7 +1610,8 @@ export class Rpc {
 
     private async getDebugFramesByTransaction(
         block: Block,
-        traceConfig: unknown
+        traceConfig: unknown,
+        req: DataRequest
     ): Promise<MaybeEmptyDebugFrameResult[]> {
         let txHashes = block.block.transactions.map(getTxHash)
         let call = txHashes.map(txHash => ({
@@ -1603,14 +1621,122 @@ export class Rpc {
 
         let validateFrame = getResultValidator(DebugFrame)
 
-        let results = await this.reduceBatchOnRetry(call, {
-            validateResult: result => (isEmptyFrame(result) ? null : validateFrame(result))
+        let results = await this.reduceBatchOnRetry<DebugFrame | null | UntracedTransaction>(call, {
+            validateResult: result => (isEmptyFrame(result) ? null : validateFrame(result)),
+            validateError: info => {
+                if (req.stubCalldataFloorFailures && isServerSideTraceError(info)) return new UntracedTransaction(info)
+                throw new RpcError(info)
+            }
         })
 
-        return results.map((result, i) => ({
-            result,
-            txHash: txHashes[i]
-        }))
+        let frames: MaybeEmptyDebugFrameResult[] = []
+        for (let i = 0; i < results.length; i++) {
+            let result = results[i]
+            if (result instanceof UntracedTransaction) {
+                let stub = await this.stubCalldataFloorFailure(block, i, result.error)
+                if (stub instanceof DebugFrameStubRefusal) {
+                    this.log.warn({
+                        blockNumber: block.number,
+                        blockHash: block.hash,
+                        transactionHash: txHashes[i],
+                        traceError: result.error.message,
+                        reason: stub.reason
+                    }, 'transaction trace failed and is not a calldata floor failure, tracing it again')
+                    // An ordinary call this time: a transient error gets the client's retries, and
+                    // a lasting one fails the block as it did without the stub
+                    result = await this.call(call[i].method, call[i].params, {
+                        validateResult: result => (isEmptyFrame(result) ? null : validateFrame(result))
+                    })
+                } else {
+                    result = stub
+                }
+            }
+            frames.push({result, txHash: txHashes[i]})
+        }
+        return frames
+    }
+
+    /**
+     * Stands in for the call frame of a transaction the chain included although its gas limit is
+     * below the EIP-7623 calldata floor. Such a transaction is invalid under Prague rules, so it ran
+     * no EVM code: a chain that includes it anyway (TAC does) only charges its whole gas limit and
+     * marks it failed. Nodes then cannot replay it, and their tracers fail on it.
+     *
+     * The frame is a failed root call (or create) with no subcalls. It is used only when the receipt
+     * confirms that outcome (status 0, all the gas used, no logs) and the node itself reports the floor
+     * as the reason it cannot replay the transaction. Before Prague, a transaction below the floor may
+     * well run code and fail the same way, so the floor alone is no evidence. Otherwise the trace error
+     * stands.
+     */
+    private async stubCalldataFloorFailure(
+        block: Block,
+        index: number,
+        error: RpcErrorInfo
+    ): Promise<DebugFrame | DebugFrameStubRefusal> {
+        let tx = block.block.transactions[index]
+        let transactionHash = getTxHash(tx)
+        let refuse = (reason: string) => new DebugFrameStubRefusal(reason)
+
+        if (typeof tx === 'string') return refuse('full transaction details are missing')
+        let gas = BigInt(tx.gas)
+        let floor = calldataFloorGas(tx.input)
+        if (gas >= floor) return refuse(`gas limit ${gas} is not below the calldata floor ${floor}`)
+
+        let receipt: Receipt | null = await this.call('eth_getTransactionReceipt', [transactionHash], {
+            validateResult: getResultValidator(nullable(Receipt))
+        })
+        if (receipt == null) return refuse('no receipt')
+        if (receipt.transactionHash.toLowerCase() !== transactionHash.toLowerCase()) {
+            return refuse(`receipt is for transaction ${receipt.transactionHash}`)
+        }
+        if (receipt.blockHash.toLowerCase() !== block.hash.toLowerCase()) {
+            return refuse(`receipt is from block ${receipt.blockHash}`)
+        }
+        if (receipt.status == null || qty2Int(receipt.status) !== 0) return refuse(`receipt status is ${receipt.status}`)
+        if (BigInt(receipt.gasUsed) !== gas) return refuse(`receipt gasUsed ${BigInt(receipt.gasUsed)} is not the gas limit ${gas}`)
+        if (receipt.logs.length > 0) return refuse('receipt has logs')
+
+        // The prestate tracer replays the transaction through the node's state transition, which
+        // names the floor when that is what stops the transaction
+        // Only the floor error is taken as an answer: any other error gets the client's retries
+        let replay: unknown
+        try {
+            replay = await this.call<unknown>(
+                'debug_traceTransaction',
+                [transactionHash, {tracer: 'prestateTracer'}],
+                {
+                    validateError: info => {
+                        if (CALLDATA_FLOOR_ERROR_PATTERN.test(info.message)) return new ReplayFailure(info.message)
+                        throw new RpcError(info)
+                    }
+                }
+            )
+        } catch (err: any) {
+            return refuse(`the replay failed: ${err?.message ?? err}`)
+        }
+        let floorError = replay instanceof ReplayFailure ? replay.message : undefined
+        if (floorError == null) return refuse('the node does not report the calldata floor as the replay failure')
+
+        this.log.warn({
+            blockNumber: block.number,
+            blockHash: block.hash,
+            transactionHash,
+            gas: gas.toString(),
+            calldataFloor: floor.toString(),
+            traceError: error.message,
+            replayError: floorError
+        }, 'transaction is below the EIP-7623 calldata floor and cannot be traced: stored as a failed root frame without subcalls')
+
+        return {
+            type: tx.to == null ? 'CREATE' : 'CALL',
+            from: tx.from,
+            to: tx.to ?? undefined,
+            input: tx.input ?? '0x',
+            value: tx.value ?? '0x0',
+            gas: tx.gas,
+            gasUsed: receipt.gasUsed,
+            error: CALLDATA_FLOOR_ERROR
+        }
     }
 
     /**
@@ -2119,6 +2245,38 @@ function isEmpty(obj: object): boolean {
 
 
 const RESPONSE_TOO_BIG = Symbol('RESPONSE_TOO_BIG')
+
+
+const TRACE_FAILED = Symbol('TRACE_FAILED')
+
+
+// A transaction whose trace the server failed to produce
+class UntracedTransaction {
+    constructor(readonly error: RpcErrorInfo) {}
+}
+
+
+// Why a transaction is not stood in for, see stubCalldataFloorFailure()
+class DebugFrameStubRefusal {
+    constructor(readonly reason: string) {}
+}
+
+
+// The error a node answers a replay with
+class ReplayFailure {
+    constructor(readonly message: string) {}
+}
+
+
+// What geth reports for a transaction below the EIP-7623 calldata floor (core.ErrFloorDataGas)
+const CALLDATA_FLOOR_ERROR = 'insufficient gas for floor data gas cost'
+const CALLDATA_FLOOR_ERROR_PATTERN = /insufficient gas for floor data gas cost/i
+
+
+// A node that fails while tracing answers with the generic server error code
+function isServerSideTraceError(info: RpcErrorInfo): boolean {
+    return info.code === -32000
+}
 
 
 // Matches oversized responses from a single RPC call. Batch-level errors are

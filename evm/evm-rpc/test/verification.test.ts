@@ -28,7 +28,8 @@ describe('Verification Functions', () => {
                 fixture.chain === 'stable' ||
                 fixture.chain === 'stable-testnet' ||
                 fixture.chain === 'bittensor-testnet' ||
-                fixture.chain === 'cronos'
+                fixture.chain === 'cronos' ||
+                fixture.chain === 'tac'
             )('blockHash verification', async () => {
                 const block = loadBlock(fixture.chain, fixture.blockNumber)
                 const chainId = getChainId(fixture.chain)

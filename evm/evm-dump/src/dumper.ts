@@ -58,6 +58,7 @@ interface Options extends DumperOptions, StreamOptions {
     consensusAnchorRules?: ConsensusAnchorRule[]
     skipLogIndexCheck?: boolean
     skipCumulativeGasUsedCheck?: boolean
+    stubCalldataFloorFailures?: boolean
     useGasUsedForReceiptsRoot?: boolean
     deriveTotalDifficulty?: boolean
     // a URL, false for --no-hyperliquid-system-tx-oracle, undefined for the chain's official RPC
@@ -139,6 +140,12 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.option(
             '--skip-cumulative-gas-used-check',
             'Do not check cumulativeGasUsed consistency across transactions',
+        )
+        program.option(
+            '--stub-calldata-floor-failures',
+            'When the node fails to trace a block, trace it per transaction. A transaction it still cannot trace ' +
+                'is stored as a failed root frame without subcalls if the chain included it below the EIP-7623 ' +
+                'calldata floor (so it ran no code) and its receipt confirms that: status 0, all gas used, no logs',
         )
         program.option(
             '--use-gas-used-for-receipts-root',
@@ -270,6 +277,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
                 useDebugTraceBlockByNumber: this.options().useDebugTraceBlockByNumber,
                 useTraceApi: this.options().useTraceApi,
                 debugTraceTimeout: '60s',
+                stubCalldataFloorFailures: this.options().stubCalldataFloorFailures,
             },
         })
     }

@@ -23,6 +23,7 @@ const CHAIN_IDS: Record<string, string> = {
     'geth-dev': '0x539',
     anvil: '0x7a69',
     scroll: '0x82750',
+    tac: '0xef',
 }
 
 

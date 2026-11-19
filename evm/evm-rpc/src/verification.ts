@@ -1613,6 +1613,22 @@ function findAccount<T>(accounts: Record<string, T> | null | undefined, address:
  * Intrinsic gas of a message call: the base cost, calldata at 4 gas per zero byte and 16 per
  * other byte (EIP-2028), access lists (EIP-2930) and authorizations (EIP-7702).
  */
+/**
+ * The EIP-7623 floor on the gas a transaction pays for its calldata (Prague and later):
+ * 21000 plus 10 per calldata token, where a zero byte is one token and any other byte four.
+ * A transaction whose gas limit is below it is invalid under these rules.
+ */
+export function calldataFloorGas(input: string | null | undefined): bigint {
+    let tokens = 0n
+    if (input != null) {
+        for (let i = 2; i + 1 < input.length; i += 2) {
+            tokens += input[i] === '0' && input[i + 1] === '0' ? 1n : 4n
+        }
+    }
+    return 21000n + 10n * tokens
+}
+
+
 export function intrinsicGasOfCall(transaction: {
     input?: string | null
     accessList?: AccessListItem[] | null
