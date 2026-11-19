@@ -49,6 +49,12 @@ export class ChainUtils {
     public readonly isPolygonBased: boolean
     public readonly useGasUsedForReceiptsRoot: boolean
 
+    /** Only Bor's derived state-sync transaction may be missing from debug traces. */
+    isStateSyncTransaction(block: Pick<GetBlock, 'number' | 'hash'>, transactionHash: Bytes32): boolean {
+        return this.isPolygonBased &&
+            transactionHash.toLowerCase() === calculateStateSyncTxHash(block.number, block.hash).toLowerCase()
+    }
+
     constructor(chainId: Qty, options?: ChainUtilsOptions) {
         this.isPolygonMainnet = chainId == '0x89'
         this.isPolygonAmoy = chainId == '0x13882'
