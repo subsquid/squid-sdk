@@ -127,7 +127,7 @@ class IncludeSet {
 }
 
 
-function filterBlock(block: Block, dataRequest: DataRequest): void {
+export function filterBlock(block: Block, dataRequest: DataRequest): void {
     let items = getItemFilter(dataRequest)
 
     let include = new IncludeSet()

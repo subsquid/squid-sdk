@@ -1,14 +1,19 @@
 import type {PortalClient, substrate as portal} from '@subsquid/portal-client'
 import type {RpcClient} from '@subsquid/rpc-client'
 import {Rpc, RuntimeTracker, type WithRuntime} from '@subsquid/substrate-data'
+import {setEmittedContractAddress} from '@subsquid/substrate-data/lib/extension/contracts'
+import {setEthereumTransact, setEvmLog} from '@subsquid/substrate-data/lib/extension/evm'
+import {setGearProgramId} from '@subsquid/substrate-data/lib/extension/gear'
+import {setReviveContractEmitted} from '@subsquid/substrate-data/lib/extension/revive'
 import type {OldSpecsBundle, OldTypesBundle} from '@subsquid/substrate-runtime/lib/metadata'
 import {annotateSyncError, assertNotNull, last, wait} from '@subsquid/util-internal'
 import {assertIsValid, type IsInvalid} from '@subsquid/util-internal-ingest-tools'
 import type {Batch, DataSource} from '@subsquid/util-internal-processor-tools'
 import type {RangeRequest, RangeRequestList} from '@subsquid/util-internal-range'
 import assert from 'assert'
+import {filterBlock} from './ds-rpc-filter'
 import {DEFAULT_FIELDS, type FieldSelection} from './interfaces/data'
-import type {ArchiveBlock, ArchiveBlockHeader, ArchiveEvent} from './interfaces/data-partial'
+import type {ArchiveBlock, ArchiveBlockHeader} from './interfaces/data-partial'
 import type {DataRequest} from './interfaces/data-request'
 import {Block, BlockHeader, Call, Event, Extrinsic, setUpItems} from './mapping'
 
@@ -25,6 +30,10 @@ export interface SubstratePortalOptions {
      * the processor caught up with it, in `ms`
      */
     headPollInterval?: number
+    /**
+     * Number of retries of a failed portal request, `0` disables retries
+     */
+    retryAttempts?: number
 }
 
 /**
@@ -39,6 +48,7 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
     private typesBundle?: OldTypesBundle | OldSpecsBundle
     private headers?: Record<string, string>
     private headPollInterval: number
+    private retryAttempts?: number
 
     constructor(options: SubstratePortalOptions) {
         this.client = options.client
@@ -46,10 +56,11 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
         this.typesBundle = options.typesBundle
         this.headers = options.headers
         this.headPollInterval = options.headPollInterval ?? 5_000
+        this.retryAttempts = options.retryAttempts
     }
 
     async getFinalizedHeight(): Promise<number> {
-        let head = await this.client.getFinalizedHead({headers: this.headers})
+        let head = await this.client.getFinalizedHead(this.getRequestOptions())
         return head?.number ?? -1
     }
 
@@ -71,7 +82,7 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
         for (let req of requests) {
             let beg = req.range.from
             let end = req.range.to ?? Number.POSITIVE_INFINITY
-            let postFilter = getPostFilter(req.request)
+            let exactFilter = needsExactFilter(req.request)
 
             while (beg <= end) {
                 let head = await this.getFinalizedHeight()
@@ -82,9 +93,10 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
                 }
 
                 let query = toPortalQuery({range: {from: beg, to: req.range.to}, request: req.request})
+                let streamFrom = beg
 
                 for await (let {blocks: batch, meta} of this.client.getFinalizedStream(query, {
-                    request: {headers: this.headers},
+                    request: this.getRequestOptions(),
                 })) {
                     if (meta.finalizedHeadNumber != null) {
                         head = Math.max(head, meta.finalizedHeadNumber)
@@ -109,7 +121,13 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
                     let isHead = beg > head
 
                     yield {
-                        blocks: blocks.map((b) => this.mapBlock(postFilter ? postFilter(b) : b)),
+                        blocks: blocks.map((b) => {
+                            let block = this.mapBlock(b)
+                            if (exactFilter) {
+                                applyRequest(block, req.request)
+                            }
+                            return block
+                        }),
                         isHead,
                     }
 
@@ -117,8 +135,19 @@ export class SubstratePortal implements DataSource<Block, DataRequest> {
                     // decides whether to stop or to wait for new blocks.
                     if (isHead) break
                 }
+
+                // The stream ended without data although the portal reported blocks ahead,
+                // back off instead of re-requesting in a loop.
+                if (beg == streamFrom) {
+                    await wait(this.headPollInterval)
+                }
             }
         }
+    }
+
+    private getRequestOptions() {
+        // passed per request: `PortalClient` can not tell an explicit `0` set on its HTTP client from an unset value
+        return {headers: this.headers, retryAttempts: this.retryAttempts}
     }
 
     @annotateSyncError((src: ArchiveBlock) => ({blockHeight: src.header.number, blockHash: src.header.hash}))
@@ -148,7 +177,9 @@ function mergeFields<Keys extends string>(
  * Unlike the legacy archive, the portal returns only the fields that were asked for,
  * so the fields the processor relies on are always requested explicitly.
  */
-export function getFields(fields: FieldSelection | undefined, needEventArgs?: boolean): portal.FieldSelection {
+export function getFields(fields: FieldSelection | undefined, needItemArgs?: boolean): portal.FieldSelection {
+    // client side filtering inspects names and args of all events and calls
+    let itemArgs = needItemArgs ? {name: true, args: true} : undefined
     return {
         block: mergeFields<any>(DEFAULT_FIELDS.block, fields?.block, {
             parentHash: true,
@@ -163,12 +194,13 @@ export function getFields(fields: FieldSelection | undefined, needEventArgs?: bo
         call: mergeFields<any>(DEFAULT_FIELDS.call, fields?.call, {
             extrinsicIndex: true,
             address: true,
+            ...itemArgs,
         }),
         event: mergeFields<any>(DEFAULT_FIELDS.event, fields?.event, {
             index: true,
             extrinsicIndex: true,
             callAddress: true,
-            ...(needEventArgs ? {name: true, args: true} : undefined),
+            ...itemArgs,
         }),
     }
 }
@@ -180,7 +212,8 @@ const GEAR_MESSAGE_QUEUED = 'Gear.MessageQueued'
  *
  * `gearMessagesQueued` requests are sent as plain `Gear.MessageQueued` event requests:
  * the portal's own `gearMessagesEnqueued` request matches `Gear.UserMessageEnqueued`
- * events instead. Program id filtering is then applied on the client by {@link getPostFilter}.
+ * events instead. When such requests select program ids, the portal returns a superset,
+ * which is narrowed down on the client by {@link applyRequest}.
  */
 export function toPortalQuery(req: RangeRequest<DataRequest>): portal.Query {
     let {fields, gearMessagesQueued, ...items} = req.request
@@ -200,7 +233,7 @@ export function toPortalQuery(req: RangeRequest<DataRequest>): portal.Query {
         type: 'substrate',
         fromBlock: req.range.from,
         toBlock: req.range.to,
-        fields: getFields(fields, needsGearPostFilter(req.request)),
+        fields: getFields(fields, needsExactFilter(req.request)),
         includeAllBlocks: items.includeAllBlocks,
         events,
         calls: items.calls,
@@ -212,44 +245,32 @@ export function toPortalQuery(req: RangeRequest<DataRequest>): portal.Query {
     }
 }
 
-function needsGearPostFilter(req: DataRequest): boolean {
-    return getGearProgramIds(req) != null
+/**
+ * Whether the portal answers the request with a superset of the requested items.
+ */
+export function needsExactFilter(req: DataRequest): boolean {
+    return !!req.gearMessagesQueued?.some((r) => r.programId != null)
 }
 
 /**
- * Returns the set of program ids `Gear.MessageQueued` events have to be restricted to,
- * or `undefined` when all `Gear.MessageQueued` events the portal returns were asked for.
+ * Narrows a block down to the items of the request, with the same filter the RPC data source uses.
+ *
+ * The filter matches some requests on properties the portal does not return
+ * (EVM log address, Gear program id, etc.), so they are derived from the item args first.
  */
-function getGearProgramIds(req: DataRequest): Set<string> | undefined {
-    if (!req.gearMessagesQueued?.length) return
-    if (req.gearMessagesQueued.some((r) => r.programId == null)) return
-    // other requests may legitimately select `Gear.MessageQueued` events
-    if (req.events?.some((r) => r.name == null || r.name.includes(GEAR_MESSAGE_QUEUED))) return
-    let ids = new Set<string>()
-    for (let r of req.gearMessagesQueued) {
-        for (let id of r.programId!) {
-            ids.add(id.toLowerCase())
-        }
+export function applyRequest(block: Block, req: DataRequest): void {
+    let runtime = block.header._runtime
+    for (let event of block.events) {
+        let e = event as any
+        setEvmLog(runtime, e)
+        setEmittedContractAddress(runtime, e)
+        setGearProgramId(runtime, e)
+        setReviveContractEmitted(runtime, e)
     }
-    return ids
-}
-
-export function getPostFilter(req: DataRequest): ((block: ArchiveBlock) => ArchiveBlock) | undefined {
-    let programIds = getGearProgramIds(req)
-    if (programIds == null) return
-    return (block) => {
-        if (!block.events?.length) return block
-        return {
-            ...block,
-            events: block.events.filter((e) => isWantedEvent(e, programIds)),
-        }
+    for (let call of block.calls) {
+        setEthereumTransact(runtime, call as any)
     }
-}
-
-function isWantedEvent(e: ArchiveEvent, gearProgramIds: Set<string>): boolean {
-    if (e.name != GEAR_MESSAGE_QUEUED) return true
-    let destination = (e.args as any)?.destination
-    return typeof destination == 'string' && gearProgramIds.has(destination.toLowerCase())
+    filterBlock(block, req)
 }
 
 export function mapBlock(src: ArchiveBlock): Block {

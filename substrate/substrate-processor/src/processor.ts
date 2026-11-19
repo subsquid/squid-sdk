@@ -486,7 +486,6 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
                 keepAlive: true
             }),
             httpTimeout: options.requestTimeout,
-            retryAttempts: options.retryAttempts ?? Number.MAX_SAFE_INTEGER,
             log
         })
 
@@ -501,7 +500,8 @@ export class SubstrateBatchProcessor<F extends FieldSelection = {}> {
                 ...options.headers,
                 'x-squid-id': this.getSquidId()
             },
-            headPollInterval: options.headPollInterval
+            headPollInterval: options.headPollInterval,
+            retryAttempts: options.retryAttempts ?? Number.MAX_SAFE_INTEGER
         })
     }
 
