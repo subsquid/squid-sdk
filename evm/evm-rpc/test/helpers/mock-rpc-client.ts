@@ -15,10 +15,19 @@ export class MockRpcClient {
         return false
     }
 
-    async call<T = any>(method: string, params?: any[]): Promise<T> {
+    async call<T = any>(
+        method: string,
+        params?: any[],
+        options?: {validateError?: (info: {code: number; message: string}) => any},
+    ): Promise<T> {
         const key = this.makeKey(method, params)
         if (this.fixtures.has(key)) {
-            return this.fixtures.get(key)
+            const result = this.fixtures.get(key)
+            // An error fixture goes through validateError, as the real client sends an error response
+            if (options?.validateError && result?.error && typeof result.error === 'object' && 'message' in result.error) {
+                return options.validateError(result.error)
+            }
+            return result
         }
 
         // Try without params

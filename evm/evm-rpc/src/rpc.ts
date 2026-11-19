@@ -419,6 +419,9 @@ export class Rpc {
         // Whether an empty call frame is legitimate depends on the transaction type.
         let needsTransactionsForEmptyCallFrames =
             !!req?.traces && !req.useTraceApi && (await this.getChainUtils()).mayAnswerEmptyCallFrames
+        // A stand-in call frame is built from the transaction's gas limit, input and target
+        let needsTransactionsForCalldataFloorStubs =
+            !!req?.traces && !req.useTraceApi && !!req.stubCalldataFloorFailures
         let utils = await this.getChainUtils()
         // The oracle comparison needs each system transaction's sender and nonce
         let askSystemTxOracle = utils.hasHyperliquidSystemTransactions && this.getSystemTxOracle(utils) != null
@@ -426,6 +429,7 @@ export class Rpc {
             transactionsRequested ||
             needsTransactionsForCallFrameValidation ||
             needsTransactionsForEmptyCallFrames ||
+            needsTransactionsForCalldataFloorStubs ||
             askSystemTxOracle
         let blocks = await this.getBlocks(numbers, withTransactions)
 
@@ -1643,7 +1647,10 @@ export class Rpc {
      * marks it failed. Nodes then cannot replay it, and their tracers fail on it.
      *
      * The frame is a failed root call (or create) with no subcalls. It is used only when the receipt
-     * confirms that outcome: status 0, all the gas used, no logs. Otherwise the trace error stands.
+     * confirms that outcome (status 0, all the gas used, no logs) and the node itself reports the floor
+     * as the reason it cannot replay the transaction. Before Prague, a transaction below the floor may
+     * well run code and fail the same way, so the floor alone is no evidence. Otherwise the trace error
+     * stands.
      */
     private async stubCalldataFloorFailure(block: Block, index: number, error: RpcErrorInfo): Promise<DebugFrame> {
         let tx = block.block.transactions[index]
@@ -1667,6 +1674,9 @@ export class Rpc {
             validateResult: getResultValidator(nullable(Receipt))
         })
         if (receipt == null) return refuse('no receipt')
+        if (receipt.transactionHash.toLowerCase() !== transactionHash.toLowerCase()) {
+            return refuse(`receipt is for transaction ${receipt.transactionHash}`)
+        }
         if (receipt.blockHash.toLowerCase() !== block.hash.toLowerCase()) {
             return refuse(`receipt is from block ${receipt.blockHash}`)
         }
@@ -1674,13 +1684,26 @@ export class Rpc {
         if (BigInt(receipt.gasUsed) !== gas) return refuse(`receipt gasUsed ${BigInt(receipt.gasUsed)} is not the gas limit ${gas}`)
         if (receipt.logs.length > 0) return refuse('receipt has logs')
 
+        // The prestate tracer replays the transaction through the node's state transition, which
+        // names the floor when that is what stops the transaction
+        let replay = await this.call<ReplayFailure | unknown>(
+            'debug_traceTransaction',
+            [transactionHash, {tracer: 'prestateTracer'}],
+            {validateError: info => new ReplayFailure(info.message)}
+        )
+        let floorError = replay instanceof ReplayFailure && CALLDATA_FLOOR_ERROR_PATTERN.test(replay.message)
+            ? replay.message
+            : undefined
+        if (floorError == null) return refuse('the node does not report the calldata floor as the replay failure')
+
         this.log.warn({
             blockNumber: block.number,
             blockHash: block.hash,
             transactionHash,
             gas: gas.toString(),
             calldataFloor: floor.toString(),
-            traceError: error.message
+            traceError: error.message,
+            replayError: floorError
         }, 'transaction is below the EIP-7623 calldata floor and cannot be traced: stored as a failed root frame without subcalls')
 
         return {
@@ -2212,8 +2235,15 @@ class UntracedTransaction {
 }
 
 
+// The error a node answers a replay with
+class ReplayFailure {
+    constructor(readonly message: string) {}
+}
+
+
 // What geth reports for a transaction below the EIP-7623 calldata floor (core.ErrFloorDataGas)
 const CALLDATA_FLOOR_ERROR = 'insufficient gas for floor data gas cost'
+const CALLDATA_FLOOR_ERROR_PATTERN = /insufficient gas for floor data gas cost/i
 
 
 // A node that fails while tracing answers with the generic server error code

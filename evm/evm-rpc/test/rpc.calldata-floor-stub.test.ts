@@ -22,7 +22,12 @@ const NODE_PANIC = {
 }
 
 
-function mockClient(opts: {receipt?: any; txTrace?: any} = {}): MockRpcClient {
+const FLOOR_REPLAY_ERROR = {
+    error: {code: -32000, message: 'rpc error: code = Internal desc = insufficient gas for floor data gas cost: have 22700, want 22760'}
+}
+
+
+function mockClient(opts: {receipt?: any; txTrace?: any; replay?: any} = {}): MockRpcClient {
     let client = new MockRpcClient()
     let block = loadBlock(CHAIN, BLOCK)
     client.setFixture('eth_chainId', undefined, getChainId(CHAIN))
@@ -30,13 +35,14 @@ function mockClient(opts: {receipt?: any; txTrace?: any} = {}): MockRpcClient {
     client.setFixture('debug_traceBlockByHash', [block.hash, TRACE_CONFIG], NODE_PANIC)
     client.setFixture('debug_traceTransaction', [TX_HASH, TRACE_CONFIG], opts.txTrace ?? NODE_PANIC)
     client.setFixture('eth_getTransactionReceipt', [TX_HASH], opts.receipt ?? loadReceipts(CHAIN, BLOCK)[0])
+    client.setFixture('debug_traceTransaction', [TX_HASH, {tracer: 'prestateTracer'}], opts.replay ?? FLOOR_REPLAY_ERROR)
     return client
 }
 
 
-function getBlock(client: MockRpcClient, stubCalldataFloorFailures: boolean) {
+function getBlock(client: MockRpcClient, stubCalldataFloorFailures: boolean, transactions = true) {
     let rpc = new Rpc({client: client as any})
-    return rpc.getBlockBatch([BLOCK], {transactions: true, traces: true, stubCalldataFloorFailures})
+    return rpc.getBlockBatch([BLOCK], {transactions, traces: true, stubCalldataFloorFailures})
 }
 
 
@@ -95,5 +101,23 @@ describe('transactions below the EIP-7623 calldata floor', () => {
 
         receipt = {...loadReceipts(CHAIN, BLOCK)[0], gasUsed: '0x5800'}
         await expect(getBlock(mockClient({receipt}), true)).rejects.toThrow(/index out of range/)
+
+        receipt = {...loadReceipts(CHAIN, BLOCK)[0], transactionHash: '0x' + '11'.repeat(32)}
+        await expect(getBlock(mockClient({receipt}), true)).rejects.toThrow(/index out of range/)
+    })
+
+    it('fails on the trace error when the node does not name the floor as the replay failure', async () => {
+        // Before Prague, a transaction below the floor can run code and fail the same way
+        let replay = {error: {code: -32000, message: 'execution timeout'}}
+        await expect(getBlock(mockClient({replay}), true)).rejects.toThrow(/index out of range/)
+
+        replay = {} as any // the replay succeeds
+        await expect(getBlock(mockClient({replay}), true)).rejects.toThrow(/index out of range/)
+    })
+
+    it('fetches full transactions for the stub when only hashes are requested', async () => {
+        let blocks = await getBlock(mockClient(), true, false)
+        expect(blocks[0].block.transactions).toEqual([TX_HASH])
+        expect(blocks[0].debugFrames?.[0]?.result.error).toBe('insufficient gas for floor data gas cost')
     })
 })
