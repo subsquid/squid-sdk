@@ -2,7 +2,9 @@ import {describe, expect, it} from 'vitest'
 import {
     type CallFrame,
     checkCallFrameTree,
-    checkDebugFrameStructure
+    checkDebugFrameStructure,
+    SYSTEM_ADDRESS,
+    systemValueFlow
 } from './verification'
 
 
@@ -36,6 +38,22 @@ const INTACT: CallFrame = {
 describe('checkDebugFrameStructure', () => {
     it('accepts every field normalization needs', () => {
         expect(checkDebugFrameStructure(INTACT)).toBeUndefined()
+    })
+
+    // zkSync-era nodes (e.g. zklink-nova) serialize call kinds in PascalCase.
+    it('accepts PascalCase frame types', () => {
+        expect(checkDebugFrameStructure({
+            type: 'Call',
+            from: SENDER,
+            to: CONTRACT,
+            input: '0x',
+            calls: [{
+                type: 'DelegateCall',
+                from: CONTRACT,
+                to: CONTRACT,
+                input: '0x'
+            }]
+        })).toBeUndefined()
     })
 
     it('requires targets and inputs for call frames', () => {
@@ -147,6 +165,29 @@ describe('checkDebugFrameStructure', () => {
 })
 
 
+describe('frame types in any casing', () => {
+    // zkSync-era nodes (e.g. zklink-nova) spell call kinds in PascalCase.
+    it('count value moved by Call and Create frames', () => {
+        let tree: CallFrame = {
+            type: 'Call',
+            from: SENDER,
+            to: SYSTEM_ADDRESS,
+            value: '0x5',
+            calls: [
+                {type: 'Create', from: SYSTEM_ADDRESS, to: CONTRACT, value: '0x2'},
+                {type: 'DelegateCall', from: SYSTEM_ADDRESS, to: CONTRACT, value: '0x7'},
+            ]
+        }
+        expect(systemValueFlow(tree)).toBe(3n)
+    })
+
+    it('accept a root Stop frame', () => {
+        expect(checkDebugFrameStructure({type: 'Stop', from: SENDER})).toBeUndefined()
+        expect(checkCallFrameTree(TX, {type: 'Stop', from: SENDER})).toBeUndefined()
+    })
+})
+
+
 describe('checkCallFrameTree', () => {
     it('accepts the intact tree', () => {
         expect(checkCallFrameTree(TX, INTACT)).toBeUndefined()
@@ -164,6 +205,14 @@ describe('checkCallFrameTree', () => {
 
     it('accepts a root frame that halted on an invalid opcode', () => {
         let root: CallFrame = {type: 'INVALID', from: SENDER, to: CONTRACT, input: '0x'}
+
+        expect(checkDebugFrameStructure(root)).toBeUndefined()
+        expect(checkCallFrameTree(TX, root)).toBeUndefined()
+    })
+
+    // zkSync-era `Call` root frame - both gates must agree it is a valid call root.
+    it('accepts a PascalCase root call frame', () => {
+        let root: CallFrame = {type: 'Call', from: SENDER, to: CONTRACT, input: '0x'}
 
         expect(checkDebugFrameStructure(root)).toBeUndefined()
         expect(checkCallFrameTree(TX, root)).toBeUndefined()
@@ -230,7 +279,7 @@ describe('checkCallFrameTree', () => {
     it('keeps the caller across DELEGATECALL and CALLCODE', () => {
         let library = '0x1111111111111111111111111111111111111111'
 
-        for (let type of ['DELEGATECALL', 'delegateCall', 'CALLCODE']) {
+        for (let type of ['DELEGATECALL', 'delegateCall', 'DelegateCall', 'CALLCODE', 'CallCode']) {
             let tree: CallFrame = {
                 type: 'CALL',
                 from: SENDER,
