@@ -177,9 +177,10 @@ export class RawStreamSource<B> {
     }
 
     /**
-     * With `untilStreamIsBack` RPC is left once it has caught up with the finalized head and the stream
-     * is seen to have the block RPC has just given. Until then it is a single RPC stream:
-     * every new one fetches up to the head on its own and what it has fetched ahead is lost when it is left.
+     * With `untilStreamIsBack` RPC is left after a batch when RPC has caught up with the finalized head
+     * at least once and the retry interval is over. The stream is then walked from `cursor.next`.
+     * Until then it is a single RPC stream: every new one fetches up to the head on its own
+     * and what it has fetched ahead is lost when it is left.
      */
     private async *rpcBlocks(cursor: Cursor, to: number | undefined, untilStreamIsBack: boolean): AsyncIterable<B[]> {
         if (untilStreamIsBack) {
@@ -191,6 +192,7 @@ export class RawStreamSource<B> {
         let parentHash = isFullHash ? cursor.parentHash : undefined
 
         let batches = this.rpc.getBlocks({from: cursor.next, to}, parentHash)[Symbol.asyncIterator]()
+        let hasCaughtUp = false
         try {
             while (true) {
                 let res = await batches.next()
@@ -210,16 +212,16 @@ export class RawStreamSource<B> {
                 this.metrics?.blocks('rpc', blocks.length)
                 yield blocks
 
-                let isCaughtUp = finalizedHead != null && headNumber >= finalizedHead
+                if (finalizedHead != null && headNumber >= finalizedHead) {
+                    hasCaughtUp = true
+                }
+
                 let isRangeOver = to != null && headNumber >= to
                 let isStreamLeftAlone = Date.now() < this.retryAt
-                let isProbeDue = untilStreamIsBack && isCaughtUp && !isRangeOver && !isStreamLeftAlone
-                if (!isProbeDue) continue
 
-                // The ask can wait for the block to be published, so blocks already in hand go out first.
-                // What RPC fetches ahead meanwhile is lost when it is left, which is the cheaper loss.
-                let isStreamBack = await this.hasBlock({number: headNumber, hash: head.hash})
-                if (isStreamBack) return
+                // Not only at a catch-up: the finalized head can move in steps of hours, and the stream can have the step
+                let isLeaveDue = untilStreamIsBack && hasCaughtUp && !isRangeOver && !isStreamLeftAlone
+                if (isLeaveDue) return
             }
         } finally {
             await batches.return?.()
@@ -261,17 +263,6 @@ export class RawStreamSource<B> {
         if (batch.length > 0) {
             yield batch
         }
-    }
-
-    private async hasBlock(block: BlockLink): Promise<boolean> {
-        let walked = await this.walk(block.number, block.number, block)
-
-        let isThere = walked.length > 0
-        if (!isThere) {
-            this.retryAt = Date.now() + this.retryInterval
-        }
-
-        return isThere
     }
 
     /**

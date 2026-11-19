@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/util-internal-dump-stream",
+      "comment": "Leave RPC for the stream after the retry interval once RPC has caught up with the finalized head, not at the next finalized step",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/util-internal-dump-stream"
+}
