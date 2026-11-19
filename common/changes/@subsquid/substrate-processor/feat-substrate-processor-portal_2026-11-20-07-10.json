@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/substrate-processor",
-      "comment": "Fetch finalized blocks from an SQD Portal dataset with `.setPortal()`. The SQD Network v2 archive (gateway) is no longer supported: `.setGateway()`, `.setArchive()`, `.setDataSource()` and the `GatewaySettings`, `ArchiveSettings` and `DataSource` types are removed",
+      "comment": "Fetch finalized blocks from an SQD Portal dataset with `.setPortal()`. The SQD Network v2 archive (gateway) is no longer supported: `.setGateway()`, `.setArchive()`, `.setDataSource()` and the `GatewaySettings`, `ArchiveSettings` and `DataSource` types are removed. RPC data source: `addEvmLog()`, `addEthereumTransaction()` and `addContractsContractEmitted()` without filters no longer select every event or call",
       "type": "major"
     }
   ],

@@ -18,6 +18,7 @@ function buildCallFilter(dataRequest: DataRequest): EntityFilter<Call, CallRelat
     dataRequest.ethereumTransactions?.forEach(req => {
         let {to, sighash, ...relations} = req
         let filter = new FilterBuilder<Call>()
+        filter.propIn('name', ['Ethereum.transact'])
         filter.propIn('_ethereumTransactTo', to)
         filter.propIn('_ethereumTransactSighash', sighash)
         calls.add(filter, relations)
@@ -40,6 +41,7 @@ function buildEventFilter(dataRequest: DataRequest): EntityFilter<Event, EventRe
     dataRequest.evmLogs?.forEach(req => {
         let {address, topic0, topic1, topic2, topic3, ...relations} = req
         let filter = new FilterBuilder<Event>()
+        filter.propIn('name', ['EVM.Log'])
         filter.propIn('_evmLogAddress', address)
         filter.propIn('_evmLogTopic0', topic0)
         filter.propIn('_evmLogTopic1', topic1)
@@ -51,6 +53,7 @@ function buildEventFilter(dataRequest: DataRequest): EntityFilter<Event, EventRe
     dataRequest.contractsEvents?.forEach(req => {
         let {contractAddress, ...relations} = req
         let filter = new FilterBuilder<Event>()
+        filter.propIn('name', ['Contracts.ContractEmitted'])
         filter.propIn('_contractAddress', contractAddress)
         events.add(filter, relations)
     })

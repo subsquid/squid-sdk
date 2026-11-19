@@ -11,6 +11,13 @@ vi.mock('@subsquid/substrate-data/lib/extension/gear', () => ({
         }
     },
 }))
+vi.mock('@subsquid/substrate-data/lib/extension/evm', () => ({
+    setEvmLog() {},
+    setEthereumTransact() {},
+}))
+vi.mock('@subsquid/substrate-data/lib/extension/contracts', () => ({
+    setEmittedContractAddress() {},
+}))
 
 function query(request: DataRequest, range = {from: 10, to: 20}) {
     return toPortalQuery({range, request})
@@ -190,6 +197,29 @@ describe('applyRequest', () => {
             ['Gear.MessageQueued', '0xbb'],
         ])
         expect(res.calls).toEqual([1])
+    })
+
+    it('wildcard typed requests select only their own items', () => {
+        let res = filtered(
+            block([
+                {index: 0, events: [{name: 'Gear.MessageQueued', destination: '0xaa'}]},
+                {index: 1, events: [{name: 'Gear.MessageQueued', destination: '0xbb'}]},
+                {index: 2, call: 'Contracts.call', events: [{name: 'Contracts.ContractEmitted'}]},
+                {index: 3, call: 'Ethereum.transact', events: [{name: 'EVM.Log'}]},
+            ]),
+            {
+                gearMessagesQueued: [{programId: ['0xaa']}],
+                contractsEvents: [{}],
+                evmLogs: [{}],
+                ethereumTransactions: [{}],
+            },
+        )
+        expect(res.events).toEqual([
+            ['Gear.MessageQueued', '0xaa'],
+            ['Contracts.ContractEmitted', null],
+            ['EVM.Log', null],
+        ])
+        expect(res.calls).toEqual([3])
     })
 
     it('drops relations fetched only for the rejected events', () => {
