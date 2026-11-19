@@ -1633,7 +1633,23 @@ export class Rpc {
         for (let i = 0; i < results.length; i++) {
             let result = results[i]
             if (result instanceof UntracedTransaction) {
-                result = await this.stubCalldataFloorFailure(block, i, result.error)
+                let stub = await this.stubCalldataFloorFailure(block, i, result.error)
+                if (stub instanceof DebugFrameStubRefusal) {
+                    this.log.warn({
+                        blockNumber: block.number,
+                        blockHash: block.hash,
+                        transactionHash: txHashes[i],
+                        traceError: result.error.message,
+                        reason: stub.reason
+                    }, 'transaction trace failed and is not a calldata floor failure, tracing it again')
+                    // An ordinary call this time: a transient error gets the client's retries, and
+                    // a lasting one fails the block as it did without the stub
+                    result = await this.call(call[i].method, call[i].params, {
+                        validateResult: result => (isEmptyFrame(result) ? null : validateFrame(result))
+                    })
+                } else {
+                    result = stub
+                }
             }
             frames.push({result, txHash: txHashes[i]})
         }
@@ -1652,18 +1668,14 @@ export class Rpc {
      * well run code and fail the same way, so the floor alone is no evidence. Otherwise the trace error
      * stands.
      */
-    private async stubCalldataFloorFailure(block: Block, index: number, error: RpcErrorInfo): Promise<DebugFrame> {
+    private async stubCalldataFloorFailure(
+        block: Block,
+        index: number,
+        error: RpcErrorInfo
+    ): Promise<DebugFrame | DebugFrameStubRefusal> {
         let tx = block.block.transactions[index]
         let transactionHash = getTxHash(tx)
-        let refuse = (reason: string): never => {
-            throw addErrorContext(new RpcError(error), {
-                blockNumber: block.number,
-                blockHash: block.hash,
-                transactionHash,
-                rpcMethod: 'debug_traceTransaction',
-                calldataFloorStub: `not applicable: ${reason}`
-            })
-        }
+        let refuse = (reason: string) => new DebugFrameStubRefusal(reason)
 
         if (typeof tx === 'string') return refuse('full transaction details are missing')
         let gas = BigInt(tx.gas)
@@ -1686,14 +1698,23 @@ export class Rpc {
 
         // The prestate tracer replays the transaction through the node's state transition, which
         // names the floor when that is what stops the transaction
-        let replay = await this.call<ReplayFailure | unknown>(
-            'debug_traceTransaction',
-            [transactionHash, {tracer: 'prestateTracer'}],
-            {validateError: info => new ReplayFailure(info.message)}
-        )
-        let floorError = replay instanceof ReplayFailure && CALLDATA_FLOOR_ERROR_PATTERN.test(replay.message)
-            ? replay.message
-            : undefined
+        // Only the floor error is taken as an answer: any other error gets the client's retries
+        let replay: unknown
+        try {
+            replay = await this.call<unknown>(
+                'debug_traceTransaction',
+                [transactionHash, {tracer: 'prestateTracer'}],
+                {
+                    validateError: info => {
+                        if (CALLDATA_FLOOR_ERROR_PATTERN.test(info.message)) return new ReplayFailure(info.message)
+                        throw new RpcError(info)
+                    }
+                }
+            )
+        } catch (err: any) {
+            return refuse(`the replay failed: ${err?.message ?? err}`)
+        }
+        let floorError = replay instanceof ReplayFailure ? replay.message : undefined
         if (floorError == null) return refuse('the node does not report the calldata floor as the replay failure')
 
         this.log.warn({
@@ -2232,6 +2253,12 @@ const TRACE_FAILED = Symbol('TRACE_FAILED')
 // A transaction whose trace the server failed to produce
 class UntracedTransaction {
     constructor(readonly error: RpcErrorInfo) {}
+}
+
+
+// Why a transaction is not stood in for, see stubCalldataFloorFailure()
+class DebugFrameStubRefusal {
+    constructor(readonly reason: string) {}
 }
 
 
