@@ -45,4 +45,10 @@ export interface DataRequest {
     useDebugTraceBlockByNumber?: boolean
     useTraceApi?: boolean
     debugTraceTimeout?: string
+    /**
+     * When a node fails to trace a block, trace it per transaction, and stand in for the call frame of a
+     * transaction the chain included below the EIP-7623 calldata floor (it ran no code, and nodes cannot
+     * replay it) with a failed root frame without subcalls. The receipt must confirm that outcome.
+     */
+    stubCalldataFloorFailures?: boolean
 }
