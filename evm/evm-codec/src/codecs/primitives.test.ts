@@ -1,5 +1,27 @@
 import {describe, expect, it} from "vitest";
-import {bytes32, BytesSink, BytesSrc, string, uint256} from "..";
+import {bytes32, BytesSink, BytesSrc, HexSink, HexSrc, int64, string, uint256} from "..";
+
+describe('Signed integers', () => {
+  it.each([['bytes', BytesSink], ['hex', HexSink]] as const)('%s int64 boundaries', (_backend, Sink) => {
+    const min = -(1n << 63n)
+    const max = (1n << 63n) - 1n
+    for (const [value, expected] of [
+      [min, `0x${'f'.repeat(48)}8000000000000000`],
+      [max, `0x${'0'.repeat(48)}7fffffffffffffff`],
+    ] as const) {
+      const sink = new Sink(1)
+      int64.encode(sink, value)
+      const encoded = sink.toString()
+      expect(encoded).toBe(expected)
+      expect(int64.decode(new HexSrc(encoded))).toBe(value)
+      expect(int64.decode(new BytesSrc(Buffer.from(encoded.slice(2), 'hex')))).toBe(value)
+    }
+
+    for (const value of [min - 1n, max + 1n]) {
+      expect(() => int64.encode(new Sink(1), value)).toThrow('out of bounds for int64')
+    }
+  })
+})
 
 describe('Strings', () => {
   it('should encode and decode strings', async () => {

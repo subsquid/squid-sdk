@@ -15,7 +15,7 @@ export const I32_MAX = 0x7fffffff
 
 export const U64_MAX_BI = 0xffffffffffffffffn
 export const I64_MIN_BI = -0x8000000000000000n
-export const I64_MAX_BI = 0x7ffffffffffffffen
+export const I64_MAX_BI = 0x7fffffffffffffffn
 
 export const U128_MAX_BI = 0xffffffffffffffffffffffffffffffffn
 export const I128_MIN_BI = -0x80000000000000000000000000000000n
