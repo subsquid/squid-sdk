@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-data",
   "entries": [
     {
+      "version": "4.5.1",
+      "tag": "@subsquid/substrate-data_v4.5.1",
+      "date": "Fri, 20 Nov 2026 14:30:22 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Depend on the published @subsquid/util-xxhash ^1.2.2"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^2.1.1` to `2.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^2.1.1` to `2.1.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.5.0",
       "tag": "@subsquid/substrate-data_v4.5.0",
       "date": "Mon, 14 Sep 2026 10:05:38 GMT",

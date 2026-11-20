@@ -2,6 +2,29 @@
   "name": "@subsquid/ink-typegen",
   "entries": [
     {
+      "version": "3.1.1",
+      "tag": "@subsquid/ink-typegen_v3.1.1",
+      "date": "Fri, 20 Nov 2026 14:30:22 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Depend on the published @subsquid/ink-abi ^3.1.2"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-typegen\" from `^8.1.0` to `8.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^2.1.1` to `2.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^2.1.1` to `2.1.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "3.1.0",
       "tag": "@subsquid/ink-typegen_v3.1.0",
       "date": "Sat, 01 Jun 2024 10:02:43 GMT",

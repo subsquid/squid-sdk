@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-data
 
-This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:30:22 GMT and should not be manually modified.
+
+## 4.5.1
+Fri, 20 Nov 2026 14:30:22 GMT
+
+### Patches
+
+- Depend on the published @subsquid/util-xxhash ^1.2.2
 
 ## 4.5.0
 Mon, 14 Sep 2026 10:05:38 GMT

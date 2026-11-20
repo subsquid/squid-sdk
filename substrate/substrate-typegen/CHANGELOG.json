@@ -2,6 +2,26 @@
   "name": "@subsquid/substrate-typegen",
   "entries": [
     {
+      "version": "8.1.1",
+      "tag": "@subsquid/substrate-typegen_v8.1.1",
+      "date": "Fri, 20 Nov 2026 14:30:22 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Depend on the published @subsquid/util-internal-config ^2.2.2"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^2.1.1` to `2.1.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^2.1.1` to `2.1.2`"
+          }
+        ]
+      }
+    },
+    {
       "version": "8.1.0",
       "tag": "@subsquid/substrate-typegen_v8.1.0",
       "date": "Tue, 09 Apr 2024 17:45:37 GMT",

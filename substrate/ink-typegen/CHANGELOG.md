@@ -1,6 +1,13 @@
 # Change Log - @subsquid/ink-typegen
 
-This log was last generated on Sat, 01 Jun 2024 10:02:43 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:30:22 GMT and should not be manually modified.
+
+## 3.1.1
+Fri, 20 Nov 2026 14:30:22 GMT
+
+### Patches
+
+- Depend on the published @subsquid/ink-abi ^3.1.2
 
 ## 3.1.0
 Sat, 01 Jun 2024 10:02:43 GMT

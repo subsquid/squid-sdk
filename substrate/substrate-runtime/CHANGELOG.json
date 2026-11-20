@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-runtime",
   "entries": [
     {
+      "version": "2.1.2",
+      "tag": "@subsquid/substrate-runtime_v2.1.2",
+      "date": "Fri, 20 Nov 2026 14:30:22 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Depend on the published @subsquid/util-xxhash ^1.2.2: 2.1.1 required the unpublished 1.2.3 and could not be installed"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.1.1",
       "tag": "@subsquid/substrate-runtime_v2.1.1",
       "date": "Fri, 20 Nov 2026 14:01:48 GMT",

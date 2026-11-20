@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-runtime
 
-This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:30:22 GMT and should not be manually modified.
+
+## 2.1.2
+Fri, 20 Nov 2026 14:30:22 GMT
+
+### Patches
+
+- Depend on the published @subsquid/util-xxhash ^1.2.2: 2.1.1 required the unpublished 1.2.3 and could not be installed
 
 ## 2.1.1
 Fri, 20 Nov 2026 14:01:48 GMT

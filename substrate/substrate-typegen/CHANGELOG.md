@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-typegen
 
-This log was last generated on Tue, 09 Apr 2024 17:45:37 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:30:22 GMT and should not be manually modified.
+
+## 8.1.1
+Fri, 20 Nov 2026 14:30:22 GMT
+
+### Patches
+
+- Depend on the published @subsquid/util-internal-config ^2.2.2
 
 ## 8.1.0
 Tue, 09 Apr 2024 17:45:37 GMT
