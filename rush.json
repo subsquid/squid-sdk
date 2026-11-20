@@ -462,10 +462,11 @@
       "versionPolicyName": "docker"
     },
     {
+      // TEMPORARY: "docker" keeps the npm release from publishing this package until it has an npm trusted publisher; restore "npm" then.
       "packageName": "@subsquid/ink-typegen",
       "projectFolder": "substrate/ink-typegen",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/openreader",
@@ -636,10 +637,11 @@
       "versionPolicyName": "npm"
     },
     {
+      // TEMPORARY: "docker" keeps the npm release from publishing this package until it has an npm trusted publisher; restore "npm" then.
       "packageName": "@subsquid/substrate-typegen",
       "projectFolder": "substrate/substrate-typegen",
       "shouldPublish": true,
-      "versionPolicyName": "npm"
+      "versionPolicyName": "docker"
     },
     {
       "packageName": "@subsquid/tron-data",
