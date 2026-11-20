@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/ink-typegen",
+      "comment": "Depend on the published @subsquid/ink-abi ^3.1.2",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/ink-typegen"
+}

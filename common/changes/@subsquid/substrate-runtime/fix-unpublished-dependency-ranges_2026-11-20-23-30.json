@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/substrate-runtime",
+      "comment": "Depend on the published @subsquid/util-xxhash ^1.2.2: 2.1.1 required the unpublished 1.2.3 and could not be installed",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/substrate-runtime"
+}
