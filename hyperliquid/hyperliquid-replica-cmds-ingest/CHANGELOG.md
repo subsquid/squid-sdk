@@ -1,6 +1,17 @@
 # Change Log - @subsquid/hyperliquid-replica-cmds-ingest
 
-This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 0.1.0
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Minor changes
+
+- download each archive file as concurrent byte ranges (`--download-concurrency`, default 8), retrying a range that fails or stalls
+
+### Patches
+
+- log a positive block count per chunk
 
 ## 0.0.3
 Tue, 10 Nov 2026 07:49:45 GMT

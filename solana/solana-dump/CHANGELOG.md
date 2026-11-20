@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-dump
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 1.0.1
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Patches
+
+- Report the RPC metrics of the worker-thread clients its requests go through; they read zero before
 
 ## 1.0.0
 Mon, 11 May 2026 05:34:26 GMT

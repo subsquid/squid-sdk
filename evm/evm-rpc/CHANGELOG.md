@@ -1,6 +1,22 @@
 # Change Log - @subsquid/evm-rpc
 
-This log was last generated on Wed, 11 Nov 2026 19:54:14 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 0.4.0
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Minor changes
+
+- `stubCalldataFloorFailures`: trace a block per transaction when the node fails to trace it, and store a transaction the chain included below the EIP-7623 calldata floor, which nodes cannot trace, as a failed root frame once its receipt confirms that outcome
+- `hyperliquidSystemTxOracle` takes a function that makes the client from the chain's official RPC URL; `requireHyperliquidSystemTxOracle` fetches a block again until the oracle answers for it
+- `hyperliquidSystemTxOracle`: hold HyperEVM blocks to the system transactions of an `eth_getSystemTxsByBlockHash` endpoint, by sender and nonce
+
+### Patches
+
+- Accept PascalCase debug call-frame types (zkSync-era nodes) in frame verification
+- recover selfdestruct frames misreported by revm-based tracers from built-in tracers (opcode logger and `prestateTracer`) first, so upstreams that refuse a custom JS tracer no longer leave such a block rejected; the JS tracer remains the fallback
+- Count a batch retried in halves in the client's retried-errors metric
+- HyperEVM: a body and receipts that disagree on a system transaction, or an answer without one an earlier answer for the block had, mark the block invalid and fetch it again; a receipt of a transaction missing from the body no longer throws from the logs bloom check
 
 ## 0.3.2
 Wed, 11 Nov 2026 19:54:14 GMT

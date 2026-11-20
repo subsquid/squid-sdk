@@ -1,6 +1,14 @@
 # Change Log - @subsquid/rpc-client
 
-This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 4.18.0
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Minor changes
+
+- `RpcMetricsCollector` and `mergeRpcMetrics`: sum the metrics of RPC clients that live elsewhere (e.g. in worker threads) per endpoint; `RpcClient.recordRetriedError(kind)` counts a retry made on top of the client in its `retriedErrors`
+- add `CallOptions.maxResponseSize` (HTTP only): a larger response fails the call with `RpcResponseTooLargeError` and is not retried
 
 ## 4.17.0
 Tue, 10 Nov 2026 07:49:45 GMT

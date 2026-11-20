@@ -2,6 +2,23 @@
   "name": "@subsquid/util-internal-data-service",
   "entries": [
     {
+      "version": "0.1.3",
+      "tag": "@subsquid/util-internal-data-service_v0.1.3",
+      "date": "Fri, 20 Nov 2026 14:01:48 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "`RpcMetricsCollector` moved to `@subsquid/rpc-client` and re-exported"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.17.0` to `4.18.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.2",
       "tag": "@subsquid/util-internal-data-service_v0.1.2",
       "date": "Tue, 10 Nov 2026 07:49:45 GMT",

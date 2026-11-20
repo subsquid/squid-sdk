@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-data-service
 
-This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 0.0.9
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Patches
+
+- Export `sqd_chain_rpc_retried_errors_total` for the RPC clients of its worker threads, including closed backfill workers
 
 ## 0.0.8
 Tue, 10 Nov 2026 07:49:45 GMT

@@ -2,6 +2,23 @@
   "name": "@subsquid/hyperliquid-replica-cmds-ingest",
   "entries": [
     {
+      "version": "0.1.0",
+      "tag": "@subsquid/hyperliquid-replica-cmds-ingest_v0.1.0",
+      "date": "Fri, 20 Nov 2026 14:01:48 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "log a positive block count per chunk"
+          }
+        ],
+        "minor": [
+          {
+            "comment": "download each archive file as concurrent byte ranges (`--download-concurrency`, default 8), retrying a range that fails or stalls"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.3",
       "tag": "@subsquid/hyperliquid-replica-cmds-ingest_v0.0.3",
       "date": "Tue, 10 Nov 2026 07:49:45 GMT",

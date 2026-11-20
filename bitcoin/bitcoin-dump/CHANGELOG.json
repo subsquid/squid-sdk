@@ -2,6 +2,21 @@
   "name": "@subsquid/bitcoin-dump",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/bitcoin-dump_v0.0.2",
+      "date": "Fri, 20 Nov 2026 14:01:48 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/bitcoin-rpc\" from `^0.0.1` to `0.0.2`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^2.2.0` to `2.2.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/bitcoin-dump_v0.0.1",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

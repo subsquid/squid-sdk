@@ -1,6 +1,13 @@
 # Change Log - @subsquid/portal-client
 
-This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 0.9.0
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Minor changes
+
+- substrate: align item requests with the portal: `contractsEvents[].contractAddress`, `gearMessagesEnqueued` (was `gearMessagesQueued`), `reviveContractEmitted`, `evmLogs[].topic0..3`; accept non-hex extrinsic signer addresses (e.g. `MultiAddress` enums) in substrate blocks
 
 ## 0.8.0
 Mon, 14 Sep 2026 10:05:38 GMT

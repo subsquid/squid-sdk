@@ -2,6 +2,35 @@
   "name": "@subsquid/evm-dump",
   "entries": [
     {
+      "version": "0.4.0",
+      "tag": "@subsquid/evm-dump_v0.4.0",
+      "date": "Fri, 20 Nov 2026 14:01:48 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "`--stub-calldata-floor-failures`: store a transaction the chain included below the EIP-7623 calldata floor as a failed root frame when no node can trace it"
+          },
+          {
+            "comment": "HyperEVM: hold blocks to the official RPC's system transactions by default; `--no-hyperliquid-system-tx-oracle` turns it off"
+          },
+          {
+            "comment": "`--hyperliquid-system-tx-oracle <url>`: check HyperEVM blocks against the official RPC's system transactions"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.3.2` to `0.4.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.2.0` to `0.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-dump-cli\" from `^2.2.0` to `2.2.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.3.0",
       "tag": "@subsquid/evm-dump_v0.3.0",
       "date": "Tue, 10 Nov 2026 07:49:45 GMT",

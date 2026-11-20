@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-runtime
 
-This log was last generated on Mon, 14 Sep 2026 10:05:38 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 2.1.1
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Patches
+
+- Fix decoding of constants from v16 metadata
 
 ## 2.1.0
 Mon, 14 Sep 2026 10:05:38 GMT

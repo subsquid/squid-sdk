@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-data-service
 
-This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 0.1.3
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Patches
+
+- `RpcMetricsCollector` moved to `@subsquid/rpc-client` and re-exported
 
 ## 0.1.2
 Tue, 10 Nov 2026 07:49:45 GMT

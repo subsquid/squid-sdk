@@ -2,6 +2,29 @@
   "name": "@subsquid/solana-data-service",
   "entries": [
     {
+      "version": "0.0.9",
+      "tag": "@subsquid/solana-data-service_v0.0.9",
+      "date": "Fri, 20 Nov 2026 14:01:48 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Export `sqd_chain_rpc_retried_errors_total` for the RPC clients of its worker threads, including closed backfill workers"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.17.0` to `4.18.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc\" from `^1.1.2` to `1.1.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/util-internal-data-service\" from `^0.1.2` to `0.1.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.8",
       "tag": "@subsquid/solana-data-service_v0.0.8",
       "date": "Tue, 10 Nov 2026 07:49:45 GMT",

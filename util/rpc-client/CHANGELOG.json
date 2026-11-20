@@ -2,6 +2,26 @@
   "name": "@subsquid/rpc-client",
   "entries": [
     {
+      "version": "4.18.0",
+      "tag": "@subsquid/rpc-client_v4.18.0",
+      "date": "Fri, 20 Nov 2026 14:01:48 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "`RpcMetricsCollector` and `mergeRpcMetrics`: sum the metrics of RPC clients that live elsewhere (e.g. in worker threads) per endpoint; `RpcClient.recordRetriedError(kind)` counts a retry made on top of the client in its `retriedErrors`"
+          },
+          {
+            "comment": "add `CallOptions.maxResponseSize` (HTTP only): a larger response fails the call with `RpcResponseTooLargeError` and is not retried"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.9.0` to `1.10.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "4.17.0",
       "tag": "@subsquid/rpc-client_v4.17.0",
       "date": "Tue, 10 Nov 2026 07:49:45 GMT",

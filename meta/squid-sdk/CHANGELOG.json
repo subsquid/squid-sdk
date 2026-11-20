@@ -2,6 +2,48 @@
   "name": "@subsquid/squid-sdk",
   "entries": [
     {
+      "version": "0.7.1",
+      "tag": "@subsquid/squid-sdk_v0.7.1",
+      "date": "Fri, 20 Nov 2026 14:01:48 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/evm-stream\" from `^0.1.5` to `0.1.6`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.9.0` to `1.10.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/portal-client\" from `^0.8.0` to `0.9.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.17.0` to `4.18.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/solana-stream\" from `^1.3.0` to `1.3.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.2.0` to `0.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.3.2` to `0.4.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc\" from `^1.1.2` to `1.1.3`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-normalization\" from `^0.2.0` to `0.2.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/evm-rpc\" from `^0.3.2` to `0.4.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/solana-rpc\" from `^1.1.2` to `1.1.3`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.7.0",
       "tag": "@subsquid/squid-sdk_v0.7.0",
       "date": "Tue, 10 Nov 2026 07:49:45 GMT",

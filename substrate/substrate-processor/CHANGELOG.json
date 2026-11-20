@@ -2,6 +2,35 @@
   "name": "@subsquid/substrate-processor",
   "entries": [
     {
+      "version": "9.0.0",
+      "tag": "@subsquid/substrate-processor_v9.0.0",
+      "date": "Fri, 20 Nov 2026 14:01:48 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "Fetch finalized blocks from an SQD Portal dataset with `.setPortal()`. The SQD Network v2 archive (gateway) is no longer supported: `.setGateway()`, `.setArchive()`, `.setDataSource()` and the `GatewaySettings`, `ArchiveSettings` and `DataSource` types are removed. RPC data source: `addEvmLog()`, `addEthereumTransaction()` and `addContractsContractEmitted()` without filters no longer select every event or call"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/http-client\" from `^1.9.0` to `1.10.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/portal-client\" from `^0.8.0` to `0.9.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.17.0` to `4.18.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^2.1.0` to `2.1.1`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/substrate-runtime\" from `^2.1.0` to `2.1.1`"
+          }
+        ]
+      }
+    },
+    {
       "version": "8.8.2",
       "tag": "@subsquid/substrate-processor_v8.8.2",
       "date": "Mon, 14 Sep 2026 10:49:58 GMT",

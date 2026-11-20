@@ -1,6 +1,13 @@
 # Change Log - @subsquid/solana-rpc
 
-This log was last generated on Wed, 11 Nov 2026 19:54:14 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 1.1.3
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Patches
+
+- `RemoteRpcPool.getRpcMetrics()` reports the metrics of its worker threads' RPC clients; batch retries in halves and bounded `Internal error` retries (kind `internal`) are counted in the retried-errors metric
 
 ## 1.1.2
 Wed, 11 Nov 2026 19:54:14 GMT

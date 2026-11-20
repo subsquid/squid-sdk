@@ -1,6 +1,13 @@
 # Change Log - @subsquid/util-internal-dump-cli
 
-This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 2.2.1
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Patches
+
+- Read the RPC metrics from an overridable `rpcMetrics()` source, so dumpers whose requests go through other clients report those
 
 ## 2.2.0
 Tue, 10 Nov 2026 07:49:45 GMT

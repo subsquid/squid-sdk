@@ -1,6 +1,15 @@
 # Change Log - @subsquid/evm-dump
 
-This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 0.4.0
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Minor changes
+
+- `--stub-calldata-floor-failures`: store a transaction the chain included below the EIP-7623 calldata floor as a failed root frame when no node can trace it
+- HyperEVM: hold blocks to the official RPC's system transactions by default; `--no-hyperliquid-system-tx-oracle` turns it off
+- `--hyperliquid-system-tx-oracle <url>`: check HyperEVM blocks against the official RPC's system transactions
 
 ## 0.3.0
 Tue, 10 Nov 2026 07:49:45 GMT

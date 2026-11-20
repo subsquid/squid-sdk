@@ -1,6 +1,13 @@
 # Change Log - @subsquid/http-client
 
-This log was last generated on Thu, 27 Aug 2026 13:59:40 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 1.10.0
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Minor changes
+
+- add `RequestOptions.maxResponseSize`: a larger response body fails the request with `HttpResponseTooLargeError`
 
 ## 1.9.0
 Thu, 27 Aug 2026 13:59:40 GMT

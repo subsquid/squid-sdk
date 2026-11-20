@@ -1,6 +1,13 @@
 # Change Log - @subsquid/evm-normalization
 
-This log was last generated on Tue, 10 Nov 2026 07:49:45 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 0.2.1
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Patches
+
+- Map PascalCase debug call-frame types (zkSync-era nodes) instead of throwing
 
 ## 0.2.0
 Tue, 10 Nov 2026 07:49:45 GMT

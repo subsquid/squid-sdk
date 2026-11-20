@@ -2,6 +2,18 @@
   "name": "@subsquid/substrate-runtime",
   "entries": [
     {
+      "version": "2.1.1",
+      "tag": "@subsquid/substrate-runtime_v2.1.1",
+      "date": "Fri, 20 Nov 2026 14:01:48 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Fix decoding of constants from v16 metadata"
+          }
+        ]
+      }
+    },
+    {
       "version": "2.1.0",
       "tag": "@subsquid/substrate-runtime_v2.1.0",
       "date": "Mon, 14 Sep 2026 10:05:38 GMT",

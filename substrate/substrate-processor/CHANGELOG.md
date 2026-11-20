@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Mon, 14 Sep 2026 10:49:58 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+
+## 9.0.0
+Fri, 20 Nov 2026 14:01:48 GMT
+
+### Breaking changes
+
+- Fetch finalized blocks from an SQD Portal dataset with `.setPortal()`. The SQD Network v2 archive (gateway) is no longer supported: `.setGateway()`, `.setArchive()`, `.setDataSource()` and the `GatewaySettings`, `ArchiveSettings` and `DataSource` types are removed. RPC data source: `addEvmLog()`, `addEthereumTransaction()` and `addContractsContractEmitted()` without filters no longer select every event or call
 
 ## 8.8.2
 Mon, 14 Sep 2026 10:49:58 GMT

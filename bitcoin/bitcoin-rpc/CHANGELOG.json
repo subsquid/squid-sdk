@@ -2,6 +2,26 @@
   "name": "@subsquid/bitcoin-rpc",
   "entries": [
     {
+      "version": "0.0.2",
+      "tag": "@subsquid/bitcoin-rpc_v0.0.2",
+      "date": "Fri, 20 Nov 2026 14:01:48 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Count a batch retried in halves in the client's retried-errors metric"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.17.0` to `4.18.0`"
+          },
+          {
+            "comment": "Updating dependency \"@subsquid/rpc-client\" from `^4.17.0` to `4.18.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.0.1",
       "tag": "@subsquid/bitcoin-rpc_v0.0.1",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

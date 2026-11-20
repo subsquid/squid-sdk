@@ -2,6 +2,18 @@
   "name": "@subsquid/http-client",
   "entries": [
     {
+      "version": "1.10.0",
+      "tag": "@subsquid/http-client_v1.10.0",
+      "date": "Fri, 20 Nov 2026 14:01:48 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `RequestOptions.maxResponseSize`: a larger response body fails the request with `HttpResponseTooLargeError`"
+          }
+        ]
+      }
+    },
+    {
       "version": "1.9.0",
       "tag": "@subsquid/http-client_v1.9.0",
       "date": "Thu, 27 Aug 2026 13:59:40 GMT",
