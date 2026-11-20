@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-processor",
-  "version": "8.8.2",
+  "version": "9.0.0",
   "description": "Data fetcher and mappings executor for substrate chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -19,10 +19,10 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@subsquid/http-client": "^1.9.0",
+    "@subsquid/http-client": "^1.10.0",
     "@subsquid/logger": "^1.6.0",
-    "@subsquid/portal-client": "^0.8.0",
-    "@subsquid/rpc-client": "^4.17.0",
+    "@subsquid/portal-client": "^0.9.0",
+    "@subsquid/rpc-client": "^4.18.0",
     "@subsquid/substrate-data": "^4.5.0",
     "@subsquid/substrate-data-raw": "^1.2.0",
     "@subsquid/util-internal": "^3.3.1",
@@ -34,10 +34,10 @@
     "@subsquid/util-internal-validation": "^0.9.0"
   },
   "peerDependencies": {
-    "@subsquid/substrate-runtime": "^2.1.0"
+    "@subsquid/substrate-runtime": "^2.1.1"
   },
   "devDependencies": {
-    "@subsquid/substrate-runtime": "^2.1.0",
+    "@subsquid/substrate-runtime": "^2.1.1",
     "@types/node": "^24.13.6",
     "typescript": "5.5.4",
     "vitest": "4.1.5"
