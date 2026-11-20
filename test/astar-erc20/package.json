@@ -9,7 +9,7 @@
   "dependencies": {
     "@subsquid/frontier": "^4.0.5",
     "@subsquid/graphql-server": "^4.12.2",
-    "@subsquid/substrate-runtime": "^2.1.1",
+    "@subsquid/substrate-runtime": "^2.1.2",
     "@subsquid/substrate-processor": "^9.0.0",
     "@subsquid/typeorm-migration": "^1.4.1",
     "@subsquid/typeorm-store": "^1.9.3",

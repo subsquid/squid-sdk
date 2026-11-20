@@ -9,7 +9,7 @@
     "@subsquid/graphql-server": "^4.12.2",
     "@subsquid/ss58": "^2.0.2",
     "@subsquid/substrate-processor": "^9.0.0",
-    "@subsquid/substrate-runtime": "^2.1.1",
+    "@subsquid/substrate-runtime": "^2.1.2",
     "@subsquid/typeorm-migration": "^1.4.1",
     "@subsquid/typeorm-store": "^1.9.3",
     "@subsquid/big-decimal": "^1.0.1",
@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@subsquid/substrate-metadata-explorer": "^3.2.0",
-    "@subsquid/substrate-typegen": "^8.1.0",
+    "@subsquid/substrate-typegen": "^8.1.1",
     "@subsquid/typeorm-codegen": "^2.4.0",
     "@types/node": "^24.13.6",
     "ts-node": "^10.9.2",
