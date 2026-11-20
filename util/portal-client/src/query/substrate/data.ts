@@ -42,7 +42,7 @@ export interface BlockHeader {
 }
 
 export interface ExtrinsicSignature {
-    address: Bytes
+    address: unknown
     signature: unknown
     signedExtensions: unknown
 }

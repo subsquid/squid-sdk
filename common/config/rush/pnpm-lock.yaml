@@ -309,7 +309,7 @@ importers:
         version: file:projects/substrate-metadata-service.tgz
       '@rush-temp/substrate-processor':
         specifier: file:./projects/substrate-processor.tgz
-        version: file:projects/substrate-processor.tgz
+        version: file:projects/substrate-processor.tgz(esbuild@0.28.2)(tsx@4.23.15)
       '@rush-temp/substrate-runtime':
         specifier: file:./projects/substrate-runtime.tgz
         version: file:projects/substrate-runtime.tgz(esbuild@0.28.2)(tsx@4.23.15)
@@ -1641,7 +1641,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/substrate-processor@file:projects/substrate-processor.tgz':
-    resolution: {integrity: sha512-1fGIU4gkyt+zhsaAOwL9B5+hE3jI2F/li/1iAY64idqM92yQ8AJhq+R6rkTEefIGrXGtwrAne+DI6P2Ww9ArfQ==, tarball: file:projects/substrate-processor.tgz}
+    resolution: {integrity: sha512-oxZit82BQVmdwoHys/yHgGJtO83gL7dIjTMK51nL9bjzCuBnEoLIT6F2mRlbj1FpOY0vT3QCHwgf62aL1k1b6Q==, tarball: file:projects/substrate-processor.tgz}
     version: 0.0.0
 
   '@rush-temp/substrate-runtime@file:projects/substrate-runtime.tgz':
@@ -1729,7 +1729,7 @@ packages:
     version: 0.0.0
 
   '@rush-temp/util-internal-data-service@file:projects/util-internal-data-service.tgz':
-    resolution: {integrity: sha512-pRgPQDNW5QlzT4aykgakuhwuG+DY3bohOHH3r7FQ+sAPbz8A1W+awsKNJyaSnI77a+wFuok5gJmPJXEgNM1y4g==, tarball: file:projects/util-internal-data-service.tgz}
+    resolution: {integrity: sha512-XA2UQ2zj1knBJma2B5JlNMEN7wkQ8viOaqaC4g9X7XE0e3fKg2hZgXIw62EKJiIHyqdbRD0faXNvGBbZgm87LA==, tarball: file:projects/util-internal-data-service.tgz}
     version: 0.0.0
 
   '@rush-temp/util-internal-data-source@file:projects/util-internal-data-source.tgz':
@@ -6564,10 +6564,34 @@ snapshots:
       prom-client: 14.2.0
       typescript: 5.5.4
 
-  '@rush-temp/substrate-processor@file:projects/substrate-processor.tgz':
+  '@rush-temp/substrate-processor@file:projects/substrate-processor.tgz(esbuild@0.28.2)(tsx@4.23.15)':
     dependencies:
       '@types/node': 24.13.6
       typescript: 5.5.4
+      vitest: 4.1.5(@types/node@24.13.6)(esbuild@0.28.2)(tsx@4.23.15)
+    transitivePeerDependencies:
+      - '@edge-runtime/vm'
+      - '@opentelemetry/api'
+      - '@vitejs/devtools'
+      - '@vitest/browser-playwright'
+      - '@vitest/browser-preview'
+      - '@vitest/browser-webdriverio'
+      - '@vitest/coverage-istanbul'
+      - '@vitest/coverage-v8'
+      - '@vitest/ui'
+      - esbuild
+      - happy-dom
+      - jiti
+      - jsdom
+      - less
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
 
   '@rush-temp/substrate-runtime@file:projects/substrate-runtime.tgz(esbuild@0.28.2)(tsx@4.23.15)':
     dependencies:

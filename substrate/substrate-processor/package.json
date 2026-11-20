@@ -9,20 +9,23 @@
   },
   "files": [
     "lib",
-    "src"
+    "src",
+    "!src/*.test.*",
+    "!lib/*.test.*"
   ],
   "main": "lib/index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "test": "vitest --run"
   },
   "dependencies": {
     "@subsquid/http-client": "^1.9.0",
     "@subsquid/logger": "^1.6.0",
+    "@subsquid/portal-client": "^0.8.0",
     "@subsquid/rpc-client": "^4.17.0",
     "@subsquid/substrate-data": "^4.5.0",
     "@subsquid/substrate-data-raw": "^1.2.0",
     "@subsquid/util-internal": "^3.3.1",
-    "@subsquid/util-internal-archive-client": "^0.2.1",
     "@subsquid/util-internal-hex": "^1.2.3",
     "@subsquid/util-internal-ingest-tools": "^1.2.0",
     "@subsquid/util-internal-json": "^1.2.5",
@@ -36,6 +39,7 @@
   "devDependencies": {
     "@subsquid/substrate-runtime": "^2.1.0",
     "@types/node": "^24.13.6",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "vitest": "4.1.5"
   }
 }

@@ -17,9 +17,7 @@ const CONTRACT_ADDRESS = '0x10f48492ccc953b2948bc2bd027d854a73d08ad3744663bc433f
 
 
 const processor = new SubstrateBatchProcessor()
-    .setDataSource({
-        chain: "https://rpc.shibuya.astar.network"
-    })
+    .setRpcEndpoint('https://rpc.shibuya.astar.network')
     .setBlockRange({
         from: 3176542
     })

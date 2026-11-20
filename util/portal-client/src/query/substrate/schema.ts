@@ -61,7 +61,8 @@ function getBlockHeaderSchema(fields: FieldSelection['block']) {
 }
 
 const ExtrinsicSignature = object({
-    address: BYTES,
+    // e.g. a `MultiAddress` enum on most chains
+    address: ANY,
     signature: ANY_OBJECT,
     signedExtensions: ANY_OBJECT,
 })
