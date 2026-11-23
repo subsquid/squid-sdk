@@ -49,6 +49,10 @@ export class TronPortal implements DataSource<Block, DataRequest> {
     }
 
     async getBlockHash(height: number): Promise<string | undefined> {
+        // a block above the portal's finalized head is not served yet, wait for it
+        while ((await this.getFinalizedHeight()) < height) {
+            await wait(this.headPollInterval)
+        }
         let query: portal.Query = {
             type: 'tron',
             fromBlock: height,
@@ -57,6 +61,8 @@ export class TronPortal implements DataSource<Block, DataRequest> {
             fields: {block: {number: true, hash: true}},
         }
         for await (let {blocks} of this.client.getFinalizedStream(query, {request: this.getRequestOptions()})) {
+            // a response without blocks would otherwise be re-requested without delay
+            if (blocks.length == 0) break
             for (let block of blocks) {
                 if (block.header.number == height) return block.header.hash
             }

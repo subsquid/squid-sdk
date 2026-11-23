@@ -59,6 +59,46 @@ describe('portal value formats', () => {
 })
 
 describe('TronPortal', () => {
+    it('looks a block hash up once the portal serves the block', async () => {
+        let heads = [5, 6, 7]
+        let streams = 0
+        let client = {
+            async getFinalizedHead() {
+                return {number: heads.shift() ?? 7, hash: '00'}
+            },
+            getFinalizedStream(query: any) {
+                streams += 1
+                return (async function* () {
+                    yield {blocks: [{header: {number: query.fromBlock, hash: 'h7'}}], meta: {bytes: 0}}
+                })()
+            },
+        }
+        let src = new TronPortal({client: client as any, headPollInterval: 1})
+        expect(await src.getBlockHash(7)).toBe('h7')
+        expect(heads).toEqual([])
+        expect(streams).toBe(1)
+    })
+
+    it('gives up a block hash lookup the portal answers without blocks', async () => {
+        let consumed = 0
+        let client = {
+            async getFinalizedHead() {
+                return {number: 10, hash: '00'}
+            },
+            getFinalizedStream() {
+                return (async function* () {
+                    while (true) {
+                        consumed += 1
+                        yield {blocks: [], meta: {finalizedHeadNumber: 10, bytes: 0}}
+                    }
+                })()
+            },
+        }
+        let src = new TronPortal({client: client as any, headPollInterval: 1})
+        expect(await src.getBlockHash(7)).toBeUndefined()
+        expect(consumed).toBe(1)
+    })
+
     it('leaves a stream that answers without blocks and backs off', async () => {
         let heads = [10, 10, 2]
         let opened = 0
