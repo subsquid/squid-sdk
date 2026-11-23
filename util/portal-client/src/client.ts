@@ -1,5 +1,6 @@
 import {HttpBody, HttpClient, HttpClientOptions, HttpError, HttpResponse, RequestOptions} from '@subsquid/http-client'
 import {addErrorContext, last, unexpectedCase, wait, withErrorContext} from '@subsquid/util-internal'
+import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
 import {cast} from '@subsquid/util-internal-validation'
 import {Semaphore, Timer} from './util'
 import {getQuery, type AnyQuery, type GetQueryBlock} from './query'
@@ -351,6 +352,7 @@ function createPortalStream<Q extends AnyQuery>(
 
     let [normalizedQuery, schema] = getQuery(query)
     let {fromBlock = 0, toBlock, parentBlockHash} = normalizedQuery
+    let parseBlock = getBlockParser(normalizedQuery.type)
 
     const ingest = async () => {
         while (!buffer.signal.aborted) {
@@ -392,7 +394,7 @@ function createPortalStream<Q extends AnyQuery>(
                     let bytes = 0
 
                     for (let line of data) {
-                        let block = cast(schema, JSON.parse(line)) as GetQueryBlock<Q>
+                        let block = cast(schema, parseBlock(line)) as GetQueryBlock<Q>
                         blocks.push(block)
                         bytes += line.length
 
@@ -421,6 +423,18 @@ function createPortalStream<Q extends AnyQuery>(
     )
 
     return buffer
+}
+
+/**
+ * TRON blocks carry int64 values (e.g. sender-set transaction timestamps) that the portal serves
+ * as JSON numbers above 2^53. Such numbers are turned into strings before parsing, so they keep
+ * their exact value instead of being rounded by `JSON.parse`.
+ */
+function getBlockParser(type: AnyQuery['type']): (line: string) => unknown {
+    if (type === 'tron') {
+        return (line) => JSON.parse(fixUnsafeIntegers(line))
+    }
+    return (line) => JSON.parse(line)
 }
 
 class PortalStreamBuffer<B> {

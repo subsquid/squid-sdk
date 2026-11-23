@@ -1,7 +1,6 @@
 import {weakMemo} from '@subsquid/util-internal'
 import {
     array,
-    BIG_NAT,
     BOOLEAN,
     NAT,
     INT,
@@ -9,10 +8,59 @@ import {
     option,
     STRING,
     ANY,
-    record
+    record,
+    ValidationFailure,
+    Validator
 } from '@subsquid/util-internal-validation'
 import {FieldSelection} from '../data/model'
 import {Selector} from '../data/util'
+
+
+function isIntegerString(value: unknown): value is string {
+    return typeof value == 'string' && /^-?\d+$/.test(value)
+}
+
+
+/**
+ * int64 value: a decimal string (possibly negative, e.g. `feeLimit`) or a JSON integer,
+ * depending on the dataset writer.
+ */
+export const INT64: Validator<bigint, string> = {
+    cast(value) {
+        if (isIntegerString(value)) return BigInt(value)
+        if (typeof value == 'number' && Number.isInteger(value)) return BigInt(value)
+        return new ValidationFailure(value, '{value} is not an integer')
+    },
+    validate(value) {
+        if (isIntegerString(value)) return
+        if (typeof value == 'number' && Number.isInteger(value)) return
+        return new ValidationFailure(value, '{value} is not an integer')
+    },
+    phantom() {
+        return '0'
+    }
+}
+
+
+/**
+ * Millisecond timestamp: a JSON integer or a decimal string. Values are not range-checked,
+ * since some are garbage above 2^53 on chain.
+ */
+export const MILLIS: Validator<number, number> = {
+    cast(value) {
+        if (typeof value == 'number' && Number.isInteger(value)) return value
+        if (isIntegerString(value)) return Number(value)
+        return new ValidationFailure(value, '{value} is not a millisecond timestamp')
+    },
+    validate(value) {
+        if (typeof value == 'number' && Number.isInteger(value)) return
+        if (isIntegerString(value)) return
+        return new ValidationFailure(value, '{value} is not a millisecond timestamp')
+    },
+    phantom() {
+        return 0
+    }
+}
 
 
 export const getDataSchema = weakMemo((fields: FieldSelection) => {
@@ -23,7 +71,7 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
         ...project(fields.block, {
             txTrieRoot: STRING,
             version: option(INT),
-            timestamp: NAT,
+            timestamp: MILLIS,
             witnessAddress: STRING,
             witnessSignature: STRING,
         })
@@ -44,26 +92,26 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
             permissionId: option(NAT),
             refBlockBytes: option(STRING),
             refBlockHash: option(STRING),
-            feeLimit: option(BIG_NAT),
-            expiration: option(NAT),
-            timestamp: option(BIG_NAT),
+            feeLimit: option(INT64),
+            expiration: option(MILLIS),
+            timestamp: option(INT64),
             rawDataHex: STRING,
-            fee: option(BIG_NAT),
+            fee: option(INT64),
             contractResult: option(STRING),
             contractAddress: option(STRING),
             resMessage: option(STRING),
-            withdrawAmount: option(BIG_NAT),
-            unfreezeAmount: option(BIG_NAT),
-            withdrawExpireAmount: option(BIG_NAT),
-            cancelUnfreezeV2Amount: option(record(STRING, BIG_NAT)),
+            withdrawAmount: option(INT64),
+            unfreezeAmount: option(INT64),
+            withdrawExpireAmount: option(INT64),
+            cancelUnfreezeV2Amount: option(record(STRING, INT64)),
             result: option(STRING),
-            energyFee: option(BIG_NAT),
-            energyUsage: option(BIG_NAT),
-            energyUsageTotal: option(BIG_NAT),
-            netUsage: option(BIG_NAT),
-            netFee: option(BIG_NAT),
-            originEnergyUsage: option(BIG_NAT),
-            energyPenaltyTotal: option(BIG_NAT),
+            energyFee: option(INT64),
+            energyUsage: option(INT64),
+            energyUsageTotal: option(INT64),
+            netUsage: option(INT64),
+            netFee: option(INT64),
+            originEnergyUsage: option(INT64),
+            energyPenaltyTotal: option(INT64),
         })
     })
 
@@ -78,7 +126,7 @@ export const getDataSchema = weakMemo((fields: FieldSelection) => {
     })
 
     let CallValueInfo = object({
-        callValue: option(BIG_NAT),
+        callValue: option(INT64),
         tokenId: option(STRING)
     })
 

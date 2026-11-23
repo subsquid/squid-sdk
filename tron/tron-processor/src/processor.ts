@@ -2,7 +2,7 @@ import {HttpAgent, HttpClient} from '@subsquid/http-client'
 import {createLogger, Logger} from '@subsquid/logger'
 import {assertNotNull, def, runProgram} from '@subsquid/util-internal'
 import {applyRangeBound, mergeRangeRequests, Range, RangeRequest} from '@subsquid/util-internal-range'
-import {ArchiveClient} from '@subsquid/util-internal-archive-client'
+import {PortalClient} from '@subsquid/portal-client'
 import {
     Batch,
     Database,
@@ -13,7 +13,7 @@ import {
 import * as base from '@subsquid/tron-data'
 import assert from 'assert'
 import {HttpDataSource} from './http/source'
-import {TronGateway} from './gateway/source'
+import {TronPortal} from './portal/source'
 import {Block, FieldSelection} from './data/model'
 import {getFields} from './data/fields'
 import {
@@ -53,19 +53,36 @@ export interface HttpApiSettings {
 }
 
 
-export interface GatewaySettings {
+export interface PortalSettings {
     /**
-     * Subsquid Network Gateway url
+     * SQD Portal dataset URL
+     *
+     * @example 'https://portal.sqd.dev/datasets/tron-mainnet'
      */
     url: string
     /**
-     * Subsquid Network API key. Defaults to SQD_API_KEY.
+     * HTTP headers sent with every portal request
      */
-    apiKey?: string
+    headers?: Record<string, string>
     /**
-     * Request timeout in ms
+     * Request timeout in `ms`
      */
     requestTimeout?: number
+    /**
+     * Number of retries of a failed portal request.
+     *
+     * Retried forever by default.
+     */
+    retryAttempts?: number
+    /**
+     * How often to poll the portal for new finalized blocks
+     * once the processor caught up with it, in `ms`.
+     *
+     * Only relevant when no HTTP API endpoint is set.
+     *
+     * @default 5000
+     */
+    headPollInterval?: number
 }
 
 
@@ -97,26 +114,26 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
     private requests: RangeRequest<DataRequest>[] = []
     private fields?: FieldSelection
     private blockRange?: Range
-    private gateway?: GatewaySettings
+    private portal?: PortalSettings
     private httpApi?: HttpApiSettings
     private prometheusServer?: PrometheusServer
     private running = false
 
     /**
-     * Set Subsquid Network Gateway endpoint (ex Archive).
+     * Set SQD Portal dataset endpoint.
      *
-     * Subsquid Network allows to get data from finalized blocks up to
-     * infinite times faster and more efficient than via regular HTTP API.
+     * Portal serves finalized blocks many times faster and more efficiently than the HTTP API.
+     * Blocks above the portal's finalized head are fetched from the HTTP API endpoint, when one is set.
      *
      * @example
-     * source.setGateway('https://v2.archive.subsquid.io/network/tron-mainnet')
+     * processor.setPortal('https://portal.sqd.dev/datasets/tron-mainnet')
      */
-    setGateway(url: string | GatewaySettings): this {
+    setPortal(url: string | PortalSettings): this {
         this.assertNotRunning()
         if (typeof url == 'string') {
-            this.gateway = {url}
+            this.portal = {url}
         } else {
-            this.gateway = url
+            this.portal = url
         }
         return this
     }
@@ -273,30 +290,31 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
     }
 
     @def
-    private getGatewayDataSource(): TronGateway {
-        let gateway = assertNotNull(this.gateway)
+    private getPortalDataSource(): TronPortal {
+        let options = assertNotNull(this.portal)
 
-        let log = this.getLogger().child('gateway')
+        let log = this.getLogger().child('portal', {portalUrl: options.url})
 
         let http = new HttpClient({
-            headers: {
-                'x-squid-id': this.getSquidId()
-            },
             agent: new HttpAgent({
                 keepAlive: true
             }),
+            httpTimeout: options.requestTimeout,
             log
         })
 
-        return new TronGateway(
-            new ArchiveClient({
-                http,
-                url: gateway.url,
-                apiKey: gateway.apiKey,
-                queryTimeout: gateway.requestTimeout,
-                log
+        return new TronPortal({
+            client: new PortalClient({
+                url: options.url,
+                http
             }),
-        )
+            headers: {
+                ...options.headers,
+                'x-squid-id': this.getSquidId()
+            },
+            headPollInterval: options.headPollInterval,
+            retryAttempts: options.retryAttempts ?? Number.MAX_SAFE_INTEGER
+        })
     }
 
     @def
@@ -374,17 +392,17 @@ export class TronBatchProcessor<F extends FieldSelection = {}> {
         this.running = true
         let log = this.getLogger()
         runProgram(async () => {
-            if (this.gateway == null && this.httpApi == null) {
+            if (this.portal == null && this.httpApi == null) {
                 throw new Error(
-                    'No data source where specified. ' +
-                    'Use .setGateway() to specify Subsquid Network Gateway and/or .setHttpApi() to specify HTTP API endpoint.'
+                    'No data source was specified. ' +
+                    'Use .setPortal() to specify SQD Portal dataset and/or .setHttpApi() to specify HTTP API endpoint.'
                 )
             }
 
             return new Runner({
                 database,
                 requests: this.getBatchRequests(),
-                archive: this.gateway == null ? undefined : this.getGatewayDataSource(),
+                archive: this.portal == null ? undefined : this.getPortalDataSource(),
                 hotDataSource: this.httpApi == null ? undefined : this.getHttpDataSource(),
                 process: (s, b) => this.processBatch(s, b as any, handler),
                 prometheus: this.getPrometheusServer(),
