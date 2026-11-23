@@ -15,7 +15,10 @@ export interface ItemQuery {
     ethereumTransactions?: EthereumTransactRequest[]
     contractsEvents?: ContractsContractEmittedRequest[]
     /**
-     * Note: the portal matches these requests against `Gear.UserMessageEnqueued` events.
+     * Selects `Gear.MessageQueued` events, `programId` being the destination program.
+     *
+     * Note: portals released before this was fixed match these requests against
+     * `Gear.UserMessageEnqueued`, an event no Gear runtime has, and return nothing.
      */
     gearMessagesEnqueued?: GearMessageEnqueuedRequest[]
     gearUserMessagesSent?: GearUserMessageSentRequest[]

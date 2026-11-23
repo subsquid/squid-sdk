@@ -154,6 +154,34 @@ describe.skipIf(!ENABLED)('portal vs RPC parity', () => {
         // the portal returns 27 Gear.MessageQueued events in this range, 3 of them for the program
         expect(res.events).toBeGreaterThanOrEqual(3)
     })
+
+    it('vara: gear MessageQueued filtered by program id in early blocks', {timeout: 600_000}, async () => {
+        // Archived blocks this old do not carry the program id the portal filters on,
+        // so a server-side program id filter would silently return nothing here.
+        // They do not store event topics either, so items are compared without them.
+        let rpc = rpcClient(VARA_RPC)
+        let req: RangeRequest<DataRequest> = {
+            range: {from: 9_300_000, to: 9_300_300},
+            request: {
+                fields: {event: {name: true, args: true}, extrinsic: {hash: true}},
+                gearMessagesQueued: [
+                    {
+                        programId: ['0x91282a7344c498560810d991c42aee5f9ef5a5b7002646a0421fdf29d4f4783e'],
+                        extrinsic: true,
+                    },
+                ],
+            },
+        }
+        let items = (blocks: Block[]) =>
+            blocks.flatMap((b) => b.events.map((e) => json([e.id, e.name, e.args, e.extrinsic?.hash])))
+        let [p, r] = await Promise.all([
+            collect(portalSource('vara', rpc), req),
+            collect(new RpcDataSource({rpc}), req),
+        ])
+        // 597 Gear.MessageQueued events in this range, 34 of them for the program
+        expect(items(p)).toHaveLength(34)
+        expect(items(p)).toEqual(items(r))
+    })
 })
 
 describe.skipIf(!ENABLED)('portal accepts every request the processor sends', () => {
