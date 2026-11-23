@@ -210,10 +210,11 @@ const GEAR_MESSAGE_QUEUED = 'Gear.MessageQueued'
 /**
  * Maps a processor data request to a portal query.
  *
- * `gearMessagesQueued` requests are sent as plain `Gear.MessageQueued` event requests:
- * the portal's own `gearMessagesEnqueued` request matches `Gear.UserMessageEnqueued`
- * events instead. When such requests select program ids, the portal returns a superset,
- * which is narrowed down on the client by {@link applyRequest}.
+ * `gearMessagesQueued` requests are sent as plain `Gear.MessageQueued` event requests
+ * rather than as the portal's own `gearMessagesEnqueued` request, which is not safe to rely on:
+ * portals released before it was fixed match nothing with it, and its program id filter reads
+ * a column that archived blocks do not all carry. When such requests select program ids,
+ * the portal returns a superset, which is narrowed down on the client by {@link applyRequest}.
  */
 export function toPortalQuery(req: RangeRequest<DataRequest>): portal.Query {
     let {fields, gearMessagesQueued, ...items} = req.request

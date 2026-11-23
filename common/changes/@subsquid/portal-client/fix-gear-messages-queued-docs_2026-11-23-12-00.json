@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "document that `gearMessagesEnqueued` selects `Gear.MessageQueued` events",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}
