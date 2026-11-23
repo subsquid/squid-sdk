@@ -91,12 +91,10 @@ export class TronPortal implements DataSource<Block, DataRequest> {
                         head = Math.max(head, meta.finalizedHeadNumber)
                     }
 
-                    // The stream reports head updates without data,
-                    // stop on them once we've seen everything the portal has.
-                    if (batch.length == 0) {
-                        if (beg > head) break
-                        continue
-                    }
+                    // A batch without blocks means the portal answered without data: either we are at its head,
+                    // or it has nothing to serve yet. Leave the stream (which would otherwise re-request
+                    // without delay) and let the outer loop stop, wait for new blocks or back off.
+                    if (batch.length == 0) break
 
                     let lastBlock = last(batch).header.number
                     assert(lastBlock >= beg)

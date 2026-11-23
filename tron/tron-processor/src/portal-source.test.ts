@@ -59,6 +59,33 @@ describe('portal value formats', () => {
 })
 
 describe('TronPortal', () => {
+    it('leaves a stream that answers without blocks and backs off', async () => {
+        let heads = [10, 10, 2]
+        let opened = 0
+        let consumed = 0
+        let client = {
+            async getFinalizedHead() {
+                return {number: heads.shift()!, hash: '00'}
+            },
+            getFinalizedStream() {
+                opened += 1
+                // the portal claims blocks ahead, but every response is empty
+                return (async function* () {
+                    while (true) {
+                        consumed += 1
+                        yield {blocks: [], meta: {finalizedHeadNumber: 10, bytes: 0}}
+                    }
+                })()
+            },
+        }
+        let src = new TronPortal({client: client as any, headPollInterval: 1})
+        for await (let _ of src.getFinalizedBlocks([{range: {from: 3}, request: {fields: getFields({})}}], true)) {
+        }
+        // head 10 >= 3: stream, left on its first empty batch, back off; again; then head 2 < 3: stop
+        expect(opened).toBe(2)
+        expect(consumed).toBe(2)
+    })
+
     it('passes the retry budget, zero included, with every request and stops at the head', async () => {
         let seen: any[] = []
         let heads = [5, 5, 2]
