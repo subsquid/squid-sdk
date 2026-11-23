@@ -2,8 +2,9 @@ import type {QueryBase} from '../common/query'
 import type {Selector} from '../type-util'
 
 /**
- * Hex strings on TRON come without the `0x` prefix: addresses are 21 bytes starting with `41`,
- * hashes and log topics are bare hex.
+ * Hex strings on TRON come without the `0x` prefix. Account and contract addresses of transactions
+ * and internal transactions are 21 bytes starting with `41` (`41a614f803…`), while log addresses
+ * and topics use the 20-byte EVM form (`a614f803…`). Hashes are bare hex.
  */
 export type Hex = string
 
@@ -86,6 +87,9 @@ export interface TransferAssetTransactionRequest {
 
 export interface TriggerSmartContractTransactionRequest {
     owner?: Hex[]
+    /**
+     * 21-byte contract addresses, starting with `41`
+     */
     contract?: Hex[]
     sighash?: Hex[]
     logs?: boolean
@@ -93,6 +97,9 @@ export interface TriggerSmartContractTransactionRequest {
 }
 
 export interface LogRequest {
+    /**
+     * 20-byte contract addresses, without the `41` prefix of transaction addresses
+     */
     address?: Hex[]
     topic0?: Hex[]
     topic1?: Hex[]

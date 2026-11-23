@@ -14,6 +14,9 @@ export interface DataRequest {
 
 
 export interface LogRequestWhere {
+    /**
+     * 20-byte contract addresses (`a614f803…`), without the `41` prefix of transaction addresses
+     */
     address?: Bytes[]
     topic0?: Bytes[]
     topic1?: Bytes[]
