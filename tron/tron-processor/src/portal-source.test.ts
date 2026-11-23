@@ -79,24 +79,27 @@ describe('TronPortal', () => {
         expect(streams).toBe(1)
     })
 
-    it('gives up a block hash lookup the portal answers without blocks', async () => {
-        let consumed = 0
+    it('retries a block hash lookup the portal answers without blocks', async () => {
+        let responses = 0
         let client = {
             async getFinalizedHead() {
                 return {number: 10, hash: '00'}
             },
-            getFinalizedStream() {
+            getFinalizedStream(query: any) {
+                let n = (responses += 1)
                 return (async function* () {
+                    // a transient empty response first, then the block
                     while (true) {
-                        consumed += 1
-                        yield {blocks: [], meta: {finalizedHeadNumber: 10, bytes: 0}}
+                        yield n == 1
+                            ? {blocks: [], meta: {finalizedHeadNumber: 10, bytes: 0}}
+                            : {blocks: [{header: {number: query.fromBlock, hash: 'h7'}}], meta: {bytes: 0}}
                     }
                 })()
             },
         }
         let src = new TronPortal({client: client as any, headPollInterval: 1})
-        expect(await src.getBlockHash(7)).toBeUndefined()
-        expect(consumed).toBe(1)
+        expect(await src.getBlockHash(7)).toBe('h7')
+        expect(responses).toBe(2)
     })
 
     it('leaves a stream that answers without blocks and backs off', async () => {
