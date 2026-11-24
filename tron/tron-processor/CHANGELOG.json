@@ -2,6 +2,23 @@
   "name": "@subsquid/tron-processor",
   "entries": [
     {
+      "version": "1.0.0",
+      "tag": "@subsquid/tron-processor_v1.0.0",
+      "date": "Tue, 24 Nov 2026 13:12:47 GMT",
+      "comments": {
+        "major": [
+          {
+            "comment": "Fetch finalized blocks from an SQD Portal dataset with `.setPortal()`. The SQD Network v2 archive (gateway) is no longer supported: `.setGateway()` and the `GatewaySettings` type are removed"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/portal-client\" from `^0.9.0` to `0.10.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.1",
       "tag": "@subsquid/tron-processor_v0.2.1",
       "date": "Mon, 11 May 2026 05:34:26 GMT",

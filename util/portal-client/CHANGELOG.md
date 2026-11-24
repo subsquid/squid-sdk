@@ -1,6 +1,18 @@
 # Change Log - @subsquid/portal-client
 
-This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+This log was last generated on Tue, 24 Nov 2026 13:12:47 GMT and should not be manually modified.
+
+## 0.10.0
+Tue, 24 Nov 2026 13:12:47 GMT
+
+### Minor changes
+
+- add `tron` queries: blocks are passed through in their wire format with only the block number and hash validated, and integers above 2^53 are kept exact as decimal strings
+
+### Patches
+
+- document that `gearMessagesEnqueued` selects `Gear.MessageQueued` events
+- Streams: a response body that fails before delivering a block now counts against the retry budget and waits on the retry schedule, instead of reconnecting immediately and without limit; a failed stream delivers its buffered blocks and then its error, without first delivering a batch that carries only head updates
 
 ## 0.9.0
 Fri, 20 Nov 2026 14:01:48 GMT

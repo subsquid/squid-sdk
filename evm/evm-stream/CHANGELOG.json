@@ -2,6 +2,18 @@
   "name": "@subsquid/evm-stream",
   "entries": [
     {
+      "version": "0.1.7",
+      "tag": "@subsquid/evm-stream_v0.1.7",
+      "date": "Tue, 24 Nov 2026 13:12:47 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@subsquid/portal-client\" from `^0.9.0` to `0.10.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.6",
       "tag": "@subsquid/evm-stream_v0.1.6",
       "date": "Fri, 20 Nov 2026 14:01:48 GMT",

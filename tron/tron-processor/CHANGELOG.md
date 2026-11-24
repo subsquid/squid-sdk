@@ -1,6 +1,13 @@
 # Change Log - @subsquid/tron-processor
 
-This log was last generated on Mon, 11 May 2026 05:34:26 GMT and should not be manually modified.
+This log was last generated on Tue, 24 Nov 2026 13:12:47 GMT and should not be manually modified.
+
+## 1.0.0
+Tue, 24 Nov 2026 13:12:47 GMT
+
+### Breaking changes
+
+- Fetch finalized blocks from an SQD Portal dataset with `.setPortal()`. The SQD Network v2 archive (gateway) is no longer supported: `.setGateway()` and the `GatewaySettings` type are removed
 
 ## 0.2.1
 Mon, 11 May 2026 05:34:26 GMT

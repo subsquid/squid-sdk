@@ -2,6 +2,26 @@
   "name": "@subsquid/portal-client",
   "entries": [
     {
+      "version": "0.10.0",
+      "tag": "@subsquid/portal-client_v0.10.0",
+      "date": "Tue, 24 Nov 2026 13:12:47 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "add `tron` queries: blocks are passed through in their wire format with only the block number and hash validated, and integers above 2^53 are kept exact as decimal strings"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "document that `gearMessagesEnqueued` selects `Gear.MessageQueued` events"
+          },
+          {
+            "comment": "Streams: a response body that fails before delivering a block now counts against the retry budget and waits on the retry schedule, instead of reconnecting immediately and without limit; a failed stream delivers its buffered blocks and then its error, without first delivering a batch that carries only head updates"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.9.0",
       "tag": "@subsquid/portal-client_v0.9.0",
       "date": "Fri, 20 Nov 2026 14:01:48 GMT",

@@ -1,6 +1,13 @@
 # Change Log - @subsquid/substrate-processor
 
-This log was last generated on Fri, 20 Nov 2026 14:01:48 GMT and should not be manually modified.
+This log was last generated on Tue, 24 Nov 2026 13:12:47 GMT and should not be manually modified.
+
+## 9.0.1
+Tue, 24 Nov 2026 13:12:47 GMT
+
+### Patches
+
+- Portal source: leave a stream that answers without blocks and back off, instead of letting it re-request without delay
 
 ## 9.0.0
 Fri, 20 Nov 2026 14:01:48 GMT
