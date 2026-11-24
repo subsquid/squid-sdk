@@ -610,8 +610,10 @@ class PortalStreamBuffer<B> {
     }
 
     private collect(): PortalStreamData<B> | undefined {
+        // A failed stream delivers the blocks it buffered, then its error. Head updates alone are
+        // not delivered: a consumer that stops on a batch without blocks would never see the error.
+        if (this.isFailed() && this.blocks.length == 0) throw this.error
         if (!this.hasData()) {
-            if (this.isFailed()) throw this.error
             return undefined
         }
 

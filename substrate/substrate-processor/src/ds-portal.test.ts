@@ -1,3 +1,5 @@
+import {HttpClient} from '@subsquid/http-client'
+import {PortalClient} from '@subsquid/portal-client'
 import {describe, expect, it, vi} from 'vitest'
 import {applyRequest, mapBlock, needsExactFilter, SubstratePortal, toPortalQuery} from './ds-portal'
 import type {ArchiveBlock} from './interfaces/data-partial'
@@ -236,7 +238,35 @@ describe('applyRequest', () => {
     })
 })
 
+
+function failingPortal() {
+    let http = new HttpClient()
+    let streams = 0
+    ;(http as any).request = (method: string) => {
+        let headers = new Headers({'x-sqd-finalized-head-number': '100', 'x-sqd-head-number': '100'})
+        if (method == 'GET') return Promise.resolve({status: 200, headers, body: {number: 100, hash: '00'}})
+        streams += 1
+        // every stream response fails before delivering a block
+        let body = (async function* () {
+            throw Object.assign(new Error('socket hang up'), {code: 'ECONNRESET'})
+        })()
+        return Promise.resolve({status: 200, headers, body})
+    }
+    return {client: new PortalClient({url: 'http://localhost/datasets/test', http}), streams: () => streams}
+}
+
 describe('SubstratePortal', () => {
+    it('surfaces a failed stream with retries disabled instead of reopening it', async () => {
+        let portal = failingPortal()
+        let src = new SubstratePortal({client: portal.client, rpc: {} as any, retryAttempts: 0, headPollInterval: 1})
+        let run = async () => {
+            for await (let _ of src.getFinalizedBlocks([{range: {from: 3}, request: {}}], true)) {
+            }
+        }
+        await expect(run()).rejects.toMatchObject({code: 'ECONNRESET'})
+        expect(portal.streams()).toBe(1)
+    })
+
     it('leaves a stream that answers without blocks and backs off', async () => {
         let heads = [10, 10, 2]
         let opened = 0

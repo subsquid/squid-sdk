@@ -45,6 +45,15 @@ describe('response bodies that fail before delivering a block', () => {
         expect(requests).toEqual([5])
     })
 
+    it('fail the stream without first delivering a batch without blocks', async () => {
+        let {portal} = mockPortal(() => [], {retryAttempts: 0})
+        let it = portal.getFinalizedStream({type: 'evm', fromBlock: 5, toBlock: 7}, {request: {retryAttempts: 0}})[
+            Symbol.asyncIterator
+        ]()
+        // the first batch would carry only the failed response's head, the consumer must get the error
+        await expect(it.next()).rejects.toMatchObject({code: 'ECONNRESET'})
+    })
+
     it('are retried within the client retry budget, then fail', async () => {
         let {portal, requests} = mockPortal(() => [], {retryAttempts: 2, retrySchedule: [1]})
         await expect(drain(portal, 5, 7)).rejects.toMatchObject({code: 'ECONNRESET'})
