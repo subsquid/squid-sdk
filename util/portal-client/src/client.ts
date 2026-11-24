@@ -248,7 +248,11 @@ export class PortalClient {
         options?: PortalStreamOptions,
         finalized?: boolean
     ): PortalStream<GetQueryBlock<Q>> {
-        return createPortalStream(query, this.getStreamOptions(options), async (q, o) =>
+        let retry: StreamRetryPolicy = {
+            attempts: options?.request?.retryAttempts ?? this.defaultRetryAttempts,
+            schedule: options?.request?.retrySchedule ?? this.client.retrySchedule,
+        }
+        return createPortalStream(query, this.getStreamOptions(options), retry, async (q, o) =>
             this.getStreamRequest(!finalized ? 'stream' : 'finalized-stream', q, o)
         )
     }
@@ -341,9 +345,19 @@ function isForkHttpError(err: unknown): err is HttpError<{previousBlocks: BlockR
     return true
 }
 
+/**
+ * Retry budget and backoff applied to response bodies that fail before delivering a block,
+ * the same as the HTTP client applies to failed requests.
+ */
+interface StreamRetryPolicy {
+    attempts: number
+    schedule: readonly number[]
+}
+
 function createPortalStream<Q extends AnyQuery>(
     query: Q,
     options: Required<PortalStreamOptions>,
+    retry: StreamRetryPolicy,
     requestStream: (query: Q, options?: PortalRequestOptions) => Promise<PortalStreamResponse>
 ): PortalStream<GetQueryBlock<Q>> {
     let {headPollInterval, request, ...bufferOptions} = options
@@ -353,6 +367,9 @@ function createPortalStream<Q extends AnyQuery>(
     let [normalizedQuery, schema] = getQuery(query)
     let {fromBlock = 0, toBlock, parentBlockHash} = normalizedQuery
     let parseBlock = getBlockParser(normalizedQuery.type)
+
+    // consecutive response bodies that failed without delivering a block
+    let bodyFailures = 0
 
     const ingest = async () => {
         while (!buffer.signal.aborted) {
@@ -386,6 +403,7 @@ function createPortalStream<Q extends AnyQuery>(
 
             if (!res.data) break
 
+            let responseFrom = fromBlock
             try {
                 for await (let data of splitLines(res.data)) {
                     buffer.signal.throwIfAborted()
@@ -406,11 +424,25 @@ function createPortalStream<Q extends AnyQuery>(
                 }
 
                 buffer.flush()
+                bodyFailures = 0
             } catch (err) {
                 if (buffer.signal.aborted) return
                 if (!isStreamAbortedError(err)) {
                     throw err
                 }
+                if (fromBlock > responseFrom) {
+                    // the response made progress before failing, reconnect from where it stopped
+                    bodyFailures = 0
+                    continue
+                }
+                if (bodyFailures >= retry.attempts) {
+                    throw err
+                }
+                let pause = retry.schedule.length
+                    ? retry.schedule[Math.min(bodyFailures, retry.schedule.length - 1)]
+                    : 0
+                bodyFailures += 1
+                await wait(pause, buffer.signal)
             }
         }
 
