@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@subsquid/graphql-server": "^4.12.2",
-    "@subsquid/tron-processor": "^0.2.1",
+    "@subsquid/tron-processor": "^1.0.0",
     "@subsquid/typeorm-migration": "^1.4.1",
     "@subsquid/typeorm-store": "^1.9.3",
     "dotenv": "^16.6.1",

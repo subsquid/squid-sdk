@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/tron-processor",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "Data fetcher and mappings executor for tron chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -21,7 +21,7 @@
   "dependencies": {
     "@subsquid/http-client": "^1.10.0",
     "@subsquid/logger": "^1.6.0",
-    "@subsquid/portal-client": "^0.9.0",
+    "@subsquid/portal-client": "^0.10.0",
     "@subsquid/tron-data": "^0.0.5",
     "@subsquid/tron-normalization": "^0.0.5",
     "@subsquid/util-internal": "^3.3.1",

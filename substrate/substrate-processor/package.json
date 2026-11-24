@@ -1,6 +1,6 @@
 {
   "name": "@subsquid/substrate-processor",
-  "version": "9.0.0",
+  "version": "9.0.1",
   "description": "Data fetcher and mappings executor for substrate chains",
   "license": "GPL-3.0-or-later",
   "repository": "git@github.com:subsquid/squid-sdk.git",
@@ -21,7 +21,7 @@
   "dependencies": {
     "@subsquid/http-client": "^1.10.0",
     "@subsquid/logger": "^1.6.0",
-    "@subsquid/portal-client": "^0.9.0",
+    "@subsquid/portal-client": "^0.10.0",
     "@subsquid/rpc-client": "^4.18.0",
     "@subsquid/substrate-data": "^4.5.1",
     "@subsquid/substrate-data-raw": "^1.2.0",
