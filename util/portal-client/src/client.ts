@@ -1,5 +1,6 @@
 import {HttpBody, HttpClient, HttpClientOptions, HttpError, HttpResponse, RequestOptions} from '@subsquid/http-client'
 import {addErrorContext, last, unexpectedCase, wait, withErrorContext} from '@subsquid/util-internal'
+import {fixUnsafeIntegers} from '@subsquid/util-internal-json-fix-unsafe-integers'
 import {cast} from '@subsquid/util-internal-validation'
 import {Semaphore, Timer} from './util'
 import {getQuery, type AnyQuery, type GetQueryBlock} from './query'
@@ -247,7 +248,11 @@ export class PortalClient {
         options?: PortalStreamOptions,
         finalized?: boolean
     ): PortalStream<GetQueryBlock<Q>> {
-        return createPortalStream(query, this.getStreamOptions(options), async (q, o) =>
+        let retry: StreamRetryPolicy = {
+            attempts: options?.request?.retryAttempts ?? this.defaultRetryAttempts,
+            schedule: options?.request?.retrySchedule ?? this.client.retrySchedule,
+        }
+        return createPortalStream(query, this.getStreamOptions(options), retry, async (q, o) =>
             this.getStreamRequest(!finalized ? 'stream' : 'finalized-stream', q, o)
         )
     }
@@ -340,9 +345,19 @@ function isForkHttpError(err: unknown): err is HttpError<{previousBlocks: BlockR
     return true
 }
 
+/**
+ * Retry budget and backoff applied to response bodies that fail before delivering a block,
+ * the same as the HTTP client applies to failed requests.
+ */
+interface StreamRetryPolicy {
+    attempts: number
+    schedule: readonly number[]
+}
+
 function createPortalStream<Q extends AnyQuery>(
     query: Q,
     options: Required<PortalStreamOptions>,
+    retry: StreamRetryPolicy,
     requestStream: (query: Q, options?: PortalRequestOptions) => Promise<PortalStreamResponse>
 ): PortalStream<GetQueryBlock<Q>> {
     let {headPollInterval, request, ...bufferOptions} = options
@@ -351,6 +366,10 @@ function createPortalStream<Q extends AnyQuery>(
 
     let [normalizedQuery, schema] = getQuery(query)
     let {fromBlock = 0, toBlock, parentBlockHash} = normalizedQuery
+    let parseBlock = getBlockParser(normalizedQuery.type)
+
+    // consecutive response bodies that failed without delivering a block
+    let bodyFailures = 0
 
     const ingest = async () => {
         while (!buffer.signal.aborted) {
@@ -384,6 +403,7 @@ function createPortalStream<Q extends AnyQuery>(
 
             if (!res.data) break
 
+            let responseFrom = fromBlock
             try {
                 for await (let data of splitLines(res.data)) {
                     buffer.signal.throwIfAborted()
@@ -392,7 +412,7 @@ function createPortalStream<Q extends AnyQuery>(
                     let bytes = 0
 
                     for (let line of data) {
-                        let block = cast(schema, JSON.parse(line)) as GetQueryBlock<Q>
+                        let block = cast(schema, parseBlock(line)) as GetQueryBlock<Q>
                         blocks.push(block)
                         bytes += line.length
 
@@ -404,11 +424,25 @@ function createPortalStream<Q extends AnyQuery>(
                 }
 
                 buffer.flush()
+                bodyFailures = 0
             } catch (err) {
                 if (buffer.signal.aborted) return
                 if (!isStreamAbortedError(err)) {
                     throw err
                 }
+                if (fromBlock > responseFrom) {
+                    // the response made progress before failing, reconnect from where it stopped
+                    bodyFailures = 0
+                    continue
+                }
+                if (bodyFailures >= retry.attempts) {
+                    throw err
+                }
+                let pause = retry.schedule.length
+                    ? retry.schedule[Math.min(bodyFailures, retry.schedule.length - 1)]
+                    : 0
+                bodyFailures += 1
+                await wait(pause, buffer.signal)
             }
         }
 
@@ -421,6 +455,18 @@ function createPortalStream<Q extends AnyQuery>(
     )
 
     return buffer
+}
+
+/**
+ * TRON blocks carry int64 values (e.g. sender-set transaction timestamps) that the portal serves
+ * as JSON numbers above 2^53. Such numbers are turned into strings before parsing, so they keep
+ * their exact value instead of being rounded by `JSON.parse`.
+ */
+function getBlockParser(type: AnyQuery['type']): (line: string) => unknown {
+    if (type === 'tron') {
+        return (line) => JSON.parse(fixUnsafeIntegers(line))
+    }
+    return (line) => JSON.parse(line)
 }
 
 class PortalStreamBuffer<B> {
@@ -564,8 +610,10 @@ class PortalStreamBuffer<B> {
     }
 
     private collect(): PortalStreamData<B> | undefined {
+        // A failed stream delivers the blocks it buffered, then its error. Head updates alone are
+        // not delivered: a consumer that stops on a batch without blocks would never see the error.
+        if (this.isFailed() && this.blocks.length == 0) throw this.error
         if (!this.hasData()) {
-            if (this.isFailed()) throw this.error
             return undefined
         }
 

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/tron-processor",
+      "comment": "Fetch finalized blocks from an SQD Portal dataset with `.setPortal()`. The SQD Network v2 archive (gateway) is no longer supported: `.setGateway()` and the `GatewaySettings` type are removed",
+      "type": "major"
+    }
+  ],
+  "packageName": "@subsquid/tron-processor"
+}

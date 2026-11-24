@@ -1,3 +1,5 @@
+import {HttpClient} from '@subsquid/http-client'
+import {PortalClient} from '@subsquid/portal-client'
 import {describe, expect, it, vi} from 'vitest'
 import {applyRequest, mapBlock, needsExactFilter, SubstratePortal, toPortalQuery} from './ds-portal'
 import type {ArchiveBlock} from './interfaces/data-partial'
@@ -236,7 +238,62 @@ describe('applyRequest', () => {
     })
 })
 
+
+function failingPortal() {
+    let http = new HttpClient()
+    let streams = 0
+    ;(http as any).request = (method: string) => {
+        let headers = new Headers({'x-sqd-finalized-head-number': '100', 'x-sqd-head-number': '100'})
+        if (method == 'GET') return Promise.resolve({status: 200, headers, body: {number: 100, hash: '00'}})
+        streams += 1
+        // every stream response fails before delivering a block
+        let body = (async function* () {
+            throw Object.assign(new Error('socket hang up'), {code: 'ECONNRESET'})
+        })()
+        return Promise.resolve({status: 200, headers, body})
+    }
+    return {client: new PortalClient({url: 'http://localhost/datasets/test', http}), streams: () => streams}
+}
+
 describe('SubstratePortal', () => {
+    it('surfaces a failed stream with retries disabled instead of reopening it', async () => {
+        let portal = failingPortal()
+        let src = new SubstratePortal({client: portal.client, rpc: {} as any, retryAttempts: 0, headPollInterval: 1})
+        let run = async () => {
+            for await (let _ of src.getFinalizedBlocks([{range: {from: 3}, request: {}}], true)) {
+            }
+        }
+        await expect(run()).rejects.toMatchObject({code: 'ECONNRESET'})
+        expect(portal.streams()).toBe(1)
+    })
+
+    it('leaves a stream that answers without blocks and backs off', async () => {
+        let heads = [10, 10, 2]
+        let opened = 0
+        let consumed = 0
+        let client = {
+            async getFinalizedHead() {
+                return {number: heads.shift()!, hash: '00'}
+            },
+            getFinalizedStream() {
+                opened += 1
+                // the portal claims blocks ahead, but every response is empty
+                return (async function* () {
+                    while (true) {
+                        consumed += 1
+                        yield {blocks: [], meta: {finalizedHeadNumber: 10, bytes: 0}}
+                    }
+                })()
+            },
+        }
+        let src = new SubstratePortal({client: client as any, rpc: {} as any, headPollInterval: 1})
+        for await (let _ of src.getFinalizedBlocks([{range: {from: 3}, request: {}}], true)) {
+        }
+        // head 10 >= 3: stream, left on its first empty batch, back off; again; then head 2 < 3: stop
+        expect(opened).toBe(2)
+        expect(consumed).toBe(2)
+    })
+
     it('passes the retry budget, zero included, with every request', async () => {
         let seen: any[] = []
         let heads = [5, 5, 2]

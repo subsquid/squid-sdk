@@ -10,7 +10,7 @@ const TOPIC0 = 'ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
 
 
 const processor = new TronBatchProcessor()
-    .setGateway('https://v2.archive.subsquid.io/network/tron-mainnet')
+    .setPortal('https://portal.sqd.dev/datasets/tron-mainnet')
     .setHttpApi({
         url: 'https://rpc.ankr.com/http/tron',
         strideConcurrency: 1,

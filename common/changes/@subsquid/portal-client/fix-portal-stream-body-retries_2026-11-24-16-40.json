@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/portal-client",
+      "comment": "Streams: a response body that fails before delivering a block now counts against the retry budget and waits on the retry schedule, instead of reconnecting immediately and without limit; a failed stream delivers its buffered blocks and then its error, without first delivering a batch that carries only head updates",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/portal-client"
+}
