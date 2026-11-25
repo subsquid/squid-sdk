@@ -786,11 +786,14 @@ describe('FallbackDataSource — a primary that stops at its own head (dataset w
         // s0 serves 1..2, then sits at its own head and only returns empty polls. Its empty batches
         // keep the staleness clock from ever tripping and it never gets within maxLagBlocks of the
         // reference, so only an empty batch can arm the lag trigger.
-        let s0 = new MockSource(async function* () {
-            yield batch([blk(1)])
-            yield batch([blk(2)])
-            for (let i = 0; i < 20; i++) yield batch([])
-        })
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(1)])
+                yield batch([blk(2)])
+                for (let i = 0; i < 20; i++) yield batch([])
+            },
+            {head: async () => ({number: 2, hash: '0x'})},
+        )
         let s1 = new MockSource(
             async function* (req) {
                 expect(req.from).toBe(3)
@@ -891,6 +894,25 @@ describe('FallbackDataSource — a primary that stops at its own head: edge case
         expect(numbers(await collect(fb.getStream({from: 100, to: 103})))).toEqual([100, 101, 102, 103])
         expect(fb.activeIndex).toBe(1)
         expect(s2.calls).toHaveLength(0)
+    })
+
+    it('does not treat a finality-only batch during catch-up as idle', async () => {
+        // Some sources emit empty, finality-only batches while still backfilling. s0's own head
+        // (500) is far above what it has delivered, so it is not idle and must keep serving.
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(1)])
+                yield batch([], {number: 1, hash: '0x1'})
+                yield batch([blk(2)])
+            },
+            {head: async () => ({number: 500, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: 1_000_000, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        expect(numbers(await collect(fb.getStream({from: 1, to: 2})))).toEqual([1, 2])
+        expect(fb.activeIndex).toBe(0)
+        expect(s1.calls).toHaveLength(0)
     })
 
     it('switches up to a caught-up source even when a more-preferred one is behind', async () => {

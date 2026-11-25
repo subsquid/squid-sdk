@@ -217,7 +217,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         // everything it has, i.e. it sits at its own head — see `laggingTooFar`. Not
                         // on the finalized stream: there the reference heads are unfinalized, so a
                         // source idle at the finalized head always looks behind them.
-                        let atSourceHead = !finalized && batch.blocks.length === 0
+                        let atSourceHead =
+                            !finalized && batch.blocks.length === 0 && (await this.isAtOwnHead(active, lastNumber))
                         if (await this.laggingTooFar(active, lastNumber, atSourceHead)) {
                             this.failSource(
                                 active,
@@ -476,6 +477,25 @@ export class FallbackDataSource<B> implements DataSource<B> {
     private isBehind(i: number, lastNumber: number): boolean {
         let head = this.#headCache[i]?.value
         return head != null && head < lastNumber
+    }
+
+    /**
+     * An empty batch is not proof of idleness on its own: some sources emit finality-only batches
+     * while still catching up. Confirm with the active source's own head. A failed or timed-out
+     * head request means "not known to be idle" and is not counted against the source here.
+     */
+    private async isAtOwnHead(active: number, lastNumber: number): Promise<boolean> {
+        try {
+            let timeoutMs = this.policy.activeHeadTimeoutMs
+            let head = await withTimeout(
+                this.sources[active].source.getHead(),
+                timeoutMs,
+                () => new Error(`head request timed out after ${timeoutMs}ms`),
+            )
+            return head.number <= lastNumber
+        } catch {
+            return false
+        }
     }
 
     /** The most-preferred `healthy` source above `active` that is not behind the frontier. */
