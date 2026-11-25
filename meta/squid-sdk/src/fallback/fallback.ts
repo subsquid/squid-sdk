@@ -218,7 +218,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         // on the finalized stream: there the reference heads are unfinalized, so a
                         // source idle at the finalized head always looks behind them.
                         let atSourceHead =
-                            !finalized && batch.blocks.length === 0 && (await this.isAtOwnHead(active, lastNumber))
+                            this.policy.maxLagBlocks != null &&
+                            !finalized &&
+                            batch.blocks.length === 0 &&
+                            (await this.isAtOwnHead(active, lastNumber))
                         if (await this.laggingTooFar(active, lastNumber, atSourceHead)) {
                             this.failSource(
                                 active,

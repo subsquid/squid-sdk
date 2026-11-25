@@ -915,6 +915,27 @@ describe('FallbackDataSource — a primary that stops at its own head: edge case
         expect(s1.calls).toHaveLength(0)
     })
 
+    it('does not ask the active source for its head when the lag trigger is disabled', async () => {
+        let headCalls = 0
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(1)])
+                yield batch([])
+                yield batch([blk(2)])
+            },
+            {
+                head: async () => {
+                    headCalls++
+                    return {number: 2, hash: '0x'}
+                },
+            },
+        )
+        let fb = fallback([s0], {maxLagBlocks: null, maxStalenessMs: null, headTtlMs: 0})
+
+        expect(numbers(await collect(fb.getStream({from: 1, to: 2})))).toEqual([1, 2])
+        expect(headCalls).toBe(0)
+    })
+
     it('switches up to a caught-up source even when a more-preferred one is behind', async () => {
         // s0 (head 0) and s1 (head 1000) both recover while s2 serves. s0 is behind the frontier,
         // so the switch-up must land on s1, not stall on s0 or skip recovery altogether.
