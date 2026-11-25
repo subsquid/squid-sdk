@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/batch-processor",
+      "comment": "recover from a fork that goes deeper than the source's `previousBlocks` slice: roll back to the highest unfinalized head below the slice and retry, instead of exiting with \"Unable to process fork\"",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/batch-processor"
+}

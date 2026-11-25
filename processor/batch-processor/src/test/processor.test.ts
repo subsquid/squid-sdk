@@ -150,6 +150,8 @@ type StreamStep = {kind: 'yield'; batch: BlockBatch<TestBlock>} | {kind: 'fork';
 
 class ProgrammableSource implements DataSource<TestBlock> {
     private readonly plan: StreamStep[][] = []
+    // Every stream request the processor made, in order.
+    readonly requests: StreamRequest[] = []
 
     constructor(private readonly chain: TestBlock[]) {}
 
@@ -181,7 +183,8 @@ class ProgrammableSource implements DataSource<TestBlock> {
         return {number: tip.number, hash: tip.hash}
     }
 
-    private async *nextStream(_req: StreamRequest): BlockStream<TestBlock> {
+    private async *nextStream(req: StreamRequest): BlockStream<TestBlock> {
+        this.requests.push(req)
         const steps = this.plan.shift()
         if (!steps) return
         for (const step of steps) {
@@ -290,13 +293,155 @@ describe('Processor', () => {
 
         expect(db.hotTransacts).toHaveLength(1)
         expect(db.hotTransacts[0].blocks.map((b) => b.header.number)).toEqual([0, 1, 2, 3, 4])
-        expect(
-            (processor as unknown as {state: {unfinalizedHeads: BlockRef[]}}).state.unfinalizedHeads
-        ).toEqual([
+        expect((processor as unknown as {state: {unfinalizedHeads: BlockRef[]}}).state.unfinalizedHeads).toEqual([
             {number: 1, hash: '0x1'},
             {number: 3, hash: '0x3'},
             {number: 4, hash: '0x4'},
         ])
+    })
+
+    describe('fork deeper than the previousBlocks slice', () => {
+        // Portal returns a slice of its chain of arbitrary length in a 409: it only guarantees the
+        // parent of the requested block. When our chain diverges below the slice, no block in it
+        // matches, and the processor has to retry from further back instead of giving up.
+        function headers(...refs: [number, string][]): TestBlock[] {
+            return refs.map(([number, hash]) => ({header: {number, hash}}))
+        }
+
+        function hotDb(top: [number, string][]): RecordingHotDatabase {
+            const db = new RecordingHotDatabase()
+            db.state = {height: 0, hash: '0x0', top: top.map(([height, hash]) => ({height, hash}))}
+            return db
+        }
+
+        it('retries from the highest head below the slice', async () => {
+            // Ours: 0 (finalized) — 1 — 2 — 3 — 4. Source: 0 — 1 — 2 — 3a — 4a — 5a.
+            // The slice is [3a, 4a]: it starts exactly at the divergence point.
+            const replay = headers([3, '0x3a'], [4, '0x4a'], [5, '0x5a'])
+            const src = new ProgrammableSource(replay)
+                .addStreamCall([
+                    {
+                        kind: 'fork',
+                        fork: new ForkException(5, '0x4', [
+                            {number: 3, hash: '0x3a'},
+                            {number: 4, hash: '0x4a'},
+                        ]),
+                    },
+                ])
+                .addStreamCall([{kind: 'yield', batch: {blocks: replay, finalizedHead: undefined}}])
+            const db = hotDb([
+                [1, '0x1'],
+                [2, '0x2'],
+                [3, '0x3'],
+                [4, '0x4'],
+            ])
+
+            await new Processor<TestBlock, RecorderStore>(src, db, async () => {}).run()
+
+            expect(src.requests.map((r) => [r.from, r.parentHash])).toEqual([
+                [5, '0x4'],
+                [3, '0x2'],
+            ])
+            expect(db.hotTransacts).toHaveLength(1)
+            expect(db.hotTransacts[0].info.baseHead).toMatchObject({height: 2, hash: '0x2'})
+            expect(db.hotTransacts[0].info.newBlocks.map((b) => b.hash)).toEqual(['0x3a', '0x4a', '0x5a'])
+        })
+
+        it('narrows the search over several slices', async () => {
+            // Ours: 0 — 1 — 2 — 3 — 4 — 5 — 6. Source diverges at 3; its first slice is [5a, 6a],
+            // the second one [3a, 4a].
+            const replay = headers([3, '0x3a'], [4, '0x4a'], [5, '0x5a'], [6, '0x6a'], [7, '0x7a'])
+            const src = new ProgrammableSource(replay)
+                .addStreamCall([
+                    {
+                        kind: 'fork',
+                        fork: new ForkException(7, '0x6', [
+                            {number: 5, hash: '0x5a'},
+                            {number: 6, hash: '0x6a'},
+                        ]),
+                    },
+                ])
+                .addStreamCall([
+                    {
+                        kind: 'fork',
+                        fork: new ForkException(5, '0x4', [
+                            {number: 3, hash: '0x3a'},
+                            {number: 4, hash: '0x4a'},
+                        ]),
+                    },
+                ])
+                .addStreamCall([{kind: 'yield', batch: {blocks: replay, finalizedHead: undefined}}])
+            const db = hotDb([
+                [1, '0x1'],
+                [2, '0x2'],
+                [3, '0x3'],
+                [4, '0x4'],
+                [5, '0x5'],
+                [6, '0x6'],
+            ])
+
+            await new Processor<TestBlock, RecorderStore>(src, db, async () => {}).run()
+
+            expect(src.requests.map((r) => [r.from, r.parentHash])).toEqual([
+                [7, '0x6'],
+                [5, '0x4'],
+                [3, '0x2'],
+            ])
+            expect(db.hotTransacts).toHaveLength(1)
+            expect(db.hotTransacts[0].info.baseHead).toMatchObject({height: 2, hash: '0x2'})
+        })
+
+        it('falls back to the finalized head, and fails only when that one does not match', async () => {
+            // Every unfinalized head is orphaned: retry from the finalized head 0.
+            const replay = headers([1, '0x1a'], [2, '0x2a'], [3, '0x3a'])
+            const recovering = new ProgrammableSource(replay)
+                .addStreamCall([
+                    {
+                        kind: 'fork',
+                        fork: new ForkException(3, '0x2', [
+                            {number: 1, hash: '0x1a'},
+                            {number: 2, hash: '0x2a'},
+                        ]),
+                    },
+                ])
+                .addStreamCall([{kind: 'yield', batch: {blocks: replay, finalizedHead: undefined}}])
+            const db = hotDb([
+                [1, '0x1'],
+                [2, '0x2'],
+            ])
+
+            await new Processor<TestBlock, RecorderStore>(recovering, db, async () => {}).run()
+
+            expect(recovering.requests.map((r) => [r.from, r.parentHash])).toEqual([
+                [3, '0x2'],
+                [1, '0x0'],
+            ])
+            expect(db.hotTransacts[0].info.baseHead).toMatchObject({height: 0, hash: '0x0'})
+
+            // The source disagrees with the finalized head itself: nothing left to roll back.
+            const failing = new ProgrammableSource([])
+                .addStreamCall([
+                    {
+                        kind: 'fork',
+                        fork: new ForkException(3, '0x2', [
+                            {number: 1, hash: '0x1a'},
+                            {number: 2, hash: '0x2a'},
+                        ]),
+                    },
+                ])
+                .addStreamCall([{kind: 'fork', fork: new ForkException(1, '0x0', [{number: 0, hash: '0x0a'}])}])
+
+            await expect(
+                new Processor<TestBlock, RecorderStore>(
+                    failing,
+                    hotDb([
+                        [1, '0x1'],
+                        [2, '0x2'],
+                    ]),
+                    async () => {},
+                ).run(),
+            ).rejects.toThrow(/Unable to process fork/)
+        })
     })
 
     it('rolls back to the nearest known sparse head', async () => {
@@ -336,7 +481,7 @@ describe('Processor', () => {
         expect(db.hotTransacts).toHaveLength(1)
         // baseHead at the nearest known sparse common block (height 2, hash 0x2).
         expect(db.hotTransacts[0].info.baseHead).toMatchObject({height: 2, hash: '0x2'})
-        expect(db.hotTransacts[0].info.newBlocks.map(b => b.hash)).toEqual(['0x3-fork', '0x4-fork'])
+        expect(db.hotTransacts[0].info.newBlocks.map((b) => b.hash)).toEqual(['0x3-fork', '0x4-fork'])
     })
 
     it('handles a deep reorg (>10 blocks) via ForkException', async () => {

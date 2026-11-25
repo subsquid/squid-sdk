@@ -90,6 +90,21 @@ class ProcessorState {
         let chain = this.finalizedHead ? [this.finalizedHead, ...this.unfinalizedHeads] : this.unfinalizedHeads
         let rollbackIndex = findRollbackIndex(chain, previousBlocks)
         if (rollbackIndex === -1) {
+            // `previousBlocks` is a slice of the source's chain of arbitrary length: Portal only
+            // guarantees that it reaches the parent of the requested block. When the chains diverge
+            // below the slice, no block in it matches ours. Drop every unfinalized head at or above
+            // the slice and retry from the highest head below it: the next fork exception either
+            // accepts that head or carries an older slice, so each round narrows the search.
+            let sliceStart = minBlockNumber(previousBlocks)
+            if (sliceStart != null) {
+                let below = this.unfinalizedHeads.filter((h) => h.number < sliceStart)
+                let retryHead = maybeLast(below) ?? this.finalizedHead
+                if (below.length < this.unfinalizedHeads.length && retryHead != null && retryHead.number < sliceStart) {
+                    log.info(`fork goes deeper than the source's block slice, retrying from ${formatHead(retryHead)}`)
+                    this.unfinalizedHeads = below
+                    return
+                }
+            }
             if (this.finalizedHead != null) throw new Error('Unable to process fork')
             this.unfinalizedHeads = []
         } else {
@@ -337,6 +352,14 @@ export function findRollbackIndex(currentChain: BlockRef[], forkChain: BlockRef[
     }
 
     return lastCommonIndex
+}
+
+function minBlockNumber(blocks: BlockRef[]): number | undefined {
+    let min: number | undefined
+    for (let b of blocks) {
+        if (min == null || b.number < min) min = b.number
+    }
+    return min
 }
 
 function toHashAndHeight(ref: BlockRef | undefined): HashAndHeight {
