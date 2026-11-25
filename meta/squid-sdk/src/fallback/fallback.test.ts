@@ -781,6 +781,69 @@ describe('FallbackDataSource — freshness (M1)', () => {
     })
 })
 
+describe('FallbackDataSource — a primary that stops at its own head (dataset without real-time data)', () => {
+    it('fails over once the idle primary is more than maxLagBlocks behind', async () => {
+        // s0 serves 1..2, then sits at its own head and only returns empty polls. Its empty batches
+        // keep the staleness clock from ever tripping and it never gets within maxLagBlocks of the
+        // reference, so only an empty batch can arm the lag trigger.
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(1)])
+            yield batch([blk(2)])
+            for (let i = 0; i < 20; i++) yield batch([])
+        })
+        let s1 = new MockSource(
+            async function* (req) {
+                expect(req.from).toBe(3)
+                yield batch([blk(3)])
+            },
+            {head: async () => ({number: 1_000, hash: '0x'})},
+        )
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        expect(numbers(await collect(fb.getStream({from: 1, to: 3})))).toEqual([1, 2, 3])
+        expect(fb.activeIndex).toBe(1)
+    })
+
+    it('does not switch back up to a recovered primary whose head is behind the frontier', async () => {
+        // s0 is healthy again but its head (0) is below what s1 already committed: reclaiming it
+        // would park the stream on a source with nothing to serve. s1 keeps serving.
+        let s0 = new MockSource(
+            async function* (_req, call) {
+                if (call === 0) throw new Error('s0 down')
+                for (let i = 0; i < 20; i++) yield batch([])
+            },
+            {head: async () => ({number: 0, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {
+            yield batch([blk(1)])
+            yield batch([blk(2)])
+            yield batch([blk(3)])
+            yield batch([blk(4)])
+        })
+        let now = 0
+        let fb = fallback([s0, s1], {
+            maxLagBlocks: null,
+            maxStalenessMs: null,
+            headTtlMs: 0,
+            cooldownMs: 1000,
+            clock: () => now,
+        })
+        let it = fb.getStream({from: 1, to: 4})[Symbol.asyncIterator]()
+        let got = numbers((await it.next()).value.blocks) // [1] from s1; s0 failed internally
+        expect(got).toEqual([1])
+
+        now = 1000 // past the cooldown
+        fb.health[0].onLivenessPass()
+        fb.health[0].onLivenessPass()
+        fb.health[0].onLivenessPass()
+        expect(fb.health[0].state).toBe('healthy')
+
+        for (let n = await it.next(); !n.done; n = await it.next()) got.push(...numbers(n.value.blocks))
+        expect(got).toEqual([1, 2, 3, 4])
+        expect(s0.calls).toHaveLength(1) // never reclaimed while behind
+    })
+})
+
 describe('FallbackDataSource — getHead delegation', () => {
     it('delegates to the active source and fails over on error', async () => {
         let noop: StreamFn = async function* () {}

@@ -213,7 +213,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         }
 
                         // Lag-based freshness: the active fell too far behind the independent head.
-                        if (await this.laggingTooFar(active, lastNumber)) {
+                        // An empty batch means the active has served everything it has, i.e. it sits
+                        // at its own head — see `laggingTooFar` for why that arms the trigger.
+                        if (await this.laggingTooFar(active, lastNumber, batch.blocks.length === 0)) {
                             this.failSource(
                                 active,
                                 freshnessFailure('stream', 'lag', `fell behind the chain head by more than ${this.policy.maxLagBlocks} blocks`),
@@ -228,7 +230,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         // head-polls are disabled — switch-up must not depend on that machinery.
                         if (this.policy.preferPrimary === 'eager') {
                             await this.probeHigherPreference(active)
-                            if (this.selector.pickSwitchUp(active) != null) break
+                            let up = this.selector.pickSwitchUp(active)
+                            if (up != null && !this.isBehind(up, lastNumber)) break
                         }
                     }
                 } finally {
@@ -456,8 +459,25 @@ export class FallbackDataSource<B> implements DataSource<B> {
             })
     }
 
-    /** Boundary-evaluated lag trigger (armed only once the tip is first reached). */
-    private async laggingTooFar(active: number, lastNumber: number): Promise<boolean> {
+    /**
+     * A switch-up candidate whose last polled head is below the committed frontier cannot serve the
+     * next block: switching to it would park the stream on a source that has nothing to deliver
+     * (e.g. a Portal dataset that does not follow the chain head), until the lag trigger moves it
+     * off again. An unknown head does not block the switch.
+     */
+    private isBehind(i: number, lastNumber: number): boolean {
+        let head = this.#headCache[i]?.value
+        return head != null && head < lastNumber
+    }
+
+    /**
+     * Boundary-evaluated lag trigger, armed once the tip is first reached. `atSourceHead` (the active
+     * just delivered an empty batch, having nothing more to serve) also arms it: a source that stops
+     * at its own head far below the chain tip, such as a Portal dataset without real-time data, never
+     * gets within `maxLagBlocks` of the reference, and its empty polls keep resetting the staleness
+     * clock, so without this neither trigger would ever move the stream to a fresher source.
+     */
+    private async laggingTooFar(active: number, lastNumber: number, atSourceHead = false): Promise<boolean> {
         if (this.policy.maxLagBlocks == null) return false
 
         let others = await this.chainHeadOthers(active)
@@ -474,6 +494,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // (stale/lagging) — arming on that would let a later-recovering source's head trip a spurious
         // failover while we are still backfilling.
         if (lag >= 0 && lag <= this.policy.maxLagBlocks) this.#lagArmed = true // arm at tip (latched)
+        if (atSourceHead) this.#lagArmed = true // the active has nothing more to serve (latched)
 
         if (this.#lagArmed && lag > this.policy.maxLagBlocks) {
             // A fresher alternative exists by construction (others > lastNumber + maxLagBlocks).

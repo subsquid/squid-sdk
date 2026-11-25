@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "comment": "fallback: fail over from a source that stops at its own head far behind the chain tip (e.g. a Portal dataset without real-time data) once a fresher source is more than `maxLagBlocks` ahead, and do not switch back up to a source whose head is behind the committed frontier",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/squid-sdk"
+}
