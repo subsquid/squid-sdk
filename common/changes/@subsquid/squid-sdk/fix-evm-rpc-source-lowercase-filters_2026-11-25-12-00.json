@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "comment": "EVM RPC source: match `where` filters case-insensitively, as Portal and `@subsquid/evm-processor` do, so a checksummed address or upper-case topic no longer drops every matching item",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/squid-sdk"
+}

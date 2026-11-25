@@ -64,8 +64,23 @@ export interface FlatStateDiffRequest {
     transaction?: boolean
 }
 
+/**
+ * The filter engine compares values exactly, and RPC nodes return addresses, topics and
+ * sighashes in lowercase hex. Portal matches hex filters case-insensitively, so a checksummed
+ * address in a `where` clause must match here too: lowercase every string filter value, as
+ * `@subsquid/evm-processor` did when a request was added.
+ */
+function lowercaseWhere<W extends object>(where: W | undefined): W | undefined {
+    if (where == null) return where
+    let result: Record<string, unknown> = {}
+    for (let [key, value] of Object.entries(where)) {
+        result[key] = Array.isArray(value) ? value.map((v) => (typeof v === 'string' ? v.toLowerCase() : v)) : value
+    }
+    return result as W
+}
+
 function flattenItem<W extends object, I extends object>(item: {where?: W; include?: I}): W & I {
-    return {...item.where, ...item.include} as W & I
+    return {...lowercaseWhere(item.where), ...item.include} as W & I
 }
 
 /**
