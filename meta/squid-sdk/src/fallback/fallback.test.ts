@@ -844,6 +844,101 @@ describe('FallbackDataSource — a primary that stops at its own head (dataset w
     })
 })
 
+describe('FallbackDataSource — a primary that stops at its own head: edge cases', () => {
+    it('does not fail over a finalized stream idle at the finalized head', async () => {
+        // Every source's latest head (1000) is ahead of the finalized head (936). An empty batch at
+        // the finalized head must not count as lagging against those unfinalized heads.
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(936)])
+            for (let i = 0; i < 5; i++) yield batch([])
+        })
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: 1000, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        expect(numbers(await collect(fb.getFinalizedStream({from: 936})))).toEqual([936])
+        expect(fb.activeIndex).toBe(0)
+        expect(s1.calls).toHaveLength(0)
+    })
+
+    it('lets the next source backfill after leaving an idle one (the idle signal is not latched)', async () => {
+        // s0 stops at 100; s1 is a source with more history (head 10_000) that is still backfilling
+        // far below the reference head of s2. Only s0 should be failed over.
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(100)])
+                for (let i = 0; i < 5; i++) yield batch([])
+            },
+            {head: async () => ({number: 100, hash: '0x'})},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                expect(req.from).toBe(101)
+                yield batch([blk(101)])
+                yield batch([blk(102)])
+                yield batch([blk(103)])
+            },
+            {head: async () => ({number: 10_000, hash: '0x'})},
+        )
+        let s2 = new MockSource(async function* () {}, {head: async () => ({number: 1_000_000, hash: '0x'})})
+        let fb = fallback([s0, s1, s2], {
+            maxLagBlocks: 10,
+            maxStalenessMs: null,
+            headTtlMs: 0,
+            cooldownMs: 60_000,
+            preferPrimary: 'onFailureOnly',
+        })
+
+        expect(numbers(await collect(fb.getStream({from: 100, to: 103})))).toEqual([100, 101, 102, 103])
+        expect(fb.activeIndex).toBe(1)
+        expect(s2.calls).toHaveLength(0)
+    })
+
+    it('switches up to a caught-up source even when a more-preferred one is behind', async () => {
+        // s0 (head 0) and s1 (head 1000) both recover while s2 serves. s0 is behind the frontier,
+        // so the switch-up must land on s1, not stall on s0 or skip recovery altogether.
+        let s0 = new MockSource(
+            async function* (_req, call) {
+                if (call === 0) throw new Error('s0 down')
+                for (let i = 0; i < 5; i++) yield batch([])
+            },
+            {head: async () => ({number: 0, hash: '0x'})},
+        )
+        let s1 = new MockSource(
+            async function* (req, call) {
+                if (call === 0) throw new Error('s1 down')
+                expect(req.from).toBe(2)
+                yield batch([blk(2)])
+                yield batch([blk(3)])
+            },
+            {head: async () => ({number: 1000, hash: '0x'})},
+        )
+        let s2 = new MockSource(async function* () {
+            yield batch([blk(1)])
+            yield batch([blk(2, '0x2-s2')])
+            yield batch([blk(3, '0x3-s2')])
+        })
+        let now = 0
+        let fb = fallback([s0, s1, s2], {
+            maxLagBlocks: null,
+            maxStalenessMs: null,
+            headTtlMs: 0,
+            cooldownMs: 1000,
+            clock: () => now,
+        })
+        let it = fb.getStream({from: 1, to: 3})[Symbol.asyncIterator]()
+        let got = numbers((await it.next()).value.blocks)
+        expect(got).toEqual([1]) // from s2
+
+        now = 1000
+        for (let i of [0, 1]) for (let k = 0; k < 3; k++) fb.health[i].onLivenessPass()
+
+        let hashes: string[] = []
+        for (let n = await it.next(); !n.done; n = await it.next()) hashes.push(...n.value.blocks.map((b) => b.header.hash))
+        expect(hashes).toEqual(['0x2', '0x3']) // served by s1
+        expect(s0.calls).toHaveLength(1)
+    })
+})
+
 describe('FallbackDataSource — getHead delegation', () => {
     it('delegates to the active source and fails over on error', async () => {
         let noop: StreamFn = async function* () {}

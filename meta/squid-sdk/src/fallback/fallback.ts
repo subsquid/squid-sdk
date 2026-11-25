@@ -213,9 +213,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         }
 
                         // Lag-based freshness: the active fell too far behind the independent head.
-                        // An empty batch means the active has served everything it has, i.e. it sits
-                        // at its own head — see `laggingTooFar` for why that arms the trigger.
-                        if (await this.laggingTooFar(active, lastNumber, batch.blocks.length === 0)) {
+                        // An empty batch on the unfinalized stream means the active has served
+                        // everything it has, i.e. it sits at its own head — see `laggingTooFar`. Not
+                        // on the finalized stream: there the reference heads are unfinalized, so a
+                        // source idle at the finalized head always looks behind them.
+                        let atSourceHead = !finalized && batch.blocks.length === 0
+                        if (await this.laggingTooFar(active, lastNumber, atSourceHead)) {
                             this.failSource(
                                 active,
                                 freshnessFailure('stream', 'lag', `fell behind the chain head by more than ${this.policy.maxLagBlocks} blocks`),
@@ -230,8 +233,13 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         // head-polls are disabled — switch-up must not depend on that machinery.
                         if (this.policy.preferPrimary === 'eager') {
                             await this.probeHigherPreference(active)
-                            let up = this.selector.pickSwitchUp(active)
-                            if (up != null && !this.isBehind(up, lastNumber)) break
+                            let up = this.pickSwitchUpTarget(active, lastNumber)
+                            if (up != null) {
+                                // Steer the re-selection past higher-preference sources that are
+                                // behind (or unproven); the next delivered batch clears the set.
+                                for (let i = 0; i < up; i++) exhausted.add(i)
+                                break
+                            }
                         }
                     }
                 } finally {
@@ -470,12 +478,21 @@ export class FallbackDataSource<B> implements DataSource<B> {
         return head != null && head < lastNumber
     }
 
+    /** The most-preferred `healthy` source above `active` that is not behind the frontier. */
+    private pickSwitchUpTarget(active: number, lastNumber: number): number | undefined {
+        for (let i = 0; i < active; i++) {
+            if (this.health[i].state === 'healthy' && !this.isBehind(i, lastNumber)) return i
+        }
+        return undefined
+    }
+
     /**
      * Boundary-evaluated lag trigger, armed once the tip is first reached. `atSourceHead` (the active
-     * just delivered an empty batch, having nothing more to serve) also arms it: a source that stops
-     * at its own head far below the chain tip, such as a Portal dataset without real-time data, never
-     * gets within `maxLagBlocks` of the reference, and its empty polls keep resetting the staleness
-     * clock, so without this neither trigger would ever move the stream to a fresher source.
+     * just delivered an empty batch, having nothing more to serve) also enables it for this decision
+     * only: a source that stops at its own head far below the chain tip, such as a Portal dataset
+     * without real-time data, never gets within `maxLagBlocks` of the reference, and its empty polls
+     * keep resetting the staleness clock, so without this neither trigger would ever move the stream
+     * to a fresher source. It is not latched, so the next source can still backfill undisturbed.
      */
     private async laggingTooFar(active: number, lastNumber: number, atSourceHead = false): Promise<boolean> {
         if (this.policy.maxLagBlocks == null) return false
@@ -494,9 +511,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // (stale/lagging) — arming on that would let a later-recovering source's head trip a spurious
         // failover while we are still backfilling.
         if (lag >= 0 && lag <= this.policy.maxLagBlocks) this.#lagArmed = true // arm at tip (latched)
-        if (atSourceHead) this.#lagArmed = true // the active has nothing more to serve (latched)
 
-        if (this.#lagArmed && lag > this.policy.maxLagBlocks) {
+        if ((this.#lagArmed || atSourceHead) && lag > this.policy.maxLagBlocks) {
             // A fresher alternative exists by construction (others > lastNumber + maxLagBlocks).
             this.chainStalled = false
             return true
