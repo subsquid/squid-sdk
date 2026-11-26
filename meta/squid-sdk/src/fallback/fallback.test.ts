@@ -29,7 +29,7 @@ class MockSource implements DataSource<TestBlock> {
 
     constructor(
         private onStream: StreamFn,
-        private opts: {head?: () => Promise<BlockRef>; blocksCount?: number} = {},
+        private opts: {head?: () => Promise<BlockRef>; finalizedHead?: () => Promise<BlockRef>; blocksCount?: number} = {},
     ) {}
 
     getStream(req: StreamRequest): BlockStream<TestBlock> {
@@ -45,6 +45,7 @@ class MockSource implements DataSource<TestBlock> {
         throw new Error('head unavailable')
     }
     async getFinalizedHead(): Promise<BlockRef> {
+        if (this.opts.finalizedHead) return this.opts.finalizedHead()
         return this.getHead()
     }
     getBlocksCountInRange(): number {
@@ -851,16 +852,68 @@ describe('FallbackDataSource — a primary that stops at its own head: edge case
     it('does not fail over a finalized stream idle at the finalized head', async () => {
         // Every source's latest head (1000) is ahead of the finalized head (936). An empty batch at
         // the finalized head must not count as lagging against those unfinalized heads.
+        let heads = {
+            head: async () => ({number: 1000, hash: '0x'}),
+            finalizedHead: async () => ({number: 936, hash: '0x'}),
+        }
         let s0 = new MockSource(async function* () {
             yield batch([blk(936)])
             for (let i = 0; i < 5; i++) yield batch([])
-        })
-        let s1 = new MockSource(async function* () {}, {head: async () => ({number: 1000, hash: '0x'})})
+        }, heads)
+        let s1 = new MockSource(async function* () {}, heads)
         let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
 
         expect(numbers(await collect(fb.getFinalizedStream({from: 936})))).toEqual([936])
         expect(fb.activeIndex).toBe(0)
         expect(s1.calls).toHaveLength(0)
+    })
+
+    it('fails a finalized stream over when the idle primary is behind the others\' finalized heads', async () => {
+        // The finalized-stream variant of the parked primary: s0 stops at finalized block 2, s1 is
+        // finalized up to 100_000. Compared against finalized heads, s0 is lagging.
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(1)])
+                yield batch([blk(2)])
+                for (let i = 0; i < 20; i++) yield batch([])
+            },
+            {head: async () => ({number: 2, hash: '0x'}), finalizedHead: async () => ({number: 2, hash: '0x'})},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                expect(req.from).toBe(3)
+                yield batch([blk(3)])
+            },
+            {head: async () => ({number: 100_100, hash: '0x'}), finalizedHead: async () => ({number: 100_000, hash: '0x'})},
+        )
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        expect(numbers(await collect(fb.getFinalizedStream({from: 1, to: 3})))).toEqual([1, 2, 3])
+        expect(fb.activeIndex).toBe(1)
+    })
+
+    it('does not ask the active source for its head once the lag trigger is armed', async () => {
+        // At the tip the trigger is armed already, so an empty batch cannot change the outcome.
+        let headCalls = 0
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(1)])
+                for (let i = 0; i < 20; i++) yield batch([])
+                yield batch([blk(2)])
+            },
+            {
+                head: async () => {
+                    headCalls++
+                    return {number: 2, hash: '0x'}
+                },
+            },
+        )
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: 2, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        expect(numbers(await collect(fb.getStream({from: 1, to: 2})))).toEqual([1, 2])
+        expect(fb.activeIndex).toBe(0)
+        expect(headCalls).toBe(0)
     })
 
     it('lets the next source backfill after leaving an idle one (the idle signal is not latched)', async () => {
@@ -934,6 +987,42 @@ describe('FallbackDataSource — a primary that stops at its own head: edge case
 
         expect(numbers(await collect(fb.getStream({from: 1, to: 2})))).toEqual([1, 2])
         expect(headCalls).toBe(0)
+    })
+
+    it('reclaims a recovered primary that trails the frontier by less than maxLagBlocks', async () => {
+        // A real-time primary whose polled head is one block behind the active source must still be
+        // reclaimed: the lag trigger would not fail it over at that distance either.
+        let s0 = new MockSource(
+            async function* (req, call) {
+                if (call === 0) throw new Error('s0 down')
+                expect(req.from).toBe(2)
+                yield batch([blk(2)])
+                yield batch([blk(3)])
+            },
+            {head: async () => ({number: 0, hash: '0x'})}, // frontier is 1 when it is polled
+        )
+        let s1 = new MockSource(async function* () {
+            yield batch([blk(1)])
+            yield batch([blk(2, '0x2-s1')])
+            yield batch([blk(3, '0x3-s1')])
+        })
+        let now = 0
+        let fb = fallback([s0, s1], {
+            maxLagBlocks: 10,
+            maxStalenessMs: null,
+            headTtlMs: 0,
+            cooldownMs: 1000,
+            clock: () => now,
+        })
+        let it = fb.getStream({from: 1, to: 3})[Symbol.asyncIterator]()
+        let hashes = (await it.next()).value.blocks.map((b: TestBlock) => b.header.hash) // [0x1] from s1
+
+        now = 1000
+        for (let k = 0; k < 3; k++) fb.health[0].onLivenessPass()
+
+        for (let n = await it.next(); !n.done; n = await it.next()) hashes.push(...n.value.blocks.map((b) => b.header.hash))
+        expect(hashes).toEqual(['0x1', '0x2', '0x3']) // reclaimed s0 after block 1
+        expect(s0.calls).toHaveLength(2)
     })
 
     it('switches up to a caught-up source even when a more-preferred one is behind', async () => {

@@ -74,7 +74,16 @@ export class FallbackDataSource<B> implements DataSource<B> {
     chainStalled = false
 
     #lagArmed = false
-    #headCache: ({value: number | undefined; at: number} | undefined)[] = []
+    /**
+     * Whether the current stream is the finalized one. Head references (lag, staleness, switch-up,
+     * idle checks) follow the stream: a finalized stream is measured against finalized heads, since
+     * the blocks above them are not deliverable there no matter which source is active.
+     */
+    #finalized = false
+    #headCaches: Record<'head' | 'finalized', ({value: number | undefined; at: number} | undefined)[]> = {
+        head: [],
+        finalized: [],
+    }
     /** Guards against firing a second capability probe for a source while one is still in flight. */
     #capabilityProbing: boolean[] = []
     /** Last source we drove, retained across an all-down gap so switch-counting stays correct. */
@@ -141,6 +150,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * source cool down while the next one is still failing, and the sweep restarts from index 0
      * forever: `[hung A, hung B, healthy C]` never reaches C. Once no unexhausted candidate is left,
      * the sweep starts over with every recovered source.
+     *
+     * Eager switch-up also uses `exhausted` to steer the re-selection: it adds every source more
+     * preferred than its target (behind the frontier, or not yet proven), so the sweep lands on the
+     * target. The next delivered batch clears the set either way.
      */
     private async *selectActive(exhausted: Set<number>): AsyncGenerator<number> {
         let allDownSince: number | undefined
@@ -167,6 +180,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // Re-arm the lag trigger per stream: a reused instance starting a later (far-behind-head)
         // backfill must not inherit "reached the tip" from a previous run and false-fire on lag.
         this.#lagArmed = false
+        this.#finalized = finalized
         this.#lastCommitted = lastNumber
 
         let exhausted = new Set<number>()
@@ -213,13 +227,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         }
 
                         // Lag-based freshness: the active fell too far behind the independent head.
-                        // An empty batch on the unfinalized stream means the active has served
-                        // everything it has, i.e. it sits at its own head — see `laggingTooFar`. Not
-                        // on the finalized stream: there the reference heads are unfinalized, so a
-                        // source idle at the finalized head always looks behind them.
+                        // An empty batch whose source confirms it has nothing above the frontier
+                        // means the active sits at its own head — see `laggingTooFar`. Skipped when
+                        // the trigger is disabled or already armed, where it cannot change the outcome.
                         let atSourceHead =
                             this.policy.maxLagBlocks != null &&
-                            !finalized &&
+                            !this.#lagArmed &&
                             batch.blocks.length === 0 &&
                             (await this.isAtOwnHead(active, lastNumber))
                         if (await this.laggingTooFar(active, lastNumber, atSourceHead)) {
@@ -370,14 +383,20 @@ export class FallbackDataSource<B> implements DataSource<B> {
         return vals.length ? Math.max(...vals) : undefined
     }
 
+    /** The head cache of the current stream's kind (latest or finalized heads). */
+    private get headCache(): ({value: number | undefined; at: number} | undefined)[] {
+        return this.#headCaches[this.#finalized ? 'finalized' : 'head']
+    }
+
     private async getCachedHead(i: number): Promise<number | undefined> {
         let now = this.policy.clock()
-        let cached = this.#headCache[i]
+        let cache = this.headCache
+        let cached = cache[i]
         if (cached && now - cached.at < this.policy.headTtlMs) return cached.value
 
         try {
             let head = await this.headWithTimeout(i)
-            this.#headCache[i] = {value: head.number, at: now}
+            cache[i] = {value: head.number, at: now}
             // The head fetch doubles as the liveness probe: a fresh head is proof the source
             // is reachable, so it counts toward the `M` passes that promote a standby to `healthy`
             // — without which it could never be eligible for eager switch-up. A reachable source
@@ -386,7 +405,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
             this.#maybeProbeCapability(i)
             return head.number
         } catch (e) {
-            this.#headCache[i] = {value: undefined, at: now}
+            cache[i] = {value: undefined, at: now}
             this.failSource(i, classifyError('liveness', e))
             return undefined
         }
@@ -401,7 +420,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
     private headWithTimeout(i: number): Promise<BlockRef> {
         let timeoutMs = this.policy.headPollTimeoutMs
         return withTimeout(
-            this.sources[i].source.getHead(),
+            this.ownHead(i),
             timeoutMs,
             () => new Error(`head poll timed out after ${timeoutMs}ms`),
         )
@@ -435,13 +454,13 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * not the chain tip — so during a backfill it verifies the source can serve the configured data
      * at the depth it is about to read in bulk (archive-pruning, trace API at old blocks). It is
      * clamped to `head - capabilityTipMargin` so a caught-up source probes a recent-but-settled
-     * block rather than the reorg-prone tip; `head` is the value just polled into `#headCache[i]`.
+     * block rather than the reorg-prone tip; `head` is the value just polled into `headCache[i]`.
      */
     #maybeProbeCapability(i: number): void {
         let probe = this.sources[i].probeCapability
         if (!probe || this.health[i].capabilityConfirmed || this.#capabilityProbing[i]) return
 
-        let head = this.#headCache[i]?.value
+        let head = this.headCache[i]?.value
         if (head == null) return // need a head to clamp off the tip; skip until one is known
 
         let target = Math.max(
@@ -471,15 +490,22 @@ export class FallbackDataSource<B> implements DataSource<B> {
             })
     }
 
+    /** Source `i`'s head of the current stream's kind: finalized for the finalized stream. */
+    private ownHead(i: number): Promise<BlockRef> {
+        let source = this.sources[i].source
+        return this.#finalized ? source.getFinalizedHead() : source.getHead()
+    }
+
     /**
-     * A switch-up candidate whose last polled head is below the committed frontier cannot serve the
-     * next block: switching to it would park the stream on a source that has nothing to deliver
-     * (e.g. a Portal dataset that does not follow the chain head), until the lag trigger moves it
-     * off again. An unknown head does not block the switch.
+     * A switch-up candidate whose last polled head is more than `maxLagBlocks` below the committed
+     * frontier would park the stream on a source with nothing to deliver (e.g. a Portal dataset that
+     * does not follow the chain head) until the lag trigger moves it off again. Within that distance
+     * the lag trigger would leave it alone too, so a real-time source that trails the active one by a
+     * block or two is still reclaimed. An unknown head does not block the switch.
      */
     private isBehind(i: number, lastNumber: number): boolean {
-        let head = this.#headCache[i]?.value
-        return head != null && head < lastNumber
+        let head = this.headCache[i]?.value
+        return head != null && head + (this.policy.maxLagBlocks ?? 0) < lastNumber
     }
 
     /**
@@ -491,7 +517,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         try {
             let timeoutMs = this.policy.activeHeadTimeoutMs
             let head = await withTimeout(
-                this.sources[active].source.getHead(),
+                this.ownHead(active),
                 timeoutMs,
                 () => new Error(`head request timed out after ${timeoutMs}ms`),
             )

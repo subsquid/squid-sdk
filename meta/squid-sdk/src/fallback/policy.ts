@@ -22,8 +22,13 @@ export interface FallbackPolicy {
     livenessRecoverThreshold?: number
     /**
      * Fail the active source over when it falls more than this many blocks behind an
-     * *independent* chain-head reference (the max head of the other eligible sources). Armed
-     * only once the tip is first reached, so a long historical backfill never false-fires.
+     * *independent* chain-head reference (the max head of the other eligible sources; their
+     * finalized heads on a finalized stream). Armed once the tip is first reached, so a long
+     * historical backfill never false-fires. It also applies at a batch boundary where the active
+     * source has nothing more to serve (an empty batch, confirmed by its own head), so a source
+     * that stops at its own head far below the tip, such as a Portal dataset without real-time
+     * data, still fails over. The same distance is the tolerance for eager switch-up: a candidate
+     * whose head trails the committed frontier by more than this is not reclaimed.
      * `10` by default; `null` disables the lag trigger.
      */
     maxLagBlocks?: number | null
