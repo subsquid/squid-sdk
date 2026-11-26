@@ -80,6 +80,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * the blocks above them are not deliverable there no matter which source is active.
      */
     #finalized = false
+    /** On a finalized stream: when the lag was first seen above `maxLagBlocks` (grace period). */
+    #lagExceededSince: number | undefined
     #headCaches: Record<'head' | 'finalized', ({value: number | undefined; at: number} | undefined)[]> = {
         head: [],
         finalized: [],
@@ -181,6 +183,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // backfill must not inherit "reached the tip" from a previous run and false-fire on lag.
         this.#lagArmed = false
         this.#finalized = finalized
+        this.#lagExceededSince = undefined
         this.#lastCommitted = lastNumber
 
         let exhausted = new Set<number>()
@@ -286,7 +289,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
     private async delegateHead(get: (s: DataSource<B>) => Promise<BlockRef>): Promise<BlockRef> {
         let exhausted = new Set<number>()
-        for await (let active of this.selectActive(exhausted)) {
+        for await (let active of this.headCandidates(exhausted)) {
             try {
                 // Time-boxed by `activeHeadTimeoutMs`, not the standby `headPollTimeoutMs`: the active
                 // source's head request queues behind its own batch requests, so the tight standby
@@ -312,6 +315,22 @@ export class FallbackDataSource<B> implements DataSource<B> {
             }
         }
         throw new AllSourcesDownError() // unreachable: selectActive throws on the all-down timeout
+    }
+
+    /**
+     * The order in which head delegation asks the sources: the source the stream is driving first,
+     * while it is not `unhealthy`, then the usual failover order. The processor derives its chain
+     * height (`isHead`, the chain-height metric) from this head, so it has to describe the chain the
+     * stream is actually reading. After a failover away from a source parked at its own head, that
+     * source becomes eligible again once its cooldown ends; asking it would report its stale head
+     * while the stream is far below the real tip.
+     */
+    private async *headCandidates(exhausted: Set<number>): AsyncGenerator<number> {
+        let streaming = this.activeIndex
+        if (streaming != null && this.health[streaming].state !== 'unhealthy') {
+            yield streaming // reached again only if that request failed: fall back to the failover order
+        }
+        yield* this.selectActive(exhausted)
     }
 
     /**
@@ -571,10 +590,19 @@ export class FallbackDataSource<B> implements DataSource<B> {
         if (lag >= 0 && lag <= this.policy.maxLagBlocks) this.#lagArmed = true // arm at tip (latched)
 
         if ((this.#lagArmed || atSourceHead) && lag > this.policy.maxLagBlocks) {
+            // On a finalized stream, a finality step another source reported first clears within
+            // seconds; only a lag that outlasts the grace period means the active source is stuck.
+            if (this.#finalized && this.policy.finalizedLagGraceMs > 0) {
+                let now = this.policy.clock()
+                this.#lagExceededSince ??= now
+                if (now - this.#lagExceededSince < this.policy.finalizedLagGraceMs) return false
+            }
             // A fresher alternative exists by construction (others > lastNumber + maxLagBlocks).
+            this.#lagExceededSince = undefined
             this.chainStalled = false
             return true
         }
+        this.#lagExceededSince = undefined
 
         return false
     }
@@ -657,6 +685,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         }
         this.#lastActive = i
         this.activeIndex = i
+        this.#lagExceededSince = undefined
     }
 
     /** No source is eligible (all unhealthy): nothing is being driven, so report no active source. */

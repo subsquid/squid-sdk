@@ -29,9 +29,23 @@ export interface FallbackPolicy {
      * that stops at its own head far below the tip, such as a Portal dataset without real-time
      * data, still fails over. The same distance is the tolerance for eager switch-up: a candidate
      * whose head trails the committed frontier by more than this is not reclaimed.
-     * `10` by default; `null` disables the lag trigger.
+     * `10` by default; `null` disables the lag trigger, including the idle-head failover, and
+     * makes the switch-up tolerance 0 (a candidate must have reached the committed frontier).
+     *
+     * Known limits: the idle-head check needs an empty batch, so when the active source's head sits
+     * inside a gap between the configured query ranges (no batch is yielded while the gap drains),
+     * only the staleness trigger moves the stream, after `maxStalenessMs`. It also needs a reference
+     * head, so a standby whose head polls keep exceeding `headPollTimeoutMs` cannot supply one.
      */
     maxLagBlocks?: number | null
+    /**
+     * On a finalized stream, how long the lag has to stay above `maxLagBlocks` before the active
+     * source is failed over. Finality advances in steps (32-block epochs on Ethereum), and another
+     * source may report a step a few seconds before the active one delivers it; a source parked
+     * at its own finalized head stays behind. `60_000` ms by default; `0` fails over at once.
+     * Unfinalized streams fail over at once.
+     */
+    finalizedLagGraceMs?: number
     /**
      * Fail the active source over when its next-batch request stays outstanding this long (the
      * source-pending clock — excludes time parked at `yield` awaiting the consumer). `180_000`
@@ -47,7 +61,9 @@ export interface FallbackPolicy {
      * path (lag check, staleness hold, switch-up), an unbounded one lets a *sick standby* — TCP up
      * but not responding — stall an otherwise-healthy active source. A poll exceeding this counts as
      * a liveness failure for that source and returns no head. `500` ms by default; `null` disables
-     * the guard and relies on the underlying client's own request timeout.
+     * the guard and relies on the underlying client's own request timeout. The lag reference comes
+     * from these polls, so raise it for a standby whose first request on a cold connection is
+     * slower than that (public RPC endpoints often take 0.5 to 1 s).
      */
     headPollTimeoutMs?: number | null
     /**
@@ -85,6 +101,7 @@ export interface ResolvedPolicy {
     livenessFailThreshold: number
     livenessRecoverThreshold: number
     maxLagBlocks: number | null
+    finalizedLagGraceMs: number
     maxStalenessMs: number | null
     freshnessTickMs: number
     headTtlMs: number
@@ -103,6 +120,7 @@ export const DEFAULT_POLICY: ResolvedPolicy = {
     livenessFailThreshold: 2,
     livenessRecoverThreshold: 3,
     maxLagBlocks: 10,
+    finalizedLagGraceMs: 60_000,
     maxStalenessMs: 180_000,
     freshnessTickMs: 1000,
     headTtlMs: 5000,
@@ -126,6 +144,7 @@ export function resolvePolicy(p?: FallbackPolicy): ResolvedPolicy {
         livenessFailThreshold: p?.livenessFailThreshold ?? DEFAULT_POLICY.livenessFailThreshold,
         livenessRecoverThreshold: p?.livenessRecoverThreshold ?? DEFAULT_POLICY.livenessRecoverThreshold,
         maxLagBlocks: orDefault(p?.maxLagBlocks, DEFAULT_POLICY.maxLagBlocks),
+        finalizedLagGraceMs: p?.finalizedLagGraceMs ?? DEFAULT_POLICY.finalizedLagGraceMs,
         maxStalenessMs: orDefault(p?.maxStalenessMs, DEFAULT_POLICY.maxStalenessMs),
         freshnessTickMs: p?.freshnessTickMs ?? DEFAULT_POLICY.freshnessTickMs,
         headTtlMs: p?.headTtlMs ?? DEFAULT_POLICY.headTtlMs,

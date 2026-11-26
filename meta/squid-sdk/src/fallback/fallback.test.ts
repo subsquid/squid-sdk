@@ -886,10 +886,103 @@ describe('FallbackDataSource — a primary that stops at its own head: edge case
             },
             {head: async () => ({number: 100_100, hash: '0x'}), finalizedHead: async () => ({number: 100_000, hash: '0x'})},
         )
-        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+        let fb = fallback([s0, s1], {
+            maxLagBlocks: 10,
+            maxStalenessMs: null,
+            headTtlMs: 0,
+            cooldownMs: 60_000,
+            finalizedLagGraceMs: 0,
+        })
 
         expect(numbers(await collect(fb.getFinalizedStream({from: 1, to: 3})))).toEqual([1, 2, 3])
         expect(fb.activeIndex).toBe(1)
+    })
+
+    it('fails a parked finalized stream over only once the lag outlasts finalizedLagGraceMs', async () => {
+        let now = 0
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(1)])
+                for (let i = 0; i < 20; i++) {
+                    now += 10_000 // each empty long-poll takes 10 s
+                    yield batch([])
+                }
+            },
+            {head: async () => ({number: 1, hash: '0x'}), finalizedHead: async () => ({number: 1, hash: '0x'})},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                expect(req.from).toBe(2)
+                expect(now).toBeGreaterThanOrEqual(60_000)
+                yield batch([blk(2)])
+            },
+            {head: async () => ({number: 1000, hash: '0x'}), finalizedHead: async () => ({number: 900, hash: '0x'})},
+        )
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 1e9, clock: () => now})
+
+        expect(numbers(await collect(fb.getFinalizedStream({from: 1, to: 2})))).toEqual([1, 2])
+        expect(fb.activeIndex).toBe(1)
+    })
+
+    it('keeps a finalized primary through a finality step another source reported first', async () => {
+        // Finality advances by 32 blocks; the standby reports the step one poll before the primary
+        // delivers it. That is not a stuck primary, so it must keep serving.
+        let standbyFinalized = 100
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(100)]) // at the finalized tip: the lag trigger arms
+                standbyFinalized = 132 // the standby sees the next epoch first
+                yield batch([])
+                yield batch([blk(132)])
+            },
+            {head: async () => ({number: 140, hash: '0x'}), finalizedHead: async () => ({number: 100, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {}, {
+            head: async () => ({number: 140, hash: '0x'}),
+            finalizedHead: async () => ({number: standbyFinalized, hash: '0x'}),
+        })
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        expect(numbers(await collect(fb.getFinalizedStream({from: 100, to: 132})))).toEqual([100, 132])
+        expect(fb.activeIndex).toBe(0)
+        expect(s1.calls).toHaveLength(0)
+    })
+
+    it('reports the head of the source the stream is driving, not of a recovered parked primary', async () => {
+        // s0 is parked at 100 and fails over to s1 (head 30_000). Once s0's cooldown ends it is
+        // eligible again, but its head would make the processor think it is at the tip.
+        let now = 0
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(100)])
+                for (let i = 0; i < 5; i++) yield batch([])
+            },
+            {head: async () => ({number: 100, hash: '0x'})},
+        )
+        let s1 = new MockSource(
+            async function* () {
+                yield batch([blk(101)])
+                yield batch([blk(102)])
+            },
+            {head: async () => ({number: 30_000, hash: '0x'})},
+        )
+        let fb = fallback([s0, s1], {
+            maxLagBlocks: 10,
+            maxStalenessMs: null,
+            headTtlMs: 0,
+            cooldownMs: 1000,
+            preferPrimary: 'onFailureOnly',
+            clock: () => now,
+        })
+        let it = fb.getStream({from: 100, to: 102})[Symbol.asyncIterator]()
+        expect(numbers((await it.next()).value.blocks)).toEqual([100])
+        expect(numbers((await it.next()).value.blocks)).toEqual([]) // s0 idle: failed over after this
+        expect(numbers((await it.next()).value.blocks)).toEqual([101]) // from s1
+        expect(fb.activeIndex).toBe(1)
+
+        now = 1000 // s0's cooldown is over: eligible again
+        expect(fb.health[0].state).not.toBe('unhealthy')
+        expect((await fb.getHead()).number).toBe(30_000)
     })
 
     it('does not ask the active source for its head once the lag trigger is armed', async () => {
