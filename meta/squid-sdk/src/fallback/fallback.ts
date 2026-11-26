@@ -228,12 +228,15 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
                         // Lag-based freshness: the active fell too far behind the independent head.
                         // An empty batch whose source confirms it has nothing above the frontier
-                        // means the active sits at its own head — see `laggingTooFar`. Skipped when
-                        // the trigger is disabled or already armed, where it cannot change the outcome.
+                        // means the active sits at its own head — see `laggingTooFar`. The active's
+                        // head is only asked when the answer can change the outcome: the trigger is
+                        // enabled and not armed yet, and another source is more than `maxLagBlocks`
+                        // ahead (never the case with a single source).
                         let atSourceHead =
                             this.policy.maxLagBlocks != null &&
                             !this.#lagArmed &&
                             batch.blocks.length === 0 &&
+                            (await this.fresherSourceAhead(active, lastNumber)) &&
                             (await this.isAtOwnHead(active, lastNumber))
                         if (await this.laggingTooFar(active, lastNumber, atSourceHead)) {
                             this.failSource(
@@ -525,6 +528,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
         } catch {
             return false
         }
+    }
+
+    /** Whether another eligible source is more than `maxLagBlocks` ahead of the frontier. */
+    private async fresherSourceAhead(active: number, lastNumber: number): Promise<boolean> {
+        let others = await this.chainHeadOthers(active)
+        return others != null && others - lastNumber > (this.policy.maxLagBlocks ?? 0)
     }
 
     /** The most-preferred `healthy` source above `active` that is not behind the frontier. */

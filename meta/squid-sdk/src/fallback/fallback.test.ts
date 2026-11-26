@@ -989,6 +989,29 @@ describe('FallbackDataSource — a primary that stops at its own head: edge case
         expect(headCalls).toBe(0)
     })
 
+    it('does not ask the only source for its head: there is nothing to fail over to', async () => {
+        // A single source never has an independent reference, so idleness cannot matter. A hung
+        // head request must not hold up the blocks that follow the empty batch.
+        let headCalls = 0
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(1)])
+                yield batch([])
+                yield batch([blk(2)])
+            },
+            {
+                head: () => {
+                    headCalls++
+                    return new Promise<BlockRef>(() => {}) // hangs
+                },
+            },
+        )
+        let fb = fallback([s0], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, activeHeadTimeoutMs: null})
+
+        expect(numbers(await collect(fb.getStream({from: 1, to: 2})))).toEqual([1, 2])
+        expect(headCalls).toBe(0)
+    }, 2000)
+
     it('reclaims a recovered primary that trails the frontier by less than maxLagBlocks', async () => {
         // A real-time primary whose polled head is one block behind the active source must still be
         // reclaimed: the lag trigger would not fail it over at that distance either.
