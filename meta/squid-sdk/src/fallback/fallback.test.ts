@@ -1405,6 +1405,31 @@ describe('FallbackDataSource — served vs claimed heights', () => {
         expect(s1.calls).toHaveLength(0)
     })
 
+    it('requests the active claim once per boundary when it is not cached', async () => {
+        let activeCalls = 0
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(90)])
+                yield batch([blk(91)])
+                yield batch([blk(92)])
+            },
+            {
+                head: async () => {
+                    activeCalls++
+                    return {number: 91, hash: '0x'}
+                },
+            },
+        )
+        // Arms at 95 (delivery lag 5), then shows a real deficit (110 vs the active claim 91).
+        let s1heads = [95, 110]
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: s1heads.shift() ?? 110, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        await collect(fb.getStream({from: 90, to: 92}))
+        expect(fb.activeIndex).toBe(1)
+        expect(activeCalls).toBe(1) // one boundary needed the claim, and asked once
+    })
+
     it('records the served height when a batch is delivered, before the consumer asks for more', async () => {
         let s0 = new MockSource(async function* () {
             yield batch([blk(90)])

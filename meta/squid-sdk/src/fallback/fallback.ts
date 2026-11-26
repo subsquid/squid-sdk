@@ -534,11 +534,16 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * its liveness signal. `fresh` skips the cache, for the idle check, where a claim polled a few
      * seconds ago can predate the blocks just delivered.
      */
-    private async activeClaim(active: number, fresh: boolean): Promise<number | undefined> {
+    private async activeClaim(
+        active: number,
+        fresh: boolean,
+    ): Promise<{height: number | undefined; cached: boolean}> {
         let kind = this.heightKind
         let now = this.policy.clock()
         let cached = this.#heights[active].claimed[kind]
-        if (!fresh && cached?.height != null && now - cached.at < this.policy.headTtlMs) return cached.height
+        if (!fresh && cached?.height != null && now - cached.at < this.policy.headTtlMs) {
+            return {height: cached.height, cached: true}
+        }
         try {
             let timeoutMs = this.policy.activeHeadTimeoutMs
             let head = await withTimeout(
@@ -547,9 +552,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
                 () => new Error(`head request timed out after ${timeoutMs}ms`),
             )
             this.#heights[active].claimed[kind] = {height: head.number, at: now}
-            return head.number
+            return {height: head.number, cached: false}
         } catch {
-            return undefined
+            return {height: undefined, cached: false}
         }
     }
 
@@ -687,12 +692,14 @@ export class FallbackDataSource<B> implements DataSource<B> {
             return false
         }
 
-        let activeClaimed = await this.activeClaim(active, emptyBatch)
+        let claim = await this.activeClaim(active, emptyBatch)
         // Claims expire independently: a freshly polled standby claim compared with an older cached
-        // active claim can show a deficit that is only the age difference. Refresh before acting.
-        if (activeClaimed != null && !emptyBatch && others - activeClaimed > maxLag) {
-            activeClaimed = await this.activeClaim(active, true)
+        // active claim can show a deficit that is only the age difference. Refresh a cached value
+        // before acting on it (a value that was just requested needs no second request).
+        if (claim.cached && claim.height != null && others - claim.height > maxLag) {
+            claim = await this.activeClaim(active, true)
         }
+        let activeClaimed = claim.height
         if (activeClaimed == null) return false // not known: decide nothing, keep the grace timer
         // Served vs claimed of the *same* source: idle means it has served all it claims.
         let idle = emptyBatch && activeClaimed <= frontier
