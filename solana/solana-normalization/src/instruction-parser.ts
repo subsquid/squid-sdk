@@ -87,17 +87,17 @@ export class MessageStream {
     }
 
     private detectFormat(lines: string[]): LogFormat | 'unknown' {
-        let legacy = false
+        let v13 = false
         let modern = false
         for (let msg of this.messages) {
             if (isV13Message(msg)) {
-                legacy = true
+                v13 = true
             } else if (isModernStructuralMessage(msg)) {
                 modern = true
             }
         }
 
-        if (!legacy) return modern ? 'modern' : 'unknown'
+        if (!v13) return modern ? 'modern' : 'unknown'
 
         if (modern) {
             // Formats are never mixed within a transaction.
