@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "comment": "fallback: fail over from a source that stops at its own head far behind the chain tip (e.g. a Portal dataset without real-time data) once a fresher source is more than `maxLagBlocks` ahead, on both the unfinalized and the finalized stream (the latter against the other sources' finalized heads, after a new `finalizedLagGraceMs` grace period, 60 s by default); eager switch-up skips a source whose head trails the committed frontier by more than `maxLagBlocks`; `getHead()`/`getFinalizedHead()` ask the source the stream is driving first",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/squid-sdk"
+}
