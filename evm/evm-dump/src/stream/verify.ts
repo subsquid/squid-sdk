@@ -261,6 +261,8 @@ function findShapeDefect(block: RawBlock, selection: Selection, utils: ChainUtil
     }
 
     let isGenesis = Number(block.number) == 0
+    // Hashed once per block: only Bor's state-sync transaction may lack its traces
+    let stateSyncTxHash = utils.getStateSyncTxHash(block)
 
     let receiptValidator = selection.receipts && Receipt
     let frameValidator = selection.debugFrames && DebugFrameResult
@@ -270,7 +272,8 @@ function findShapeDefect(block: RawBlock, selection: Selection, utils: ChainUtil
     for (let tx of block.transactions) {
         if (tx == null || typeof tx != 'object') return 'transaction details are missing'
 
-        let isTraceOptional = isGenesis || utils.isStateSyncTransaction(block, tx.hash)
+        let isTraceOptional =
+            isGenesis || (stateSyncTxHash != null && tx.hash.toLowerCase() === stateSyncTxHash)
 
         // RPC drops the empty call frame some chains answer for a transaction
         let isFrameOptional = isTraceOptional || utils.allowsEmptyCallFrame(tx)

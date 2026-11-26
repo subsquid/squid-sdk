@@ -51,8 +51,17 @@ export class ChainUtils {
 
     /** Only Bor's derived state-sync transaction may be missing from debug traces. */
     isStateSyncTransaction(block: Pick<GetBlock, 'number' | 'hash'>, transactionHash: Bytes32): boolean {
-        return this.isPolygonBased &&
-            transactionHash.toLowerCase() === calculateStateSyncTxHash(block.number, block.hash).toLowerCase()
+        let stateSyncTxHash = this.getStateSyncTxHash(block)
+        return stateSyncTxHash != null && transactionHash.toLowerCase() === stateSyncTxHash
+    }
+
+    /**
+     * The lower-case hash of Bor's derived state-sync transaction of a block, undefined on other chains.
+     * For checking every transaction of a block, compute it once here rather than per transaction.
+     */
+    getStateSyncTxHash(block: Pick<GetBlock, 'number' | 'hash'>): Bytes32 | undefined {
+        if (!this.isPolygonBased) return undefined
+        return calculateStateSyncTxHash(block.number, block.hash).toLowerCase()
     }
 
     constructor(chainId: Qty, options?: ChainUtilsOptions) {
