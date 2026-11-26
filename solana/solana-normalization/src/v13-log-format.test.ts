@@ -2,7 +2,7 @@ import type * as rpc from '@subsquid/solana-rpc-data'
 import {describe, expect, it} from 'vitest'
 import {Block, Instruction, LogMessage} from './data'
 import {MessageStream} from './instruction-parser'
-import {Journal, mapRpcBlock} from './mapping'
+import {getBlockLogFormat, Journal, mapRpcBlock, MapRpcBlockOptions} from './mapping'
 
 
 const SYSTEM = '11111111111111111111111111111111'
@@ -82,6 +82,11 @@ interface Journaled {
 
 
 function map(...txs: TxSpec[]): Journaled {
+    return mapWith({}, ...txs)
+}
+
+
+function mapWith(options: MapRpcBlockOptions, ...txs: TxSpec[]): Journaled {
     let warnings: string[] = []
     let errors: string[] = []
     let journal: Journal = {
@@ -100,7 +105,7 @@ function map(...txs: TxSpec[]): Journaled {
         previousBlockhash: 'parent',
         transactions: txs.map(tx)
     }
-    let block = mapRpcBlock(1, src, journal)
+    let block = mapRpcBlock(1, src, journal, options)
     return {block, warnings, errors}
 }
 
@@ -142,11 +147,11 @@ const NESTED_CPI_LOGS = [
 ]
 
 
-describe('legacy (v1.3) log format', () => {
+describe('v1.3 log format', () => {
     it('detects the format and restores stack heights from bracket depth', () => {
         let stream = new MessageStream(NESTED_CPI_LOGS)
-        expect(stream.format).toBe('legacy')
-        expect(stream.legacyFormat).toBe(true)
+        expect(stream.format).toBe('v1.3')
+        expect(stream.nativeProgramsAreSilent).toBe(true)
         expect(new MessageStream([`Program ${PROG} invoke [1]`, `Program ${PROG} success`]).format).toBe('modern')
         expect(new MessageStream([]).format).toBe('unknown')
     })
@@ -304,7 +309,7 @@ describe('legacy (v1.3) log format', () => {
         expect(instructions(block, 2).map(i => i.dropped)).toEqual([false])
     })
 
-    it('transaction without log messages is not treated as legacy outside of a legacy block', () => {
+    it('transaction without log messages does not get v1.3 rules outside of a v1.3 block', () => {
         let {block, warnings} = map({
             instructions: [{program: SYSTEM}],
             logs: []
@@ -322,7 +327,8 @@ describe('legacy (v1.3) log format', () => {
                 `BPF program ${PROG} success`,
             ]
         })
-        expect(warnings).toEqual([])
+        // PROG logs its calls, so its call without a leading invoke message is reported as in the modern format
+        expect(warnings).toEqual(['missing invoke message'])
         expect(errors).toEqual(['not all log messages where consumed'])
         expect(block.transactions[0].hasDroppedLogMessages).toBe(true)
         expect(block.logs).toEqual([])
@@ -342,7 +348,7 @@ describe('legacy (v1.3) log format', () => {
         expect(block.transactions[0].hasDroppedLogMessages).toBe(true)
     })
 
-    it('block with a modern transaction does not lend legacy rules to log-less transactions', () => {
+    it('block with a modern transaction does not lend v1.3 rules to log-less transactions', () => {
         let {warnings} = map(
             {
                 instructions: [{program: PROG}],
@@ -358,6 +364,125 @@ describe('legacy (v1.3) log format', () => {
             }
         )
         expect(warnings).toEqual(['unexpected end of message log'])
+    })
+
+    it('a block without any format uses the caller\'s hint', () => {
+        // a native-only block (e.g. votes only): no structural messages anywhere
+        let spec = {instructions: [{program: SYSTEM}], logs: []}
+        let plain = map(spec)
+        expect(plain.warnings).toEqual(['unexpected end of message log'])
+        expect(instructions(plain.block).map(i => i.dropped)).toEqual([true])
+
+        let hinted = mapWith({logFormat: 'v1.3'}, spec)
+        expect(hinted.warnings).toEqual([])
+        expect(instructions(hinted.block).map(i => i.dropped)).toEqual([false])
+    })
+
+    it('the block\'s own format wins over the hint', () => {
+        let {warnings, block} = mapWith(
+            {logFormat: 'v1.3'},
+            {instructions: [{program: SYSTEM}], logs: []},
+            {
+                instructions: [{program: PROG}],
+                logs: [`Program ${PROG} invoke [1]`, `Program ${PROG} success`]
+            }
+        )
+        expect(warnings).toEqual(['unexpected end of message log'])
+        expect(instructions(block, 0).map(i => i.dropped)).toEqual([true])
+    })
+
+    it('getBlockLogFormat', () => {
+        let block = (...logs: (string[] | null)[]) => ({
+            blockHeight: 1, blockTime: 1, blockhash: 'h', parentSlot: 0, previousBlockhash: 'p',
+            transactions: logs.map((l, i) => tx({instructions: [{program: SYSTEM}], logs: l}, i))
+        }) as rpc.GetBlock
+        expect(getBlockLogFormat(block([], null))).toBeUndefined()
+        expect(getBlockLogFormat(block([], NESTED_CPI_LOGS))).toBe('v1.3')
+        expect(getBlockLogFormat(block(NESTED_CPI_LOGS, [`Program ${PROG} invoke [1]`, `Program ${PROG} success`]))).toBe('modern')
+    })
+
+    it('a program, that logs its calls in the block, is not silent where its log is missing', () => {
+        let {block, warnings} = map(
+            {instructions: [{program: PROG, inner: [TOKEN, TOKEN]}], logs: NESTED_CPI_LOGS},
+            // the same BPF program, its log lost entirely
+            {instructions: [{program: PROG}], logs: []},
+            // a native program stays silent
+            {instructions: [{program: SYSTEM}], logs: []}
+        )
+        expect(warnings).toEqual(['unexpected end of message log'])
+        expect(instructions(block, 1).map(i => i.dropped)).toEqual([true])
+        expect(instructions(block, 2).map(i => i.dropped)).toEqual([false])
+    })
+
+    it('a missing inner call of a logging program is reported', () => {
+        let {block, warnings} = map({
+            instructions: [{program: PROG, inner: [TOKEN, TOKEN]}],
+            logs: [
+                `Call BPF program ${PROG}`,
+                `Call BPF program ${TOKEN}`,
+                `BPF program ${TOKEN} success`,
+                // the second Token call is not logged
+                `BPF program ${PROG} success`,
+            ]
+        })
+        expect(warnings).toEqual(['missing invoke message for inner instruction'])
+        expect(instructions(block).map(i => i.dropped)).toEqual([false, false, true])
+    })
+
+    it('inner instructions under a call without log messages share its flag', () => {
+        // the top-level call failed before it was invoked: nothing logged, inner instructions follow it
+        let silent = map(
+            {instructions: [{program: PROG2, inner: [SYSTEM]}], logs: [], err: {InstructionError: [0, {Custom: 1}]}},
+            {instructions: [{program: PROG}], logs: [`Call BPF program ${PROG}`, `BPF program ${PROG} success`]}
+        )
+        expect(silent.warnings).toEqual([])
+        expect(instructions(silent.block, 0).map(i => i.dropped)).toEqual([false, false])
+
+        // the same with a program known to log its calls: a missing log, the inner instruction is flagged too
+        let lost = map(
+            {instructions: [{program: PROG, inner: [SYSTEM]}], logs: []},
+            {instructions: [{program: PROG}], logs: [`Call BPF program ${PROG}`, `BPF program ${PROG} success`]}
+        )
+        expect(lost.warnings).toEqual(['unexpected end of message log'])
+        expect(instructions(lost.block, 0).map(i => i.dropped)).toEqual([true, true])
+    })
+
+    it('a call without an instruction left to match falls back instead of throwing', () => {
+        let {block, errors} = map({
+            instructions: [{program: PROG}],
+            logs: [
+                `Call BPF program ${PROG}`,
+                `Call BPF program ${TOKEN}`,
+                `BPF program ${TOKEN} success`,
+                `BPF program ${PROG} success`,
+            ]
+        })
+        expect(errors).toEqual(['invoke message without a matching instruction'])
+        expect(block.transactions[0].hasDroppedLogMessages).toBe(true)
+        expect(instructions(block).map(i => i.address)).toEqual([[0]])
+    })
+
+    it('depth limitation: a native call after a nested BPF call is placed under the top-level call', () => {
+        // A (PROG) -> B (PROG2) -> [Token, System]. Old inner instructions have no stackHeight,
+        // and System never logs, so nothing places it under B: it is put at depth 2, under A.
+        let {block, warnings} = map({
+            instructions: [{program: PROG, inner: [PROG2, TOKEN, SYSTEM]}],
+            logs: [
+                `Call BPF program ${PROG}`,
+                `Call BPF program ${PROG2}`,
+                `Call BPF program ${TOKEN}`,
+                `BPF program ${TOKEN} success`,
+                `BPF program ${PROG2} success`,
+                `BPF program ${PROG} success`,
+            ]
+        })
+        expect(warnings).toEqual([])
+        expect(instructions(block).map(i => [i.program, i.address])).toEqual([
+            [PROG, [0]],
+            [PROG2, [0, 0]],
+            [TOKEN, [0, 0, 0]],
+            [SYSTEM, [0, 1]],
+        ])
     })
 })
 
@@ -437,7 +562,7 @@ describe('modern log format (regression)', () => {
         expect(instructions(block).map(i => i.dropped)).toEqual([false, true])
     })
 
-    it('legacy-looking lines in a modern log are plain messages', () => {
+    it('v1.3-looking lines in a modern log are plain messages', () => {
         let {block, warnings, errors} = map({
             instructions: [{program: PROG}],
             logs: [

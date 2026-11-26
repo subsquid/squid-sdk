@@ -3,14 +3,44 @@ import {addErrorContext, assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Balance, Block, BlockHeader, Instruction, LogMessage, Reward, TokenBalance, Transaction, TransactionConfig} from './data'
 import {InstructionTreeTraversal, MessageStream, ParsingError} from './instruction-parser'
-import {LogTruncatedMessage} from './log-parser'
+import {detectLogFormat, LogFormat, LogTruncatedMessage} from './log-parser'
 import {Journal, TransactionContext} from './transaction-context'
 
 
-export {Journal}
+export {Journal, LogFormat}
 
 
-export function mapRpcBlock(slot: number, src: rpc.GetBlock, journal: Journal): Block {
+export interface MapRpcBlockOptions {
+    /**
+     * Log format to assume, when the block itself does not show it
+     * (no transaction has a structural log message, e.g. a block of vote transactions only).
+     *
+     * The format belongs to the node that recorded the block, so a caller mapping consecutive blocks
+     * can pass the format of the last block that showed one ({@link getBlockLogFormat}).
+     * A block that shows its own format always uses it.
+     */
+    logFormat?: LogFormat
+}
+
+
+/**
+ * Log format shown by the transactions of a block: `v1.3` when some transaction has v1.3 structural messages
+ * and none has modern ones, `modern` when some has modern ones, `undefined` when there are none.
+ *
+ * Call it before removing vote transactions: in the modern format they log their calls too.
+ */
+export function getBlockLogFormat(src: rpc.GetBlock): LogFormat | undefined {
+    let v13 = false
+    for (let tx of src.transactions ?? []) {
+        let format = detectLogFormat(tx.meta.logMessages ?? [])
+        if (format === 'modern') return 'modern'
+        if (format === 'v1.3') v13 = true
+    }
+    return v13 ? 'v1.3' : undefined
+}
+
+
+export function mapRpcBlock(slot: number, src: rpc.GetBlock, journal: Journal, options?: MapRpcBlockOptions): Block {
     let header: BlockHeader = {
         hash: src.blockhash,
         height: assertNotNull(src.blockHeight, '.blockHeight is not available'),
@@ -20,7 +50,7 @@ export function mapRpcBlock(slot: number, src: rpc.GetBlock, journal: Journal): 
         timestamp: src.blockTime ?? 0
     }
 
-    let items = new ItemMapping(journal, src)
+    let items = new ItemMapping(journal, src, options?.logFormat)
 
     let rewards = src.rewards?.map(s => {
         let reward: Reward = {
@@ -61,7 +91,8 @@ class ItemMapping {
 
     constructor(
         private journal: Journal,
-        block: rpc.GetBlock
+        block: rpc.GetBlock,
+        logFormatHint?: LogFormat
     ) {
         let transactions = block.transactions ?? []
 
@@ -69,14 +100,27 @@ class ItemMapping {
 
         // Log format is a property of the node, that recorded the block.
         // Hence, a transaction without any structural log messages (e.g. one calling only native programs)
-        // inherits the old format, when the block has it.
-        if (
-            messageStreams.some(s => s.format === 'legacy') &&
-            !messageStreams.some(s => s.format === 'modern')
-        ) {
+        // inherits the v1.3 format, when the block has it, or when the caller says so for a block,
+        // that does not show any format.
+        let blockFormat: LogFormat | undefined
+        if (messageStreams.some(s => s.format === 'modern')) {
+            blockFormat = 'modern'
+        } else if (messageStreams.some(s => s.format === 'v1.3')) {
+            blockFormat = 'v1.3'
+        } else {
+            blockFormat = logFormatHint
+        }
+        if (blockFormat === 'v1.3') {
+            // A program, that logs its calls somewhere in the block, is a BPF program:
+            // a call of it without log messages is a missing log.
+            let loggingPrograms = new Set(messageStreams.flatMap(s => s.calledPrograms()))
             for (let i = 0; i < transactions.length; i++) {
-                if (messageStreams[i].format === 'unknown' && transactions[i].meta.logMessages != null) {
-                    messageStreams[i].legacyFormat = true
+                let stream = messageStreams[i]
+                if (stream.format === 'unknown' && transactions[i].meta.logMessages != null) {
+                    stream.nativeProgramsAreSilent = true
+                }
+                if (stream.nativeProgramsAreSilent) {
+                    stream.loggingPrograms = loggingPrograms
                 }
             }
         }

@@ -121,7 +121,7 @@ export class LogTruncatedMessage {
  * It does not carry a stack height, the actual value is assigned by {@link MessageStream}
  * from the bracket depth.
  */
-export class LegacyInvokeMessage {
+export class V13InvokeMessage {
     public kind = 'invoke' as const
 
     constructor(
@@ -129,9 +129,9 @@ export class LegacyInvokeMessage {
         public stackHeight: number = 0
     ) {}
 
-    static parse(msg: string): LegacyInvokeMessage | undefined {
+    static parse(msg: string): V13InvokeMessage | undefined {
         let m = /^Call BPF program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$/.exec(msg)
-        if (m) return new LegacyInvokeMessage(m[1])
+        if (m) return new V13InvokeMessage(m[1])
     }
 
     toString(): string {
@@ -145,7 +145,7 @@ export class LegacyInvokeMessage {
  *
  * Old (v1.3 runtime) counterpart of {@link InvokeResultMessage}.
  */
-export class LegacyInvokeResultMessage {
+export class V13InvokeResultMessage {
     public kind = 'invoke-result' as const
 
     constructor(
@@ -154,12 +154,12 @@ export class LegacyInvokeResultMessage {
         public error?: string
     ) {}
 
-    static parse(msg: string): LegacyInvokeResultMessage | undefined {
+    static parse(msg: string): V13InvokeResultMessage | undefined {
         let m = /^BPF program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) success$/.exec(msg)
-        if (m) return new LegacyInvokeResultMessage(m[1], true)
+        if (m) return new V13InvokeResultMessage(m[1], true)
 
         m = /^BPF program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) failed: (.*)$/.exec(msg)
-        if (m) return new LegacyInvokeResultMessage(m[1], false, m[2])
+        if (m) return new V13InvokeResultMessage(m[1], false, m[2])
     }
 
     toString(): string {
@@ -179,7 +179,7 @@ export class LegacyInvokeResultMessage {
  * The message does not name the program, it belongs to the innermost open call.
  * {@link MessageStream} fills in the `programId` (it stays undefined, when there is no open call).
  */
-export class LegacyComputeUnitsMessage {
+export class V13ComputeUnitsMessage {
     public kind = 'cu' as const
 
     constructor(
@@ -188,9 +188,9 @@ export class LegacyComputeUnitsMessage {
         public programId?: Base58Bytes
     ) {}
 
-    static parse(msg: string): LegacyComputeUnitsMessage | undefined {
+    static parse(msg: string): V13ComputeUnitsMessage | undefined {
         let m = /^BPF program consumed (\d+) of (\d+) units$/.exec(msg)
-        if (m) return new LegacyComputeUnitsMessage(BigInt(m[1]), BigInt(m[2]))
+        if (m) return new V13ComputeUnitsMessage(BigInt(m[1]), BigInt(m[2]))
     }
 
     toString(): string {
@@ -210,10 +210,10 @@ export class OtherMessage {
 }
 
 
-export type LegacyMessage =
-    LegacyInvokeMessage |
-    LegacyInvokeResultMessage |
-    LegacyComputeUnitsMessage
+export type V13Message =
+    V13InvokeMessage |
+    V13InvokeResultMessage |
+    V13ComputeUnitsMessage
 
 
 export type Message =
@@ -223,7 +223,7 @@ export type Message =
     ProgramDataMessage |
     ComputeUnitsMessage |
     LogTruncatedMessage |
-    LegacyMessage |
+    V13Message |
     OtherMessage
 
 
@@ -234,17 +234,42 @@ export function parseLogMessage(msg: string): Message {
         || ProgramDataMessage.parse(msg)
         || ComputeUnitsMessage.parse(msg)
         || LogTruncatedMessage.parse(msg)
-        || LegacyInvokeMessage.parse(msg)
-        || LegacyInvokeResultMessage.parse(msg)
-        || LegacyComputeUnitsMessage.parse(msg)
+        || V13InvokeMessage.parse(msg)
+        || V13InvokeResultMessage.parse(msg)
+        || V13ComputeUnitsMessage.parse(msg)
         || new OtherMessage(msg)
 }
 
 
-export function isLegacyMessage(msg: Message): msg is LegacyMessage {
-    return msg instanceof LegacyInvokeMessage
-        || msg instanceof LegacyInvokeResultMessage
-        || msg instanceof LegacyComputeUnitsMessage
+/**
+ * Format of the structural (invoke / result / compute units) log messages:
+ * `modern` (`Program X invoke [n]` ...) or `v1.3` (`Call BPF program X` ..., written by the v1.3 runtime).
+ */
+export type LogFormat = 'modern' | 'v1.3'
+
+
+/**
+ * The log format of one transaction log, from its structural messages alone,
+ * or `undefined` when it has none. A log with both kinds counts as `modern`, see `MessageStream`.
+ */
+export function detectLogFormat(lines: readonly string[]): LogFormat | undefined {
+    let v13 = false
+    for (let line of lines) {
+        if (InvokeMessage.parse(line) || InvokeResultMessage.parse(line) || ComputeUnitsMessage.parse(line)) {
+            return 'modern'
+        }
+        if (!v13 && (V13InvokeMessage.parse(line) || V13InvokeResultMessage.parse(line) || V13ComputeUnitsMessage.parse(line))) {
+            v13 = true
+        }
+    }
+    return v13 ? 'v1.3' : undefined
+}
+
+
+export function isV13Message(msg: Message): msg is V13Message {
+    return msg instanceof V13InvokeMessage
+        || msg instanceof V13InvokeResultMessage
+        || msg instanceof V13ComputeUnitsMessage
 }
 
 

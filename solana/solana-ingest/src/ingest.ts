@@ -1,5 +1,5 @@
 import {createLogger} from '@subsquid/logger'
-import {archive, Journal, mapRpcBlock} from '@subsquid/solana-normalization'
+import {archive, getBlockLogFormat, Journal, LogFormat, mapRpcBlock} from '@subsquid/solana-normalization'
 import {GetBlock, removeVoteTransactions} from '@subsquid/solana-rpc-data'
 import {addErrorContext, def} from '@subsquid/util-internal'
 import {Command, Ingest, IngestOptions, Range} from '@subsquid/util-internal-ingest-cli'
@@ -56,8 +56,16 @@ export class SolanaIngest extends Ingest<Options> {
             }
         }
 
+        // The log format belongs to the node that recorded the blocks, so a block that does not show one
+        // (e.g. votes only, which never log in the v1.3 format) takes the format of the last block that did.
+        let lastLogFormat: LogFormat | undefined
+
         return function mapRawBlock(raw: unknown): object {
             assertValidity(RawBlock, raw)
+
+            // before removing votes: in the modern format they log their calls too
+            let logFormat = getBlockLogFormat(raw.block) ?? lastLogFormat
+            lastLogFormat = logFormat
 
             if (!votes) {
                 removeVoteTransactions(raw.block)
@@ -68,7 +76,7 @@ export class SolanaIngest extends Ingest<Options> {
                 blockHash: raw.hash
             }) : failingJournal
 
-            let normalized = mapRpcBlock(raw.number, raw.block, journal)
+            let normalized = mapRpcBlock(raw.number, raw.block, journal, {logFormat})
 
             return archive.toArchiveBlock(normalized)
         }
