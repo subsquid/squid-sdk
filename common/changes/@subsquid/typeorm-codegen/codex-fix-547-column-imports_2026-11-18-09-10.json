@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Only import the generic Column decorator when a generated entity uses it.",
+      "type": "patch",
+      "packageName": "@subsquid/typeorm-codegen"
+    }
+  ],
+  "packageName": "@subsquid/typeorm-codegen",
+  "email": "bowenyin@tencent.com"
+}
