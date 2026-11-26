@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Support the old (v1.3 runtime) Solana log format: `Call BPF program`, `BPF program consumed N of M units`, `BPF program X success|failed`",
+      "type": "minor",
+      "packageName": "@subsquid/solana-normalization"
+    }
+  ],
+  "packageName": "@subsquid/solana-normalization",
+  "email": "abernatskiy@toha.li"
+}
