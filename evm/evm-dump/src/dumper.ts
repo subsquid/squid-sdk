@@ -142,8 +142,10 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
         program.addOption(
             new Option(
                 '--trace-replay-completeness <mode>',
-                'Check that trace_replayBlockTransactions returned a replay for every transaction; ' +
-                    'observe logs a block with missing replays and accepts it, reject marks it invalid so it is fetched again'
+                'Check that trace_replayBlockTransactions returned one replay for every transaction; ' +
+                    'reject marks a block with missing or repeated replays invalid so it is fetched again, ' +
+                    'observe only logs it. The raw format needs a replay for every transaction, so with observe ' +
+                    'or off a block with a missing one still stops the dump when it is written',
             )
                 .choices([...TRACE_REPLAY_COMPLETENESS_MODES])
                 .default('reject')

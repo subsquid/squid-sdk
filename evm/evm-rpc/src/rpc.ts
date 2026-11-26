@@ -12,7 +12,6 @@ import {
     Validator
 } from '@subsquid/util-internal-validation'
 import { addErrorContext, groupBy, last, wait } from '@subsquid/util-internal'
-import assert from 'assert'
 import {
     GetBlock,
     Receipt,
@@ -53,7 +52,6 @@ import {
     selfdestructEvents,
     systemBalanceDeltaFromPrestate,
     systemBalanceDeltaFromReplay,
-    calculateStateSyncTxHash,
 } from './verification'
 import { SELFDESTRUCT_TRACER } from './selfdestruct-tracer'
 import { RpcErrorInfo } from '@subsquid/rpc-client/lib/interfaces'
@@ -217,9 +215,9 @@ export const TRACE_REPLAY_COMPLETENESS_MODES = ['off', 'observe', 'reject'] as c
 const MISSING_TRACE_REPLAY_SAMPLE_LIMIT = 3
 
 /**
- * Controls the check that `trace_replayBlockTransactions` returned a replay for every
- * transaction of the block: `off` skips it, `observe` logs the block's missing replays
- * and accepts it, `reject` marks the block invalid so it is fetched again.
+ * Controls the check that `trace_replayBlockTransactions` returned exactly one replay for
+ * every transaction of the block: `off` skips it, `observe` logs the block's missing or
+ * repeated replays and accepts it, `reject` marks the block invalid so it is fetched again.
  */
 export type TraceReplayCompletenessMode = (typeof TRACE_REPLAY_COMPLETENESS_MODES)[number]
 
@@ -2142,11 +2140,17 @@ export class Rpc {
             for (let rep of replays) {
                 if (!rep.transactionHash) {
                     let txHash: Bytes32 | null | undefined = undefined
+                    let ambiguous = false
                     for (let frame of rep.trace || []) {
-                        assert(txHash == null || txHash === frame.transactionHash)
+                        if (txHash != null && txHash !== frame.transactionHash) ambiguous = true
                         txHash = txHash || frame.transactionHash
                     }
-                    assert(txHash, "can't match transaction replay with its transaction")
+                    // A malformed answer: fetch the block again rather than crash the process
+                    if (ambiguous || !txHash) {
+                        block._isInvalid = true
+                        block._errorMessage = "can't match a trace_replayBlockTransactions entry with its transaction"
+                        break
+                    }
                     rep.transactionHash = txHash
                 }
 
@@ -2166,28 +2170,37 @@ export class Rpc {
 
     /**
      * Providers have answered `trace_replayBlockTransactions` with an empty or truncated
-     * list for a block with transactions. Accepted, such a block is archived without
-     * state diffs (and traces) for the transactions left out.
+     * list for a block with transactions. Accepted, such a block is mapped without state
+     * diffs (and traces) for the transactions left out (`toRawBlock` of evm-normalization
+     * instead fails on it). A transaction replayed twice would have its traces and state
+     * diffs mapped twice, so it is a defect too.
      */
     private checkTraceReplayCompleteness(block: Block, replays: TraceTransactionReplay[], utils: ChainUtils): void {
-        let replayed = new Set(replays.map(rep => rep.transactionHash))
-        // Bor's state-sync transaction is not executed by the EVM and has no replay
-        let stateSyncTxHash = utils.isPolygonBased
-            ? calculateStateSyncTxHash(block.block.number, block.block.hash)
-            : undefined
+        let replayed = new Set<string>()
+        let duplicated: Bytes32[] = []
+        for (let rep of replays) {
+            // set for every entry by addTraceTxReplays before the check
+            let txHash = rep.transactionHash!.toLowerCase()
+            if (replayed.has(txHash)) duplicated.push(txHash)
+            replayed.add(txHash)
+        }
+        // Bor's derived state-sync transaction is not executed by the EVM and may have no replay
+        let stateSyncTxHash = utils.getStateSyncTxHash(block.block)
 
         let missing: Bytes32[] = []
         for (let tx of block.block.transactions) {
-            let txHash = getTxHash(tx)
+            let txHash = getTxHash(tx).toLowerCase()
             if (!replayed.has(txHash) && txHash !== stateSyncTxHash) missing.push(txHash)
         }
-        if (missing.length === 0) return
+        if (missing.length === 0 && duplicated.length === 0) return
 
         let transactionCount = block.block.transactions.length
         if (this.traceReplayCompleteness === 'reject') {
             block._isInvalid = true
-            block._errorMessage =
-                `trace_replayBlockTransactions returned no replay for ${missing.length} of ${transactionCount} transactions`
+            block._errorMessage = missing.length > 0
+                ? `trace_replayBlockTransactions returned no replay for ${missing.length} of ${transactionCount} ` +
+                    `transactions, e.g. ${missing[0]}`
+                : `trace_replayBlockTransactions returned more than one replay for transaction ${duplicated[0]}`
         } else {
             this.log.warn({
                 blockNumber: block.number,
@@ -2195,8 +2208,10 @@ export class Rpc {
                 transactionCount,
                 replayCount: replays.length,
                 missingCount: missing.length,
-                missingSample: missing.slice(0, MISSING_TRACE_REPLAY_SAMPLE_LIMIT)
-            }, 'trace replays are missing for some transactions, block accepted without them')
+                missingSample: missing.slice(0, MISSING_TRACE_REPLAY_SAMPLE_LIMIT),
+                duplicatedCount: duplicated.length,
+                duplicatedSample: duplicated.slice(0, MISSING_TRACE_REPLAY_SAMPLE_LIMIT)
+            }, 'trace replays are missing or repeated for some transactions, block accepted as is')
         }
     }
 

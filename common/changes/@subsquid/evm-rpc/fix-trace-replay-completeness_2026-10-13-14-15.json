@@ -1,7 +1,7 @@
 {
   "changes": [
     {
-      "comment": "Check that trace_replayBlockTransactions returned a replay for every transaction (traceReplayCompleteness: off|observe|reject, off by default)",
+      "comment": "Check that trace_replayBlockTransactions returned exactly one replay for every transaction (traceReplayCompleteness: off|observe|reject, off by default); an unmatchable replay entry now marks the block invalid instead of failing an assertion",
       "type": "minor",
       "packageName": "@subsquid/evm-rpc"
     }

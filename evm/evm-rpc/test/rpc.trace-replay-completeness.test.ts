@@ -26,18 +26,23 @@ const REQUEST: DataRequest = {
  * `keepReplays` replays survive, mimicking a provider that answers with a truncated
  * (or, at 0, empty) list.
  */
-function mockClient(keepReplays = TX_COUNT, chainId = FIXTURE.chainId, block = FIXTURE.block): MockRpcClient {
+function mockClient(
+    keepReplays = TX_COUNT,
+    chainId = FIXTURE.chainId,
+    block = FIXTURE.block,
+    replays: any[] = FIXTURE.replays.slice(0, keepReplays),
+): MockRpcClient {
     let client = new MockRpcClient()
     let number = `0x${BLOCK_NUMBER.toString(16)}`
     client.setFixture('eth_chainId', undefined, chainId)
     client.setFixture('eth_getBlockByNumber', [number, true], block)
     client.setFixture('eth_getBlockByNumber', [number, false], FIXTURE.blockWithHashes)
-    client.setFixture(
-        'trace_replayBlockTransactions',
-        [block.hash, ['stateDiff']],
-        FIXTURE.replays.slice(0, keepReplays),
-    )
+    client.setFixture('trace_replayBlockTransactions', [block.hash, ['stateDiff']], replays)
     return client
+}
+
+function withReplays(replays: any[]): MockRpcClient {
+    return mockClient(TX_COUNT, FIXTURE.chainId, FIXTURE.block, replays)
 }
 
 function rpc(client: MockRpcClient, mode?: TraceReplayCompletenessMode): Rpc {
@@ -69,7 +74,8 @@ describe('trace replay completeness', () => {
             let [block] = await rpc(mockClient(keep), 'reject').getBlockBatch([BLOCK_NUMBER], REQUEST)
             expect(block._isInvalid).toBe(true)
             expect(block._errorMessage).toBe(
-                `trace_replayBlockTransactions returned no replay for ${TX_COUNT - keep} of ${TX_COUNT} transactions`,
+                `trace_replayBlockTransactions returned no replay for ${TX_COUNT - keep} of ${TX_COUNT} ` +
+                    `transactions, e.g. ${FIXTURE.block.transactions[keep].hash}`,
             )
         })
 
@@ -114,7 +120,51 @@ describe('trace replay completeness', () => {
         )
         expect(truncated._isInvalid).toBe(true)
         expect(truncated._errorMessage).toBe(
-            `trace_replayBlockTransactions returned no replay for 1 of ${TX_COUNT} transactions`,
+            `trace_replayBlockTransactions returned no replay for 1 of ${TX_COUNT} transactions, ` +
+                `e.g. ${block.transactions[TX_COUNT - 2].hash}`,
         )
     })
+
+    it("expects a replay of the state-sync transaction's hash on other chains", async () => {
+        let block = structuredClone(FIXTURE.block)
+        block.transactions[TX_COUNT - 1].hash = calculateStateSyncTxHash(block.number, block.hash)
+        let [result] = await rpc(mockClient(TX_COUNT - 1, FIXTURE.chainId, block), 'reject').getBlockBatch(
+            [BLOCK_NUMBER],
+            REQUEST,
+        )
+        expect(result._isInvalid).toBe(true)
+    })
+
+    it('rejects a block with a transaction replayed twice', async () => {
+        let replays = [...FIXTURE.replays, FIXTURE.replays[1]]
+        let [block] = await rpc(withReplays(replays), 'reject').getBlockBatch([BLOCK_NUMBER], REQUEST)
+        expect(block._isInvalid).toBe(true)
+        expect(block._errorMessage).toBe(
+            `trace_replayBlockTransactions returned more than one replay for transaction ${FIXTURE.replays[1].transactionHash}`,
+        )
+    })
+
+    it('warns about a transaction replayed twice in observe mode', async () => {
+        let replays = [...FIXTURE.replays, FIXTURE.replays[1]]
+        let [block] = await rpc(withReplays(replays), 'observe').getBlockBatch([BLOCK_NUMBER], REQUEST)
+        expect(block._isInvalid).toBeFalsy()
+        expect(missingReplayWarnings()).toEqual([
+            expect.objectContaining({
+                missingCount: 0,
+                duplicatedCount: 1,
+                duplicatedSample: [FIXTURE.replays[1].transactionHash],
+            }),
+        ])
+    })
+
+    // Regardless of the mode: these used to fail an assertion and crash the process
+    for (let mode of ['off', 'reject'] as const) {
+        it(`marks a block with an unlabelled replay invalid instead of throwing (${mode})`, async () => {
+            let replays = structuredClone(FIXTURE.replays)
+            delete replays[0].transactionHash
+            let [block] = await rpc(withReplays(replays), mode).getBlockBatch([BLOCK_NUMBER], REQUEST)
+            expect(block._isInvalid).toBe(true)
+            expect(block._errorMessage).toBe("can't match a trace_replayBlockTransactions entry with its transaction")
+        })
+    }
 })

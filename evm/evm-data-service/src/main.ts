@@ -84,8 +84,8 @@ runProgram(async () => {
     program.addOption(
         new Option(
             '--trace-replay-completeness <mode>',
-            'Check that trace_replayBlockTransactions returned a replay for every transaction; ' +
-                'observe logs a block with missing replays and accepts it, reject marks it invalid so it is fetched again'
+            'Check that trace_replayBlockTransactions returned one replay for every transaction; ' +
+                'observe logs a block with missing or repeated replays and accepts it, reject marks it invalid so it is fetched again'
         )
             .choices([...TRACE_REPLAY_COMPLETENESS_MODES])
             .default('observe')

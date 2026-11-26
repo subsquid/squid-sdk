@@ -1,7 +1,7 @@
 {
   "changes": [
     {
-      "comment": "Warn about blocks whose trace_replayBlockTransactions answer misses transactions (--trace-replay-completeness, default observe)",
+      "comment": "Warn about blocks whose trace_replayBlockTransactions answer misses or repeats transactions (--trace-replay-completeness, default observe)",
       "type": "minor",
       "packageName": "@subsquid/evm-data-service"
     }
