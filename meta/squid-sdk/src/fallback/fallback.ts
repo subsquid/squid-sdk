@@ -57,8 +57,27 @@ interface ClaimedHeight {
  *   unverified: a source can claim blocks it then fails to deliver, or lag behind its own claim.
  */
 interface SourceHeights {
+    /** Last stream to deliver from this source wins: with overlapping streams it is a metric only. */
     served: number | undefined
     claimed: Record<HeightKind, ClaimedHeight | undefined>
+}
+
+/**
+ * Per-stream state. A `FallbackDataSource` can drive overlapping streams (live ingestion next to
+ * a finalized backfill), so nothing a stream resumes from or decides on lives on the instance.
+ */
+interface StreamState {
+    /** Which claimed heights this stream is measured against: finalized ones on a finalized stream. */
+    kind: HeightKind
+    /**
+     * The stream's served frontier: the last block it delivered, from whichever source (the resume
+     * point `from - 1` before the first batch). Failover resumes after it.
+     */
+    frontier: number
+    /** The lag trigger is armed once the frontier first gets within `maxLagBlocks` of the tip. */
+    lagArmed: boolean
+    /** On a finalized stream: when the source lag was first seen above `maxLagBlocks`. */
+    lagExceededSince?: number
 }
 
 export interface RankedSource<B> {
@@ -125,26 +144,14 @@ export class FallbackDataSource<B> implements DataSource<B> {
     /** Set when every source is stuck at the same head (no fresher alternative to switch to). */
     chainStalled = false
 
-    #lagArmed = false
-    /**
-     * Whether the current stream is the finalized one. Head references (lag, staleness, switch-up,
-     * idle checks) follow the stream: a finalized stream is measured against finalized heads, since
-     * the blocks above them are not deliverable there no matter which source is active.
-     */
-    #finalized = false
-    /** On a finalized stream: when the lag was first seen above `maxLagBlocks` (grace period). */
-    #lagExceededSince: number | undefined
+    /** The most recently started stream, for metrics (see {@link StreamState}). */
+    #lastStream: StreamState | undefined
     /** Served and claimed heights per source, see {@link SourceHeights}. */
     #heights: SourceHeights[]
     /** Guards against firing a second capability probe for a source while one is still in flight. */
     #capabilityProbing: boolean[] = []
     /** Last source we drove, retained across an all-down gap so switch-counting stays correct. */
     #lastActive: number | undefined
-    /**
-     * The stream's served frontier: the last block it delivered, from whichever source (the resume
-     * point `from - 1` before the first batch). Capability probes anchor to it.
-     */
-    #frontier = 0
 
     constructor(options: FallbackDataSourceOptions<B>) {
         if (options.sources.length === 0) {
@@ -232,20 +239,19 @@ export class FallbackDataSource<B> implements DataSource<B> {
     private async *runStream(req: StreamRequest, finalized: boolean): BlockStream<B> {
         let frontierHash = req.parentHash
 
-        // Re-arm the lag trigger per stream: a reused instance starting a later (far-behind-head)
-        // backfill must not inherit "reached the tip" from a previous run and false-fire on lag.
-        this.#lagArmed = false
-        this.#finalized = finalized
-        this.#lagExceededSince = undefined
-        this.#frontier = req.from - 1
+        // Fresh per-stream state: a reused instance starting a later (far-behind-head) backfill must
+        // not inherit "reached the tip" from a previous run and false-fire on lag.
+        let st: StreamState = {kind: finalized ? 'finalized' : 'latest', frontier: req.from - 1, lagArmed: false}
+        this.#lastStream = st
         // Served heights are per stream: a new stream has not been served anything yet.
         for (let h of this.#heights) h.served = undefined
 
         let exhausted = new Set<number>()
         for await (let active of this.selectActive(exhausted)) {
             this.setActive(active)
+            st.lagExceededSince = undefined // a switch ends the lag episode
 
-            let streamReq: StreamRequest = {from: this.#frontier + 1, to: req.to, parentHash: frontierHash}
+            let streamReq: StreamRequest = {from: st.frontier + 1, to: req.to, parentHash: frontierHash}
             let src = this.sources[active].source
 
             try {
@@ -254,7 +260,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                 ]()
                 try {
                     while (true) {
-                        let next = await this.nextWithStaleness(iterator, active)
+                        let next = await this.nextWithStaleness(iterator, active, st)
                         if (next === STALE) {
                             // Source stopped delivering while a fresher source is ahead.
                             this.failSource(
@@ -284,11 +290,11 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
                         // The resume frontier moves once the consumer asks for more (it took the batch).
                         if (lastRef) {
-                            this.#frontier = lastRef.number
+                            st.frontier = lastRef.number
                             frontierHash = lastRef.hash
                         }
 
-                        if (await this.laggingTooFar(active, batch.blocks.length === 0)) {
+                        if (await this.laggingTooFar(st, active, batch.blocks.length === 0)) {
                             this.failSource(
                                 active,
                                 freshnessFailure('stream', 'lag', `fell behind the chain head by more than ${this.policy.maxLagBlocks} blocks`),
@@ -302,8 +308,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         // liveness/capability can recover them to `healthy` even when the freshness
                         // head-polls are disabled — switch-up must not depend on that machinery.
                         if (this.policy.preferPrimary === 'eager') {
-                            await this.probeHigherPreference(active)
-                            let up = this.pickSwitchUpTarget(active)
+                            await this.probeHigherPreference(active, st)
+                            let up = this.pickSwitchUpTarget(active, st)
                             if (up != null) {
                                 // Steer the re-selection past higher-preference sources that are
                                 // behind (or unproven); the next delivered batch clears the set.
@@ -416,7 +422,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
     /** Snapshot of the observable state for export to a metrics surface. */
     metrics(): FallbackMetrics {
-        let kind = this.heightKind
+        let kind = this.#lastStream?.kind ?? 'latest'
         return {
             activeIndex: this.activeIndex,
             switchCount: this.switchCount,
@@ -454,7 +460,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
     get sourceLag(): number {
         let active = this.activeIndex
         if (active == null) return 0
-        let kind = this.heightKind
+        let kind = this.#lastStream?.kind ?? 'latest'
         let mine = this.#heights[active].claimed[kind]?.height
         if (mine == null) return 0
         let others: number | undefined
@@ -466,23 +472,18 @@ export class FallbackDataSource<B> implements DataSource<B> {
         return others == null ? 0 : Math.max(0, others - mine)
     }
 
-    /** The kind of claimed height the current stream is measured against. */
-    private get heightKind(): HeightKind {
-        return this.#finalized ? 'finalized' : 'latest'
-    }
-
     /**
      * The best height the *other* eligible sources claim — an independent reference that avoids
      * the circular-lag trap (a source that stalls head and data together reads lag ≈ 0 against its
      * own claim). Excludes `unhealthy` sources so a flagged-bad one can't define the tip. Claims are
      * cached for `headTtlMs` to bound the probe rate.
      */
-    private async othersBestClaim(active: number): Promise<number | undefined> {
+    private async othersBestClaim(active: number, st: StreamState): Promise<number | undefined> {
         let results = await Promise.all(
             this.sources.map((_, i) =>
                 i === active || this.health[i].state === 'unhealthy'
                     ? Promise.resolve(undefined)
-                    : this.pollClaim(i),
+                    : this.pollClaim(i, st),
             ),
         )
         let vals = results.filter((h): h is number => h != null)
@@ -503,8 +504,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * switched up to) and (re)confirms its capability; a failure counts as a liveness failure.
      * `null` timeout defers to the underlying client's own request timeout.
      */
-    private async pollClaim(i: number): Promise<number | undefined> {
-        let kind = this.heightKind
+    private async pollClaim(i: number, st: StreamState): Promise<number | undefined> {
+        let kind = st.kind
         let now = this.policy.clock()
         let cached = this.#heights[i].claimed[kind]
         if (cached && now - cached.at < this.policy.headTtlMs) return cached.height
@@ -518,7 +519,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
             )
             this.#heights[i].claimed[kind] = {height: head.number, at: now}
             this.health[i].onLivenessPass()
-            this.#maybeProbeCapability(i)
+            this.#maybeProbeCapability(i, st)
             return head.number
         } catch (e) {
             this.#heights[i].claimed[kind] = {height: undefined, at: now}
@@ -536,9 +537,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
      */
     private async activeClaim(
         active: number,
+        st: StreamState,
         fresh: boolean,
     ): Promise<{height: number | undefined; cached: boolean}> {
-        let kind = this.heightKind
+        let kind = st.kind
         let now = this.policy.clock()
         let cached = this.#heights[active].claimed[kind]
         if (!fresh && cached?.height != null && now - cached.at < this.policy.headTtlMs) {
@@ -564,10 +566,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * primary (index 0) there are none, so this is a no-op on the hot path; it only does work after
      * a failover, which is exactly when a recovered primary needs to be noticed.
      */
-    private async probeHigherPreference(active: number): Promise<void> {
+    private async probeHigherPreference(active: number, st: StreamState): Promise<void> {
         await Promise.all(
             this.sources.map((_, i) =>
-                i < active && this.health[i].state !== 'unhealthy' ? this.pollClaim(i) : Promise.resolve(undefined),
+                i < active && this.health[i].state !== 'unhealthy' ? this.pollClaim(i, st) : Promise.resolve(undefined),
             ),
         )
     }
@@ -580,11 +582,11 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * concurrently for the same source. Periodic re-verification, to catch a source that *loses*
      * capability after confirmation, is a future refinement.
      */
-    #maybeProbeCapability(i: number): void {
+    #maybeProbeCapability(i: number, st: StreamState): void {
         let probe = this.sources[i].probeCapability
         if (!probe || this.health[i].capabilityConfirmed || this.#capabilityProbing[i]) return
 
-        let claimed = this.#heights[i].claimed[this.heightKind]?.height
+        let claimed = this.#heights[i].claimed[st.kind]?.height
         if (claimed == null) return // need a claim to clamp off the tip; skip until one is known
 
         // Served vs claimed, on purpose: the probe targets the block the stream is about to read
@@ -593,7 +595,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // (minus `capabilityTipMargin`) so a caught-up source probes a settled block it says it has.
         let target = Math.max(
             0,
-            Math.min(this.#frontier + this.policy.capabilityLookahead, claimed - this.policy.capabilityTipMargin),
+            Math.min(st.frontier + this.policy.capabilityLookahead, claimed - this.policy.capabilityTipMargin),
         )
 
         this.#capabilityProbing[i] = true
@@ -628,12 +630,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * the chain head); within that distance the lag trigger would leave it alone too, so a real-time
      * source that trails by a block or two is still reclaimed. An unknown claim does not block it.
      */
-    private pickSwitchUpTarget(active: number): number | undefined {
+    private pickSwitchUpTarget(active: number, st: StreamState): number | undefined {
         let tolerance = this.policy.maxLagBlocks ?? 0
         for (let i = 0; i < active; i++) {
             if (this.health[i].state !== 'healthy') continue
-            let claimed = this.#heights[i].claimed[this.heightKind]?.height
-            if (claimed == null || claimed + tolerance >= this.#frontier) return i
+            let claimed = this.#heights[i].claimed[st.kind]?.height
+            if (claimed == null || claimed + tolerance >= st.frontier) return i
         }
         return undefined
     }
@@ -658,18 +660,18 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * finalized stream, the source lag has to persist for `finalizedLagGraceMs` first: finality
      * advances in steps that another source may claim a few seconds before the active one.
      */
-    private async laggingTooFar(active: number, emptyBatch: boolean): Promise<boolean> {
+    private async laggingTooFar(st: StreamState, active: number, emptyBatch: boolean): Promise<boolean> {
         if (this.policy.maxLagBlocks == null) return false
         let maxLag = this.policy.maxLagBlocks
-        let frontier = this.#frontier
+        let frontier = st.frontier
 
-        let others = await this.othersBestClaim(active)
+        let others = await this.othersBestClaim(active, st)
         // Claimed vs served: a lower bound on the chain height — the frontier was served, so the
         // chain is at least that high whatever the other sources claim.
         this.chainHead = others != null ? Math.max(others, frontier) : frontier
         if (others == null) {
             this.lag = 0 // no independent reference ⇒ lag is not computable; don't report a stale value
-            this.#lagExceededSince = undefined // a later lag episode starts its own grace period
+            st.lagExceededSince = undefined // a later lag episode starts its own grace period
             return false
         }
 
@@ -681,31 +683,31 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // reference (`deliveryLag >= 0`). A negative value means the reference is itself behind us
         // (stale/lagging) — arming on that would let a later-recovering source's claim trip a
         // spurious failover while we are still backfilling.
-        if (deliveryLag >= 0 && deliveryLag <= maxLag) this.#lagArmed = true // arm at tip (latched)
+        if (deliveryLag >= 0 && deliveryLag <= maxLag) st.lagArmed = true // arm at tip (latched)
         if (deliveryLag <= maxLag) {
-            this.#lagExceededSince = undefined
+            st.lagExceededSince = undefined
             return false
         }
-        if (!this.#lagArmed && !emptyBatch) {
+        if (!st.lagArmed && !emptyBatch) {
             // Backfilling below the tip: the check is not armed and the source is delivering.
-            this.#lagExceededSince = undefined
+            st.lagExceededSince = undefined
             return false
         }
 
-        let claim = await this.activeClaim(active, emptyBatch)
+        let claim = await this.activeClaim(active, st, emptyBatch)
         // Claims expire independently: a freshly polled standby claim compared with an older cached
         // active claim can show a deficit that is only the age difference. Refresh a cached value
         // before acting on it (a value that was just requested needs no second request).
         if (claim.cached && claim.height != null && others - claim.height > maxLag) {
-            claim = await this.activeClaim(active, true)
+            claim = await this.activeClaim(active, st, true)
         }
         let activeClaimed = claim.height
         if (activeClaimed == null) return false // not known: decide nothing, keep the grace timer
         // Served vs claimed of the *same* source: idle means it has served all it claims.
         let idle = emptyBatch && activeClaimed <= frontier
-        if (!this.#lagArmed && !idle) {
+        if (!st.lagArmed && !idle) {
             // An empty batch from a source still catching up (finality-only batches) is not idleness.
-            this.#lagExceededSince = undefined
+            st.lagExceededSince = undefined
             return false
         }
 
@@ -713,16 +715,16 @@ export class FallbackDataSource<B> implements DataSource<B> {
         let sourceLag = others - activeClaimed
         if (sourceLag <= maxLag) {
             // The source claims the tip; the stream is behind because the consumer is slower.
-            this.#lagExceededSince = undefined
+            st.lagExceededSince = undefined
             return false
         }
 
-        if (this.#finalized && this.policy.finalizedLagGraceMs > 0) {
+        if (st.kind === 'finalized' && this.policy.finalizedLagGraceMs > 0) {
             let now = this.policy.clock()
-            this.#lagExceededSince ??= now
-            if (now - this.#lagExceededSince < this.policy.finalizedLagGraceMs) return false
+            st.lagExceededSince ??= now
+            if (now - st.lagExceededSince < this.policy.finalizedLagGraceMs) return false
         }
-        this.#lagExceededSince = undefined
+        st.lagExceededSince = undefined
         this.chainStalled = false
         return true
     }
@@ -744,6 +746,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
     private async nextWithStaleness(
         iterator: AsyncIterator<BlockBatch<B>>,
         active: number,
+        st: StreamState,
     ): Promise<IteratorResult<BlockBatch<B>> | typeof STALE> {
         if (this.policy.maxStalenessMs == null) {
             this.staleness = 0
@@ -779,11 +782,11 @@ export class FallbackDataSource<B> implements DataSource<B> {
             if (elapsed > this.policy.maxStalenessMs) {
                 // Re-polling the other sources both decides failover and (re)probes their
                 // liveness/capability, so a held source keeps noticing when the chain comes back.
-                let others = await this.othersBestClaim(active)
+                let others = await this.othersBestClaim(active, st)
                 // Claimed vs served, on purpose: the active source has served nothing for
                 // `maxStalenessMs`, so what it claims says nothing about whether it is stuck; what
                 // matters is that another source claims blocks the stream does not have yet.
-                if (others != null && others > this.#frontier) {
+                if (others != null && others > st.frontier) {
                     this.chainStalled = false
                     return STALE
                 }
@@ -807,7 +810,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
         }
         this.#lastActive = i
         this.activeIndex = i
-        this.#lagExceededSince = undefined
     }
 
     /** No source is eligible (all unhealthy): nothing is being driven, so report no active source. */

@@ -1430,6 +1430,32 @@ describe('FallbackDataSource — served vs claimed heights', () => {
         expect(activeCalls).toBe(1) // one boundary needed the claim, and asked once
     })
 
+    it('keeps the resume point per stream when two streams overlap', async () => {
+        // A finalized backfill and a live stream on the same instance. The backfill's source fails
+        // after the live stream moved to block 100; the backfill must resume after its own block 10.
+        let s0 = new MockSource(async function* (req) {
+            if (req.from === 10) {
+                yield batch([blk(10)])
+                throw new Error('backfill source down')
+            }
+            yield batch([blk(100)])
+        })
+        let s1 = new MockSource(async function* (req) {
+            yield batch([blk(req.from, `0x${req.from}-s1`)])
+        })
+        let fb = fallback([s0, s1], {maxLagBlocks: null, maxStalenessMs: null, cooldownMs: 60_000})
+
+        let backfill = fb.getFinalizedStream({from: 10, to: 11})[Symbol.asyncIterator]()
+        let live = fb.getStream({from: 100, to: 100})[Symbol.asyncIterator]()
+        expect(numbers((await backfill.next()).value.blocks)).toEqual([10])
+        expect(numbers((await live.next()).value.blocks)).toEqual([100])
+        // Both streams resume at once: the live one commits block 100 while the backfill fails over.
+        let [b, l] = await Promise.all([backfill.next(), live.next()])
+        expect(l.done).toBe(true)
+        expect(numbers(b.value.blocks)).toEqual([11]) // not 101
+        expect(s1.calls[0]).toMatchObject({from: 11, parentHash: '0x10'})
+    })
+
     it('records the served height when a batch is delivered, before the consumer asks for more', async () => {
         let s0 = new MockSource(async function* () {
             yield batch([blk(90)])
