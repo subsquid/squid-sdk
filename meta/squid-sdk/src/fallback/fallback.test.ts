@@ -1374,6 +1374,66 @@ describe('FallbackDataSource — served vs claimed heights', () => {
         expect(fb.activeIndex).toBe(0)
     })
 
+    it('refreshes a cached active claim before acting on a deficit against a fresher standby claim', async () => {
+        // Both sources always claim the same tip. With a 5 s TTL, the standby's claim is refreshed at
+        // t=11.5 s (160) while the active claim cached at t=8 s (140) is still valid: a 20-block
+        // "deficit" that is only the age difference. The consumer is slow; nothing should fail over.
+        let now = 0
+        let tip = 115
+        let fb: FallbackDataSource<TestBlock>
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(110)]) // t=0: delivery lag 5, arms the trigger
+                now = 6000
+                tip = 130
+                yield batch([blk(111)])
+                now = 8000
+                tip = 140
+                await fb.getHead() // records the active claim (140) at t=8 s
+                yield batch([blk(112)])
+                now = 11_500
+                tip = 160
+                yield batch([blk(113)])
+            },
+            {head: async () => ({number: tip, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: tip, hash: '0x'})})
+        fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 5000, cooldownMs: 60_000, clock: () => now})
+
+        expect(numbers(await collect(fb.getStream({from: 110, to: 113})))).toEqual([110, 111, 112, 113])
+        expect(fb.activeIndex).toBe(0)
+        expect(s1.calls).toHaveLength(0)
+    })
+
+    it('records the served height when a batch is delivered, before the consumer asks for more', async () => {
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(90)])
+            yield batch([blk(91)])
+        })
+        let fb = fallback([s0], {maxLagBlocks: 10, maxStalenessMs: null})
+        let it = fb.getStream({from: 90, to: 91})[Symbol.asyncIterator]()
+        await it.next()
+        expect(fb.metrics().sources[0].servedHeight).toBe(90) // the handler is still on block 90
+        await it.return?.()
+    })
+
+    it('derives the reported source lag from the known claims, independently of the failover gates', async () => {
+        // At the tip, no lag check needs the active claim, but once it is known (head delegation),
+        // the reported source lag is the plain claim difference: 105 − 100 = 5.
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(100)])
+            },
+            {head: async () => ({number: 100, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: 105, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 60_000, cooldownMs: 60_000})
+
+        await collect(fb.getStream({from: 100, to: 100}))
+        await fb.getHead()
+        expect(fb.metrics().sourceLag).toBe(5)
+    })
+
     it('reports served and claimed heights per source in metrics()', async () => {
         let s0 = new MockSource(
             async function* () {

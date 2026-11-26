@@ -120,7 +120,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
     switchCount = 0
     /** Freshness metrics: see {@link FallbackMetrics} for `lag` vs `sourceLag`; source-pending ms. */
     lag = 0
-    sourceLag = 0
     staleness = 0
     chainHead: number | undefined
     /** Set when every source is stuck at the same head (no fresher alternative to switch to). */
@@ -276,13 +275,17 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         this.health[active].onBatch()
                         this.health[active].onCapability(true)
                         exhausted.clear() // a delivered batch ends the failover sweep
+                        let lastRef = batch.blocks.length
+                            ? this.getBlockRef(batch.blocks[batch.blocks.length - 1])
+                            : undefined
+                        // Served as soon as it is delivered, whatever the consumer does with it.
+                        if (lastRef) this.#heights[active].served = lastRef.number
                         yield batch
 
-                        if (batch.blocks.length) {
-                            let ref = this.getBlockRef(batch.blocks[batch.blocks.length - 1])
-                            this.#frontier = ref.number
-                            frontierHash = ref.hash
-                            this.#heights[active].served = ref.number
+                        // The resume frontier moves once the consumer asks for more (it took the batch).
+                        if (lastRef) {
+                            this.#frontier = lastRef.number
+                            frontierHash = lastRef.hash
                         }
 
                         if (await this.laggingTooFar(active, batch.blocks.length === 0)) {
@@ -441,6 +444,26 @@ export class FallbackDataSource<B> implements DataSource<B> {
         await sleep(this.policy.allDownPollMs)
 
         return true
+    }
+
+    /**
+     * Source lag from the known claims, for metrics: the best claim among the other eligible
+     * sources minus the active source's claim (claimed vs claimed). Derived from the cached claims
+     * only, never requests one; `0` when either side is unknown.
+     */
+    get sourceLag(): number {
+        let active = this.activeIndex
+        if (active == null) return 0
+        let kind = this.heightKind
+        let mine = this.#heights[active].claimed[kind]?.height
+        if (mine == null) return 0
+        let others: number | undefined
+        for (let i = 0; i < this.sources.length; i++) {
+            if (i === active || this.health[i].state === 'unhealthy') continue
+            let h = this.#heights[i].claimed[kind]?.height
+            if (h != null && (others == null || h > others)) others = h
+        }
+        return others == null ? 0 : Math.max(0, others - mine)
     }
 
     /** The kind of claimed height the current stream is measured against. */
@@ -641,7 +664,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
         this.chainHead = others != null ? Math.max(others, frontier) : frontier
         if (others == null) {
             this.lag = 0 // no independent reference ⇒ lag is not computable; don't report a stale value
-            this.sourceLag = 0
             this.#lagExceededSince = undefined // a later lag episode starts its own grace period
             return false
         }
@@ -656,7 +678,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // spurious failover while we are still backfilling.
         if (deliveryLag >= 0 && deliveryLag <= maxLag) this.#lagArmed = true // arm at tip (latched)
         if (deliveryLag <= maxLag) {
-            this.sourceLag = 0
             this.#lagExceededSince = undefined
             return false
         }
@@ -667,6 +688,11 @@ export class FallbackDataSource<B> implements DataSource<B> {
         }
 
         let activeClaimed = await this.activeClaim(active, emptyBatch)
+        // Claims expire independently: a freshly polled standby claim compared with an older cached
+        // active claim can show a deficit that is only the age difference. Refresh before acting.
+        if (activeClaimed != null && !emptyBatch && others - activeClaimed > maxLag) {
+            activeClaimed = await this.activeClaim(active, true)
+        }
         if (activeClaimed == null) return false // not known: decide nothing, keep the grace timer
         // Served vs claimed of the *same* source: idle means it has served all it claims.
         let idle = emptyBatch && activeClaimed <= frontier
@@ -678,7 +704,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
         // Claimed vs claimed: the decision itself.
         let sourceLag = others - activeClaimed
-        this.sourceLag = Math.max(0, sourceLag)
         if (sourceLag <= maxLag) {
             // The source claims the tip; the stream is behind because the consumer is slower.
             this.#lagExceededSince = undefined
@@ -791,7 +816,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
      */
     private resetFreshnessGauges(): void {
         this.lag = 0
-        this.sourceLag = 0
         this.staleness = 0
         this.chainStalled = false
         this.chainHead = undefined
