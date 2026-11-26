@@ -8,6 +8,7 @@ const snapshot: FallbackMetrics = {
     activeIndex: 1,
     switchCount: 2,
     lag: 7,
+    sourceLag: 3,
     staleness: 1500,
     chainStalled: true,
     chainHead: 100,
@@ -18,7 +19,7 @@ const snapshot: FallbackMetrics = {
             active: false,
             cause: {check: 'capability', reason: 'http', code: 400, detail: 'capability check failed: http 400, request: …'},
         },
-        {name: 'rpc', health: 'unknown', active: true},
+        {name: 'rpc', health: 'unknown', active: true, servedHeight: 90, claimedHeight: 97},
     ],
 }
 
@@ -39,6 +40,10 @@ describe('fallbackMetricsSink', () => {
         )
         expect(text).not.toContain('capability check failed') // the full detail never leaks into metrics
         expect(text).toContain('sqd_fallback_lag_blocks 7')
+        expect(text).toContain('sqd_fallback_source_lag_blocks 3')
+        expect(text).toContain('sqd_fallback_source_served_height{source="rpc"} 90')
+        expect(text).toContain('sqd_fallback_source_claimed_height{source="rpc"} 97')
+        expect(text).not.toContain('sqd_fallback_source_served_height{source="portal"}') // unknown: no series
         expect(text).toContain('sqd_fallback_staleness_ms 1500')
         expect(text).toContain('sqd_fallback_chain_stalled 1')
         expect(text).toContain('sqd_fallback_switches 2')
