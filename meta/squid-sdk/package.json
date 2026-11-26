@@ -225,7 +225,7 @@
     "test:lfs": "VITEST_LFS=1 vitest --run"
   },
   "dependencies": {
-    "@subsquid/batch-processor": "^1.1.0",
+    "@subsquid/batch-processor": "^1.1.1",
     "@subsquid/evm-objects": "^0.0.3",
     "@subsquid/evm-stream": "^0.1.7",
     "@subsquid/fuel-stream": "^1.2.0",
