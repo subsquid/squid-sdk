@@ -1,5 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
+import {filterBlock, setUpRelations} from './filter'
 import {flattenRequest, toRequiredData, unionRequiredData} from './request'
 
 describe('flattenRequest', () => {
@@ -11,6 +12,37 @@ describe('flattenRequest', () => {
 
         expect(flat.logs).toEqual([{address: ['0xa'], topic0: ['0xt'], transaction: true}])
         expect(flat.transactions).toEqual([{to: ['0xb'], logs: true}])
+    })
+
+    it('lowercases hex filter values, so checksummed addresses match RPC data', () => {
+        let flat = flattenRequest({
+            logs: [{where: {address: ['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'], topic0: ['0xDDF252AD']}}],
+            transactions: [{where: {to: ['0xAbC'], sighash: ['0xA9059CBB'], type: [2]}}],
+            traces: [{where: {type: ['call'], callTo: ['0xAbC']}}],
+            stateDiffs: [{where: {address: ['0xAbC'], key: ['balance'], kind: ['*']}}],
+        })
+
+        expect(flat.logs).toEqual([{address: ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'], topic0: ['0xddf252ad']}])
+        expect(flat.transactions).toEqual([{to: ['0xabc'], sighash: ['0xa9059cbb'], type: [2]}])
+        expect(flat.traces).toEqual([{type: ['call'], callTo: ['0xabc']}])
+        expect(flat.stateDiffs).toEqual([{address: ['0xabc'], key: ['balance'], kind: ['*']}])
+
+        let block: any = {
+            header: {number: 1, hash: '0x1', height: 1, parentHash: '0x0'},
+            transactions: [],
+            logs: [
+                {
+                    logIndex: 0,
+                    transactionIndex: 0,
+                    address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+                    topics: ['0xddf252ad'],
+                },
+            ],
+            traces: [],
+            stateDiffs: [],
+        }
+        filterBlock(block, {logs: flat.logs}, setUpRelations(block))
+        expect(block.logs).toHaveLength(1)
     })
 
     it('preserves includeAllBlocks and tolerates missing where/include', () => {
@@ -65,19 +97,15 @@ describe('toRequiredData', () => {
 
 describe('unionRequiredData', () => {
     it('ORs the per-request needs across the list', () => {
-        let acc = unionRequiredData(
-            [{logs: [{address: ['0xa']}]}, {traces: [{callTo: ['0xb']}]}],
-            {},
-        )
+        let acc = unionRequiredData([{logs: [{address: ['0xa']}]}, {traces: [{callTo: ['0xb']}]}], {})
         expect(acc).toEqual({logs: true, receipts: false, traces: true, stateDiffs: false})
     })
 
     it('suppresses the separate logs fetch when the aggregate pulls receipts (single request)', () => {
         // Receipts already carry the block's logs, so no separate eth_getLogs is needed.
-        let acc = unionRequiredData(
-            [{transactions: [{to: ['0xb']}], logs: [{address: ['0xa']}]}],
-            {transaction: {gasUsed: true}},
-        )
+        let acc = unionRequiredData([{transactions: [{to: ['0xb']}], logs: [{address: ['0xa']}]}], {
+            transaction: {gasUsed: true},
+        })
         expect(acc).toEqual({logs: false, receipts: true, traces: false, stateDiffs: false})
     })
 
@@ -86,10 +114,9 @@ describe('unionRequiredData', () => {
         // receipts. Pre-fix, A's logs and B's receipts each survived the per-request suppression and
         // OR-ed to {logs:true, receipts:true} — a redundant eth_getLogs every stride. The dedup must
         // see the whole list: because *something* pulls receipts, the separate logs fetch is dropped.
-        let acc = unionRequiredData(
-            [{logs: [{address: ['0xa']}]}, {transactions: [{to: ['0xb']}]}],
-            {transaction: {gasUsed: true}},
-        )
+        let acc = unionRequiredData([{logs: [{address: ['0xa']}]}, {transactions: [{to: ['0xb']}]}], {
+            transaction: {gasUsed: true},
+        })
         expect(acc).toEqual({logs: false, receipts: true, traces: false, stateDiffs: false})
     })
 })
