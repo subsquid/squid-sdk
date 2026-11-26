@@ -76,6 +76,54 @@ describe.each(['0x89', '0x13882', '0x6d'])('Polygon trace requirements on %s', (
             details: expect.stringContaining(kind === 'frames' ? 'call frames is missing' : 'state diff is missing'),
         })
     })
+
+    it('exempts only the state-sync transaction from trace replays', async () => {
+        const block = loadTracedBlock()
+        const options: ComponentOptions = {withTraces: true, useTraceApi: true}
+        for (const tx of block.transactions) {
+            tx.debugFrame_ = undefined
+            tx.debugStateDiff_ = undefined
+            tx.traceReplay_ = {transactionHash: tx.hash, trace: []} as any
+        }
+        block.transactions.push({
+            ...(block.transactions[0] as RawTransaction),
+            hash: calculateStateSyncTxHash(block.number, block.hash),
+            transactionIndex: `0x${block.transactions.length.toString(16)}`,
+            debugFrame_: undefined,
+            debugStateDiff_: undefined,
+            traceReplay_: undefined,
+        })
+        const verifyLine = createLineVerifier(new ChainUtils(chain), options)
+        expect(await verifyLine(block, linkOf(block))).toBeUndefined()
+
+        block.transactions[0].traceReplay_ = undefined
+        expect(await verifyLine(block, linkOf(block))).toMatchObject({
+            reason: 'verify',
+            details: expect.stringContaining('trace replay is missing'),
+        })
+    })
+})
+
+describe('trace replays off Bor chains', () => {
+    it('require a replay for a transaction with the state-sync hash shape on Ethereum', async () => {
+        const block = loadTracedBlock()
+        for (const tx of block.transactions) {
+            tx.debugFrame_ = undefined
+            tx.debugStateDiff_ = undefined
+            tx.traceReplay_ = {transactionHash: tx.hash, trace: []} as any
+        }
+        block.transactions.push({
+            ...(block.transactions[0] as RawTransaction),
+            hash: calculateStateSyncTxHash(block.number, block.hash),
+            transactionIndex: `0x${block.transactions.length.toString(16)}`,
+            traceReplay_: undefined,
+        })
+        const verifyLine = createLineVerifier(new ChainUtils('0x1'), {withTraces: true, useTraceApi: true})
+        expect(await verifyLine(block, linkOf(block))).toMatchObject({
+            reason: 'verify',
+            details: expect.stringContaining('trace replay is missing'),
+        })
+    })
 })
 
 describe.each([false, true])('log associations with receipts=%s', (withReceipts) => {

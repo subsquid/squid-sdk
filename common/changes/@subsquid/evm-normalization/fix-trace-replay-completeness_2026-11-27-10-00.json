@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/evm-normalization",
+      "comment": "`toRawBlock`: store Bor's derived state-sync transaction without a trace replay instead of failing an assertion, and name the transaction when another replay is missing",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/evm-normalization"
+}
