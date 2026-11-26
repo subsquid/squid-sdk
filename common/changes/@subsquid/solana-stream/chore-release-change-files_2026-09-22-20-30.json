@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/solana-stream",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/solana-stream"
+}

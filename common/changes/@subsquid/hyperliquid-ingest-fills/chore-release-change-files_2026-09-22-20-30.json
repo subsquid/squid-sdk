@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/hyperliquid-ingest-fills",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@subsquid/hyperliquid-ingest-fills"
+}
