@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Fixed debug trace transaction membership checks and restricted missing Polygon traces to state-sync transactions.",
+      "type": "patch",
+      "packageName": "@subsquid/evm-dump"
+    }
+  ],
+  "packageName": "@subsquid/evm-dump",
+  "email": "bowenyin@tencent.com"
+}

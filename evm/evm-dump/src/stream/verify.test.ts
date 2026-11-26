@@ -1,5 +1,6 @@
 import type {RawBlock, RawTransaction} from '@subsquid/evm-normalization'
 import {ChainUtils} from '@subsquid/evm-rpc'
+import {calculateStateSyncTxHash} from '@subsquid/evm-rpc/lib/verification'
 import {describe, expect, it} from 'vitest'
 import type {ComponentOptions} from './components'
 import {linkOf, loadMainnetBlock, makeBlock, makeHash, testChainUtils} from './test-util'
@@ -43,6 +44,39 @@ function changeTransaction(block: RawBlock, index: number, change: (tx: RawTrans
     change(changed.transactions[index])
     return changed
 }
+
+describe.each(['0x89', '0x13882', '0x6d'])('Polygon trace requirements on %s', (chain) => {
+    it.each(['frames', 'diffs'])('exempts only the state-sync transaction from %s', async (kind) => {
+        const block = loadTracedBlock()
+        const options: ComponentOptions = {
+            withTraces: kind === 'frames',
+            withStatediffs: kind === 'diffs',
+            useDebugApiForStatediffs: true,
+        }
+        for (const tx of block.transactions) {
+            if (kind === 'diffs') {
+                tx.debugFrame_ = undefined
+                tx.debugStateDiff_ = {txHash: tx.hash, result: {pre: {}, post: {}}}
+            }
+        }
+        block.transactions.push({
+            ...(block.transactions[0] as RawTransaction),
+            hash: calculateStateSyncTxHash(block.number, block.hash),
+            transactionIndex: `0x${block.transactions.length.toString(16)}`,
+            debugFrame_: undefined,
+            debugStateDiff_: undefined,
+        })
+        const verifyLine = createLineVerifier(new ChainUtils(chain), options)
+        expect(await verifyLine(block, linkOf(block))).toBeUndefined()
+
+        if (kind === 'frames') block.transactions[0].debugFrame_ = undefined
+        else block.transactions[0].debugStateDiff_ = undefined
+        expect(await verifyLine(block, linkOf(block))).toMatchObject({
+            reason: 'verify',
+            details: expect.stringContaining(kind === 'frames' ? 'call frames is missing' : 'state diff is missing'),
+        })
+    })
+})
 
 describe.each([false, true])('log associations with receipts=%s', (withReceipts) => {
     const options: ComponentOptions = {
