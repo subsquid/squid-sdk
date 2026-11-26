@@ -190,7 +190,7 @@ describe('consensus anchor validation', () => {
         client.setFixture('debug_traceBlockByHash', [f.block.hash, PRESTATE_TRACER], f.prestateDiffs)
         let [block] = await rpc(client, 'reject').getBlockBatch([BLOCK_NUMBER], request('prestate'))
         expect(block._isInvalid).toBe(true)
-        expect(block._errorMessage).toMatch(/\(system-fee\).*got no state diff/)
+        expect(block._errorMessage).toMatch(/debug state diff response is labelled with transaction/)
     })
 
     it('refuses to reject without the inputs it checks', async () => {

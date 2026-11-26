@@ -1238,8 +1238,6 @@ export class Rpc {
             if (diffs == null) {
                 block._isInvalid = true
                 block._errorMessage = "failed to get debug state diffs for a block"
-            } else if (block.block.transactions.length === diffs.length) {
-                block.debugStateDiffs = diffs
             } else {
                 block.debugStateDiffs = this.matchDebugTrace('debug state diff', block, diffs, utils)
             }
@@ -2044,16 +2042,38 @@ export class Rpc {
         trace: T[],
         utils: ChainUtils
     ): (T | undefined)[] {
-        let mapping = new Map(trace.map(t => [t.txHash, t]))
         let out = new Array(block.block.transactions.length)
+        const invalid = (message: string): (T | undefined)[] => {
+            block._isInvalid = true
+            block._errorMessage = message
+            return new Array(block.block.transactions.length)
+        }
+        if (trace.length === block.block.transactions.length) {
+            for (let i = 0; i < trace.length; i++) {
+                const label = trace[i].txHash
+                if (label != null && label.toLowerCase() !== getTxHash(block.block.transactions[i]).toLowerCase()) {
+                    return invalid(`${type} response is labelled with transaction ${label}, which is not at position ${i}`)
+                }
+            }
+            return trace
+        }
+        const bodyHashes = new Set(block.block.transactions.map(tx => getTxHash(tx).toLowerCase()))
+        const mapping = new Map<string, T>()
+        for (const entry of trace) {
+            if (typeof entry.txHash !== 'string') return invalid(`unlabelled ${type} entry`)
+            const hash = entry.txHash.toLowerCase()
+            if (!bodyHashes.has(hash)) return invalid(`${type} entry names transaction ${hash}, which is not in this block`)
+            if (mapping.has(hash)) return invalid(`duplicate ${type} for transaction ${hash}`)
+            mapping.set(hash, entry)
+        }
         for (let i = 0; i < block.block.transactions.length; i++) {
             let txHash = getTxHash(block.block.transactions[i])
-            let rec = mapping.get(txHash)
+            let rec = mapping.get(txHash.toLowerCase())
             if (rec) {
                 out[i] = rec
             } else {
-                if (utils.isPolygonBased) continue
-                throw new Error(`no ${type} for transaction`)
+                if (utils.isStateSyncTransaction(block.block, txHash)) continue
+                return invalid(`no ${type} for transaction ${txHash}`)
             }
         }
         return out
