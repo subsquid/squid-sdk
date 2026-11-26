@@ -1025,6 +1025,48 @@ describe('FallbackDataSource — a primary that stops at its own head: edge case
         expect((await fb.getHead()).number).toBe(30_000)
     })
 
+    it('keeps the grace timer through transient failures of the idle confirmation', async () => {
+        // A finalized primary parked at its head from the start (never armed at the tip). Every other
+        // own-head request fails; those boundaries must not restart the grace period.
+        let now = 0
+        let headCalls = 0
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(1)])
+                for (let i = 0; i < 20; i++) {
+                    now += 10_000
+                    yield batch([])
+                }
+            },
+            {
+                head: async () => ({number: 1, hash: '0x'}),
+                finalizedHead: async () => {
+                    if (headCalls++ % 2 === 1) throw new Error('transient')
+                    return {number: 1, hash: '0x'}
+                },
+            },
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                expect(req.from).toBe(2)
+                yield batch([blk(2)])
+            },
+            {head: async () => ({number: 1000, hash: '0x'}), finalizedHead: async () => ({number: 900, hash: '0x'})},
+        )
+        let fb = fallback([s0, s1], {
+            maxLagBlocks: 10,
+            maxStalenessMs: null,
+            headTtlMs: 0,
+            cooldownMs: 1e9,
+            activeHeadTimeoutMs: null,
+            clock: () => now,
+        })
+
+        expect(numbers(await collect(fb.getFinalizedStream({from: 1, to: 2})))).toEqual([1, 2])
+        expect(fb.activeIndex).toBe(1)
+        expect(now).toBeLessThanOrEqual(100_000)
+    })
+
     it('starts a new grace period after the lag reference was unavailable', async () => {
         // Lag first exceeds the threshold at t=0, then the standby cannot be polled while the primary
         // catches up. A later step at t=70 s is a new episode and must get its own grace period.

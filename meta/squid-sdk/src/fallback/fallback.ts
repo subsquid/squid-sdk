@@ -241,7 +241,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                             batch.blocks.length === 0 &&
                             (await this.fresherSourceAhead(active, lastNumber)) &&
                             (await this.isAtOwnHead(active, lastNumber))
-                        if (await this.laggingTooFar(active, lastNumber, atSourceHead)) {
+                        if (await this.laggingTooFar(active, lastNumber, atSourceHead, batch.blocks.length > 0)) {
                             this.failSource(
                                 active,
                                 freshnessFailure('stream', 'lag', `fell behind the chain head by more than ${this.policy.maxLagBlocks} blocks`),
@@ -573,7 +573,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * keep resetting the staleness clock, so without this neither trigger would ever move the stream
      * to a fresher source. It is not latched, so the next source can still backfill undisturbed.
      */
-    private async laggingTooFar(active: number, lastNumber: number, atSourceHead = false): Promise<boolean> {
+    private async laggingTooFar(
+        active: number,
+        lastNumber: number,
+        atSourceHead = false,
+        delivered = true,
+    ): Promise<boolean> {
         if (this.policy.maxLagBlocks == null) return false
 
         let others = await this.chainHeadOthers(active)
@@ -605,7 +610,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
             this.chainStalled = false
             return true
         }
-        this.#lagExceededSince = undefined
+        // The episode ends when the lag is back within bounds or the active source makes progress.
+        // A boundary where only the idle confirmation is missing (e.g. its own head request failed)
+        // keeps the timer, so transient head errors cannot postpone the failover forever.
+        if (lag <= this.policy.maxLagBlocks || delivered) this.#lagExceededSince = undefined
 
         return false
     }
