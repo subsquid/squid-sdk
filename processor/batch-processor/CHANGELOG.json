@@ -2,6 +2,18 @@
   "name": "@subsquid/batch-processor",
   "entries": [
     {
+      "version": "1.1.1",
+      "tag": "@subsquid/batch-processor_v1.1.1",
+      "date": "Thu, 26 Nov 2026 10:32:04 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "recover from a fork that goes deeper than the source's `previousBlocks` slice: roll back to the highest unfinalized head below the slice and retry, instead of exiting with \"Unable to process fork\""
+          }
+        ]
+      }
+    },
+    {
       "version": "1.1.0",
       "tag": "@subsquid/batch-processor_v1.1.0",
       "date": "Thu, 16 Jul 2026 19:47:53 GMT",

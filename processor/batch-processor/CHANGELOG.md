@@ -1,6 +1,13 @@
 # Change Log - @subsquid/batch-processor
 
-This log was last generated on Thu, 16 Jul 2026 19:47:53 GMT and should not be manually modified.
+This log was last generated on Thu, 26 Nov 2026 10:32:04 GMT and should not be manually modified.
+
+## 1.1.1
+Thu, 26 Nov 2026 10:32:04 GMT
+
+### Patches
+
+- recover from a fork that goes deeper than the source's `previousBlocks` slice: roll back to the highest unfinalized head below the slice and retry, instead of exiting with "Unable to process fork"
 
 ## 1.1.0
 Thu, 16 Jul 2026 19:47:53 GMT
