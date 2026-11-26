@@ -64,11 +64,28 @@ class ItemMapping {
         block: rpc.GetBlock
     ) {
         let transactions = block.transactions ?? []
+
+        let messageStreams = transactions.map(tx => new MessageStream(tx.meta.logMessages ?? []))
+
+        // Log format is a property of the node, that recorded the block.
+        // Hence, a transaction without any structural log messages (e.g. one calling only native programs)
+        // inherits the old format, when the block has it.
+        if (
+            messageStreams.some(s => s.format === 'legacy') &&
+            !messageStreams.some(s => s.format === 'modern')
+        ) {
+            for (let i = 0; i < transactions.length; i++) {
+                if (messageStreams[i].format === 'unknown' && transactions[i].meta.logMessages != null) {
+                    messageStreams[i].legacyFormat = true
+                }
+            }
+        }
+
         for (let i = 0; i < transactions.length; i++) {
             let tx = transactions[i]
             let txIndex = tx._index ?? i
             try {
-                this.processTransaction(txIndex, tx)
+                this.processTransaction(txIndex, tx, messageStreams[i])
             } catch(err: any) {
                 throw addErrorContext(err, {
                     transactionHash: tx.transaction.signatures[0]
@@ -77,12 +94,10 @@ class ItemMapping {
         }
     }
 
-    private processTransaction(transactionIndex: number, src: rpc.Transaction): void {
+    private processTransaction(transactionIndex: number, src: rpc.Transaction, messages: MessageStream): void {
         let mapped = mapTransaction(transactionIndex, src)
 
         let ctx = new TransactionContext(transactionIndex, src, this.journal)
-
-        let messages = new MessageStream(src.meta.logMessages ?? [])
 
         let insCheckPoint = this.instructions.length
         let logCheckPoint = this.logs.length

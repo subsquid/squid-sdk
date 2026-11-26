@@ -2,7 +2,16 @@ import * as rpc from '@subsquid/solana-rpc-data'
 import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Instruction, LogMessage} from './data'
-import {Message, parseLogMessage} from './log-parser'
+import {
+    isLegacyMessage,
+    isModernStructuralMessage,
+    LegacyComputeUnitsMessage,
+    LegacyInvokeMessage,
+    LegacyInvokeResultMessage,
+    Message,
+    OtherMessage,
+    parseLogMessage
+} from './log-parser'
 import {TransactionContext} from './transaction-context'
 
 
@@ -32,8 +41,68 @@ export class MessageStream {
     private messages: Message[]
     private pos = 0
 
+    /**
+     * Log format, as detected from the structural (invoke / result / compute units) messages:
+     *
+     *  - `modern`: `Program X invoke [n]`, `Program X consumed N of M compute units`, `Program X success`
+     *  - `legacy`: `Call BPF program X`, `BPF program consumed N of M units`, `BPF program X success`
+     *    (v1.3 runtime)
+     *  - `unknown`: there are no structural messages at all
+     */
+    public readonly format: 'modern' | 'legacy' | 'unknown'
+
+    /**
+     * `true`, when the log should be interpreted according to the legacy format rules:
+     * only BPF programs log their calls,
+     * native programs (System, Vote, Stake, etc.) are executed without any log messages.
+     *
+     * It is set for `legacy` logs, and might be set by the caller
+     * for an `unknown` one, when the format is known from elsewhere (e.g. from other transactions of the block).
+     */
+    public legacyFormat: boolean
+
     constructor(messages: string[]) {
         this.messages = messages.map(parseLogMessage)
+        this.format = this.detectFormat(messages)
+        this.legacyFormat = this.format === 'legacy'
+    }
+
+    private detectFormat(lines: string[]): 'modern' | 'legacy' | 'unknown' {
+        let legacy = false
+        let modern = false
+        for (let msg of this.messages) {
+            if (isLegacyMessage(msg)) {
+                legacy = true
+            } else if (isModernStructuralMessage(msg)) {
+                modern = true
+            }
+        }
+
+        if (!legacy) return modern ? 'modern' : 'unknown'
+
+        if (modern) {
+            // Formats are never mixed within a transaction.
+            // Should that happen, treat old-style lines as plain messages,
+            // as they were treated before legacy format support.
+            this.messages = this.messages.map((msg, i) => isLegacyMessage(msg) ? new OtherMessage(lines[i]) : msg)
+            return 'modern'
+        }
+
+        // Old-style messages don't carry stack height and compute unit messages don't carry program id,
+        // restore them from the bracket structure.
+        let stack: LegacyInvokeMessage[] = []
+        for (let msg of this.messages) {
+            if (msg instanceof LegacyInvokeMessage) {
+                stack.push(msg)
+                msg.stackHeight = stack.length
+            } else if (msg instanceof LegacyComputeUnitsMessage) {
+                msg.programId = stack[stack.length - 1]?.programId
+            } else if (msg instanceof LegacyInvokeResultMessage) {
+                stack.pop()
+            }
+        }
+
+        return 'legacy'
     }
 
     get unfinished(): boolean {
@@ -118,6 +187,15 @@ export class InstructionTreeTraversal {
             return
         }
 
+        if (this.messages.legacyFormat) {
+            // The old runtime logged only calls of BPF programs.
+            // Native programs (System, Vote, Stake, etc.) were executed without any log messages,
+            // and a BPF program that failed before being invoked has nothing logged either.
+            // So nothing was dropped and the following messages belong to someone else.
+            this.push(stackHeight)
+            return
+        }
+
         if (PROGRAMS_MISSING_INVOKE_LOG.has(programId)) {
         } else if (
             this.tx.couldFailBeforeInvokeMessage &&
@@ -183,6 +261,11 @@ export class InstructionTreeTraversal {
 
             let pos = this.pos
             let ins = this.push(stackHeight)
+
+            if (this.messages.legacyFormat) {
+                // calls without log messages are expected in the old format, see .call()
+                continue
+            }
 
             // even if we have some messages emitted,
             // we already assigned them to parent call

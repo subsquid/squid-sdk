@@ -114,6 +114,91 @@ export class LogTruncatedMessage {
 }
 
 
+/**
+ * `Call BPF program <id>`
+ *
+ * Old (v1.3 runtime) counterpart of {@link InvokeMessage}.
+ * It does not carry a stack height, the actual value is assigned by {@link MessageStream}
+ * from the bracket depth.
+ */
+export class LegacyInvokeMessage {
+    public kind = 'invoke' as const
+
+    constructor(
+        public programId: Base58Bytes,
+        public stackHeight: number = 0
+    ) {}
+
+    static parse(msg: string): LegacyInvokeMessage | undefined {
+        let m = /^Call BPF program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$/.exec(msg)
+        if (m) return new LegacyInvokeMessage(m[1])
+    }
+
+    toString(): string {
+        return `Call BPF program ${this.programId}`
+    }
+}
+
+
+/**
+ * `BPF program <id> success` / `BPF program <id> failed: <err>`
+ *
+ * Old (v1.3 runtime) counterpart of {@link InvokeResultMessage}.
+ */
+export class LegacyInvokeResultMessage {
+    public kind = 'invoke-result' as const
+
+    constructor(
+        public programId: Base58Bytes,
+        public success: boolean,
+        public error?: string
+    ) {}
+
+    static parse(msg: string): LegacyInvokeResultMessage | undefined {
+        let m = /^BPF program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) success$/.exec(msg)
+        if (m) return new LegacyInvokeResultMessage(m[1], true)
+
+        m = /^BPF program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) failed: (.*)$/.exec(msg)
+        if (m) return new LegacyInvokeResultMessage(m[1], false, m[2])
+    }
+
+    toString(): string {
+        if (this.success) {
+            return `BPF program ${this.programId} success`
+        } else {
+            return `BPF program ${this.programId} failed: ${this.error}`
+        }
+    }
+}
+
+
+/**
+ * `BPF program consumed <N> of <M> units`
+ *
+ * Old (v1.3 runtime) counterpart of {@link ComputeUnitsMessage}.
+ * The message does not name the program, it belongs to the innermost open call.
+ * {@link MessageStream} fills in the `programId` (it stays undefined, when there is no open call).
+ */
+export class LegacyComputeUnitsMessage {
+    public kind = 'cu' as const
+
+    constructor(
+        public consumed: bigint,
+        public available: bigint,
+        public programId?: Base58Bytes
+    ) {}
+
+    static parse(msg: string): LegacyComputeUnitsMessage | undefined {
+        let m = /^BPF program consumed (\d+) of (\d+) units$/.exec(msg)
+        if (m) return new LegacyComputeUnitsMessage(BigInt(m[1]), BigInt(m[2]))
+    }
+
+    toString(): string {
+        return `BPF program consumed ${this.consumed} of ${this.available} units`
+    }
+}
+
+
 export class OtherMessage {
     public kind = 'other' as const
 
@@ -125,6 +210,12 @@ export class OtherMessage {
 }
 
 
+export type LegacyMessage =
+    LegacyInvokeMessage |
+    LegacyInvokeResultMessage |
+    LegacyComputeUnitsMessage
+
+
 export type Message =
     InvokeMessage |
     InvokeResultMessage |
@@ -132,6 +223,7 @@ export type Message =
     ProgramDataMessage |
     ComputeUnitsMessage |
     LogTruncatedMessage |
+    LegacyMessage |
     OtherMessage
 
 
@@ -142,5 +234,22 @@ export function parseLogMessage(msg: string): Message {
         || ProgramDataMessage.parse(msg)
         || ComputeUnitsMessage.parse(msg)
         || LogTruncatedMessage.parse(msg)
+        || LegacyInvokeMessage.parse(msg)
+        || LegacyInvokeResultMessage.parse(msg)
+        || LegacyComputeUnitsMessage.parse(msg)
         || new OtherMessage(msg)
+}
+
+
+export function isLegacyMessage(msg: Message): msg is LegacyMessage {
+    return msg instanceof LegacyInvokeMessage
+        || msg instanceof LegacyInvokeResultMessage
+        || msg instanceof LegacyComputeUnitsMessage
+}
+
+
+export function isModernStructuralMessage(msg: Message): boolean {
+    return msg instanceof InvokeMessage
+        || msg instanceof InvokeResultMessage
+        || msg instanceof ComputeUnitsMessage
 }
