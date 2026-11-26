@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {EntityManager, FindOptionsOrder, FindOptionsRelations, FindOptionsWhere} from 'typeorm'
+import {EntityManager, FindOptionsOrder, FindOptionsRelations, FindOptionsWhere, In} from 'typeorm'
 import {EntityTarget} from 'typeorm/common/EntityTarget'
 import {ColumnMetadata} from 'typeorm/metadata/ColumnMetadata'
 import {ChangeTracker} from './hot'
@@ -90,7 +90,8 @@ export class Store {
         } else {
             let entityClass = e.constructor as EntityClass<E>
             await this.changes?.trackUpsert(entityClass, [e])
-            await this.em().upsert(entityClass, e as any, ['id'])
+            let em = this.em()
+            await em.upsert(entityClass, e as any, conflictTarget(em, entityClass))
         }
     }
 
@@ -127,8 +128,9 @@ export class Store {
     }
 
     private async upsertMany(em: EntityManager, entityClass: EntityClass<any>, entities: any[]): Promise<void> {
+        let target = conflictTarget(em, entityClass)
         for (let b of splitIntoBatches(entities, 1000)) {
-            await em.upsert(entityClass, b as any, ['id'])
+            await em.upsert(entityClass, b as any, target)
         }
     }
 
@@ -176,17 +178,17 @@ export class Store {
                 }
                 let ids = e.map(i => i.id)
                 await this.changes?.trackDelete(entityClass, ids)
-                await this.em().delete(entityClass, ids)
+                await this.em().delete(entityClass, {id: In(ids)} as any)
             } else {
                 let entity = e as E
                 let entityClass = entity.constructor as EntityClass<E>
                 await this.changes?.trackDelete(entityClass, [entity.id])
-                await this.em().delete(entityClass, entity.id)
+                await this.em().delete(entityClass, {id: entity.id} as any)
             }
         } else {
             let entityClass = e as EntityClass<E>
             await this.changes?.trackDelete(entityClass, Array.isArray(id) ? id : [id])
-            await this.em().delete(entityClass, id)
+            await this.em().delete(entityClass, {id: Array.isArray(id) ? In(id) : id} as any)
         }
     }
 
@@ -248,4 +250,15 @@ function* splitIntoBatches<T>(list: T[], maxBatchSize: number): Generator<T[]> {
 
 function noNull<T>(val: null | undefined | T): T | undefined {
     return val == null ? undefined : val
+}
+
+
+/**
+ * ON CONFLICT target for upserts — the entity's primary key.
+ *
+ * This is `['id']` for every entity that doesn't opt into a composite key via
+ * `@entity(pk: [...])`, which is what this code used to hardcode.
+ */
+function conflictTarget(em: EntityManager, entityClass: EntityClass<any>): string[] {
+    return em.connection.getMetadata(entityClass).primaryColumns.map(c => c.propertyName)
 }

@@ -54,7 +54,15 @@ export class ListQuery implements Query<any[]> {
 }
 
 
-export class EntityByIdQuery {
+/**
+ * Fetches the single entity identified by a full primary key.
+ *
+ * `key` carries one value per primary key column — just `id` for the great
+ * majority of entities, plus the extra columns of a key declared with
+ * `@entity(pk: [...])`. The key being complete is what makes at most one row
+ * matchable, which `map` relies on.
+ */
+export class EntityByPkQuery {
     public readonly sql: string
     public readonly params: unknown[] = []
 
@@ -63,14 +71,19 @@ export class EntityByIdQuery {
         dialect: DbType,
         entityName: string,
         private fields: FieldRequest[],
-        id: string
+        key: Record<string, unknown>
     ) {
+        let columns = Object.keys(key)
+        assert(columns.length > 0, 'a primary key lookup needs at least one column')
+        let where: Where = columns.length == 1
+            ? {op: 'eq', field: columns[0], value: key[columns[0]]}
+            : {op: 'AND', args: columns.map(field => ({op: 'eq' as const, field, value: key[field]}))}
         this.sql = new EntitySqlPrinter(
             model,
             dialect,
             entityName,
             this.params,
-            {where: {op: 'eq', field: 'id', value: id}},
+            {where},
             fields
         ).print()
     }
@@ -78,6 +91,22 @@ export class EntityByIdQuery {
     map(rows: any[][]): any {
         assert(rows.length < 2)
         return mapRows(rows, this.fields)[0]
+    }
+}
+
+
+/**
+ * @deprecated use {@link EntityByPkQuery}, which covers composite keys too.
+ */
+export class EntityByIdQuery extends EntityByPkQuery {
+    constructor(
+        model: Model,
+        dialect: DbType,
+        entityName: string,
+        fields: FieldRequest[],
+        id: string
+    ) {
+        super(model, dialect, entityName, fields, {id})
     }
 }
 

@@ -111,6 +111,11 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
         out.line()
         printComment(entity, out)
         const nameIndex = (fields: string[], unique: boolean) => indexNameFor(name, fields, unique)
+        // `id` carries @PrimaryColumn_(); the remaining pk columns are marked
+        // in place on their own typed decorator. Empty for the default pk,
+        // which keeps the generated output identical to a single-column key.
+        const extraPk = new Set((entity.pk ?? []).slice(1))
+        const primaryOption = (key: string) => extraPk.has(key) ? 'primary: true, ' : ''
         entity.indexes?.forEach(index => {
             if (index.fields.length < 2) return
             imports.useTypeormStore('Index')
@@ -144,13 +149,13 @@ export function generateOrmModels(model: Model, dir: OutDir): void {
                             imports.useTypeormStore(decorator)
 
                             addIndexAnnotation(entity, key, imports, out, nameIndex)
-                            out.line(`@${decorator}_({nullable: ${prop.nullable}})`)
+                            out.line(`@${decorator}_({${primaryOption(key)}nullable: ${prop.nullable}})`)
                         }
                         break
                     case 'enum':
                         addIndexAnnotation(entity, key, imports, out, nameIndex)
                         out.line(
-                            `@Column_("varchar", {length: ${getEnumMaxLength(
+                            `@Column_("varchar", {${primaryOption(key)}length: ${getEnumMaxLength(
                                 model,
                                 prop.type.name
                             )}, nullable: ${prop.nullable}})`

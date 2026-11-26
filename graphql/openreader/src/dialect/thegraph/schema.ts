@@ -33,7 +33,7 @@ import {getListSize, getObjectSize} from '../../limit.size'
 import {Entity, Interface, JsonObject, Model, Prop} from '../../model'
 import {getEntity, getObject, getUniversalProperties} from '../../model.tools'
 import {customScalars} from '../../scalars'
-import {EntityByIdQuery, ListQuery} from '../../sql/query'
+import {EntityByPkQuery, ListQuery} from '../../sql/query'
 import {Limit} from '../../util/limit'
 import {getResolveTree} from '../../util/resolve-tree'
 import {identity} from '../../util/util'
@@ -481,15 +481,32 @@ export class SchemaBuilder {
 
         let entity = model[entityName]
         let queryName = (entity.kind === 'entity' && entity.queryName) || this.normalizeQueryName(entityName).singular
-        let argsType = {
-            id: {type: new GraphQLNonNull(GraphQLString)},
+        // This dialect mirrors the subgraph API, where the single-entity query
+        // is named after the entity and keyed on `id`. A composite key adds its
+        // extra columns as arguments rather than renaming the query.
+        let pk = (entity.kind === 'entity' && entity.pk) || ['id']
+        let argsType: GraphQLFieldConfigArgumentMap = {}
+        for (let field of pk) {
+            let prop = getEntity(model, entityName).properties[field]
+            assert(prop != null, `${entityName}.${field} is a part of its pk, but is not a property`)
+            assert(
+                prop.type.kind == 'scalar' || prop.type.kind == 'enum',
+                `${entityName}.${field} is a part of its pk, but is neither a scalar nor an enum`
+            )
+            argsType[field] = {
+                type: new GraphQLNonNull(this.get(prop.type.name) as unknown as GraphQLInputType)
+            }
         }
 
         function createQuery(context: Context, info: GraphQLResolveInfo, limit?: Limit) {
             let tree = getResolveTree(info)
             let fields = parseObjectTree(model, entityName, info.schema, tree)
             limit?.check(() => getObjectSize(model, fields) + 1)
-            return new EntityByIdQuery(model, context.openreader.dbType, entityName, fields, tree.args.id as string)
+            let key: Record<string, unknown> = {}
+            for (let field of pk) {
+                key[field] = tree.args[field]
+            }
+            return new EntityByPkQuery(model, context.openreader.dbType, entityName, fields, key)
         }
 
         query[queryName] = {
