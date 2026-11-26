@@ -327,8 +327,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
      */
     private async *headCandidates(exhausted: Set<number>): AsyncGenerator<number> {
         let streaming = this.activeIndex
-        if (streaming != null && this.health[streaming].state !== 'unhealthy') {
-            yield streaming // reached again only if that request failed: fall back to the failover order
+        // Retry the streaming source through transient failures: only once they have marked it
+        // `unhealthy` does the usual failover order (possibly the parked primary) take over.
+        while (streaming != null && this.health[streaming].state !== 'unhealthy') {
+            yield streaming
         }
         yield* this.selectActive(exhausted)
     }
@@ -578,6 +580,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         this.chainHead = others != null ? Math.max(others, lastNumber) : lastNumber
         if (others == null) {
             this.lag = 0 // no independent reference ⇒ lag is not computable; don't report a stale value
+            this.#lagExceededSince = undefined // a later lag episode starts its own grace period
             return false
         }
 

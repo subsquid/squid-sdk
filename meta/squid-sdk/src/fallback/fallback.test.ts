@@ -985,6 +985,84 @@ describe('FallbackDataSource — a primary that stops at its own head: edge case
         expect((await fb.getHead()).number).toBe(30_000)
     })
 
+    it('retries the streaming source through a head blip instead of reporting the parked primary', async () => {
+        let now = 0
+        let blips = 1
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(100)])
+                for (let i = 0; i < 5; i++) yield batch([])
+            },
+            {head: async () => ({number: 100, hash: '0x'})},
+        )
+        let s1 = new MockSource(
+            async function* () {
+                yield batch([blk(101)])
+                yield batch([blk(102)])
+            },
+            {
+                head: async () => {
+                    if (blips-- > 0) throw new Error('transient')
+                    return {number: 30_000, hash: '0x'}
+                },
+            },
+        )
+        let fb = fallback([s0, s1], {
+            maxLagBlocks: 10,
+            maxStalenessMs: null,
+            headTtlMs: 0,
+            cooldownMs: 1000,
+            preferPrimary: 'onFailureOnly',
+            clock: () => now,
+        })
+        let it = fb.getStream({from: 100, to: 102})[Symbol.asyncIterator]()
+        await it.next() // [100] from s0
+        await it.next() // empty: s0 idle, failed over
+        expect(numbers((await it.next()).value.blocks)).toEqual([101]) // from s1
+
+        now = 1000
+        blips = 1 // one transient failure on the streaming source's head
+        expect((await fb.getHead()).number).toBe(30_000)
+    })
+
+    it('starts a new grace period after the lag reference was unavailable', async () => {
+        // Lag first exceeds the threshold at t=0, then the standby cannot be polled while the primary
+        // catches up. A later step at t=70 s is a new episode and must get its own grace period.
+        let now = 0
+        let standby: (() => Promise<BlockRef>) = async () => ({number: 132, hash: '0x'})
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(100)])
+                yield batch([]) // lag 32 seen at t=0: grace starts
+                standby = async () => {
+                    throw new Error('standby down')
+                }
+                now = 70_000
+                yield batch([blk(132)]) // no reference here
+                standby = async () => ({number: 164, hash: '0x'})
+                yield batch([]) // new lag at t=70 s: must not fail over at once
+                yield batch([blk(164)])
+            },
+            {head: async () => ({number: 200, hash: '0x'}), finalizedHead: async () => ({number: 100, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {}, {
+            head: async () => ({number: 200, hash: '0x'}),
+            finalizedHead: () => standby(),
+        })
+        let fb = fallback([s0, s1], {
+            maxLagBlocks: 10,
+            maxStalenessMs: null,
+            headTtlMs: 0,
+            cooldownMs: 0,
+            livenessFailThreshold: 100,
+            clock: () => now,
+        })
+
+        expect(numbers(await collect(fb.getFinalizedStream({from: 100, to: 164})))).toEqual([100, 132, 164])
+        expect(fb.activeIndex).toBe(0)
+        expect(s1.calls).toHaveLength(0)
+    })
+
     it('does not ask the active source for its head once the lag trigger is armed', async () => {
         // At the tip the trigger is armed already, so an empty batch cannot change the outcome.
         let headCalls = 0
