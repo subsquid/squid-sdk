@@ -22,6 +22,9 @@ import {getTxHash, qty2Int} from './util'
 // missing receipts, logs-bloom leakage) that were fixed well before block 20M.
 // Our Cronos-specific RPC fixes are only enabled for blocks below this cutoff
 // so they do not silently paper over new/unrelated bugs on recent data.
+/** Hash of Bor's derived state-sync transaction of a block (Polygon and its derivatives). */
+export {calculateStateSyncTxHash} from './verification'
+
 export const CRONOS_ETHERMINT_BUG_LAST_BLOCK = 20_000_000
 
 

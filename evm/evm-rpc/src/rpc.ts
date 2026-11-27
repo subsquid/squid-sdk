@@ -12,7 +12,6 @@ import {
     Validator
 } from '@subsquid/util-internal-validation'
 import { addErrorContext, groupBy, last, wait } from '@subsquid/util-internal'
-import assert from 'assert'
 import {
     GetBlock,
     Receipt,
@@ -212,6 +211,16 @@ export function parseConsensusAnchorRules(list: string): ConsensusAnchorRule[] {
 
 const CONSENSUS_ANCHOR_VIOLATION_SAMPLE_LIMIT = 3
 
+export const TRACE_REPLAY_COMPLETENESS_MODES = ['off', 'observe', 'reject'] as const
+const MISSING_TRACE_REPLAY_SAMPLE_LIMIT = 3
+
+/**
+ * Controls the check that `trace_replayBlockTransactions` returned exactly one replay for
+ * every transaction of the block: `off` skips it, `observe` logs the block's missing or
+ * repeated replays and accepts it, `reject` marks the block invalid so it is fetched again.
+ */
+export type TraceReplayCompletenessMode = (typeof TRACE_REPLAY_COMPLETENESS_MODES)[number]
+
 
 interface ConsensusAnchorViolationSample extends ConsensusAnchorViolation {
     transactionIndex: number
@@ -249,6 +258,11 @@ export interface RpcOptions extends BlockCheckOptions {
     consensusAnchorValidation?: ConsensusAnchorValidationMode
     /** Rules to apply, {@link DEFAULT_CONSENSUS_ANCHOR_RULES} by default. */
     consensusAnchorRules?: readonly ConsensusAnchorRule[]
+    /**
+     * Checks that trace replays (trace API state diffs and traces) cover every
+     * transaction, see {@link TraceReplayCompletenessMode}. `off` by default.
+     */
+    traceReplayCompleteness?: TraceReplayCompletenessMode
     useGasUsedForReceiptsRoot?: boolean
     /**
      * HyperEVM only: an endpoint that serves `eth_getSystemTxsByBlockHash` (the official RPC does).
@@ -292,6 +306,7 @@ export class Rpc {
     private systemTxOracleUnavailable = {count: 0, sinceWarning: 0, lastWarning: 0}
     // The oracle call in flight, if any; settles without an error
     private systemTxOracleCall?: Promise<void>
+    private traceReplayCompleteness: TraceReplayCompletenessMode
     private useGasUsedForReceiptsRoot?: boolean
     private log: Logger
     private receiptsMethod?: GetReceiptsMethod
@@ -356,6 +371,10 @@ export class Rpc {
                 "consensusAnchorValidation 'reject' requires verifyReceiptsRoot, checkCumulativeGasUsed " +
                     '(or useGasUsedForReceiptsRoot), verifyTxRoot and verifyTxSender'
             )
+        }
+        this.traceReplayCompleteness = options.traceReplayCompleteness ?? 'off'
+        if (!TRACE_REPLAY_COMPLETENESS_MODES.includes(this.traceReplayCompleteness)) {
+            throw new Error(`unsupported traceReplayCompleteness mode: ${this.traceReplayCompleteness}`)
         }
         this.useGasUsedForReceiptsRoot = options.useGasUsedForReceiptsRoot
         this.log = createLogger('sqd:evm-rpc')
@@ -2103,6 +2122,7 @@ export class Rpc {
             )
         })
 
+        let utils = this.traceReplayCompleteness === 'off' ? undefined : await this.getChainUtils()
         for (let i = 0; i < blocks.length; i++) {
             let block = blocks[i]
             let replays = replaysByBlock[i]
@@ -2120,11 +2140,17 @@ export class Rpc {
             for (let rep of replays) {
                 if (!rep.transactionHash) {
                     let txHash: Bytes32 | null | undefined = undefined
+                    let ambiguous = false
                     for (let frame of rep.trace || []) {
-                        assert(txHash == null || txHash === frame.transactionHash)
+                        if (txHash != null && txHash !== frame.transactionHash) ambiguous = true
                         txHash = txHash || frame.transactionHash
                     }
-                    assert(txHash, "can't match transaction replay with its transaction")
+                    // A malformed answer: fetch the block again rather than crash the process
+                    if (ambiguous || !txHash) {
+                        block._isInvalid = true
+                        block._errorMessage = "can't match a trace_replayBlockTransactions entry with its transaction"
+                        break
+                    }
                     rep.transactionHash = txHash
                 }
 
@@ -2134,7 +2160,58 @@ export class Rpc {
                 }
             }
 
+            if (utils && !block._isInvalid) {
+                this.checkTraceReplayCompleteness(block, replays, utils)
+            }
+
             block.traceReplays = replays
+        }
+    }
+
+    /**
+     * Providers have answered `trace_replayBlockTransactions` with an empty or truncated
+     * list for a block with transactions. Accepted, such a block is mapped without state
+     * diffs (and traces) for the transactions left out (`toRawBlock` of evm-normalization
+     * instead fails on it). A transaction replayed twice would have its traces and state
+     * diffs mapped twice, so it is a defect too.
+     */
+    private checkTraceReplayCompleteness(block: Block, replays: TraceTransactionReplay[], utils: ChainUtils): void {
+        let replayed = new Set<string>()
+        let duplicated: Bytes32[] = []
+        for (let rep of replays) {
+            // set for every entry by addTraceTxReplays before the check
+            let txHash = rep.transactionHash!.toLowerCase()
+            if (replayed.has(txHash)) duplicated.push(txHash)
+            replayed.add(txHash)
+        }
+        // Bor's derived state-sync transaction is not executed by the EVM and may have no replay
+        let stateSyncTxHash = utils.getStateSyncTxHash(block.block)
+
+        let missing: Bytes32[] = []
+        for (let tx of block.block.transactions) {
+            let txHash = getTxHash(tx).toLowerCase()
+            if (!replayed.has(txHash) && txHash !== stateSyncTxHash) missing.push(txHash)
+        }
+        if (missing.length === 0 && duplicated.length === 0) return
+
+        let transactionCount = block.block.transactions.length
+        if (this.traceReplayCompleteness === 'reject') {
+            block._isInvalid = true
+            block._errorMessage = missing.length > 0
+                ? `trace_replayBlockTransactions returned no replay for ${missing.length} of ${transactionCount} ` +
+                    `transactions, e.g. ${missing[0]}`
+                : `trace_replayBlockTransactions returned more than one replay for transaction ${duplicated[0]}`
+        } else {
+            this.log.warn({
+                blockNumber: block.number,
+                blockHash: block.hash,
+                transactionCount,
+                replayCount: replays.length,
+                missingCount: missing.length,
+                missingSample: missing.slice(0, MISSING_TRACE_REPLAY_SAMPLE_LIMIT),
+                duplicatedCount: duplicated.length,
+                duplicatedSample: duplicated.slice(0, MISSING_TRACE_REPLAY_SAMPLE_LIMIT)
+            }, 'trace replays are missing or repeated for some transactions, block accepted as is')
         }
     }
 

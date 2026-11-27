@@ -282,7 +282,7 @@ function findShapeDefect(block: RawBlock, selection: Selection, utils: ChainUtil
             findPartDefect('receipt', tx.receipt_, receiptValidator, false) ??
             findPartDefect('call frames', tx.debugFrame_, frameValidator, isFrameOptional) ??
             findPartDefect('state diff', tx.debugStateDiff_, diffValidator, isTraceOptional) ??
-            findPartDefect('trace replay', tx.traceReplay_, replayValidator, isGenesis)
+            findPartDefect('trace replay', tx.traceReplay_, replayValidator, isTraceOptional)
 
         if (defect) return `transaction ${tx.hash}: ${defect}`
     }

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Reject blocks whose trace_replayBlockTransactions answer misses or repeats transactions, retrying them instead of failing on them when written (--trace-replay-completeness, default reject)",
+      "type": "minor",
+      "packageName": "@subsquid/evm-dump"
+    }
+  ],
+  "packageName": "@subsquid/evm-dump"
+}

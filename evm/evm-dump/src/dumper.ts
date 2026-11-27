@@ -6,6 +6,8 @@ import {
     type ConsensusAnchorValidationMode,
     DEFAULT_CONSENSUS_ANCHOR_RULES,
     parseConsensusAnchorRules,
+    TRACE_REPLAY_COMPLETENESS_MODES,
+    type TraceReplayCompletenessMode,
     Rpc,
     EvmRpcDataSource,
     EvmRpcClient,
@@ -56,6 +58,7 @@ interface Options extends DumperOptions, StreamOptions {
     callFrameValidation?: CallFrameValidationMode
     consensusAnchorValidation?: ConsensusAnchorValidationMode
     consensusAnchorRules?: ConsensusAnchorRule[]
+    traceReplayCompleteness?: TraceReplayCompletenessMode
     skipLogIndexCheck?: boolean
     skipCumulativeGasUsedCheck?: boolean
     stubCalldataFloorFailures?: boolean
@@ -135,6 +138,17 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
             )
                 .argParser(parseConsensusAnchorRules)
                 .default([...DEFAULT_CONSENSUS_ANCHOR_RULES], DEFAULT_CONSENSUS_ANCHOR_RULES.join(',')),
+        )
+        program.addOption(
+            new Option(
+                '--trace-replay-completeness <mode>',
+                'Check that trace_replayBlockTransactions returned one replay for every transaction; ' +
+                    'reject marks a block with missing or repeated replays invalid so it is fetched again, ' +
+                    'observe only logs it. The raw format needs a replay for every transaction, so with observe ' +
+                    'or off a block with a missing one still stops the dump when it is written',
+            )
+                .choices([...TRACE_REPLAY_COMPLETENESS_MODES])
+                .default('reject')
         )
         program.option('--skip-log-index-check', 'Do not check log indices within a block are sequential')
         program.option(
@@ -254,6 +268,7 @@ export class EvmDumper extends Dumper<RawBlock, Options> {
             callFrameValidation: this.options().callFrameValidation,
             consensusAnchorValidation: this.options().consensusAnchorValidation,
             consensusAnchorRules: this.options().consensusAnchorRules,
+            traceReplayCompleteness: this.options().traceReplayCompleteness,
             checkLogIndex: !this.options().skipLogIndexCheck,
             checkCumulativeGasUsed: !this.options().skipCumulativeGasUsedCheck,
             useGasUsedForReceiptsRoot: this.options().useGasUsedForReceiptsRoot,

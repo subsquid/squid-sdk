@@ -7,7 +7,8 @@ import {
     Block,
     DebugFrameResult,
     DebugStateDiffResult,
-    BlockAccessList
+    BlockAccessList,
+    calculateStateSyncTxHash
 } from '@subsquid/evm-rpc'
 import {assertNotNull} from '@subsquid/util-internal'
 import assert from 'assert'
@@ -56,10 +57,21 @@ export function toRawBlock(block: Block): RawBlock {
     }
 
     if (block.traceReplays) {
-        let byTx = new Map(block.traceReplays.map(replay => [assertNotNull(replay.transactionHash), replay]))
+        let byTx = new Map(block.traceReplays.map(replay => [assertNotNull(replay.transactionHash).toLowerCase(), replay]))
+        let stateSyncTxHash: string | undefined
         for (let i = 0; i < transactions.length; i++) {
             let tx = transactions[i]
-            tx.traceReplay_ = assertNotNull(byTx.get(tx.hash))
+            let replay = byTx.get(tx.hash.toLowerCase())
+            if (replay == null) {
+                // Bor (Polygon and its derivatives) does not replay the derived state-sync transaction
+                // that older blocks list last in their body. It is stored without a replay, as the debug
+                // API path stores it without a call frame. The hash is derived from the block number and
+                // hash, so no transaction of another chain can match it.
+                stateSyncTxHash ??= calculateStateSyncTxHash(rawBlock.number, rawBlock.hash).toLowerCase()
+                if (tx.hash.toLowerCase() === stateSyncTxHash) continue
+                throw new Error(`block ${rawBlock.number}#${rawBlock.hash}: no trace replay for transaction ${tx.hash}`)
+            }
+            tx.traceReplay_ = replay
         }
     }
 
