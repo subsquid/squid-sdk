@@ -1507,6 +1507,253 @@ describe('FallbackDataSource — served vs claimed heights', () => {
     })
 })
 
+describe('FallbackDataSource — a source that claims the tip but does not deliver it', () => {
+    // The clock is the test's: time that passes inside a source's generator is time the stream
+    // waited on that source; time that passes in the consumer loop is the consumer's.
+    type Env = {wait: (ms: number) => void; advanceChain: (blocks: number) => void}
+
+    function setup(
+        primary: (req: StreamRequest, env: Env) => AsyncGenerator<BlockBatch<TestBlock>>,
+        policy: FallbackPolicy = {},
+        opts: {tip?: number; primaryHead?: () => Promise<BlockRef>} = {},
+    ) {
+        let now = 0
+        let tip = opts.tip ?? 100
+        let env = {
+            wait: (ms: number) => {
+                now += ms
+            },
+            advanceChain: (blocks: number) => {
+                tip += blocks
+            },
+        }
+        let claim = async () => ({number: tip, hash: '0x'})
+        let primaryClaim = opts.primaryHead ?? claim
+        let s0 = new MockSource((req) => primary(req, env), {head: primaryClaim, finalizedHead: primaryClaim})
+        let s1 = new MockSource(
+            async function* (req) {
+                let blocks: TestBlock[] = []
+                for (let n = req.from; n <= tip; n++) blocks.push(blk(n))
+                yield batch(blocks)
+            },
+            {head: claim, finalizedHead: claim},
+        )
+        let fb = fallback([s0, s1], {
+            maxLagBlocks: 10,
+            maxStalenessMs: 180_000,
+            headTtlMs: 0,
+            cooldownMs: 600_000,
+            preferPrimary: 'onFailureOnly',
+            clock: () => now,
+            ...policy,
+        })
+        let consume = (ms: number) => {
+            now += ms
+        }
+        return {fb, s0, s1, consume, tip: () => tip, now: () => now}
+    }
+
+    // Reads until the stream leaves the primary or ends; the consumer takes `consumerMs` per batch.
+    async function drive(t: ReturnType<typeof setup>, stream: BlockStream<TestBlock>, consumerMs = 0) {
+        let last: number | undefined
+        for await (let b of stream) {
+            if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
+            if (t.fb.activeIndex !== 0) break
+            t.consume(consumerMs)
+        }
+        return last
+    }
+
+    it('fails over a primary that claims the tip but only yields empty batches', async () => {
+        // Its head keeps up with the chain, so claim against claim it is never behind; every empty
+        // batch also resets the staleness clock. Only the time spent waiting on it shows the problem.
+        let t = setup(async function* (req, env) {
+            yield batch([blk(req.from)]) // at the tip: arms the lag trigger
+            for (let i = 0; i < 100; i++) {
+                env.wait(5000) // a long poll that returns nothing
+                env.advanceChain(5)
+                yield batch([])
+            }
+        })
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
+        // not before `maxStalenessMs` of waiting on the source has passed
+        expect(t.now()).toBeGreaterThan(180_000)
+        expect(t.now()).toBeLessThan(240_000)
+    })
+
+    it('fails over a primary that claims the tip but delivers slower than the chain grows', async () => {
+        let t = setup(async function* (req, env) {
+            yield batch([blk(req.from)])
+            for (let n = req.from + 1; n < req.from + 200; n++) {
+                env.wait(5000)
+                env.advanceChain(5) // 5 blocks produced for each one delivered
+                yield batch([blk(n)])
+            }
+        })
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
+    })
+
+    for (let finalized of [false, true]) {
+        let kind = finalized ? 'finalized' : 'unfinalized'
+        it(`keeps a healthy primary when only the consumer is slow (${kind} stream, clocked)`, async () => {
+            // The source has every batch ready at once; the handler takes 10 s per batch while the
+            // chain moves on. All the time is the consumer's, however long it lasts.
+            let t = setup(async function* (req, env) {
+                for (let n = req.from; n < req.from + 200; n++) {
+                    env.advanceChain(5)
+                    yield batch([blk(n)])
+                }
+            })
+            let req = {from: 100, to: 299}
+            let stream = finalized ? t.fb.getFinalizedStream(req) : t.fb.getStream(req)
+            expect(await drive(t, stream, 10_000)).toBe(299)
+
+            expect(t.fb.activeIndex).toBe(0)
+            expect(t.s1.calls).toHaveLength(0)
+            expect(t.now()).toBeGreaterThan(1_800_000) // half an hour behind, never failed over
+        })
+    }
+
+    it('keeps a primary that the consumer waits on a little, when the consumer takes most of the time', async () => {
+        // 1 s of source time and 9 s of handler time per batch: the wait on the source adds up to
+        // more than `maxStalenessMs`, but the source is not what holds the stream back.
+        let t = setup(async function* (req, env) {
+            for (let n = req.from; n < req.from + 400; n++) {
+                env.wait(1000)
+                env.advanceChain(5)
+                yield batch([blk(n)])
+            }
+        })
+        expect(await drive(t, t.fb.getStream({from: 100, to: 499}), 9000)).toBe(499)
+        expect(t.fb.activeIndex).toBe(0)
+    })
+
+    it('keeps a primary that is working through a backlog and getting closer to the tip', async () => {
+        // The stream arms at the tip, then the chain jumps 6000 blocks ahead. The source is the
+        // bottleneck (the consumer is instant), but each batch brings the stream closer.
+        let t = setup(async function* (req, env) {
+            yield batch([blk(req.from)])
+            env.advanceChain(6000)
+            for (let n = req.from + 1; n <= 6100; n += 20) {
+                env.wait(5000)
+                env.advanceChain(2)
+                yield batch(Array.from({length: 20}, (_, i) => blk(n + i)))
+            }
+        })
+        let last = await drive(t, t.fb.getStream({from: 100, to: 6100}))
+
+        expect(last).toBe(6100)
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
+    it('keeps a slow primary during a historical backfill that delivers blocks', async () => {
+        // Never armed: the stream starts 100_000 blocks below the tip and the source is slower than
+        // the chain. A backfill is not failed over for being slow, as before.
+        let t = setup(
+            async function* (req, env) {
+                for (let n = req.from; n < req.from + 100; n++) {
+                    env.wait(5000)
+                    env.advanceChain(5)
+                    yield batch([blk(n)])
+                }
+            },
+            {},
+            {tip: 100_000},
+        )
+        expect(await drive(t, t.fb.getStream({from: 100, to: 199}))).toBe(199)
+        expect(t.fb.activeIndex).toBe(0)
+    })
+
+    it('fails over a primary that stops delivering in the middle of a backfill while claiming more', async () => {
+        // Never armed, and not idle at its own claim (it claims the tip), so neither the lag trigger
+        // nor the idle check applies; the empty batches keep the staleness clock quiet.
+        let t = setup(
+            async function* (req, env) {
+                yield batch([blk(req.from)])
+                for (let i = 0; i < 100; i++) {
+                    env.wait(5000)
+                    yield batch([])
+                }
+            },
+            {},
+            {tip: 100_000},
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
+    })
+
+    it('starts over when the stream gets back within maxLagBlocks of the tip', async () => {
+        // Two spells behind the tip, 150 s of waiting each, with a batch that catches up in between:
+        // neither spell reaches `maxStalenessMs`, and they do not add up.
+        let t = setup(async function* (req, env) {
+            let n = req.from
+            yield batch([blk(n)])
+            for (let spell = 0; spell < 2; spell++) {
+                env.advanceChain(50)
+                for (let i = 0; i < 30; i++) {
+                    env.wait(5000)
+                    yield batch([])
+                }
+                let blocks: TestBlock[] = []
+                while (n < t.tip()) blocks.push(blk(++n))
+                yield batch(blocks) // caught up
+            }
+        })
+        expect(await drive(t, t.fb.getStream({from: 100, to: 200}))).toBe(200)
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
+    it('also covers a primary whose claim is unknown', async () => {
+        // Its head request fails, so the lag trigger decides nothing; the stream still falls behind
+        // while it waits on this source.
+        let t = setup(
+            async function* (req, env) {
+                yield batch([blk(req.from)])
+                for (let i = 0; i < 100; i++) {
+                    env.wait(5000)
+                    env.advanceChain(5)
+                    yield batch([])
+                }
+            },
+            {},
+            {
+                primaryHead: async () => {
+                    throw new Error('head unavailable')
+                },
+            },
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+        expect(t.fb.activeIndex).toBe(1)
+    })
+
+    it('is off when the staleness trigger is disabled', async () => {
+        let t = setup(
+            async function* (req, env) {
+                yield batch([blk(req.from)])
+                for (let i = 0; i < 100; i++) {
+                    env.wait(5000)
+                    env.advanceChain(5)
+                    yield batch([])
+                }
+            },
+            {maxStalenessMs: null},
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+})
+
 describe('FallbackDataSource — getHead delegation', () => {
     it('delegates to the active source and fails over on error', async () => {
         let noop: StreamFn = async function* () {}

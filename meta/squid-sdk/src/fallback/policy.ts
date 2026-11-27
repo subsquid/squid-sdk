@@ -34,6 +34,9 @@ export interface FallbackPolicy {
      * real-time data, is checked too. When the active source's claim is unknown (its head request
      * failed), no lag failover happens at that boundary; the staleness trigger still applies.
      *
+     * A claim is unverified, so this alone would keep a source that claims the tip but does not
+     * deliver it. That case is covered by `maxStalenessMs`.
+     *
      * The same distance is the tolerance for eager switch-up: a candidate whose claim is more
      * than this below the served frontier is not reclaimed. `10` by default; `null` disables the
      * lag trigger, including the idle-head failover, and makes the switch-up tolerance 0.
@@ -54,8 +57,16 @@ export interface FallbackPolicy {
     finalizedLagGraceMs?: number
     /**
      * Fail the active source over when its next-batch request stays outstanding this long (the
-     * source-pending clock — excludes time parked at `yield` awaiting the consumer). `180_000`
-     * ms by default; `null` disables the staleness trigger.
+     * source-pending clock — excludes time parked at `yield` awaiting the consumer).
+     *
+     * The same limit applies to a source that keeps answering but does not keep up, whatever
+     * height it claims: while the stream stays more than `maxLagBlocks` behind the other sources'
+     * best claim, the time it waits on the active source is added up, and past this limit the
+     * source is failed over. Three cases are left alone: the consumer took more of the time than
+     * the source did, the stream got closer to the tip in the meantime, or it is a historical
+     * backfill that delivers blocks. This part also needs `maxLagBlocks` to be set.
+     *
+     * `180_000` ms by default; `null` disables the staleness trigger.
      */
     maxStalenessMs?: number | null
     /** How often the staleness clock is checked while a request is outstanding. */
