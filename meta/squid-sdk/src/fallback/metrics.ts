@@ -17,8 +17,9 @@ const HEALTH_STATES = ['healthy', 'unhealthy', 'unknown'] as const
 
 /**
  * A `MetricsSink` exporting a {@link FallbackDataSource}'s observable state as Prometheus gauges
- * (unhealthiness reflected in metrics): which source is active, per-source trinary health,
- * lag/staleness/chain-stalled, and the cumulative switch count. Each gauge reads `source.metrics()`
+ * (unhealthiness reflected in metrics): which source is active, per-source trinary health, the
+ * per-source served and claimed heights, delivery and source lag, staleness, chain-stalled, and the
+ * cumulative switch count. Each gauge reads `source.metrics()`
  * on scrape via prom-client's `collect`, so there is nothing to push.
  */
 export function fallbackMetricsSink(source: FallbackMetricsSource, prefix = 'sqd_fallback'): MetricsSink {
@@ -76,10 +77,49 @@ export function fallbackMetricsSink(source: FallbackMetricsSource, prefix = 'sqd
 
             new Gauge({
                 name: `${prefix}_lag_blocks`,
-                help: 'Blocks behind the independent chain-head reference',
+                help:
+                    'Delivery lag: the best height another source claims, minus the last block the ' +
+                    'stream served (includes a slow consumer)',
                 registers: [registry],
                 collect() {
                     this.set(source.metrics().lag)
+                },
+            })
+
+            new Gauge({
+                name: `${prefix}_source_lag_blocks`,
+                help:
+                    'Source lag: the best height another source claims, minus the height the active ' +
+                    'source claims (what the lag failover acts on)',
+                registers: [registry],
+                collect() {
+                    this.set(source.metrics().sourceLag)
+                },
+            })
+
+            new Gauge({
+                name: `${prefix}_source_served_height`,
+                help: 'Highest block each source delivered on the current stream (verified by the data)',
+                labelNames: ['source'],
+                registers: [registry],
+                collect() {
+                    this.reset()
+                    for (let s of source.metrics().sources) {
+                        if (s.servedHeight != null) this.set({source: s.name}, s.servedHeight)
+                    }
+                },
+            })
+
+            new Gauge({
+                name: `${prefix}_source_claimed_height`,
+                help: 'Height each source last claimed it can serve, for the current stream kind (unverified)',
+                labelNames: ['source'],
+                registers: [registry],
+                collect() {
+                    this.reset()
+                    for (let s of source.metrics().sources) {
+                        if (s.claimedHeight != null) this.set({source: s.name}, s.claimedHeight)
+                    }
                 },
             })
 

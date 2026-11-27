@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/squid-sdk",
+      "comment": "fallback: tell served heights (blocks a source delivered) from claimed heights (its head endpoints) everywhere; the lag failover now compares the active source's claim with the other sources' claims, so a consumer slower than a healthy source no longer fails it over; new gauges `sqd_fallback_source_lag_blocks`, `sqd_fallback_source_served_height` and `sqd_fallback_source_claimed_height`",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/squid-sdk"
+}

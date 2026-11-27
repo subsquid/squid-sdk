@@ -21,28 +21,34 @@ export interface FallbackPolicy {
     /** `M` — consecutive liveness passes (with capability confirmed) required to become `healthy`. */
     livenessRecoverThreshold?: number
     /**
-     * Fail the active source over when it falls more than this many blocks behind an
-     * *independent* chain-head reference (the max head of the other eligible sources; their
-     * finalized heads on a finalized stream). Armed once the tip is first reached, so a long
-     * historical backfill never false-fires. It also applies at a batch boundary where the active
-     * source has nothing more to serve (an empty batch, confirmed by its own head), so a source
-     * that stops at its own head far below the tip, such as a Portal dataset without real-time
-     * data, still fails over. The same distance is the tolerance for eager switch-up: a candidate
-     * whose head trails the committed frontier by more than this is not reclaimed.
-     * `10` by default; `null` disables the lag trigger, including the idle-head failover, and
-     * makes the switch-up tolerance 0 (a candidate must have reached the committed frontier).
+     * Fail the active source over when the height it *claims* (its head endpoint) trails the best
+     * height the other eligible sources claim by more than this many blocks (finalized heads on a
+     * finalized stream). Claims are compared with claims: a stream that is behind only because its
+     * consumer is slower than a healthy source never fails over.
      *
-     * Known limits: the idle-head check needs an empty batch, so when the active source's head sits
+     * The check runs only when the stream's *served* frontier (the last block it delivered) is
+     * itself more than this many blocks below the others' best claim, so no extra request is made
+     * at the tip. It arms once the frontier first gets within this distance of the tip, so a long
+     * historical backfill never fires it. Before that, a source that is idle at its own claim (an
+     * empty batch, and a claim no higher than the frontier), such as a Portal dataset without
+     * real-time data, is checked too. When the active source's claim is unknown (its head request
+     * failed), no lag failover happens at that boundary; the staleness trigger still applies.
+     *
+     * The same distance is the tolerance for eager switch-up: a candidate whose claim is more
+     * than this below the served frontier is not reclaimed. `10` by default; `null` disables the
+     * lag trigger, including the idle-head failover, and makes the switch-up tolerance 0.
+     *
+     * Known limits: the idle check needs an empty batch, so when the active source's head sits
      * inside a gap between the configured query ranges (no batch is yielded while the gap drains),
      * only the staleness trigger moves the stream, after `maxStalenessMs`. It also needs a reference
-     * head, so a standby whose head polls keep exceeding `headPollTimeoutMs` cannot supply one.
+     * claim, so a standby whose head polls keep exceeding `headPollTimeoutMs` cannot supply one.
      */
     maxLagBlocks?: number | null
     /**
-     * On a finalized stream, how long the lag has to stay above `maxLagBlocks` before the active
-     * source is failed over. Finality advances in steps (32-block epochs on Ethereum), and another
-     * source may report a step a few seconds before the active one delivers it; a source parked
-     * at its own finalized head stays behind. `60_000` ms by default; `0` fails over at once.
+     * On a finalized stream, how long the active source's claimed finalized height has to trail
+     * the others' by more than `maxLagBlocks` before it is failed over. Finality advances in steps
+     * (32-block epochs on Ethereum), and another source may claim a step a few seconds before the
+     * active one; a source parked at its own finalized head stays behind. `60_000` ms by default; `0` fails over at once.
      * Unfinalized streams fail over at once.
      */
     finalizedLagGraceMs?: number

@@ -551,11 +551,15 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 describe('FallbackDataSource — freshness (M1)', () => {
     it('(a) lag: fails over once it falls behind the independent head (after arming at the tip)', async () => {
         let s1heads = [95, 110] // first read arms (lag 5), second trips (lag 19)
-        let s0 = new MockSource(async function* () {
-            yield batch([blk(90)])
-            yield batch([blk(91)])
-            yield batch([blk(92)]) // not reached
-        })
+        // s0's own claim stops at 91: the source itself is behind, not just the stream.
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(90)])
+                yield batch([blk(91)])
+                yield batch([blk(92)]) // not reached
+            },
+            {head: async () => ({number: 91, hash: '0x'})},
+        )
         let s1 = new MockSource(
             async function* (req) {
                 expect(req.from).toBe(92)
@@ -719,10 +723,13 @@ describe('FallbackDataSource — freshness (M1)', () => {
 
     it('(g) resets freshness gauges on a switch (no stale lag from the old source)', async () => {
         let s1heads = [95, 110] // arm at lag 5, then trip at lag 19
-        let s0 = new MockSource(async function* () {
-            yield batch([blk(90)])
-            yield batch([blk(91)])
-        })
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(90)])
+                yield batch([blk(91)])
+            },
+            {head: async () => ({number: 91, hash: '0x'})}, // the source's own claim lags too
+        )
         // Empty standby: after failover the stream ends immediately, so no boundary recomputes
         // freshness — exposing whether the switch itself cleared the old source's lag.
         let s1 = new MockSource(async function* () {}, {head: async () => ({number: s1heads.shift() ?? 110, hash: '0x'})})
@@ -733,6 +740,7 @@ describe('FallbackDataSource — freshness (M1)', () => {
         // The switch (setActive) must clear ALL freshness gauges the old source populated, not just
         // lag: the lag trigger also recorded chainHead (~110). None may survive onto the new source.
         expect(fb.lag).toBe(0) // not the stale 19 the lag trigger recorded against s0
+        expect(fb.sourceLag).toBe(0)
         expect(fb.staleness).toBe(0)
         expect(fb.chainStalled).toBe(false)
         expect(fb.chainHead).toBeUndefined()
@@ -1304,6 +1312,198 @@ describe('FallbackDataSource — a primary that stops at its own head: edge case
         for (let n = await it.next(); !n.done; n = await it.next()) hashes.push(...n.value.blocks.map((b) => b.header.hash))
         expect(hashes).toEqual(['0x2', '0x3']) // served by s1
         expect(s0.calls).toHaveLength(1)
+    })
+})
+
+describe('FallbackDataSource — served vs claimed heights', () => {
+    // A healthy primary whose claim keeps up with the reference, while the consumer is slow: the
+    // stream's served frontier falls ever further behind both claims.
+    function slowConsumer(finalized: boolean) {
+        let tip = 100
+        let s0 = new MockSource(
+            async function* () {
+                for (let n = 90; n <= 100; n++) {
+                    yield batch([blk(n)])
+                    tip += 10 // the chain moves faster than the handler consumes it
+                }
+            },
+            {
+                head: async () => ({number: tip, hash: '0x'}),
+                finalizedHead: async () => ({number: tip, hash: '0x'}),
+            },
+        )
+        let s1 = new MockSource(async function* () {}, {
+            head: async () => ({number: tip, hash: '0x'}),
+            finalizedHead: async () => ({number: tip, hash: '0x'}),
+        })
+        let fb = fallback([s0, s1], {
+            maxLagBlocks: 10,
+            maxStalenessMs: null,
+            headTtlMs: 0,
+            cooldownMs: 60_000,
+            finalizedLagGraceMs: 0,
+        })
+        return {fb, s1, stream: finalized ? fb.getFinalizedStream({from: 90, to: 100}) : fb.getStream({from: 90, to: 100})}
+    }
+
+    for (let finalized of [false, true]) {
+        it(`keeps a healthy primary when only the consumer is slow (${finalized ? 'finalized' : 'unfinalized'} stream)`, async () => {
+            let {fb, s1, stream} = slowConsumer(finalized)
+            let got = numbers(await collect(stream))
+            expect(got).toEqual([90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100])
+            expect(fb.activeIndex).toBe(0)
+            expect(s1.calls).toHaveLength(0)
+            expect(fb.lag).toBeGreaterThan(10) // the stream is behind...
+            expect(fb.sourceLag).toBe(0) // ...but the source is not
+        })
+    }
+
+    it('does not fail over on lag while the active source\'s claim is unknown', async () => {
+        // The stream is behind the reference, but the active source's head request fails: nothing
+        // shows that the source (rather than the consumer) is behind, so the boundary decides nothing.
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(90)])
+            yield batch([blk(91)])
+            yield batch([blk(92)])
+        })
+        let s1heads = [95, 110, 120]
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: s1heads.shift() ?? 130, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        expect(numbers(await collect(fb.getStream({from: 90, to: 92})))).toEqual([90, 91, 92])
+        expect(fb.activeIndex).toBe(0)
+    })
+
+    it('refreshes a cached active claim before acting on a deficit against a fresher standby claim', async () => {
+        // Both sources always claim the same tip. With a 5 s TTL, the standby's claim is refreshed at
+        // t=11.5 s (160) while the active claim cached at t=8 s (140) is still valid: a 20-block
+        // "deficit" that is only the age difference. The consumer is slow; nothing should fail over.
+        let now = 0
+        let tip = 115
+        let fb: FallbackDataSource<TestBlock>
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(110)]) // t=0: delivery lag 5, arms the trigger
+                now = 6000
+                tip = 130
+                yield batch([blk(111)])
+                now = 8000
+                tip = 140
+                await fb.getHead() // records the active claim (140) at t=8 s
+                yield batch([blk(112)])
+                now = 11_500
+                tip = 160
+                yield batch([blk(113)])
+            },
+            {head: async () => ({number: tip, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: tip, hash: '0x'})})
+        fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 5000, cooldownMs: 60_000, clock: () => now})
+
+        expect(numbers(await collect(fb.getStream({from: 110, to: 113})))).toEqual([110, 111, 112, 113])
+        expect(fb.activeIndex).toBe(0)
+        expect(s1.calls).toHaveLength(0)
+    })
+
+    it('requests the active claim once per boundary when it is not cached', async () => {
+        let activeCalls = 0
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(90)])
+                yield batch([blk(91)])
+                yield batch([blk(92)])
+            },
+            {
+                head: async () => {
+                    activeCalls++
+                    return {number: 91, hash: '0x'}
+                },
+            },
+        )
+        // Arms at 95 (delivery lag 5), then shows a real deficit (110 vs the active claim 91).
+        let s1heads = [95, 110]
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: s1heads.shift() ?? 110, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        await collect(fb.getStream({from: 90, to: 92}))
+        expect(fb.activeIndex).toBe(1)
+        expect(activeCalls).toBe(1) // one boundary needed the claim, and asked once
+    })
+
+    it('keeps the resume point per stream when two streams overlap', async () => {
+        // A finalized backfill and a live stream on the same instance. The backfill's source fails
+        // after the live stream moved to block 100; the backfill must resume after its own block 10.
+        let s0 = new MockSource(async function* (req) {
+            if (req.from === 10) {
+                yield batch([blk(10)])
+                throw new Error('backfill source down')
+            }
+            yield batch([blk(100)])
+        })
+        let s1 = new MockSource(async function* (req) {
+            yield batch([blk(req.from, `0x${req.from}-s1`)])
+        })
+        let fb = fallback([s0, s1], {maxLagBlocks: null, maxStalenessMs: null, cooldownMs: 60_000})
+
+        let backfill = fb.getFinalizedStream({from: 10, to: 11})[Symbol.asyncIterator]()
+        let live = fb.getStream({from: 100, to: 100})[Symbol.asyncIterator]()
+        expect(numbers((await backfill.next()).value.blocks)).toEqual([10])
+        expect(numbers((await live.next()).value.blocks)).toEqual([100])
+        // Both streams resume at once: the live one commits block 100 while the backfill fails over.
+        let [b, l] = await Promise.all([backfill.next(), live.next()])
+        expect(l.done).toBe(true)
+        expect(numbers(b.value.blocks)).toEqual([11]) // not 101
+        expect(s1.calls[0]).toMatchObject({from: 11, parentHash: '0x10'})
+    })
+
+    it('records the served height when a batch is delivered, before the consumer asks for more', async () => {
+        let s0 = new MockSource(async function* () {
+            yield batch([blk(90)])
+            yield batch([blk(91)])
+        })
+        let fb = fallback([s0], {maxLagBlocks: 10, maxStalenessMs: null})
+        let it = fb.getStream({from: 90, to: 91})[Symbol.asyncIterator]()
+        await it.next()
+        expect(fb.metrics().sources[0].servedHeight).toBe(90) // the handler is still on block 90
+        await it.return?.()
+    })
+
+    it('derives the reported source lag from the known claims, independently of the failover gates', async () => {
+        // At the tip, no lag check needs the active claim, but once it is known (head delegation),
+        // the reported source lag is the plain claim difference: 105 − 100 = 5.
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(100)])
+            },
+            {head: async () => ({number: 100, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: 105, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 60_000, cooldownMs: 60_000})
+
+        await collect(fb.getStream({from: 100, to: 100}))
+        await fb.getHead()
+        expect(fb.metrics().sourceLag).toBe(5)
+    })
+
+    it('reports served and claimed heights per source in metrics()', async () => {
+        let s0 = new MockSource(
+            async function* () {
+                yield batch([blk(90)])
+                yield batch([blk(91)])
+            },
+            {head: async () => ({number: 120, hash: '0x'})},
+        )
+        let s1 = new MockSource(async function* () {}, {head: async () => ({number: 130, hash: '0x'})})
+        let fb = fallback([s0, s1], {maxLagBlocks: 10, maxStalenessMs: null, headTtlMs: 0, cooldownMs: 60_000})
+
+        await collect(fb.getStream({from: 90, to: 91}))
+        // Backfilling, so the lag check never needed s0's claim; head delegation records it.
+        expect((await fb.getHead()).number).toBe(120)
+        let m = fb.metrics()
+        expect(m.sources[0]).toMatchObject({servedHeight: 91, claimedHeight: 120})
+        expect(m.sources[1]).toMatchObject({claimedHeight: 130})
+        expect(m.sources[1].servedHeight).toBeUndefined()
+        expect(m.lag).toBe(39) // others' best claim (130) − served frontier (91)
     })
 })
 
