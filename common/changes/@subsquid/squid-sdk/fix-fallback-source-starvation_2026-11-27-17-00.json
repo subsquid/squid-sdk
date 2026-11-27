@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@subsquid/squid-sdk",
-      "comment": "fallback: fail over a source that claims the chain tip but does not deliver it (only empty batches, or blocks slower than the chain grows): while the stream stays more than `maxLagBlocks` behind, the time spent waiting on the source is added up, and past `maxStalenessMs` the source is failed over unless the consumer took most of the time or the stream got closer to the tip; eager switch-up stays away from such a source for the new `reclaimBackoffMs` (30 minutes by default, doubling on repeats)",
+      "comment": "fallback: fail over a source that claims the chain tip but does not deliver it (only empty batches, or blocks slower than the chain grows): while the stream stays more than `maxLagBlocks` behind, the time spent waiting on the source is added up, and past `maxStalenessMs` the source is failed over unless the consumer took most of the time or the stream got closer to the tip; a source that has made headway may stay slower than the chain for the new `slowdownGraceMs` (15 minutes by default); the fallback stays away from a source failed this way for the new `reclaimBackoffMs` (30 minutes by default, doubling on repeats), and when every source has failed this way it stays on the one that lost ground most slowly",
       "type": "patch"
     }
   ],

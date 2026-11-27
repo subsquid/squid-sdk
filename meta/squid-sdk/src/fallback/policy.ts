@@ -62,10 +62,11 @@ export interface FallbackPolicy {
      * The same limit applies to a source that keeps answering but does not keep up, whatever
      * height it claims: while the stream stays more than `maxLagBlocks` behind the other sources'
      * best claim, the time it waits on the active source is added up, and past this limit the
-     * source is failed over. Two cases are left alone: the consumer held the batches for longer
-     * than the stream waited on the source, or the stream got closer to the tip in the meantime
-     * (which covers a historical backfill that makes headway; one on a source slower than the
-     * chain is failed over). This part also needs `maxLagBlocks` to be set.
+     * source is failed over. Some cases are left alone: the consumer held the batches for longer
+     * than the stream waited on the source; the stream got closer to the tip in the meantime
+     * (which covers a historical backfill that makes headway); a source that has made headway is
+     * slower than the chain for a while (`slowdownGraceMs`); or there is no better source to go
+     * to (`reclaimBackoffMs`). This part also needs `maxLagBlocks` to be set.
      * The two lags it compares are taken against freshly polled claims, so the standbys are polled
      * on the batch path when such a spell starts and when it is judged; these polls are bounded by
      * `headPollTimeoutMs` like any other, and count as liveness probes.
@@ -78,6 +79,19 @@ export interface FallbackPolicy {
      */
     maxStalenessMs?: number | null
     /**
+     * How long a source that delivers blocks may stay slower than the chain before it is failed
+     * over for not keeping up (the second part of `maxStalenessMs`), provided the stream is still
+     * closer to the tip than when it first fell behind. A backfill that crosses a stretch of heavy
+     * blocks can be slower than the chain for a while with nothing wrong with the source, and the
+     * other sources are usually slower still. A source that delivers nothing, or that has made no
+     * headway at all (a stream that starts behind on a source that cannot keep up), gets no such
+     * allowance and is failed over after `maxStalenessMs`.
+     *
+     * `900_000` ms (15 minutes) by default; `0` fails a source over as soon as one
+     * `maxStalenessMs` of waiting passes without the stream getting closer to the tip.
+     */
+    slowdownGraceMs?: number
+    /**
      * How long the fallback stays away from a source that was failed over for not delivering (the
      * second part of `maxStalenessMs`). Such a source still claims the tip, and a claim is all
      * eager switch-up can check, so without this it would be taken back as soon as its cooldown
@@ -88,6 +102,10 @@ export interface FallbackPolicy {
      *
      * In that time the source is also passed over when a new stream starts or the stream fails
      * over, as long as another source is eligible. If no other source is, it is used at once.
+     *
+     * When every other source is being kept away like this, the active one is not failed over for
+     * the same reason: the stream stays on whichever lost ground most slowly instead of alternating
+     * between sources that are all too slow.
      * `1_800_000` ms (30 minutes) by default; `0` takes the source back right after its cooldown.
      */
     reclaimBackoffMs?: number
@@ -142,6 +160,7 @@ export interface ResolvedPolicy {
     maxLagBlocks: number | null
     finalizedLagGraceMs: number
     maxStalenessMs: number | null
+    slowdownGraceMs: number
     reclaimBackoffMs: number
     freshnessTickMs: number
     headTtlMs: number
@@ -162,6 +181,7 @@ export const DEFAULT_POLICY: ResolvedPolicy = {
     maxLagBlocks: 10,
     finalizedLagGraceMs: 60_000,
     maxStalenessMs: 180_000,
+    slowdownGraceMs: 900_000,
     reclaimBackoffMs: 1_800_000,
     freshnessTickMs: 1000,
     headTtlMs: 5000,
@@ -187,6 +207,7 @@ export function resolvePolicy(p?: FallbackPolicy): ResolvedPolicy {
         maxLagBlocks: orDefault(p?.maxLagBlocks, DEFAULT_POLICY.maxLagBlocks),
         finalizedLagGraceMs: p?.finalizedLagGraceMs ?? DEFAULT_POLICY.finalizedLagGraceMs,
         maxStalenessMs: orDefault(p?.maxStalenessMs, DEFAULT_POLICY.maxStalenessMs),
+        slowdownGraceMs: p?.slowdownGraceMs ?? DEFAULT_POLICY.slowdownGraceMs,
         reclaimBackoffMs: p?.reclaimBackoffMs ?? DEFAULT_POLICY.reclaimBackoffMs,
         freshnessTickMs: p?.freshnessTickMs ?? DEFAULT_POLICY.freshnessTickMs,
         headTtlMs: p?.headTtlMs ?? DEFAULT_POLICY.headTtlMs,

@@ -2186,12 +2186,15 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         expect(reclaimed.at - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled, not reset to 60 s
     })
 
-    it('adds up good service across streams', async () => {
-        // The primary is slow until t=100 s (fails once, kept away for 60 s), keeps up until t=400 s
-        // and is slow again after. While it keeps up, the consumer opens a new stream every 30 s, as
-        // the batch processor does after a chain reorganisation. None of those streams lasts as long
-        // as the delay, but together they are several minutes of good service: the second failure
-        // is a first one again.
+    // The primary is slow until t=100 s (fails once, kept away for 60 s), keeps up until t=400 s and
+    // is slow again after. While it keeps up, the consumer opens a new stream every `streamMs`, as
+    // the batch processor does after a chain reorganisation. None of those streams lasts as long as
+    // the delay, but together they are several minutes of good service: the second failure is a
+    // first one again. In the second case no stream even lasts until the claims are polled again.
+    for (let [streamMs, headTtlMs] of [
+        [30_000, 5000],
+        [3000, 40_000],
+    ]) it(`adds up good service across streams of ${streamMs} ms (claims cached for ${headTtlMs} ms)`, async () => {
         let now = 0
         let tip = () => 100 + Math.floor(now / 1000)
         let claim = async () => ({number: tip(), hash: '0x'})
@@ -2235,6 +2238,7 @@ describe('FallbackDataSource — taking back a source that was failed over for n
             reclaimBackoffMs: 60_000,
             maxStalenessMs: 20_000,
             cooldownMs: 1000,
+            headTtlMs,
         })
 
         let last = 99
@@ -2250,7 +2254,7 @@ describe('FallbackDataSource — taking back a source that was failed over for n
                 prev = active
                 if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
                 if (now >= 700_000) break
-                if (now - startedAt >= 30_000 && keepsUp()) break
+                if (now - startedAt >= streamMs && keepsUp()) break
             }
         }
 
@@ -2475,6 +2479,138 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         expect(got[got.length - 1]).toBe(115)
         expect(s0.calls.length).toBeGreaterThanOrEqual(2) // served, failed over, selected again
         expect(s1.calls.length).toBeGreaterThanOrEqual(1)
+    })
+})
+
+describe('FallbackDataSource — sources that are slower than the chain for a while', () => {
+    // The chain makes 4 blocks/s and the stream starts 200_000 blocks behind. Each source delivers
+    // `rate(block)` blocks per second, never past the tip, and always claims the tip. The consumer
+    // is instant. Runs until the stream is within 10 blocks of the tip, or for `limitMs`.
+    async function backfill(
+        rates: ((block: number) => number)[],
+        policy: FallbackPolicy = {},
+        limitMs = 40_000_000,
+    ) {
+        let now = 0
+        let tip = () => 200_000 + 4 * Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let sources = rates.map(
+            (rate) =>
+                new MockSource(
+                    async function* (req) {
+                        let next = req.from
+                        while (true) {
+                            now += 1000
+                            let blocks: TestBlock[] = []
+                            let n = rate(next)
+                            for (let i = 0; i < n && next <= tip(); i++) blocks.push(blk(next++))
+                            yield batch(blocks)
+                        }
+                    },
+                    {head: claim},
+                ),
+        )
+        let fb = fallback(sources, {clock: () => now, ...policy})
+
+        let switches: {at: number; to: number}[] = []
+        let activeMs = sources.map(() => 0)
+        let prev: number | undefined
+        let prevNow = 0
+        let last = -1
+        for await (let b of fb.getStream({from: 0})) {
+            let active = fb.activeIndex!
+            if (prev != null && active !== prev) switches.push({at: prevNow, to: active})
+            activeMs[active] += now - prevNow
+            prev = active
+            prevNow = now
+            if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
+            if (tip() - last <= 10 || now >= limitMs) break
+        }
+        return {fb, sources, switches, activeMs, endedAt: now}
+    }
+
+    // Like a Portal: fast, except in a stretch of heavy blocks where it makes 3 blocks/s.
+    const heavyFor = (blocks: number) => (block: number) => (block >= 100_000 && block < 100_000 + blocks ? 3 : 400)
+    // Like an RPC endpoint in a backfill: 1 block/s throughout.
+    const slow = () => 1
+
+    it('stays on a source that crosses a short stretch where it is slower than the chain', async () => {
+        // 1800 heavy blocks take the primary 10 minutes, during which the stream loses 600 blocks
+        // of the 100_000 it had gained. Nothing is wrong with the source, and the other one is slower.
+        let r = await backfill([heavyFor(1800), slow])
+
+        expect(r.switches).toEqual([])
+        expect(r.sources[1].calls).toHaveLength(0)
+        expect(r.endedAt).toBeLessThan(1_200_000)
+    })
+
+    it('fails over after one staleness limit when slowdownGraceMs is 0, and comes back', async () => {
+        // No allowance: the primary is failed over in the heavy stretch. The second source loses
+        // ground faster, so the stream goes back to the primary and stays.
+        let r = await backfill([heavyFor(1800), slow], {slowdownGraceMs: 0})
+
+        expect(r.switches.map((s) => s.to)).toEqual([1, 0])
+        expect(r.activeMs[1]).toBeLessThan(250_000)
+    })
+
+    it('does not alternate through a long stretch where every source is slower than the chain', async () => {
+        // 9000 heavy blocks take the primary 50 minutes: longer than the 15-minute allowance. It is
+        // failed over, the second source turns out to lose ground faster, and the stream goes back.
+        // The second source is tried once more when its 30 minutes away are over.
+        let r = await backfill([heavyFor(9000), slow])
+
+        expect(r.switches.map((s) => s.to)).toEqual([1, 0, 1, 0])
+        expect(r.switches[2].at - r.switches[0].at).toBeGreaterThanOrEqual(1_800_000)
+        expect(r.activeMs[1]).toBeLessThan(500_000)
+        expect(r.endedAt).toBeLessThan(4_000_000)
+    })
+
+    for (let [name, rates] of [
+        ['the primary', [() => 3, () => 1]],
+        ['the second source', [() => 1, () => 3]],
+    ] as const) {
+        it(`stays on the source that loses ground more slowly when none keeps up: ${name}`, async () => {
+            // Neither source ever matches the chain's 4 blocks/s. Each is tried, and from then on the
+            // stream spends its time on the better one; the other is only tried again, briefly, each
+            // time its growing delay is over.
+            let better = rates[0](0) > rates[1](0) ? 0 : 1
+            let r = await backfill([...rates], {slowdownGraceMs: 0}, 3 * 3_600_000)
+
+            expect(r.activeMs[1 - better] / r.endedAt).toBeLessThan(0.1)
+            expect(r.switches.length).toBeLessThanOrEqual(6)
+        })
+    }
+
+    it('goes back to the best of three sources when none keeps up, wherever it is ranked', async () => {
+        // 1, 3 and 2 blocks/s against the chain's 4. Each is tried in turn; the middle one lost
+        // ground most slowly, so that is where the stream goes back to and stays.
+        let r = await backfill([() => 1, () => 3, () => 2], {slowdownGraceMs: 0}, 3 * 3_600_000)
+
+        expect(r.switches.slice(0, 3).map((s) => s.to)).toEqual([1, 2, 1])
+        expect(r.activeMs[1] / r.endedAt).toBeGreaterThan(0.85)
+    })
+
+    it('fails over a source that made headway and then stays slow, once the allowance is used up', async () => {
+        // The primary gains 100_000 blocks quickly and is slower than the chain from there on. The
+        // second source is fine. 15 minutes of that are allowed, not more.
+        let r = await backfill([heavyFor(1_000_000), () => 400])
+        let failed = r.switches[0]
+        let enteredAt = 250_000 // the primary reaches block 100_000 after 100_000 / 400 = 250 s
+
+        expect(failed.to).toBe(1)
+        expect(failed.at - enteredAt).toBeGreaterThan(900_000)
+        expect(failed.at - enteredAt).toBeLessThan(1_300_000)
+        expect(r.fb.activeIndex).toBe(1)
+        expect(r.switches).toHaveLength(1)
+    })
+
+    it('gives no allowance to a source that delivers nothing', async () => {
+        // Empty batches from block 100_000 on: gained ground does not excuse that.
+        let r = await backfill([(block) => (block >= 100_000 ? 0 : 400), () => 400])
+        let failed = r.switches[0]
+
+        expect(failed.to).toBe(1)
+        expect(failed.at - 250_000).toBeLessThan(400_000)
     })
 })
 
