@@ -1,7 +1,7 @@
 import {createLogger} from '@subsquid/logger'
 import {archive, getBlockLogFormat, Journal, LogFormat, mapRpcBlock} from '@subsquid/solana-normalization'
 import {GetBlock, removeVoteTransactions} from '@subsquid/solana-rpc-data'
-import {addErrorContext, def} from '@subsquid/util-internal'
+import {addErrorContext} from '@subsquid/util-internal'
 import {Command, Ingest, IngestOptions, Range} from '@subsquid/util-internal-ingest-cli'
 import {toJSON} from '@subsquid/util-internal-json'
 import {assertValidity, B58, NAT, object} from '@subsquid/util-internal-validation'
@@ -33,7 +33,8 @@ export class SolanaIngest extends Ingest<Options> {
         program.option('--relaxed', 'Do not crush on log parsing failure')
     }
 
-    @def
+    // Not memoized: the returned closure keeps state between blocks (the last log format),
+    // so each getBlocks() stream needs its own.
     private mapping(): (raw: unknown) => object {
         let votes = this.options().votes
         let relaxed = this.options().relaxed
