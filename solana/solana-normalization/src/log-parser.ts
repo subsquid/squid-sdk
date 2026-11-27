@@ -114,6 +114,91 @@ export class LogTruncatedMessage {
 }
 
 
+/**
+ * `Call BPF program <id>`
+ *
+ * Old (v1.3 runtime) counterpart of {@link InvokeMessage}.
+ * It does not carry a stack height, the actual value is assigned by {@link MessageStream}
+ * from the bracket depth.
+ */
+export class V13InvokeMessage {
+    public kind = 'invoke' as const
+
+    constructor(
+        public programId: Base58Bytes,
+        public stackHeight: number = 0
+    ) {}
+
+    static parse(msg: string): V13InvokeMessage | undefined {
+        let m = /^Call BPF program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+)$/.exec(msg)
+        if (m) return new V13InvokeMessage(m[1])
+    }
+
+    toString(): string {
+        return `Call BPF program ${this.programId}`
+    }
+}
+
+
+/**
+ * `BPF program <id> success` / `BPF program <id> failed: <err>`
+ *
+ * Old (v1.3 runtime) counterpart of {@link InvokeResultMessage}.
+ */
+export class V13InvokeResultMessage {
+    public kind = 'invoke-result' as const
+
+    constructor(
+        public programId: Base58Bytes,
+        public success: boolean,
+        public error?: string
+    ) {}
+
+    static parse(msg: string): V13InvokeResultMessage | undefined {
+        let m = /^BPF program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) success$/.exec(msg)
+        if (m) return new V13InvokeResultMessage(m[1], true)
+
+        m = /^BPF program ([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+) failed: (.*)$/.exec(msg)
+        if (m) return new V13InvokeResultMessage(m[1], false, m[2])
+    }
+
+    toString(): string {
+        if (this.success) {
+            return `BPF program ${this.programId} success`
+        } else {
+            return `BPF program ${this.programId} failed: ${this.error}`
+        }
+    }
+}
+
+
+/**
+ * `BPF program consumed <N> of <M> units`
+ *
+ * Old (v1.3 runtime) counterpart of {@link ComputeUnitsMessage}.
+ * The message does not name the program, it belongs to the innermost open call.
+ * {@link MessageStream} fills in the `programId` (it stays undefined, when there is no open call).
+ */
+export class V13ComputeUnitsMessage {
+    public kind = 'cu' as const
+
+    constructor(
+        public consumed: bigint,
+        public available: bigint,
+        public programId?: Base58Bytes
+    ) {}
+
+    static parse(msg: string): V13ComputeUnitsMessage | undefined {
+        let m = /^BPF program consumed (\d+) of (\d+) units$/.exec(msg)
+        if (m) return new V13ComputeUnitsMessage(BigInt(m[1]), BigInt(m[2]))
+    }
+
+    toString(): string {
+        return `BPF program consumed ${this.consumed} of ${this.available} units`
+    }
+}
+
+
 export class OtherMessage {
     public kind = 'other' as const
 
@@ -125,6 +210,12 @@ export class OtherMessage {
 }
 
 
+export type V13Message =
+    V13InvokeMessage |
+    V13InvokeResultMessage |
+    V13ComputeUnitsMessage
+
+
 export type Message =
     InvokeMessage |
     InvokeResultMessage |
@@ -132,6 +223,7 @@ export type Message =
     ProgramDataMessage |
     ComputeUnitsMessage |
     LogTruncatedMessage |
+    V13Message |
     OtherMessage
 
 
@@ -142,5 +234,47 @@ export function parseLogMessage(msg: string): Message {
         || ProgramDataMessage.parse(msg)
         || ComputeUnitsMessage.parse(msg)
         || LogTruncatedMessage.parse(msg)
+        || V13InvokeMessage.parse(msg)
+        || V13InvokeResultMessage.parse(msg)
+        || V13ComputeUnitsMessage.parse(msg)
         || new OtherMessage(msg)
+}
+
+
+/**
+ * Format of the structural (invoke / result / compute units) log messages:
+ * `modern` (`Program X invoke [n]` ...) or `v1.3` (`Call BPF program X` ..., written by the v1.3 runtime).
+ */
+export type LogFormat = 'modern' | 'v1.3'
+
+
+/**
+ * The log format of one transaction log, from its structural messages alone,
+ * or `undefined` when it has none. A log with both kinds counts as `modern`, see `MessageStream`.
+ */
+export function detectLogFormat(lines: readonly string[]): LogFormat | undefined {
+    let v13 = false
+    for (let line of lines) {
+        if (InvokeMessage.parse(line) || InvokeResultMessage.parse(line) || ComputeUnitsMessage.parse(line)) {
+            return 'modern'
+        }
+        if (!v13 && (V13InvokeMessage.parse(line) || V13InvokeResultMessage.parse(line) || V13ComputeUnitsMessage.parse(line))) {
+            v13 = true
+        }
+    }
+    return v13 ? 'v1.3' : undefined
+}
+
+
+export function isV13Message(msg: Message): msg is V13Message {
+    return msg instanceof V13InvokeMessage
+        || msg instanceof V13InvokeResultMessage
+        || msg instanceof V13ComputeUnitsMessage
+}
+
+
+export function isModernStructuralMessage(msg: Message): boolean {
+    return msg instanceof InvokeMessage
+        || msg instanceof InvokeResultMessage
+        || msg instanceof ComputeUnitsMessage
 }

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Carry the block log format over to blocks that show none (e.g. votes only), so v1.3-era vote blocks map without warnings",
+      "type": "patch",
+      "packageName": "@subsquid/solana-ingest"
+    }
+  ],
+  "packageName": "@subsquid/solana-ingest",
+  "email": "abernatskiy@toha.li"
+}

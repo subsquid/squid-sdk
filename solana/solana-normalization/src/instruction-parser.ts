@@ -2,7 +2,17 @@ import * as rpc from '@subsquid/solana-rpc-data'
 import {unexpectedCase} from '@subsquid/util-internal'
 import assert from 'assert'
 import {Instruction, LogMessage} from './data'
-import {Message, parseLogMessage} from './log-parser'
+import {
+    LogFormat,
+    isV13Message,
+    isModernStructuralMessage,
+    V13ComputeUnitsMessage,
+    V13InvokeMessage,
+    V13InvokeResultMessage,
+    Message,
+    OtherMessage,
+    parseLogMessage
+} from './log-parser'
 import {TransactionContext} from './transaction-context'
 
 
@@ -32,8 +42,86 @@ export class MessageStream {
     private messages: Message[]
     private pos = 0
 
+    /**
+     * Log format, as detected from the structural (invoke / result / compute units) messages:
+     *
+     *  - `modern`: `Program X invoke [n]`, `Program X consumed N of M compute units`, `Program X success`
+     *  - `v1.3`: `Call BPF program X`, `BPF program consumed N of M units`, `BPF program X success`
+     *    (written by the v1.3 runtime)
+     *  - `unknown`: there are no structural messages at all
+     */
+    public readonly format: LogFormat | 'unknown'
+
+    /**
+     * `true`, when calls without log messages are expected (the v1.3 rules):
+     * only BPF programs log their calls,
+     * native programs (System, Vote, Stake, etc.) are executed without any log messages.
+     *
+     * It is set for `v1.3` logs, and might be set by the caller
+     * for an `unknown` one, when the format is known from elsewhere (e.g. from other transactions of the block).
+     */
+    public nativeProgramsAreSilent: boolean
+
+    /**
+     * Programs known to log their calls, while {@link nativeProgramsAreSilent} is set
+     * (e.g. the programs of `Call BPF program X` messages of the whole block).
+     * A call of such a program without log messages is a missing log, not a silent native call.
+     */
+    public loggingPrograms: ReadonlySet<string> = new Set()
+
     constructor(messages: string[]) {
         this.messages = messages.map(parseLogMessage)
+        this.format = this.detectFormat(messages)
+        this.nativeProgramsAreSilent = this.format === 'v1.3'
+    }
+
+    /**
+     * Programs of the `Call BPF program X` messages of this log
+     */
+    calledPrograms(): string[] {
+        let programs: string[] = []
+        for (let msg of this.messages) {
+            if (msg instanceof V13InvokeMessage) programs.push(msg.programId)
+        }
+        return programs
+    }
+
+    private detectFormat(lines: string[]): LogFormat | 'unknown' {
+        let v13 = false
+        let modern = false
+        for (let msg of this.messages) {
+            if (isV13Message(msg)) {
+                v13 = true
+            } else if (isModernStructuralMessage(msg)) {
+                modern = true
+            }
+        }
+
+        if (!v13) return modern ? 'modern' : 'unknown'
+
+        if (modern) {
+            // Formats are never mixed within a transaction.
+            // Should that happen, treat old-style lines as plain messages,
+            // as they were treated before v1.3 format support.
+            this.messages = this.messages.map((msg, i) => isV13Message(msg) ? new OtherMessage(lines[i]) : msg)
+            return 'modern'
+        }
+
+        // Old-style messages don't carry stack height and compute unit messages don't carry program id,
+        // restore them from the bracket structure.
+        let stack: V13InvokeMessage[] = []
+        for (let msg of this.messages) {
+            if (msg instanceof V13InvokeMessage) {
+                stack.push(msg)
+                msg.stackHeight = stack.length
+            } else if (msg instanceof V13ComputeUnitsMessage) {
+                msg.programId = stack[stack.length - 1]?.programId
+            } else if (msg instanceof V13InvokeResultMessage) {
+                stack.pop()
+            }
+        }
+
+        return 'v1.3'
     }
 
     get unfinished(): boolean {
@@ -82,8 +170,10 @@ export class InstructionTreeTraversal {
         this.lastAddress = [instructionIndex - 1]
         this.instructions = [{...instruction, stackHeight: 1}, ...inner]
         if (this.tx.erroredInstruction >= this.instructionIndex) {
-            this.call(1)
-            this.finishLogLess()
+            let root = this.call(1)
+            // Inner instructions left after a call without log messages share its flag:
+            // under the v1.3 rules a silent call dropped nothing, so neither did its callees.
+            this.finishLogLess(this.messages.nativeProgramsAreSilent && root ? root.hasDroppedLogMessages : true)
         } else {
             this.assert(this.instructions.length === 1, 'failed instructions should not have inner calls', 0)
             this.push(1)
@@ -91,7 +181,11 @@ export class InstructionTreeTraversal {
         this.assert(this.ended, 'not all inner instructions where consumed', 0)
     }
 
-    private call(stackHeight: number): void {
+    /**
+     * Maps the current instruction. Returns it, or `undefined` when the log is truncated:
+     * then the instruction is left for {@link finishLogLess}.
+     */
+    private call(stackHeight: number): Instruction | undefined {
         let ins = this.current
 
         this.assert(ins.stackHeight == null || ins.stackHeight === stackHeight, 'stack height mismatch', this.pos)
@@ -110,12 +204,21 @@ export class InstructionTreeTraversal {
                 this.messages.position
             )
             this.messages.advance()
-            this.invoke(stackHeight)
-            return
+            return this.invoke(stackHeight)
         }
 
         if (this.messages.truncated) {
             return
+        }
+
+        if (this.messages.nativeProgramsAreSilent && !this.messages.loggingPrograms.has(programId)) {
+            // The old runtime logged only calls of BPF programs.
+            // Native programs (System, Vote, Stake, etc.) were executed without any log messages,
+            // and a BPF program that failed before being invoked has nothing logged either.
+            // So nothing was dropped and the following messages belong to someone else.
+            // A program that logs its calls elsewhere in the block is not silent: it falls through
+            // to the checks below.
+            return this.push(stackHeight)
         }
 
         if (PROGRAMS_MISSING_INVOKE_LOG.has(programId)) {
@@ -131,11 +234,13 @@ export class InstructionTreeTraversal {
             this.warn('missing invoke message', this.pos, this.messages.position)
         }
 
-        this.push(stackHeight).hasDroppedLogMessages = true
+        let mapped = this.push(stackHeight)
+        mapped.hasDroppedLogMessages = true
         this.dropNonInvokeMessages()
+        return mapped
     }
 
-    private invoke(stackHeight: number): void {
+    private invoke(stackHeight: number): Instruction {
         let pos = this.pos
         let ins = this.push(stackHeight)
 
@@ -143,7 +248,7 @@ export class InstructionTreeTraversal {
 
         if (this.messages.truncated) {
             ins.hasDroppedLogMessages = true
-            return
+            return ins
         }
 
         if (this.messages.ended) {
@@ -163,6 +268,7 @@ export class InstructionTreeTraversal {
         // consume invoke-less subcalls,
         // that might have left unvisited due to missing 'invoke' messages
         this.eatInvokeLessSubCalls(ins)
+        return ins
     }
 
     private eatInvokeLessSubCalls(parent: Instruction) {
@@ -183,6 +289,11 @@ export class InstructionTreeTraversal {
 
             let pos = this.pos
             let ins = this.push(stackHeight)
+
+            if (this.messages.nativeProgramsAreSilent && !this.messages.loggingPrograms.has(ins.programId)) {
+                // calls without log messages are expected in the old format, see .call()
+                continue
+            }
 
             // even if we have some messages emitted,
             // we already assigned them to parent call
@@ -228,6 +339,8 @@ export class InstructionTreeTraversal {
                     }
                     break
                 case 'invoke':
+                    // a call, that has no instruction left to match
+                    this.assert(this.unfinished, 'invoke message without a matching instruction', pos, this.messages.position)
                     this.call(ins.instructionAddress.length + 1)
                     break
                 case 'invoke-result':
@@ -259,9 +372,9 @@ export class InstructionTreeTraversal {
         }
     }
 
-    private finishLogLess(): void {
+    private finishLogLess(dropped: boolean): void {
         while (this.unfinished) {
-            this.push(this.current.stackHeight ?? 2).hasDroppedLogMessages = true
+            this.push(this.current.stackHeight ?? 2).hasDroppedLogMessages = dropped
         }
     }
 
