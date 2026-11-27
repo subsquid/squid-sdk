@@ -83,8 +83,6 @@ interface StreamState {
      * `undefined` when there is no reference (or the lag trigger is disabled).
      */
     deliveryLag?: number
-    /** Whether every claim behind `deliveryLag` was polled at that boundary (none from the cache). */
-    referenceFresh?: boolean
     /** Open while the stream stays more than `maxLagBlocks` behind, see {@link StarvationWindow}. */
     starvation?: StarvationWindow
 }
@@ -540,26 +538,14 @@ export class FallbackDataSource<B> implements DataSource<B> {
         return vals.length ? Math.max(...vals) : undefined
     }
 
-    /** Whether the claims of all the other eligible sources were polled at or after `since`. */
-    private othersPolledSince(active: number, kind: HeightKind, since: number): boolean {
-        for (let i = 0; i < this.sources.length; i++) {
-            if (i === active || this.health[i].state === 'unhealthy') continue
-            let claim = this.#heights[i].claimed[kind]
-            if (claim == null || claim.at < since) return false
-        }
-        return true
-    }
-
     /**
-     * The delivery lag of the last boundary, against claims that are not from the cache: polls the
-     * other sources again if any of their claims was. Used where two lags are compared over time,
-     * which claims of different ages would distort by what the chain produced in `headTtlMs`
-     * (a whole finality step on a finalized stream).
+     * The stream's delivery lag right now, against claims polled now rather than cached ones. Used
+     * where two lags are compared over time: claims of different ages would distort that by what
+     * the chain produced in the meantime (up to `headTtlMs`, plus the time the boundary's own
+     * requests took; a whole finality step on a finalized stream).
      */
     private async exactDeliveryLag(st: StreamState, active: number): Promise<number | undefined> {
-        if (st.referenceFresh) return st.deliveryLag
         let others = await this.othersBestClaim(active, st, true)
-        st.referenceFresh = true
         st.deliveryLag = others == null ? undefined : others - st.frontier
         return st.deliveryLag
     }
@@ -735,12 +721,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
      */
     private async laggingTooFar(st: StreamState, active: number, emptyBatch: boolean): Promise<boolean> {
         st.deliveryLag = undefined
-        st.referenceFresh = undefined
         if (this.policy.maxLagBlocks == null) return false
         let maxLag = this.policy.maxLagBlocks
         let frontier = st.frontier
 
-        let boundaryAt = this.policy.clock()
         let others = await this.othersBestClaim(active, st)
         // Claimed vs served: a lower bound on the chain height — the frontier was served, so the
         // chain is at least that high whatever the other sources claim.
@@ -755,7 +739,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // together) is behind the best claim. It gates the check and arms it; it never fires it.
         let deliveryLag = others - frontier
         st.deliveryLag = deliveryLag
-        st.referenceFresh = this.othersPolledSince(active, st.kind, boundaryAt)
         this.lag = Math.max(0, deliveryLag)
         // Arm only once we are genuinely at/near the tip: within the threshold *and* not ahead of the
         // reference (`deliveryLag >= 0`). A negative value means the reference is itself behind us
@@ -823,7 +806,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * - the stream did not get closer to the tip: its delivery lag is no smaller than when the
      *   window opened. A source working through a backlog is left alone. Both lags are taken
      *   against claims polled at that moment, not cached ones (see {@link exactDeliveryLag}); that
-     *   costs one extra round of standby polls per window;
+     *   costs one round of standby polls when a window opens and one when it is judged;
      * - the lag trigger is armed, or the source delivered no block at all. A historical backfill
      *   that delivers is not failed over for being slow.
      *

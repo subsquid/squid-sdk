@@ -1842,6 +1842,42 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
         expect(t.s1.calls).toHaveLength(0)
     })
 
+    it('opens the window on the lag as it is after its own head request, not before', async () => {
+        // The primary's first head request takes a minute, and the chain grows by 60 blocks in that
+        // time. The window that opens right after it must start from the lag as it is then. The
+        // source then serves 211 blocks while the chain grows by 181: the stream gets 30 closer.
+        let n = 100
+        let deliver = (count: number) => batch(Array.from({length: count}, () => blk(++n)))
+        let headRequests = 0
+        let t: ReturnType<typeof setup> = setup(
+            async function* (_req, env) {
+                yield batch([blk(100)]) // t=0: 5 behind, arms the trigger
+                env.advanceChain(1000)
+                for (let i = 0; i < 182; i++) {
+                    env.wait(1000)
+                    env.advanceChain(1)
+                    yield deliver(i > 0 && i <= 30 ? 2 : 1)
+                }
+            },
+            {},
+            {
+                tip: 105,
+                primaryHead: async (env) => {
+                    if (headRequests++ === 0) {
+                        env.wait(60_000)
+                        env.advanceChain(60)
+                    }
+                    return {number: t.tip(), hash: '0x'}
+                },
+            },
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.now()).toBe(242_000)
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
     it('is off when the staleness trigger is disabled', async () => {
         let t = setup(
             async function* (req, env) {
