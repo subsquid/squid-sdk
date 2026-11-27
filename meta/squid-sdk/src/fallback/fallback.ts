@@ -272,16 +272,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
     private async *selectActive(exhausted: Set<number>): AsyncGenerator<number> {
         let allDownSince: number | undefined
         while (true) {
-            // First choice: a source that is neither exhausted nor kept away for not delivering.
-            let keptAway = this.keptAway()
-            let active =
-                keptAway.size > 0
-                    ? this.selector.pickForFailover(new Set([...exhausted, ...keptAway]))
-                    : undefined
-            active ??= this.selector.pickForFailover(exhausted)
+            let active = this.pickEligible(exhausted)
             if (active == null && exhausted.size > 0) {
                 exhausted.clear() // sweep complete: retry whatever has recovered since
-                active = this.selector.pickForFailover()
+                active = this.pickEligible(exhausted)
             }
             if (active == null) {
                 this.clearActive()
@@ -291,6 +285,19 @@ export class FallbackDataSource<B> implements DataSource<B> {
             allDownSince = undefined
             yield active
         }
+    }
+
+    /**
+     * The source to drive next, skipping `exhausted`: by preference one that is not kept away for
+     * not delivering (see {@link keptAway}), otherwise any eligible one.
+     */
+    private pickEligible(exhausted: ReadonlySet<number>): number | undefined {
+        let keptAway = this.keptAway()
+        if (keptAway.size > 0) {
+            let preferred = this.selector.pickForFailover(new Set([...exhausted, ...keptAway]))
+            if (preferred != null) return preferred
+        }
+        return this.selector.pickForFailover(exhausted)
     }
 
     private async *runStream(req: StreamRequest, finalized: boolean): BlockStream<B> {

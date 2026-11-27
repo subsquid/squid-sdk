@@ -2214,6 +2214,65 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         expect(s0.calls).toHaveLength(primaryStreams)
     })
 
+    it('still passes it over when a failover sweep starts again', async () => {
+        // A is failed for not delivering. B fails at once, and C fails after a two-second timeout
+        // without delivering anything. By then A's and B's cooldowns are over and every source has
+        // been tried, so the sweep starts again: it has to go to B, not back to A.
+        let now = 0
+        let tip = () => 100 + Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let upToTip = (from: number) => {
+            let blocks: TestBlock[] = []
+            for (let n = from; n <= tip(); n++) blocks.push(blk(n))
+            return blocks
+        }
+        let a = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 5000
+                    yield batch(next <= tip() ? [blk(next++)] : [])
+                }
+            },
+            {head: claim},
+        )
+        let b = new MockSource(
+            async function* (req, call) {
+                if (call === 0) throw new Error('b is down')
+                let next = req.from
+                while (true) {
+                    now += 1000
+                    let blocks = upToTip(next)
+                    next += blocks.length
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let c = new MockSource(
+            async function* (req) {
+                now += 2000
+                if (req.from >= 0) throw new Error('c timed out')
+                yield batch([])
+            },
+            {head: claim},
+        )
+        let fb = fallback([a, b, c], {
+            clock: () => now,
+            maxStalenessMs: 20_000,
+            cooldownMs: 1000,
+            preferPrimary: 'onFailureOnly',
+        })
+
+        for await (let batch of fb.getStream({from: 100})) {
+            if (c.calls.length > 0 && batch.blocks.length) break
+        }
+        expect(c.calls).toHaveLength(1)
+        expect(fb.activeIndex).toBe(1)
+        expect(a.calls).toHaveLength(1)
+        expect(b.calls).toHaveLength(2)
+    })
+
     it('still uses it when the other source fails', async () => {
         // The delay only applies to eager switch-up. A stream error on the second source right after
         // the failover leaves nothing else, so the primary is selected again.
