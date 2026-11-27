@@ -102,6 +102,8 @@ interface StreamState {
      * `undefined` when there is no reference (or the lag trigger is disabled).
      */
     deliveryLag?: number
+    /** When the boundary that produced `deliveryLag` started; claims polled since then are fresh. */
+    lagAskedAt?: number
     /** Open while the stream stays more than `maxLagBlocks` behind, see {@link StarvationWindow}. */
     starvation?: StarvationWindow
 }
@@ -320,6 +322,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
             st.lagExceededSince = undefined // a switch ends the lag episode
             st.starvation = undefined
             let boundaryAt = this.policy.clock()
+            // Time that looked like good service but is not yet confirmed by freshly polled claims.
+            let unconfirmedMs = 0
 
             let streamReq: StreamRequest = {from: st.frontier + 1, to: req.to, parentHash: frontierHash}
             let src = this.sources[active].source
@@ -393,16 +397,11 @@ export class FallbackDataSource<B> implements DataSource<B> {
                             break
                         }
                         let now = this.policy.clock()
-                        // Good service needs a known lag within bounds: with no reference (every
-                        // standby's head request failed) there is no window, but nothing shows the
-                        // source keeping up either.
-                        let keptUp =
-                            st.starvation == null &&
-                            st.deliveryLag != null &&
-                            this.policy.maxLagBlocks != null &&
-                            st.deliveryLag <= this.policy.maxLagBlocks
-                        if (keptUp) this.forgiveNotDelivering(active, now - boundaryAt)
+                        unconfirmedMs += now - boundaryAt
                         boundaryAt = now
+                        let keptUp = await this.keepingUp(st, active, unconfirmedMs)
+                        if (keptUp === true) this.forgiveNotDelivering(active, unconfirmedMs)
+                        if (keptUp != null) unconfirmedMs = 0
 
                         // Eager switch-up: reclaim a recovered higher-preference source at the
                         // batch boundary (never mid-batch). Probe those candidates first so their
@@ -794,6 +793,32 @@ export class FallbackDataSource<B> implements DataSource<B> {
     }
 
     /**
+     * Whether the active source, which has failed for not delivering before, is now keeping up:
+     * `true` or `false` once that is established, `undefined` while it only looks so.
+     *
+     * Good service needs a known delivery lag within `maxLagBlocks` and no starvation window open.
+     * With no reference (every standby's head request failed) there is no window, but nothing shows
+     * the source keeping up either. And the lag has to be against claims polled at this boundary:
+     * against a cached claim it is understated, and reads as negative once the claim is older than
+     * the stream's own frontier. Time that only looks good is held back (`unconfirmedMs`) until a
+     * boundary where the claims are fresh; if none comes within `headTtlMs`, they are polled.
+     */
+    private async keepingUp(
+        st: StreamState,
+        active: number,
+        unconfirmedMs: number,
+    ): Promise<boolean | undefined> {
+        let maxLag = this.policy.maxLagBlocks
+        if (this.#reclaimBackoff[active].failures === 0) return false // nothing to forgive
+        if (maxLag == null || st.starvation != null) return false
+        if (st.deliveryLag == null || st.deliveryLag > maxLag) return false
+        if (st.lagAskedAt != null && this.othersPolledSince(active, st.kind, st.lagAskedAt)) return true
+        if (unconfirmedMs < this.policy.headTtlMs) return undefined
+        let lag = await this.exactDeliveryLag(st, active)
+        return lag != null && lag <= maxLag
+    }
+
+    /**
      * The active source has served for another `ms` with the stream keeping up (no starvation
      * window open, and the delivery lag known and within `maxLagBlocks`). Once such time since its
      * last failure for not delivering adds up to more than it was kept away, its earlier failures
@@ -832,11 +857,13 @@ export class FallbackDataSource<B> implements DataSource<B> {
      */
     private async laggingTooFar(st: StreamState, active: number, emptyBatch: boolean): Promise<boolean> {
         st.deliveryLag = undefined
+        st.lagAskedAt = undefined
         if (this.policy.maxLagBlocks == null) return false
         let maxLag = this.policy.maxLagBlocks
         let frontier = st.frontier
 
         let askedAt = this.policy.clock()
+        st.lagAskedAt = askedAt
         let others = await this.othersBestClaim(active, st)
         if (others != null && !st.lagArmed && others >= frontier && others - frontier <= maxLag) {
             // About to arm. A cached claim is an older, lower one, and would make a stream that never

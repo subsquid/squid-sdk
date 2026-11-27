@@ -2260,6 +2260,77 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         expect(reclaimedAt[1] - failedAt[1]).toBeLessThan(100_000) // the base delay, not a doubled one
     })
 
+    it('does not count time as good service on the word of a cached claim', async () => {
+        // The chain makes 5 blocks/s. The primary falls behind and fails once (kept away for 60 s).
+        // From t=60 s to t=500 s it holds a steady 15 blocks behind the tip, with a batch every 4 s,
+        // and the consumer opens a new stream after every second batch, so no stream lasts long
+        // enough to fail it. Claims are cached for 20 s here: one polled 8 s earlier is 40 blocks old,
+        // which puts it below the stream's own frontier, and the lag reads as negative. That is not
+        // keeping up: when the primary falls behind again after t=500 s, it is a repeat failure.
+        let now = 0
+        let tip = () => 100 + 5 * Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let steady = () => now >= 60_000 && now < 500_000
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    let blocks: TestBlock[] = []
+                    if (steady()) {
+                        now += 4000
+                        while (next <= tip() - 15) blocks.push(blk(next++))
+                    } else {
+                        now += 1000
+                        if (next <= tip()) blocks.push(blk(next++)) // a fifth of the chain's pace
+                    }
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 1000
+                    let blocks: TestBlock[] = []
+                    while (next <= tip()) blocks.push(blk(next++))
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let fb = fallback([s0, s1], {
+            clock: () => now,
+            reclaimBackoffMs: 60_000,
+            maxStalenessMs: 20_000,
+            cooldownMs: 1000,
+            headTtlMs: 20_000,
+        })
+
+        let last = 99
+        let prev: number | undefined
+        let failedAt: number[] = []
+        let reclaimedAt: number[] = []
+        while (now < 800_000) {
+            let batches = 0
+            for await (let b of fb.getStream({from: last + 1})) {
+                let active = fb.activeIndex!
+                if (prev === 0 && active === 1) failedAt.push(now)
+                if (prev === 1 && active === 0) reclaimedAt.push(now)
+                prev = active
+                if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
+                if (now >= 800_000) break
+                if (++batches >= 2 && steady()) break
+            }
+        }
+
+        expect(failedAt[0]).toBeLessThan(60_000)
+        expect(failedAt[1]).toBeGreaterThan(500_000) // nothing failed it in between
+        let retried = reclaimedAt.find((at) => at > failedAt[1])!
+        expect(retried - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled
+    })
+
     it('takes it back right after the cooldown with reclaimBackoffMs: 0', async () => {
         let r = await follow({reclaimBackoffMs: 0, maxStalenessMs: 20_000, cooldownMs: 1000}, 600_000)
 
