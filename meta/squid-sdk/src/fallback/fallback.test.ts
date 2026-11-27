@@ -2158,6 +2158,80 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         expect(reclaimed.at - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled, not reset to 60 s
     })
 
+    it('adds up good service across streams', async () => {
+        // The primary is slow until t=100 s (fails once, kept away for 60 s), keeps up until t=400 s
+        // and is slow again after. While it keeps up, the consumer opens a new stream every 30 s, as
+        // the batch processor does after a chain reorganisation. None of those streams lasts as long
+        // as the delay, but together they are several minutes of good service: the second failure
+        // is a first one again.
+        let now = 0
+        let tip = () => 100 + Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let upToTip = (from: number) => {
+            let blocks: TestBlock[] = []
+            for (let n = from; n <= tip(); n++) blocks.push(blk(n))
+            return blocks
+        }
+        let keepsUp = () => now >= 100_000 && now < 400_000
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    if (keepsUp()) {
+                        now += 1000
+                        let blocks = upToTip(next)
+                        next += blocks.length
+                        yield batch(blocks)
+                    } else {
+                        now += 5000
+                        yield batch(next <= tip() ? [blk(next++)] : [])
+                    }
+                }
+            },
+            {head: claim},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 1000
+                    let blocks = upToTip(next)
+                    next += blocks.length
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let fb = fallback([s0, s1], {
+            clock: () => now,
+            reclaimBackoffMs: 60_000,
+            maxStalenessMs: 20_000,
+            cooldownMs: 1000,
+        })
+
+        let last = 99
+        let prev: number | undefined
+        let failedAt: number[] = []
+        let reclaimedAt: number[] = []
+        while (now < 700_000) {
+            let startedAt = now
+            for await (let b of fb.getStream({from: last + 1})) {
+                let active = fb.activeIndex!
+                if (prev === 0 && active === 1) failedAt.push(now)
+                if (prev === 1 && active === 0) reclaimedAt.push(now)
+                prev = active
+                if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
+                if (now >= 700_000) break
+                if (now - startedAt >= 30_000 && keepsUp()) break
+            }
+        }
+
+        expect(failedAt[0]).toBeLessThan(100_000)
+        expect(failedAt[1]).toBeGreaterThan(400_000)
+        expect(reclaimedAt[1] - failedAt[1]).toBeGreaterThanOrEqual(60_000)
+        expect(reclaimedAt[1] - failedAt[1]).toBeLessThan(100_000) // the base delay, not a doubled one
+    })
+
     it('takes it back right after the cooldown with reclaimBackoffMs: 0', async () => {
         let r = await follow({reclaimBackoffMs: 0, maxStalenessMs: 20_000, cooldownMs: 1000}, 600_000)
 

@@ -25,6 +25,12 @@ interface ReclaimBackoff {
     delayMs: number
     /** Eager switch-up does not take the source back before this time. */
     notBefore: number
+    /**
+     * Since the last such failure: time the source served with the stream keeping up. Kept here,
+     * not per stream, because the batch processor opens a new stream after every chain
+     * reorganisation and no single one may last as long as the delay.
+     */
+    keptUpMs: number
 }
 
 /** A structured snapshot of the fallback's observable state, for a metrics surface. */
@@ -208,7 +214,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         this.health = this.sources.map((s) => new SourceHealth(this.policy, !!s.probeCapability))
         this.selector = new Selector(this.health)
         this.#heights = this.sources.map(() => ({served: undefined, claimed: {latest: undefined, finalized: undefined}}))
-        this.#reclaimBackoff = this.sources.map(() => ({failures: 0, delayMs: 0, notBefore: 0}))
+        this.#reclaimBackoff = this.sources.map(() => ({failures: 0, delayMs: 0, notBefore: 0, keptUpMs: 0}))
     }
 
     /**
@@ -315,8 +321,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
             this.setActive(active)
             st.lagExceededSince = undefined // a switch ends the lag episode
             st.starvation = undefined
-            // Time this source served without the stream being behind, for `reclaimBackoffMs`.
-            let keptUpMs = 0
             let boundaryAt = this.policy.clock()
 
             let streamReq: StreamRequest = {from: st.frontier + 1, to: req.to, parentHash: frontierHash}
@@ -400,9 +404,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
                             st.deliveryLag != null &&
                             this.policy.maxLagBlocks != null &&
                             st.deliveryLag <= this.policy.maxLagBlocks
-                        if (keptUp) keptUpMs += now - boundaryAt
+                        if (keptUp) this.forgiveNotDelivering(active, now - boundaryAt)
                         boundaryAt = now
-                        this.forgiveNotDelivering(active, keptUpMs)
 
                         // Eager switch-up: reclaim a recovered higher-preference source at the
                         // batch boundary (never mid-batch). Probe those candidates first so their
@@ -779,6 +782,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         b.failures += 1
         b.delayMs = this.policy.reclaimBackoffMs * factor
         b.notBefore = this.policy.clock() + b.delayMs
+        b.keptUpMs = 0
         return b.delayMs
     }
 
@@ -793,15 +797,20 @@ export class FallbackDataSource<B> implements DataSource<B> {
     }
 
     /**
-     * The active source has served for `keptUpMs` with the stream keeping up (no starvation window
-     * open, and the delivery lag known and within `maxLagBlocks`). Once that is longer than the
-     * source was last kept away, its earlier failures no longer count. Time spent behind the tip
-     * does not: a source that is on its way to failing again must not be forgiven first, whatever
-     * the delay is.
+     * The active source has served for another `ms` with the stream keeping up (no starvation
+     * window open, and the delivery lag known and within `maxLagBlocks`). Once such time since its
+     * last failure for not delivering adds up to more than it was kept away, its earlier failures
+     * no longer count. Time spent behind the tip does not add: a source that is on its way to
+     * failing again must not be forgiven first, whatever the delay is.
      */
-    private forgiveNotDelivering(active: number, keptUpMs: number): void {
+    private forgiveNotDelivering(active: number, ms: number): void {
         let b = this.#reclaimBackoff[active]
-        if (b.failures > 0 && keptUpMs > b.delayMs) b.failures = 0
+        if (b.failures === 0) return
+        b.keptUpMs += ms
+        if (b.keptUpMs > b.delayMs) {
+            b.failures = 0
+            b.keptUpMs = 0
+        }
     }
 
     /**

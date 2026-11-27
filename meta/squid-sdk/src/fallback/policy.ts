@@ -69,6 +69,12 @@ export interface FallbackPolicy {
      * on the batch path when such a spell starts and when it is judged; these polls are bounded by
      * `headPollTimeoutMs` like any other, and count as liveness probes.
      *
+     * Known limit: the count is per stream, and so is the arming of the lag trigger. A consumer
+     * that opens a new stream (the batch processor does after every chain reorganisation) starts
+     * both over; a stream that begins more than `maxLagBlocks` behind is treated as a backfill
+     * until it reaches the tip. On a chain that reorganises more often than this limit, a source
+     * that delivers but too slowly can therefore stay active.
+     *
      * `180_000` ms by default; `null` disables the staleness trigger.
      */
     maxStalenessMs?: number | null
@@ -78,7 +84,8 @@ export interface FallbackPolicy {
      * eager switch-up can check, so without this it would be taken back as soon as its cooldown
      * ends and the stream would spend most of its time on it. The delay doubles each time the source fails
      * the same way again, up to 16 times this value, and starts over once the source, taken back,
-     * has served for as long as it was kept away without failing that way.
+     * has served with the stream keeping up for as long as it was kept away (added up across
+     * streams).
      *
      * In that time the source is also passed over when a new stream starts or the stream fails
      * over, as long as another source is eligible. If no other source is, it is used at once.
