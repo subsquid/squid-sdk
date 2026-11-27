@@ -297,7 +297,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
             this.setActive(active)
             st.lagExceededSince = undefined // a switch ends the lag episode
             st.starvation = undefined
-            let activeSince = this.policy.clock()
+            // Time this source served without the stream being behind, for `reclaimBackoffMs`.
+            let keptUpMs = 0
+            let boundaryAt = this.policy.clock()
 
             let streamReq: StreamRequest = {from: st.frontier + 1, to: req.to, parentHash: frontierHash}
             let src = this.sources[active].source
@@ -368,7 +370,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
                             this.exhaust(active, exhausted)
                             break
                         }
-                        this.forgiveNotDelivering(active, activeSince)
+                        let now = this.policy.clock()
+                        if (st.starvation == null) keptUpMs += now - boundaryAt
+                        boundaryAt = now
+                        this.forgiveNotDelivering(active, keptUpMs)
 
                         // Eager switch-up: reclaim a recovered higher-preference source at the
                         // batch boundary (never mid-batch). Probe those candidates first so their
@@ -558,6 +563,16 @@ export class FallbackDataSource<B> implements DataSource<B> {
         return vals.length ? Math.max(...vals) : undefined
     }
 
+    /** Whether the claims of all the other eligible sources were polled at or after `since`. */
+    private othersPolledSince(active: number, kind: HeightKind, since: number): boolean {
+        for (let i = 0; i < this.sources.length; i++) {
+            if (i === active || this.health[i].state === 'unhealthy') continue
+            let claim = this.#heights[i].claimed[kind]
+            if (claim == null || claim.at < since) return false
+        }
+        return true
+    }
+
     /**
      * The stream's delivery lag right now, against claims polled now rather than cached ones. Used
      * where two lags are compared over time: claims of different ages would distort that by what
@@ -737,12 +752,14 @@ export class FallbackDataSource<B> implements DataSource<B> {
     }
 
     /**
-     * The active source has served since `activeSince` without being failed for not delivering.
-     * Once that is longer than it was last kept away, its earlier failures no longer count.
+     * The active source has served for `keptUpMs` with the stream keeping up (no starvation window
+     * open). Once that is longer than the source was last kept away, its earlier failures no longer
+     * count. Time spent behind the tip does not: a source that is on its way to failing again must
+     * not be forgiven first, whatever the delay is.
      */
-    private forgiveNotDelivering(active: number, activeSince: number): void {
+    private forgiveNotDelivering(active: number, keptUpMs: number): void {
         let b = this.#reclaimBackoff[active]
-        if (b.failures > 0 && this.policy.clock() - activeSince > b.delayMs) b.failures = 0
+        if (b.failures > 0 && keptUpMs > b.delayMs) b.failures = 0
     }
 
     /**
@@ -771,6 +788,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         let maxLag = this.policy.maxLagBlocks
         let frontier = st.frontier
 
+        let askedAt = this.policy.clock()
         let others = await this.othersBestClaim(active, st)
         // Claimed vs served: a lower bound on the chain height — the frontier was served, so the
         // chain is at least that high whatever the other sources claim.
@@ -790,7 +808,11 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // reference (`deliveryLag >= 0`). A negative value means the reference is itself behind us
         // (stale/lagging) — arming on that would let a later-recovering source's claim trip a
         // spurious failover while we are still backfilling.
-        if (deliveryLag >= 0 && deliveryLag <= maxLag) st.lagArmed = true // arm at tip (latched)
+        // Only against claims polled at this boundary: a cached claim is an older, lower one, and
+        // would make a stream that never got this close look as if it had.
+        if (deliveryLag >= 0 && deliveryLag <= maxLag && this.othersPolledSince(active, st.kind, askedAt)) {
+            st.lagArmed = true // arm at tip (latched)
+        }
         if (deliveryLag <= maxLag) {
             st.lagExceededSince = undefined
             return false

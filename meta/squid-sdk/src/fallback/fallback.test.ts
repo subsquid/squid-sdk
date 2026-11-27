@@ -1905,6 +1905,28 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
         expect(t.now()).toBeLessThan(200_000)
     })
 
+    it('does not take a backfill for armed because a cached claim made it look close to the tip', async () => {
+        // Never within maxLagBlocks of the tip: chain and source both move 5 blocks/s, 20 apart from
+        // the start. Against a claim cached for 5 s the lag reads 10 and less before every new poll;
+        // that must not arm the trigger, or this delivering backfill would be failed over.
+        let n = 99
+        let t = setup(
+            async function* (_req, env) {
+                for (let i = 0; i < 400; i++) {
+                    env.wait(1000)
+                    env.advanceChain(5)
+                    yield batch(Array.from({length: 5}, () => blk(++n)))
+                }
+            },
+            {headTtlMs: 5000},
+            {tip: 119},
+        )
+        expect(await drive(t, t.fb.getStream({from: 100, to: 2099}))).toBe(2099)
+
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
     it('is off when the staleness trigger is disabled', async () => {
         let t = setup(
             async function* (req, env) {
@@ -2011,6 +2033,21 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         let delays = reclaimedAt.map((at, i) => at - failedAt[i])
         expect(delays.length).toBeGreaterThanOrEqual(4)
         for (let i = 0; i < 4; i++) {
+            expect(delays[i]).toBeGreaterThanOrEqual(60_000 * 2 ** i)
+            expect(delays[i]).toBeLessThan(60_000 * 2 ** i + 30_000)
+        }
+    })
+
+    it('doubles the delay also when it is shorter than the time it takes to fail the source', async () => {
+        // With the default 180 s limit the primary serves for more than 3 minutes before it fails,
+        // longer than the 60 s it was kept away. Time spent behind the tip is not good service.
+        let r = await follow({reclaimBackoffMs: 60_000, cooldownMs: 1000}, HOUR)
+
+        let failedAt = r.switches.filter((s) => s.to === 1).map((s) => s.at)
+        let reclaimedAt = r.switches.filter((s) => s.to === 0).map((s) => s.at)
+        let delays = reclaimedAt.map((at, i) => at - failedAt[i])
+        expect(delays.length).toBeGreaterThanOrEqual(3)
+        for (let i = 0; i < 3; i++) {
             expect(delays[i]).toBeGreaterThanOrEqual(60_000 * 2 ** i)
             expect(delays[i]).toBeLessThan(60_000 * 2 ** i + 30_000)
         }
