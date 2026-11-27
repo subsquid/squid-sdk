@@ -1804,6 +1804,44 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
         expect(t.s1.calls).toHaveLength(0)
     })
 
+    it('does not count a finality step from before the window as growth inside it', async () => {
+        // Finalized stream, claims cached for 5 s. Finality steps 100 blocks ahead 2 s after a poll,
+        // and the next window opens 2 s later, still on the cached claim. In that window there is no
+        // step and the source serves 91 blocks: the stream gets 91 blocks closer.
+        let n = 100
+        let deliver = (count: number) => batch(Array.from({length: count}, () => blk(++n)))
+        let t = setup(
+            async function* (_req, env) {
+                yield batch([blk(100)]) // t=0: 5 behind, arms the trigger
+                env.advanceChain(1000)
+                for (let i = 0; i < 5; i++) {
+                    env.wait(1000)
+                    yield deliver(1) // t=5: the claim is polled again, the first window opens
+                }
+                for (let i = 0; i < 180; i++) {
+                    env.wait(1000)
+                    yield deliver(4) // t=185: last poll before the step
+                }
+                env.wait(2000)
+                env.advanceChain(100) // t=187: the finality step
+                env.wait(2000)
+                yield deliver(8) // t=189: the first window is judged and the next one opens
+                for (let i = 0; i < 181; i++) {
+                    env.wait(1000)
+                    yield i % 2 === 0 ? deliver(1) : batch([])
+                }
+                // t=370: the second window is judged
+            },
+            {headTtlMs: 5000},
+            {tip: 105},
+        )
+        await drive(t, t.fb.getFinalizedStream({from: 100}))
+
+        expect(t.now()).toBe(370_000)
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
     it('is off when the staleness trigger is disabled', async () => {
         let t = setup(
             async function* (req, env) {

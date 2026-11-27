@@ -83,16 +83,10 @@ interface StreamState {
      * `undefined` when there is no reference (or the lag trigger is disabled).
      */
     deliveryLag?: number
-    /** The other sources' best claim behind `deliveryLag`, and when that claim was polled. */
-    reference?: ClaimedAt
+    /** Whether every claim behind `deliveryLag` was polled at that boundary (none from the cache). */
+    referenceFresh?: boolean
     /** Open while the stream stays more than `maxLagBlocks` behind, see {@link StarvationWindow}. */
     starvation?: StarvationWindow
-}
-
-/** A claimed height together with the time it was polled (claims are cached for `headTtlMs`). */
-interface ClaimedAt {
-    height: number
-    at: number
 }
 
 /**
@@ -110,10 +104,8 @@ interface StarvationWindow {
     consumerMs: number
     /** Blocks the source delivered since then. */
     blocks: number
-    /** The served frontier when the window opened. */
-    startFrontier: number
-    /** The reference claim when the window opened. */
-    startReference: ClaimedAt
+    /** Delivery lag when the window opened, against claims polled at that moment. */
+    startLag: number
 }
 
 export interface RankedSource<B> {
@@ -351,7 +343,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         }
 
                         // The source may claim the tip and still not deliver it.
-                        if (this.starvedBySource(st, waitedMs, consumerMs, batch.blocks.length)) {
+                        if (await this.starvedBySource(st, active, waitedMs, consumerMs, batch.blocks.length)) {
                             let detail =
                                 `stayed more than ${this.policy.maxLagBlocks} blocks behind the chain head ` +
                                 `while waiting on the source for more than ${this.policy.maxStalenessMs}ms`
@@ -535,12 +527,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * own claim). Excludes `unhealthy` sources so a flagged-bad one can't define the tip. Claims are
      * cached for `headTtlMs` to bound the probe rate.
      */
-    private async othersBestClaim(active: number, st: StreamState): Promise<number | undefined> {
+    private async othersBestClaim(active: number, st: StreamState, fresh = false): Promise<number | undefined> {
         let results = await Promise.all(
             this.sources.map((_, i) =>
                 i === active || this.health[i].state === 'unhealthy'
                     ? Promise.resolve(undefined)
-                    : this.pollClaim(i, st),
+                    : this.pollClaim(i, st, fresh),
             ),
         )
         let vals = results.filter((h): h is number => h != null)
@@ -548,15 +540,28 @@ export class FallbackDataSource<B> implements DataSource<B> {
         return vals.length ? Math.max(...vals) : undefined
     }
 
-    /** When the best claim among the other eligible sources (`height`) was polled. */
-    private claimPolledAt(active: number, kind: HeightKind, height: number): number {
-        let at: number | undefined
+    /** Whether the claims of all the other eligible sources were polled at or after `since`. */
+    private othersPolledSince(active: number, kind: HeightKind, since: number): boolean {
         for (let i = 0; i < this.sources.length; i++) {
+            if (i === active || this.health[i].state === 'unhealthy') continue
             let claim = this.#heights[i].claimed[kind]
-            if (i === active || claim?.height !== height) continue
-            if (at == null || claim.at > at) at = claim.at
+            if (claim == null || claim.at < since) return false
         }
-        return at ?? this.policy.clock()
+        return true
+    }
+
+    /**
+     * The delivery lag of the last boundary, against claims that are not from the cache: polls the
+     * other sources again if any of their claims was. Used where two lags are compared over time,
+     * which claims of different ages would distort by what the chain produced in `headTtlMs`
+     * (a whole finality step on a finalized stream).
+     */
+    private async exactDeliveryLag(st: StreamState, active: number): Promise<number | undefined> {
+        if (st.referenceFresh) return st.deliveryLag
+        let others = await this.othersBestClaim(active, st, true)
+        st.referenceFresh = true
+        st.deliveryLag = others == null ? undefined : others - st.frontier
+        return st.deliveryLag
     }
 
     /** Ask source `i` for its claimed height of the given kind. */
@@ -572,11 +577,11 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * switched up to) and (re)confirms its capability; a failure counts as a liveness failure.
      * `null` timeout defers to the underlying client's own request timeout.
      */
-    private async pollClaim(i: number, st: StreamState): Promise<number | undefined> {
+    private async pollClaim(i: number, st: StreamState, fresh = false): Promise<number | undefined> {
         let kind = st.kind
         let now = this.policy.clock()
         let cached = this.#heights[i].claimed[kind]
-        if (cached && now - cached.at < this.policy.headTtlMs) return cached.height
+        if (!fresh && cached && now - cached.at < this.policy.headTtlMs) return cached.height
 
         let timeoutMs = this.policy.headPollTimeoutMs
         try {
@@ -730,11 +735,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
      */
     private async laggingTooFar(st: StreamState, active: number, emptyBatch: boolean): Promise<boolean> {
         st.deliveryLag = undefined
-        st.reference = undefined
+        st.referenceFresh = undefined
         if (this.policy.maxLagBlocks == null) return false
         let maxLag = this.policy.maxLagBlocks
         let frontier = st.frontier
 
+        let boundaryAt = this.policy.clock()
         let others = await this.othersBestClaim(active, st)
         // Claimed vs served: a lower bound on the chain height — the frontier was served, so the
         // chain is at least that high whatever the other sources claim.
@@ -749,7 +755,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // together) is behind the best claim. It gates the check and arms it; it never fires it.
         let deliveryLag = others - frontier
         st.deliveryLag = deliveryLag
-        st.reference = {height: others, at: this.claimPolledAt(active, st.kind, others)}
+        st.referenceFresh = this.othersPolledSince(active, st.kind, boundaryAt)
         this.lag = Math.max(0, deliveryLag)
         // Arm only once we are genuinely at/near the tip: within the threshold *and* not ahead of the
         // reference (`deliveryLag >= 0`). A negative value means the reference is itself behind us
@@ -814,66 +820,55 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * - the wait on the source was at least as long as the time the consumer held the batches. A
      *   consumer slower than the source spends its time in the handler, not waiting, and never
      *   fails the source over. The supervisor's own head requests count for neither side;
-     * - the stream did not get closer to the tip: it served no more blocks than the reference claim
-     *   grew by in the same time. A source working through a backlog is left alone. Claims are
-     *   cached, so the claim's growth is taken between the two times it was actually polled and
-     *   scaled to the window; comparing two lags with claims of different ages would be off by
-     *   what the chain produces in `headTtlMs`;
+     * - the stream did not get closer to the tip: its delivery lag is no smaller than when the
+     *   window opened. A source working through a backlog is left alone. Both lags are taken
+     *   against claims polled at that moment, not cached ones (see {@link exactDeliveryLag}); that
+     *   costs one extra round of standby polls per window;
      * - the lag trigger is armed, or the source delivered no block at all. A historical backfill
      *   that delivers is not failed over for being slow.
      *
      * Otherwise a new window starts. Getting back within `maxLagBlocks`, losing the reference and
      * switching sources all close the window. Needs both `maxLagBlocks` and `maxStalenessMs`.
      */
-    private starvedBySource(
+    private async starvedBySource(
         st: StreamState,
+        active: number,
         waitedMs: number,
         consumerMs: number,
         deliveredBlocks: number,
-    ): boolean {
+    ): Promise<boolean> {
         let maxLag = this.policy.maxLagBlocks
         let maxWaitMs = this.policy.maxStalenessMs
-        let lag = st.deliveryLag
-        let reference = st.reference
-        if (maxLag == null || maxWaitMs == null || lag == null || reference == null || lag <= maxLag) {
+        if (maxLag == null || maxWaitMs == null || st.deliveryLag == null || st.deliveryLag <= maxLag) {
             st.starvation = undefined
             return false
         }
 
-        let now = this.policy.clock()
-        let open = (): StarvationWindow => ({
-            since: now,
-            waitMs: 0,
-            consumerMs: 0,
-            blocks: 0,
-            startFrontier: st.frontier,
-            startReference: reference,
-        })
         let w = st.starvation
-        if (w == null) {
-            // The wait for this batch ended before the stream was seen behind: it is not counted.
-            st.starvation = open()
+        if (w != null) {
+            w.waitMs += waitedMs
+            w.consumerMs += consumerMs
+            w.blocks += deliveredBlocks
+            if (w.waitMs <= maxWaitMs) return false
+        }
+        // A window opens here or is judged here: either way the lag has to be exact.
+        let lag = await this.exactDeliveryLag(st, active)
+        if (lag == null || lag <= maxLag) {
+            st.starvation = undefined
             return false
         }
-        w.waitMs += waitedMs
-        w.consumerMs += consumerMs
-        w.blocks += deliveredBlocks
-        if (w.waitMs <= maxWaitMs) return false
-
-        let sourceBound = w.waitMs >= w.consumerMs
-        // Served against claimed growth over the same span: the claim's growth between its two
-        // polls, scaled to the window (the same poll at both ends means it did not grow).
-        let claimGrowth = reference.height - w.startReference.height
-        let polledOverMs = reference.at - w.startReference.at
-        if (polledOverMs > 0) claimGrowth *= (now - w.since) / polledOverMs
-        let gettingCloser = st.frontier - w.startFrontier > claimGrowth
-        let backfilling = !st.lagArmed && w.blocks > 0
-        if (sourceBound && !gettingCloser && !backfilling) {
-            st.starvation = undefined
-            this.chainStalled = false
-            return true
+        if (w != null) {
+            let sourceBound = w.waitMs >= w.consumerMs
+            let gettingCloser = lag < w.startLag
+            let backfilling = !st.lagArmed && w.blocks > 0
+            if (sourceBound && !gettingCloser && !backfilling) {
+                st.starvation = undefined
+                this.chainStalled = false
+                return true
+            }
         }
-        st.starvation = open()
+        // The wait for this batch ended before the window opened: it is not counted.
+        st.starvation = {since: this.policy.clock(), waitMs: 0, consumerMs: 0, blocks: 0, startLag: lag}
         return false
     }
 
