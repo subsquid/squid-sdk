@@ -119,8 +119,6 @@ interface StarvationWindow {
     waitMs: number
     /** Time the consumer held the delivered batches since then (parked at `yield`). */
     consumerMs: number
-    /** Blocks the source delivered since then. */
-    blocks: number
     /** Delivery lag when the window opened, against claims polled at that moment. */
     startLag: number
 }
@@ -383,8 +381,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         }
 
                         // The source may claim the tip and still not deliver it.
-                        let delivered = batch.blocks.length
-                        if (await this.starvedBySource(st, active, waitedMs, consumerMs, delivered)) {
+                        if (await this.starvedBySource(st, active, waitedMs, consumerMs)) {
                             let keptAwayMs = this.backOffReclaim(active)
                             let detail = [
                                 `stayed more than ${this.policy.maxLagBlocks} blocks behind the chain head`,
@@ -923,7 +920,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
      *
      * Served heights and time only: while the stream stays more than `maxLagBlocks` behind the
      * other sources' best claim (the delivery lag of the last boundary), the time it waits on the
-     * source is added up. Once that exceeds `maxStalenessMs`, the source is failed over if all of
+     * source is added up. Once that exceeds `maxStalenessMs`, the source is failed over if both of
      * these hold for the window:
      * - the wait on the source was at least as long as the time the consumer held the batches. A
      *   consumer slower than the source spends its time in the handler, not waiting, and never
@@ -931,9 +928,13 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * - the stream did not get closer to the tip: its delivery lag is no smaller than when the
      *   window opened. A source working through a backlog is left alone. Both lags are taken
      *   against claims polled at that moment, not cached ones (see {@link exactDeliveryLag}); that
-     *   costs one round of standby polls when a window opens and one when it is judged;
-     * - the lag trigger is armed, or the source delivered no block at all. A historical backfill
-     *   that delivers is not failed over for being slow.
+     *   costs one round of standby polls when a window opens and one when it is judged.
+     *
+     * A historical backfill is not treated differently, and does not need to be: one that makes
+     * headway gets closer to the tip, and a source slower than the chain would never finish it.
+     * In particular a stream that starts more than `maxLagBlocks` behind (after a restart, say) on
+     * a source that cannot keep up is failed over like any other, although the lag trigger never
+     * arms for it.
      *
      * Otherwise a new window starts. Getting back within `maxLagBlocks`, losing the reference and
      * switching sources all close the window. Getting back is confirmed against freshly polled
@@ -945,7 +946,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
         active: number,
         waitedMs: number,
         consumerMs: number,
-        deliveredBlocks: number,
     ): Promise<boolean> {
         let maxLag = this.policy.maxLagBlocks
         let maxWaitMs = this.policy.maxStalenessMs
@@ -963,7 +963,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
         if (w != null) {
             w.waitMs += waitedMs
             w.consumerMs += consumerMs
-            w.blocks += deliveredBlocks
             judge = w.waitMs > maxWaitMs
             if (behind && !judge) return false
         }
@@ -977,15 +976,14 @@ export class FallbackDataSource<B> implements DataSource<B> {
         if (w != null) {
             let sourceBound = w.waitMs >= w.consumerMs
             let gettingCloser = lag < w.startLag
-            let backfilling = !st.lagArmed && w.blocks > 0
-            if (sourceBound && !gettingCloser && !backfilling) {
+            if (sourceBound && !gettingCloser) {
                 st.starvation = undefined
                 this.chainStalled = false
                 return true
             }
         }
         // The wait for this batch ended before the window opened: it is not counted.
-        st.starvation = {since: this.policy.clock(), waitMs: 0, consumerMs: 0, blocks: 0, startLag: lag}
+        st.starvation = {since: this.policy.clock(), waitMs: 0, consumerMs: 0, startLag: lag}
         return false
     }
 

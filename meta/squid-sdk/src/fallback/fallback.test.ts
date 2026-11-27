@@ -1654,22 +1654,48 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
         expect(t.s1.calls).toHaveLength(0)
     })
 
-    it('keeps a slow primary during a historical backfill that delivers blocks', async () => {
-        // Never armed: the stream starts 100_000 blocks below the tip and the source is slower than
-        // the chain. A backfill is not failed over for being slow, as before.
+    for (let behind of [50, 100_000]) {
+        it(`fails over a primary slower than the chain when the stream starts ${behind} blocks behind`, async () => {
+            // The lag trigger never arms: the stream never gets within maxLagBlocks of the tip. That
+            // is what a restart after a minute of downtime looks like, and a source that is slower
+            // than the chain will never finish this backfill.
+            let t = setup(
+                async function* (req, env) {
+                    for (let n = req.from; n < req.from + 100; n++) {
+                        env.wait(5000)
+                        env.advanceChain(5)
+                        yield batch([blk(n)])
+                    }
+                },
+                {},
+                {tip: 100 + behind},
+            )
+            await drive(t, t.fb.getStream({from: 100}))
+
+            expect(t.fb.activeIndex).toBe(1)
+            expect(t.fb.health[0].cause?.reason).toBe('stale')
+            expect(t.now()).toBeGreaterThan(180_000)
+            expect(t.now()).toBeLessThan(200_000)
+        })
+    }
+
+    it('keeps a primary in a historical backfill that gets closer to the tip', async () => {
+        // 100_000 blocks behind and never armed. The consumer waits on the source all the time, but
+        // each batch brings 20 blocks while the chain makes 5.
         let t = setup(
             async function* (req, env) {
-                for (let n = req.from; n < req.from + 100; n++) {
+                for (let n = req.from; n < req.from + 2000; n += 20) {
                     env.wait(5000)
                     env.advanceChain(5)
-                    yield batch([blk(n)])
+                    yield batch(Array.from({length: 20}, (_, i) => blk(n + i)))
                 }
             },
             {},
             {tip: 100_000},
         )
-        expect(await drive(t, t.fb.getStream({from: 100, to: 199}))).toBe(199)
+        expect(await drive(t, t.fb.getStream({from: 100, to: 2099}))).toBe(2099)
         expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
     })
 
     it('fails over a primary that stops delivering in the middle of a backfill while claiming more', async () => {
@@ -1905,10 +1931,12 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
         expect(t.now()).toBeLessThan(200_000)
     })
 
-    it('does not take a backfill for armed because a cached claim made it look close to the tip', async () => {
+    it('does not arm the lag trigger when only a cached claim makes the stream look near the tip', async () => {
         // Never within maxLagBlocks of the tip: chain and source both move 5 blocks/s, 20 apart from
-        // the start. Against a claim cached for 5 s the lag reads 10 and less before every new poll;
-        // that must not arm the trigger, or this delivering backfill would be failed over.
+        // the start, and the source reports its own head truthfully. Against a claim cached for 5 s
+        // the lag reads 10 and less before every new poll; that must not arm the lag trigger, which
+        // would then fail this source over for claiming less than the other one. (The staleness
+        // limit is off here: on its own it would fail a source that keeps a steady distance.)
         let n = 99
         let t = setup(
             async function* (_req, env) {
@@ -1918,8 +1946,8 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
                     yield batch(Array.from({length: 5}, () => blk(++n)))
                 }
             },
-            {headTtlMs: 5000},
-            {tip: 119},
+            {headTtlMs: 5000, maxStalenessMs: null},
+            {tip: 119, primaryHead: async () => ({number: n, hash: '0x'})},
         )
         expect(await drive(t, t.fb.getStream({from: 100, to: 2099}))).toBe(2099)
 

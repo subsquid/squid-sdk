@@ -62,18 +62,17 @@ export interface FallbackPolicy {
      * The same limit applies to a source that keeps answering but does not keep up, whatever
      * height it claims: while the stream stays more than `maxLagBlocks` behind the other sources'
      * best claim, the time it waits on the active source is added up, and past this limit the
-     * source is failed over. Three cases are left alone: the consumer held the batches for longer
-     * than the stream waited on the source, the stream got closer to the tip in the meantime, or it
-     * is a historical backfill that delivers blocks. This part also needs `maxLagBlocks` to be set.
+     * source is failed over. Two cases are left alone: the consumer held the batches for longer
+     * than the stream waited on the source, or the stream got closer to the tip in the meantime
+     * (which covers a historical backfill that makes headway; one on a source slower than the
+     * chain is failed over). This part also needs `maxLagBlocks` to be set.
      * The two lags it compares are taken against freshly polled claims, so the standbys are polled
      * on the batch path when such a spell starts and when it is judged; these polls are bounded by
      * `headPollTimeoutMs` like any other, and count as liveness probes.
      *
-     * Known limit: the count is per stream, and so is the arming of the lag trigger. A consumer
-     * that opens a new stream (the batch processor does after every chain reorganisation) starts
-     * both over; a stream that begins more than `maxLagBlocks` behind is treated as a backfill
-     * until it reaches the tip. On a chain that reorganises more often than this limit, a source
-     * that delivers but too slowly can therefore stay active.
+     * Known limit: the time is added up per stream. A consumer that opens a new stream (the batch
+     * processor does after every chain reorganisation) starts the count over, so on a chain that
+     * reorganises more often than this limit a source that delivers too slowly can stay active.
      *
      * `180_000` ms by default; `null` disables the staleness trigger.
      */
