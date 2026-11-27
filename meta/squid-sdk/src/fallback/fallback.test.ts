@@ -1790,6 +1790,61 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
         expect(t.fb.health[0].cause?.reason).toBe('stale')
     })
 
+    it('does not count the consumer\'s wait for the fallback\'s own head as the consumer\'s work', async () => {
+        // The batch processor asks the fallback for the chain head between batches, and that request
+        // goes to the active source. Here it takes 40 s every time. The handler itself is instant, so
+        // the source is what holds the stream back: 5 s per block, while the chain makes five.
+        let t: ReturnType<typeof setup> = setup(
+            async function* (req, env) {
+                yield batch([blk(req.from)])
+                for (let n = req.from + 1; n < req.from + 200; n++) {
+                    env.wait(5000)
+                    env.advanceChain(5)
+                    yield batch([blk(n)])
+                }
+            },
+            {},
+            {
+                primaryHead: async (env) => {
+                    env.wait(40_000)
+                    return {number: t.tip(), hash: '0x'}
+                },
+            },
+        )
+        for await (let _ of t.fb.getStream({from: 100})) {
+            if (t.fb.activeIndex !== 0) break
+            await t.fb.getHead()
+        }
+
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
+    })
+
+    it('reports the lag it acts on, not the one a cached claim suggests', async () => {
+        // The steady 20 blocks behind again, with claims cached for 5 s. When the cached lag reads
+        // "caught up", the fallback polls and finds 20; the lag gauge has to say so too.
+        let n = 100
+        let t = setup(
+            async function* (_req, env) {
+                yield batch([blk(100)])
+                env.advanceChain(15)
+                for (let i = 0; i < 60; i++) {
+                    env.wait(1000)
+                    env.advanceChain(5)
+                    yield batch(Array.from({length: 5}, () => blk(++n)))
+                }
+            },
+            {headTtlMs: 5000},
+            {tip: 105},
+        )
+        let lowest = Number.POSITIVE_INFINITY
+        for await (let _ of t.fb.getStream({from: 100, to: 400})) {
+            if (t.now() > 10_000) lowest = Math.min(lowest, t.fb.metrics().lag)
+        }
+
+        expect(lowest).toBeGreaterThan(10)
+    })
+
     it('compares progress with the chain over the same time span when the claims are cached', async () => {
         // The chain grows 1 block/s and claims are cached for 5 s, so a cached claim can be up to
         // 4 blocks old. The second window opens on a claim that is 4 s old and is judged on a fresh
@@ -2333,6 +2388,81 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         expect(failedAt[1]).toBeGreaterThan(500_000) // nothing failed it in between
         let retried = reclaimedAt.find((at) => at > failedAt[1])!
         expect(retried - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled
+    })
+
+    it('counts good service once when two streams run on the source at the same time', async () => {
+        // The primary fails once (kept away for 60 s), is taken back and keeps up until t=150 s. For
+        // the last 40 s of that a second stream runs next to the first. Together that is less than
+        // a minute of good service, not the 90 s it would be if both streams counted. When the
+        // primary is slow again, that is a repeat failure. (Only the first stream moves the clock.)
+        let now = 0
+        let ticking = true
+        let tip = () => 100 + Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let keepsUp = () => now >= 100_000 && now < 150_000
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    let blocks: TestBlock[] = []
+                    if (keepsUp()) {
+                        if (ticking) now += 1000
+                        while (next <= tip()) blocks.push(blk(next++))
+                    } else {
+                        now += 5000
+                        if (next <= tip()) blocks.push(blk(next++))
+                    }
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 1000
+                    let blocks: TestBlock[] = []
+                    while (next <= tip()) blocks.push(blk(next++))
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let fb = fallback([s0, s1], {
+            clock: () => now,
+            reclaimBackoffMs: 60_000,
+            maxStalenessMs: 20_000,
+            cooldownMs: 1000,
+        })
+
+        let first = fb.getStream({from: 100})[Symbol.asyncIterator]()
+        let prev: number | undefined
+        let failedAt: number[] = []
+        let reclaimedAt: number[] = []
+        let step = async () => {
+            await first.next()
+            let active = fb.activeIndex!
+            if (prev === 0 && active === 1) failedAt.push(now)
+            if (prev === 1 && active === 0) reclaimedAt.push(now)
+            prev = active
+        }
+        while (now < 110_000) await step()
+        expect(fb.activeIndex).toBe(0) // taken back, keeping up
+        expect(reclaimedAt[0]).toBeGreaterThan(100_000)
+
+        let second = fb.getStream({from: tip()})[Symbol.asyncIterator]()
+        while (now < 150_000) {
+            await step()
+            ticking = false
+            await second.next()
+            ticking = true
+        }
+        await second.return?.()
+
+        while (now < 600_000) await step()
+        expect(failedAt[1]).toBeGreaterThan(150_000)
+        expect(reclaimedAt[1] - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled
     })
 
     it('takes it back right after the cooldown with reclaimBackoffMs: 0', async () => {

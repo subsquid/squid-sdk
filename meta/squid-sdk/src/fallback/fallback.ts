@@ -36,6 +36,8 @@ interface ReclaimBackoff {
      * across streams like `keptUpMs`: a stream may end before the claims are polled again.
      */
     unconfirmedMs: number
+    /** Up to when service on this source has been counted, so overlapping streams count it once. */
+    countedUntil: number
     /**
      * How fast the stream fell behind on this source when it last failed that way: blocks of
      * delivery lag gained per millisecond of waiting on it. When every source has failed like
@@ -223,6 +225,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
     #capabilityProbing: boolean[] = []
     /** Per source: how long eager switch-up stays away after a failure for not delivering. */
     #reclaimBackoff: ReclaimBackoff[]
+    /**
+     * Wall time during which at least one delegated head request (`getHead()` /
+     * `getFinalizedHead()`) was outstanding: `pending` requests now, the earliest of them started
+     * at `since`, and `totalMs` of such time before that. See {@link delegatedHeadMs}.
+     */
+    #headDelegation = {pending: 0, since: 0, totalMs: 0}
     /** Last source we drove, retained across an all-down gap so switch-counting stays correct. */
     #lastActive: number | undefined
 
@@ -242,6 +250,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
             notBefore: 0,
             keptUpMs: 0,
             unconfirmedMs: 0,
+            countedUntil: 0,
         }))
     }
 
@@ -393,9 +402,13 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         // Served as soon as it is delivered, whatever the consumer does with it.
                         if (lastRef) this.#heights[active].served = lastRef.number
                         let handedOver = this.policy.clock()
+                        let headMsBefore = this.delegatedHeadMs()
                         yield batch
-                        // Time the consumer held the batch, as opposed to `waitedMs` above.
-                        let consumerMs = this.policy.clock() - handedOver
+                        // Time the consumer held the batch, as opposed to `waitedMs` above. Not the
+                        // part it spent waiting for this fallback's own head (the batch processor
+                        // asks for it between batches): that is a request to the source again.
+                        let headMs = this.delegatedHeadMs() - headMsBefore
+                        let consumerMs = Math.max(0, this.policy.clock() - handedOver - headMs)
 
                         // The resume frontier moves once the consumer asks for more (it took the batch).
                         if (lastRef) {
@@ -433,7 +446,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         }
                         let now = this.policy.clock()
                         let backoff = this.#reclaimBackoff[active]
-                        backoff.unconfirmedMs += now - boundaryAt
+                        // Only the part no other stream on this source has counted already.
+                        backoff.unconfirmedMs += Math.max(0, now - Math.max(boundaryAt, backoff.countedUntil))
+                        backoff.countedUntil = now
                         boundaryAt = now
                         let keptUp = await this.keepingUp(st, active, backoff.unconfirmedMs)
                         if (keptUp === true) this.forgiveNotDelivering(active, backoff.unconfirmedMs)
@@ -482,7 +497,27 @@ export class FallbackDataSource<B> implements DataSource<B> {
         return this.delegateHead('finalized')
     }
 
+    /**
+     * Total wall time so far during which a delegated head request was outstanding. Overlapping
+     * requests count once. A stream subtracts what accrued while it was parked at `yield` from the
+     * consumer's time, so a slow head endpoint is not mistaken for a slow handler.
+     */
+    private delegatedHeadMs(): number {
+        let d = this.#headDelegation
+        return d.totalMs + (d.pending > 0 ? this.policy.clock() - d.since : 0)
+    }
+
     private async delegateHead(kind: HeightKind): Promise<BlockRef> {
+        let d = this.#headDelegation
+        if (d.pending++ === 0) d.since = this.policy.clock()
+        try {
+            return await this.requestDelegatedHead(kind)
+        } finally {
+            if (--d.pending === 0) d.totalMs += this.policy.clock() - d.since
+        }
+    }
+
+    private async requestDelegatedHead(kind: HeightKind): Promise<BlockRef> {
         let exhausted = new Set<number>()
         for await (let active of this.headCandidates(exhausted)) {
             try {
@@ -646,6 +681,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
     private async exactDeliveryLag(st: StreamState, active: number): Promise<number | undefined> {
         let others = await this.othersBestClaim(active, st, true)
         st.deliveryLag = others == null ? undefined : others - st.frontier
+        // The gauges follow, as in `laggingTooFar`: they have to show the lag that is acted on.
+        this.chainHead = others == null ? st.frontier : Math.max(others, st.frontier)
+        this.lag = st.deliveryLag == null ? 0 : Math.max(0, st.deliveryLag)
         return st.deliveryLag
     }
 
