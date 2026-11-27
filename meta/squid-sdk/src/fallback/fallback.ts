@@ -14,6 +14,19 @@ import {Selector} from './selector'
 /** Returned by the staleness-aware fetch when the active source must be failed over. */
 const STALE = Symbol('stale')
 
+/** The delay before a source failed for not delivering is taken back doubles up to this factor. */
+const MAX_RECLAIM_BACKOFF_FACTOR = 16
+
+/** Per-source record of failures for not delivering, see `FallbackPolicy.reclaimBackoffMs`. */
+interface ReclaimBackoff {
+    /** Such failures in a row, without a long enough spell of good service in between. */
+    failures: number
+    /** The delay applied after the last one. */
+    delayMs: number
+    /** Eager switch-up does not take the source back before this time. */
+    notBefore: number
+}
+
 /** A structured snapshot of the fallback's observable state, for a metrics surface. */
 export interface FallbackMetrics {
     activeIndex: number | undefined
@@ -149,7 +162,8 @@ export interface FallbackDataSourceOptions<B> {
  *   the frontier fails over;
  * - starvation: a claim is unverified, so a source that claims the tip while the stream waits on
  *   it for `maxStalenessMs` without getting closer to the tip fails over too. Only served heights
- *   and the time spent waiting on the source decide this, see {@link starvedBySource};
+ *   and the time spent waiting on the source decide this, see {@link starvedBySource}. Such a
+ *   source still claims the tip, so eager switch-up stays away from it for `reclaimBackoffMs`;
  * - switch-up: a candidate must claim at least the frontier (minus `maxLagBlocks`);
  * - head delegation reports the *claim* of the source the stream is driving.
  */
@@ -179,6 +193,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
     #heights: SourceHeights[]
     /** Guards against firing a second capability probe for a source while one is still in flight. */
     #capabilityProbing: boolean[] = []
+    /** Per source: how long eager switch-up stays away after a failure for not delivering. */
+    #reclaimBackoff: ReclaimBackoff[]
     /** Last source we drove, retained across an all-down gap so switch-counting stays correct. */
     #lastActive: number | undefined
 
@@ -192,6 +208,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         this.health = this.sources.map((s) => new SourceHealth(this.policy, !!s.probeCapability))
         this.selector = new Selector(this.health)
         this.#heights = this.sources.map(() => ({served: undefined, claimed: {latest: undefined, finalized: undefined}}))
+        this.#reclaimBackoff = this.sources.map(() => ({failures: 0, delayMs: 0, notBefore: 0}))
     }
 
     /**
@@ -280,6 +297,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
             this.setActive(active)
             st.lagExceededSince = undefined // a switch ends the lag episode
             st.starvation = undefined
+            let activeSince = this.policy.clock()
 
             let streamReq: StreamRequest = {from: st.frontier + 1, to: req.to, parentHash: frontierHash}
             let src = this.sources[active].source
@@ -346,9 +364,11 @@ export class FallbackDataSource<B> implements DataSource<B> {
                                 `stayed more than ${this.policy.maxLagBlocks} blocks behind the chain head ` +
                                 `while waiting on the source for more than ${this.policy.maxStalenessMs}ms`
                             this.failSource(active, freshnessFailure('stream', 'stale', detail))
+                            this.backOffReclaim(active)
                             this.exhaust(active, exhausted)
                             break
                         }
+                        this.forgiveNotDelivering(active, activeSince)
 
                         // Eager switch-up: reclaim a recovered higher-preference source at the
                         // batch boundary (never mid-batch). Probe those candidates first so their
@@ -691,12 +711,38 @@ export class FallbackDataSource<B> implements DataSource<B> {
      */
     private pickSwitchUpTarget(active: number, st: StreamState): number | undefined {
         let tolerance = this.policy.maxLagBlocks ?? 0
+        let now = this.policy.clock()
         for (let i = 0; i < active; i++) {
             if (this.health[i].state !== 'healthy') continue
+            // Failed over for not delivering what it claims: its claim says nothing new yet.
+            if (now < this.#reclaimBackoff[i].notBefore) continue
             let claimed = this.#heights[i].claimed[st.kind]?.height
             if (claimed == null || claimed + tolerance >= st.frontier) return i
         }
         return undefined
+    }
+
+    /**
+     * Source `i` was just failed over for not delivering (see {@link starvedBySource}). It still
+     * claims the tip, and its claim is all eager switch-up can check, so keep switch-up away from it
+     * for `reclaimBackoffMs`, doubled for each such failure in a row. Failure-driven selection is
+     * not affected: if the other sources fail, this one is used again.
+     */
+    private backOffReclaim(i: number): void {
+        let b = this.#reclaimBackoff[i]
+        let factor = Math.min(2 ** b.failures, MAX_RECLAIM_BACKOFF_FACTOR)
+        b.failures += 1
+        b.delayMs = this.policy.reclaimBackoffMs * factor
+        b.notBefore = this.policy.clock() + b.delayMs
+    }
+
+    /**
+     * The active source has served since `activeSince` without being failed for not delivering.
+     * Once that is longer than it was last kept away, its earlier failures no longer count.
+     */
+    private forgiveNotDelivering(active: number, activeSince: number): void {
+        let b = this.#reclaimBackoff[active]
+        if (b.failures > 0 && this.policy.clock() - activeSince > b.delayMs) b.failures = 0
     }
 
     /**
@@ -811,7 +857,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
      *   that delivers is not failed over for being slow.
      *
      * Otherwise a new window starts. Getting back within `maxLagBlocks`, losing the reference and
-     * switching sources all close the window. Needs both `maxLagBlocks` and `maxStalenessMs`.
+     * switching sources all close the window. Getting back is confirmed against freshly polled
+     * claims too: against a cached claim a stream that keeps a steady distance looks as if it
+     * caught up shortly before every new poll. Needs both `maxLagBlocks` and `maxStalenessMs`.
      */
     private async starvedBySource(
         st: StreamState,
@@ -822,24 +870,31 @@ export class FallbackDataSource<B> implements DataSource<B> {
     ): Promise<boolean> {
         let maxLag = this.policy.maxLagBlocks
         let maxWaitMs = this.policy.maxStalenessMs
-        if (maxLag == null || maxWaitMs == null || st.deliveryLag == null || st.deliveryLag <= maxLag) {
+        if (maxLag == null || maxWaitMs == null) {
             st.starvation = undefined
             return false
         }
 
+        // Against cached claims the lag can only be understated (an older claim is a lower one), so
+        // "behind" needs no confirmation, while "caught up" does.
+        let behind = st.deliveryLag != null && st.deliveryLag > maxLag
         let w = st.starvation
+        if (w == null && !behind) return false
+        let judge = false
         if (w != null) {
             w.waitMs += waitedMs
             w.consumerMs += consumerMs
             w.blocks += deliveredBlocks
-            if (w.waitMs <= maxWaitMs) return false
+            judge = w.waitMs > maxWaitMs
+            if (behind && !judge) return false
         }
-        // A window opens here or is judged here: either way the lag has to be exact.
+        // A window opens, is judged, or looks caught up: each needs the exact lag.
         let lag = await this.exactDeliveryLag(st, active)
         if (lag == null || lag <= maxLag) {
             st.starvation = undefined
             return false
         }
+        if (w != null && !judge) return false // only the cached claim said it had caught up
         if (w != null) {
             let sourceBound = w.waitMs >= w.consumerMs
             let gettingCloser = lag < w.startLag

@@ -65,10 +65,25 @@ export interface FallbackPolicy {
      * source is failed over. Three cases are left alone: the consumer held the batches for longer
      * than the stream waited on the source, the stream got closer to the tip in the meantime, or it
      * is a historical backfill that delivers blocks. This part also needs `maxLagBlocks` to be set.
+     * The two lags it compares are taken against freshly polled claims, so the standbys are polled
+     * on the batch path when such a spell starts and when it is judged; these polls are bounded by
+     * `headPollTimeoutMs` like any other, and count as liveness probes.
      *
      * `180_000` ms by default; `null` disables the staleness trigger.
      */
     maxStalenessMs?: number | null
+    /**
+     * How long eager switch-up stays away from a source that was failed over for not delivering
+     * (the second part of `maxStalenessMs`). Such a source still claims the tip, and a claim is all
+     * switch-up can check, so without this it would be taken back as soon as its cooldown ends and
+     * the stream would spend most of its time on it. The delay doubles each time the source fails
+     * the same way again, up to 16 times this value, and starts over once the source, taken back,
+     * has served for as long as it was kept away without failing that way.
+     *
+     * It only delays eager switch-up: if the other sources fail, the source is used again at once.
+     * `1_800_000` ms (30 minutes) by default; `0` takes the source back right after its cooldown.
+     */
+    reclaimBackoffMs?: number
     /** How often the staleness clock is checked while a request is outstanding. */
     freshnessTickMs?: number
     /** Max age of a cached per-source head before it is re-fetched for the lag reference. */
@@ -120,6 +135,7 @@ export interface ResolvedPolicy {
     maxLagBlocks: number | null
     finalizedLagGraceMs: number
     maxStalenessMs: number | null
+    reclaimBackoffMs: number
     freshnessTickMs: number
     headTtlMs: number
     headPollTimeoutMs: number | null
@@ -139,6 +155,7 @@ export const DEFAULT_POLICY: ResolvedPolicy = {
     maxLagBlocks: 10,
     finalizedLagGraceMs: 60_000,
     maxStalenessMs: 180_000,
+    reclaimBackoffMs: 1_800_000,
     freshnessTickMs: 1000,
     headTtlMs: 5000,
     headPollTimeoutMs: 500,
@@ -163,6 +180,7 @@ export function resolvePolicy(p?: FallbackPolicy): ResolvedPolicy {
         maxLagBlocks: orDefault(p?.maxLagBlocks, DEFAULT_POLICY.maxLagBlocks),
         finalizedLagGraceMs: p?.finalizedLagGraceMs ?? DEFAULT_POLICY.finalizedLagGraceMs,
         maxStalenessMs: orDefault(p?.maxStalenessMs, DEFAULT_POLICY.maxStalenessMs),
+        reclaimBackoffMs: p?.reclaimBackoffMs ?? DEFAULT_POLICY.reclaimBackoffMs,
         freshnessTickMs: p?.freshnessTickMs ?? DEFAULT_POLICY.freshnessTickMs,
         headTtlMs: p?.headTtlMs ?? DEFAULT_POLICY.headTtlMs,
         headPollTimeoutMs: orDefault(p?.headPollTimeoutMs, DEFAULT_POLICY.headPollTimeoutMs),
