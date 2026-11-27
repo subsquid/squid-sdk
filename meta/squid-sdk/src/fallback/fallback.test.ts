@@ -1820,6 +1820,51 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
         expect(t.fb.health[0].cause?.reason).toBe('stale')
     })
 
+    it('keeps the slow-consumer exemption when someone else\'s head request overlaps the handler', async () => {
+        // Two streams are open on the fallback, so a head request cannot be put down to either
+        // consumer. This stream's handler takes 9 s per batch against 1 s of waiting on the source,
+        // and all the while an unrelated head request is outstanding. The handler's time still counts.
+        let gate: Promise<void> | undefined
+        let t: ReturnType<typeof setup> = setup(
+            async function* (req, env) {
+                for (let n = req.from; n < req.from + 400; n++) {
+                    env.wait(1000)
+                    env.advanceChain(20)
+                    yield batch([blk(n)])
+                }
+            },
+            {},
+            {
+                primaryHead: async () => {
+                    if (gate) await gate
+                    return {number: t.tip(), hash: '0x'}
+                },
+            },
+        )
+        let other = t.fb.getStream({from: 100})[Symbol.asyncIterator]()
+        await other.next() // open, and parked at its first batch from here on
+
+        let last = 0
+        for await (let b of t.fb.getStream({from: 100, to: 499})) {
+            last = b.blocks[b.blocks.length - 1].header.number
+            if (t.fb.activeIndex !== 0) break
+            let release!: () => void
+            gate = new Promise((resolve) => {
+                release = resolve
+            })
+            let head = t.fb.getHead() // not this consumer's: it does not wait for it
+            t.consume(9000)
+            gate = undefined
+            release()
+            await head
+        }
+        await other.return?.()
+
+        expect(last).toBe(499)
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
     it('reports the lag it acts on, not the one a cached claim suggests', async () => {
         // The steady 20 blocks behind again, with claims cached for 5 s. When the cached lag reads
         // "caught up", the fallback polls and finds 20; the lag gauge has to say so too.
@@ -2463,6 +2508,82 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         while (now < 600_000) await step()
         expect(failedAt[1]).toBeGreaterThan(150_000)
         expect(reclaimedAt[1] - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled
+    })
+
+    it('credits a stream that keeps up although a backfill on the same source is far behind', async () => {
+        // The primary fails once (kept away for 60 s), is taken back and keeps up until t=250 s:
+        // well over a minute of good service on the live stream. Next to it a backfill runs on the
+        // same source, thousands of blocks behind the whole time. That says nothing about the live
+        // stream: when the primary is slow again, it is a first failure. (Only the live stream
+        // moves the clock.)
+        let now = 0
+        let tip = () => 5000 + Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let keepsUp = () => now >= 100_000 && now < 250_000
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                let backfill = req.from < 1000
+                while (true) {
+                    let blocks: TestBlock[] = []
+                    if (backfill) {
+                        blocks.push(blk(next++)) // one block per round, never near the tip
+                    } else if (keepsUp()) {
+                        now += 1000
+                        while (next <= tip()) blocks.push(blk(next++))
+                    } else {
+                        now += 5000
+                        if (next <= tip()) blocks.push(blk(next++))
+                    }
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 1000
+                    let blocks: TestBlock[] = []
+                    while (next <= tip()) blocks.push(blk(next++))
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let fb = fallback([s0, s1], {
+            clock: () => now,
+            reclaimBackoffMs: 60_000,
+            maxStalenessMs: 20_000,
+            cooldownMs: 1000,
+        })
+
+        let live = fb.getStream({from: 5000})[Symbol.asyncIterator]()
+        let prev: number | undefined
+        let failedAt: number[] = []
+        let reclaimedAt: number[] = []
+        let step = async () => {
+            await live.next()
+            let active = fb.activeIndex!
+            if (prev === 0 && active === 1) failedAt.push(now)
+            if (prev === 1 && active === 0) reclaimedAt.push(now)
+            prev = active
+        }
+        while (now < 110_000) await step()
+        expect(fb.activeIndex).toBe(0) // taken back, keeping up
+
+        let backfill = fb.getFinalizedStream({from: 0})[Symbol.asyncIterator]()
+        while (now < 250_000) {
+            await step()
+            await backfill.next()
+        }
+        await backfill.return?.()
+
+        while (now < 600_000) await step()
+        expect(failedAt[1]).toBeGreaterThan(250_000)
+        expect(reclaimedAt[1] - failedAt[1]).toBeGreaterThanOrEqual(60_000)
+        expect(reclaimedAt[1] - failedAt[1]).toBeLessThan(100_000) // the base delay, not a doubled one
     })
 
     it('takes it back right after the cooldown with reclaimBackoffMs: 0', async () => {

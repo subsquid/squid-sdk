@@ -32,11 +32,13 @@ interface ReclaimBackoff {
      */
     keptUpMs: number
     /**
-     * Time that looked like good service but is not yet confirmed by freshly polled claims. Kept
-     * across streams like `keptUpMs`: a stream may end before the claims are polled again.
+     * Time that looked like good service to a stream that has ended, not yet confirmed by freshly
+     * polled claims; the next stream on this source takes it over. A stream may end before the
+     * claims are polled again. While a stream runs, it keeps its own unconfirmed time, so one
+     * stream that is behind says nothing about another that keeps up.
      */
-    unconfirmedMs: number
-    /** Up to when service on this source has been counted, so overlapping streams count it once. */
+    carriedMs: number
+    /** Up to when confirmed good service has been credited, so overlapping streams count it once. */
     countedUntil: number
     /**
      * How fast the stream fell behind on this source when it last failed that way: blocks of
@@ -231,6 +233,8 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * at `since`, and `totalMs` of such time before that. See {@link delegatedHeadMs}.
      */
     #headDelegation = {pending: 0, since: 0, totalMs: 0}
+    /** Streams currently open on this instance. */
+    #openStreams = 0
     /** Last source we drove, retained across an all-down gap so switch-counting stays correct. */
     #lastActive: number | undefined
 
@@ -249,7 +253,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
             delayMs: 0,
             notBefore: 0,
             keptUpMs: 0,
-            unconfirmedMs: 0,
+            carriedMs: 0,
             countedUntil: 0,
         }))
     }
@@ -353,14 +357,32 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // Served heights are per stream: a new stream has not been served anything yet.
         for (let h of this.#heights) h.served = undefined
 
+        this.#openStreams++
+        try {
+            yield* this.driveStream(req, finalized, st, frontierHash)
+        } finally {
+            this.#openStreams--
+        }
+    }
+
+    private async *driveStream(
+        req: StreamRequest,
+        finalized: boolean,
+        st: StreamState,
+        frontierHash: string | undefined,
+    ): BlockStream<B> {
         let exhausted = new Set<number>()
         for await (let active of this.selectActive(exhausted)) {
-            // Unconfirmed good service carries over to the next stream on the same source only.
-            if (this.#lastActive !== active) this.#reclaimBackoff[active].unconfirmedMs = 0
+            // Unconfirmed good service: what the last stream on this source left behind (nothing if
+            // another source was driven in between), plus what this one sees from now on.
+            let backoff = this.#reclaimBackoff[active]
+            let carriedMs = this.#lastActive === active ? backoff.carriedMs : 0
+            backoff.carriedMs = 0
+            let unconfirmedSince = this.policy.clock()
+            let unconfirmedMs = carriedMs
             this.setActive(active)
             st.lagExceededSince = undefined // a switch ends the lag episode
             st.starvation = undefined
-            let boundaryAt = this.policy.clock()
 
             let streamReq: StreamRequest = {from: st.frontier + 1, to: req.to, parentHash: frontierHash}
             let src = this.sources[active].source
@@ -407,7 +429,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         // Time the consumer held the batch, as opposed to `waitedMs` above. Not the
                         // part it spent waiting for this fallback's own head (the batch processor
                         // asks for it between batches): that is a request to the source again.
-                        let headMs = this.delegatedHeadMs() - headMsBefore
+                        // With several streams open there is no telling whose consumer asked, so
+                        // nothing is taken off then.
+                        let headMs = this.#openStreams === 1 ? this.delegatedHeadMs() - headMsBefore : 0
                         let consumerMs = Math.max(0, this.policy.clock() - handedOver - headMs)
 
                         // The resume frontier moves once the consumer asks for more (it took the batch).
@@ -445,14 +469,19 @@ export class FallbackDataSource<B> implements DataSource<B> {
                             break
                         }
                         let now = this.policy.clock()
-                        let backoff = this.#reclaimBackoff[active]
-                        // Only the part no other stream on this source has counted already.
-                        backoff.unconfirmedMs += Math.max(0, now - Math.max(boundaryAt, backoff.countedUntil))
-                        backoff.countedUntil = now
-                        boundaryAt = now
-                        let keptUp = await this.keepingUp(st, active, backoff.unconfirmedMs)
-                        if (keptUp === true) this.forgiveNotDelivering(active, backoff.unconfirmedMs)
-                        if (keptUp != null) backoff.unconfirmedMs = 0
+                        unconfirmedMs = carriedMs + now - unconfirmedSince
+                        let keptUp = await this.keepingUp(st, active, unconfirmedMs)
+                        if (keptUp === true) {
+                            // Credit only the part no other stream on this source has credited.
+                            let own = Math.max(0, now - Math.max(unconfirmedSince, backoff.countedUntil))
+                            backoff.countedUntil = now
+                            this.forgiveNotDelivering(active, carriedMs + own)
+                        }
+                        if (keptUp != null) {
+                            carriedMs = 0
+                            unconfirmedMs = 0
+                            unconfirmedSince = now
+                        }
 
                         // Eager switch-up: reclaim a recovered higher-preference source at the
                         // batch boundary (never mid-batch). Probe those candidates first so their
@@ -470,6 +499,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         }
                     }
                 } finally {
+                    // Leave what still looked like good service for the next stream on this source.
+                    if (this.health[active].state !== 'unhealthy') {
+                        backoff.carriedMs = Math.max(backoff.carriedMs, unconfirmedMs)
+                    }
                     // Fire-and-forget: a *stalled* source's `return()` can itself hang on the
                     // same unresolved fetch, and failover must not wait on it.
                     safeReturn(iterator)
@@ -853,7 +886,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         b.delayMs = this.policy.reclaimBackoffMs * factor
         b.notBefore = this.policy.clock() + b.delayMs
         b.keptUpMs = 0
-        b.unconfirmedMs = 0
+        b.carriedMs = 0
         b.lossRate = lossRate
         return b.delayMs
     }
