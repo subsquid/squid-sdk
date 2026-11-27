@@ -1927,6 +1927,69 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
         expect(t.s1.calls).toHaveLength(0)
     })
 
+    it('arms at the tip with three sources whose claims are never polled at the same time', async () => {
+        // The third source starts in its cooldown, so its claim is first polled a second after the
+        // second one's, and their 5 s caches expire at different batch boundaries from then on.
+        // (With the staleness trigger on, its own polls would bring them back in step.) The stream
+        // catches up and follows the tip for a minute. Then the chain speeds up to 5 blocks/s while
+        // the primary still delivers one, and reports its own head truthfully.
+        let now = 0
+        let extra = 0
+        let tip = () => 1100 + Math.floor(now / 1000) + extra
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let served = 99
+        let slow = false
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                for (let i = 0; i < 3; i++) {
+                    now += 1000
+                    yield batch(Array.from({length: 300}, () => blk(next++))) // still in the backlog
+                }
+                for (let i = 0; i < 60; i++) {
+                    now += 1000
+                    let blocks: TestBlock[] = []
+                    while (next <= tip()) blocks.push(blk(next++))
+                    served = next - 1
+                    yield batch(blocks)
+                }
+                slow = true
+                for (let i = 0; i < 60; i++) {
+                    now += 1000
+                    extra += 4
+                    served = next
+                    yield batch([blk(next++)])
+                }
+            },
+            {head: async () => ({number: slow ? served : tip(), hash: '0x'})},
+        )
+        let standby = () =>
+            new MockSource(
+                async function* (req) {
+                    let blocks: TestBlock[] = []
+                    for (let n = req.from; n <= tip(); n++) blocks.push(blk(n))
+                    yield batch(blocks)
+                },
+                {head: claim},
+            )
+        let s1 = standby()
+        let s2 = standby()
+        let fb = fallback([s0, s1, s2], {
+            maxStalenessMs: null,
+            headTtlMs: 5000,
+            cooldownMs: 2000,
+            preferPrimary: 'onFailureOnly',
+            clock: () => now,
+        })
+        fb.health[2].onStreamError()
+
+        for await (let _ of fb.getStream({from: 100})) {
+            if (fb.activeIndex !== 0) break
+        }
+        expect(fb.activeIndex).toBe(1)
+        expect(fb.health[0].cause?.reason).toBe('lag')
+    })
+
     it('is off when the staleness trigger is disabled', async () => {
         let t = setup(
             async function* (req, env) {

@@ -790,6 +790,17 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
         let askedAt = this.policy.clock()
         let others = await this.othersBestClaim(active, st)
+        if (others != null && !st.lagArmed && others >= frontier && others - frontier <= maxLag) {
+            // About to arm. A cached claim is an older, lower one, and would make a stream that never
+            // got this close look as if it had, so arm only against claims polled at this boundary.
+            // With several standbys their caches rarely expire together: poll them all if needed.
+            if (!this.othersPolledSince(active, st.kind, askedAt)) {
+                others = await this.othersBestClaim(active, st, true)
+            }
+            if (others != null && others >= frontier && others - frontier <= maxLag) {
+                st.lagArmed = true // arm at tip (latched)
+            }
+        }
         // Claimed vs served: a lower bound on the chain height — the frontier was served, so the
         // chain is at least that high whatever the other sources claim.
         this.chainHead = others != null ? Math.max(others, frontier) : frontier
@@ -804,15 +815,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
         let deliveryLag = others - frontier
         st.deliveryLag = deliveryLag
         this.lag = Math.max(0, deliveryLag)
-        // Arm only once we are genuinely at/near the tip: within the threshold *and* not ahead of the
-        // reference (`deliveryLag >= 0`). A negative value means the reference is itself behind us
-        // (stale/lagging) — arming on that would let a later-recovering source's claim trip a
-        // spurious failover while we are still backfilling.
-        // Only against claims polled at this boundary: a cached claim is an older, lower one, and
-        // would make a stream that never got this close look as if it had.
-        if (deliveryLag >= 0 && deliveryLag <= maxLag && this.othersPolledSince(active, st.kind, askedAt)) {
-            st.lagArmed = true // arm at tip (latched)
-        }
+        // The trigger is armed above, only once we are genuinely at/near the tip: within the
+        // threshold *and* not ahead of the reference. A reference behind us is itself stale or
+        // lagging — arming on that would let a later-recovering source's claim trip a spurious
+        // failover while we are still backfilling.
         if (deliveryLag <= maxLag) {
             st.lagExceededSince = undefined
             return false
