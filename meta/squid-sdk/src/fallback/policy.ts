@@ -62,9 +62,9 @@ export interface FallbackPolicy {
      * The same limit applies to a source that keeps answering but does not keep up, whatever
      * height it claims: while the stream stays more than `maxLagBlocks` behind the other sources'
      * best claim, the time it waits on the active source is added up, and past this limit the
-     * source is failed over. Three cases are left alone: the consumer took more of the time than
-     * the source did, the stream got closer to the tip in the meantime, or it is a historical
-     * backfill that delivers blocks. This part also needs `maxLagBlocks` to be set.
+     * source is failed over. Three cases are left alone: the consumer held the batches for longer
+     * than the stream waited on the source, the stream got closer to the tip in the meantime, or it
+     * is a historical backfill that delivers blocks. This part also needs `maxLagBlocks` to be set.
      *
      * `180_000` ms by default; `null` disables the staleness trigger.
      */

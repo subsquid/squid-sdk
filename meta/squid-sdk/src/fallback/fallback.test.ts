@@ -1515,7 +1515,7 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
     function setup(
         primary: (req: StreamRequest, env: Env) => AsyncGenerator<BlockBatch<TestBlock>>,
         policy: FallbackPolicy = {},
-        opts: {tip?: number; primaryHead?: () => Promise<BlockRef>} = {},
+        opts: {tip?: number; primaryHead?: (env: Env) => Promise<BlockRef>} = {},
     ) {
         let now = 0
         let tip = opts.tip ?? 100
@@ -1528,7 +1528,8 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
             },
         }
         let claim = async () => ({number: tip, hash: '0x'})
-        let primaryClaim = opts.primaryHead ?? claim
+        let primaryHead = opts.primaryHead
+        let primaryClaim = primaryHead ? () => primaryHead(env) : claim
         let s0 = new MockSource((req) => primary(req, env), {head: primaryClaim, finalizedHead: primaryClaim})
         let s1 = new MockSource(
             async function* (req) {
@@ -1734,6 +1735,73 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
         )
         await drive(t, t.fb.getStream({from: 100}))
         expect(t.fb.activeIndex).toBe(1)
+    })
+
+    it('does not count the time of its own head requests as the consumer\'s', async () => {
+        // The primary's head request hangs for a minute and then fails, after every empty batch.
+        // That minute is neither the consumer's time nor a wait for a batch: the consumer is instant,
+        // so the 5 s waits on the source are what holds the stream back.
+        let t = setup(
+            async function* (req, env) {
+                yield batch([blk(req.from)])
+                for (let i = 0; i < 100; i++) {
+                    env.wait(5000)
+                    env.advanceChain(5)
+                    yield batch([])
+                }
+            },
+            {},
+            {
+                primaryHead: async (env) => {
+                    env.wait(60_000)
+                    throw new Error('head request timed out')
+                },
+            },
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
+    })
+
+    it('compares progress with the chain over the same time span when the claims are cached', async () => {
+        // The chain grows 1 block/s and claims are cached for 5 s, so a cached claim can be up to
+        // 4 blocks old. The second window opens on a claim that is 4 s old and is judged on a fresh
+        // one: the measured lag goes up by 1 while the stream actually got 3 blocks closer.
+        let n = 100
+        let deliver = (count: number) => batch(Array.from({length: count}, () => blk(++n)))
+        let t = setup(
+            async function* (_req, env) {
+                let tick = (seconds: number) => {
+                    env.wait(seconds * 1000)
+                    env.advanceChain(seconds)
+                }
+                yield batch([blk(100)]) // t=0: 5 behind, arms the trigger
+                env.advanceChain(500)
+                for (let i = 0; i < 5; i++) {
+                    tick(1)
+                    yield deliver(1) // t=5: the claim is polled again, the first window opens
+                }
+                for (let i = 0; i < 180; i++) {
+                    tick(1)
+                    yield deliver(2) // twice the chain's pace: clearly catching up
+                }
+                tick(4)
+                yield deliver(8) // t=189: first window judged on a claim polled at t=185; the next opens
+                for (let i = 0; i < 181; i++) {
+                    tick(1)
+                    yield deliver(i < 3 ? 2 : 1) // 184 blocks in 181 s: 3 blocks closer
+                }
+                // t=370: the second window is judged on a claim polled just now
+            },
+            {headTtlMs: 5000},
+            {tip: 105},
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.now()).toBe(370_000)
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
     })
 
     it('is off when the staleness trigger is disabled', async () => {
