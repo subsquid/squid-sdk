@@ -2011,11 +2011,13 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
 describe('FallbackDataSource — taking back a source that was failed over for not delivering', () => {
     // Both sources follow a chain that makes one block per second and always claim its tip. The
     // second source delivers everything up to the tip once a second. The primary does the same
-    // while `primaryKeepsUp(now)`, and otherwise delivers one block per 5 s. The consumer is instant.
+    // while `primaryKeepsUp(now)`, and otherwise delivers one block per 5 s. While `secondDown(now)`,
+    // the second source fails its stream and its head requests. The consumer is instant.
     async function follow(
         policy: FallbackPolicy,
         durationMs: number,
         primaryKeepsUp: (now: number) => boolean = () => false,
+        secondDown: (now: number) => boolean = () => false,
     ) {
         let now = 0
         let tip = () => 100 + Math.floor(now / 1000)
@@ -2042,17 +2044,22 @@ describe('FallbackDataSource — taking back a source that was failed over for n
             },
             {head: claim, finalizedHead: claim},
         )
+        let secondClaim = async () => {
+            if (secondDown(now)) throw new Error('second source is down')
+            return claim()
+        }
         let s1 = new MockSource(
             async function* (req) {
                 let next = req.from
                 while (true) {
+                    if (secondDown(now)) throw new Error('second source is down')
                     now += 1000
                     let blocks = upToTip(next)
                     next += blocks.length
                     yield batch(blocks)
                 }
             },
-            {head: claim, finalizedHead: claim},
+            {head: secondClaim, finalizedHead: secondClaim},
         )
         let fb = fallback([s0, s1], {clock: () => now, ...policy})
 
@@ -2130,6 +2137,25 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         expect(failedAt.length).toBeGreaterThanOrEqual(2)
         expect(failedAt[1]).toBeGreaterThan(1_000_000)
         expect(reclaimedAt[1] - failedAt[1]).toBeLessThan(60_000 + 30_000) // not doubled
+    })
+
+    it('does not count time without a reference as good service', async () => {
+        // The primary fails, then the second source goes down for 6 minutes, so the primary is used
+        // again with nothing to compare it against. Those minutes are longer than the 60 s delay, but
+        // they say nothing about whether the primary keeps up: once the second source is back, the
+        // primary fails again, and that is a repeat failure with a doubled delay.
+        let r = await follow(
+            {reclaimBackoffMs: 60_000, maxStalenessMs: 20_000, cooldownMs: 1000},
+            900_000,
+            () => false,
+            (now) => now >= 50_000 && now < 410_000,
+        )
+
+        let failedAt = r.switches.filter((s) => s.to === 1).map((s) => s.at)
+        expect(failedAt[0]).toBeLessThan(50_000) // failed over before the outage
+        expect(failedAt[1]).toBeGreaterThan(410_000) // failed again after it
+        let reclaimed = r.switches.find((s) => s.to === 0 && s.at > failedAt[1])!
+        expect(reclaimed.at - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled, not reset to 60 s
     })
 
     it('takes it back right after the cooldown with reclaimBackoffMs: 0', async () => {

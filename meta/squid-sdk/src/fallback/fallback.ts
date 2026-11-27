@@ -371,7 +371,15 @@ export class FallbackDataSource<B> implements DataSource<B> {
                             break
                         }
                         let now = this.policy.clock()
-                        if (st.starvation == null) keptUpMs += now - boundaryAt
+                        // Good service needs a known lag within bounds: with no reference (every
+                        // standby's head request failed) there is no window, but nothing shows the
+                        // source keeping up either.
+                        let keptUp =
+                            st.starvation == null &&
+                            st.deliveryLag != null &&
+                            this.policy.maxLagBlocks != null &&
+                            st.deliveryLag <= this.policy.maxLagBlocks
+                        if (keptUp) keptUpMs += now - boundaryAt
                         boundaryAt = now
                         this.forgiveNotDelivering(active, keptUpMs)
 
@@ -753,7 +761,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
     /**
      * The active source has served for `keptUpMs` with the stream keeping up (no starvation window
-     * open). Once that is longer than the source was last kept away, its earlier failures no longer
+     * open, and the delivery lag known and within `maxLagBlocks`). Once that is longer than the source was last kept away, its earlier failures no longer
      * count. Time spent behind the tip does not: a source that is on its way to failing again must
      * not be forgiven first, whatever the delay is.
      */
