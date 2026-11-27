@@ -2167,6 +2167,53 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         expect(reclaimedAt[0] - failedAt[0]).toBeLessThan(30_000)
     })
 
+    it('does not start a new stream on it while another source is available', async () => {
+        // The batch processor opens a new stream after every chain reorganisation. Selection for a
+        // new stream prefers the first eligible source, which would be the primary again as soon as
+        // its cooldown ends, for another three minutes of falling behind each time.
+        let now = 0
+        let tip = () => 100 + Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 5000
+                    yield batch(next <= tip() ? [blk(next++)] : [])
+                }
+            },
+            {head: claim},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 1000
+                    let blocks: TestBlock[] = []
+                    while (next <= tip()) blocks.push(blk(next++))
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let fb = fallback([s0, s1], {clock: () => now, maxStalenessMs: 20_000, cooldownMs: 1000})
+
+        let last = 99
+        for await (let b of fb.getStream({from: 100})) {
+            if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
+            if (fb.activeIndex === 1 && b.blocks.length) break
+        }
+        expect(fb.activeIndex).toBe(1)
+        let primaryStreams = s0.calls.length
+
+        now += 10_000 // the primary's cooldown is long over
+        for await (let b of fb.getStream({from: last + 1})) {
+            if (b.blocks.length) break
+        }
+        expect(fb.activeIndex).toBe(1)
+        expect(s0.calls).toHaveLength(primaryStreams)
+    })
+
     it('still uses it when the other source fails', async () => {
         // The delay only applies to eager switch-up. A stream error on the second source right after
         // the failover leaves nothing else, so the primary is selected again.

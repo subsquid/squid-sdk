@@ -73,14 +73,15 @@ export interface FallbackPolicy {
      */
     maxStalenessMs?: number | null
     /**
-     * How long eager switch-up stays away from a source that was failed over for not delivering
-     * (the second part of `maxStalenessMs`). Such a source still claims the tip, and a claim is all
-     * switch-up can check, so without this it would be taken back as soon as its cooldown ends and
-     * the stream would spend most of its time on it. The delay doubles each time the source fails
+     * How long the fallback stays away from a source that was failed over for not delivering (the
+     * second part of `maxStalenessMs`). Such a source still claims the tip, and a claim is all
+     * eager switch-up can check, so without this it would be taken back as soon as its cooldown
+     * ends and the stream would spend most of its time on it. The delay doubles each time the source fails
      * the same way again, up to 16 times this value, and starts over once the source, taken back,
      * has served for as long as it was kept away without failing that way.
      *
-     * It only delays eager switch-up: if the other sources fail, the source is used again at once.
+     * In that time the source is also passed over when a new stream starts or the stream fails
+     * over, as long as another source is eligible. If no other source is, it is used at once.
      * `1_800_000` ms (30 minutes) by default; `0` takes the source back right after its cooldown.
      */
     reclaimBackoffMs?: number

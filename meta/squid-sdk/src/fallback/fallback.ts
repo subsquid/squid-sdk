@@ -263,11 +263,22 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * Eager switch-up also uses `exhausted` to steer the re-selection: it adds every source more
      * preferred than its target (behind the frontier, or not yet proven), so the sweep lands on the
      * target. The next delivered batch clears the set either way.
+     *
+     * A source that was failed over for not delivering and is still kept away (`reclaimBackoffMs`)
+     * is passed over while any other source is eligible. It still claims the tip, so it would
+     * otherwise be the first choice of every new stream (the batch processor opens one after each
+     * chain reorganisation) as soon as its cooldown ends.
      */
     private async *selectActive(exhausted: Set<number>): AsyncGenerator<number> {
         let allDownSince: number | undefined
         while (true) {
-            let active = this.selector.pickForFailover(exhausted)
+            // First choice: a source that is neither exhausted nor kept away for not delivering.
+            let keptAway = this.keptAway()
+            let active =
+                keptAway.size > 0
+                    ? this.selector.pickForFailover(new Set([...exhausted, ...keptAway]))
+                    : undefined
+            active ??= this.selector.pickForFailover(exhausted)
             if (active == null && exhausted.size > 0) {
                 exhausted.clear() // sweep complete: retry whatever has recovered since
                 active = this.selector.pickForFailover()
@@ -362,11 +373,12 @@ export class FallbackDataSource<B> implements DataSource<B> {
 
                         // The source may claim the tip and still not deliver it.
                         if (await this.starvedBySource(st, active, waitedMs, consumerMs, batch.blocks.length)) {
+                            let keptAwayMs = this.backOffReclaim(active)
                             let detail =
                                 `stayed more than ${this.policy.maxLagBlocks} blocks behind the chain head ` +
-                                `while waiting on the source for more than ${this.policy.maxStalenessMs}ms`
+                                `while waiting on the source for more than ${this.policy.maxStalenessMs}ms` +
+                                (keptAwayMs > 0 ? `; not preferred again for ${keptAwayMs}ms` : '')
                             this.failSource(active, freshnessFailure('stream', 'stale', detail))
-                            this.backOffReclaim(active)
                             this.exhaust(active, exhausted)
                             break
                         }
@@ -748,22 +760,35 @@ export class FallbackDataSource<B> implements DataSource<B> {
     /**
      * Source `i` was just failed over for not delivering (see {@link starvedBySource}). It still
      * claims the tip, and its claim is all eager switch-up can check, so keep switch-up away from it
-     * for `reclaimBackoffMs`, doubled for each such failure in a row. Failure-driven selection is
-     * not affected: if the other sources fail, this one is used again.
+     * for `reclaimBackoffMs`, doubled for each such failure in a row. Selection (a new stream, a
+     * failover) passes it over as well while another source is eligible, see {@link selectActive}:
+     * otherwise every new stream would start on it again. If no other source is, it is used.
      */
-    private backOffReclaim(i: number): void {
+    private backOffReclaim(i: number): number {
         let b = this.#reclaimBackoff[i]
         let factor = Math.min(2 ** b.failures, MAX_RECLAIM_BACKOFF_FACTOR)
         b.failures += 1
         b.delayMs = this.policy.reclaimBackoffMs * factor
         b.notBefore = this.policy.clock() + b.delayMs
+        return b.delayMs
+    }
+
+    /** The sources eager switch-up and selection currently stay away from, see {@link backOffReclaim}. */
+    private keptAway(): Set<number> {
+        let now = this.policy.clock()
+        let out = new Set<number>()
+        this.#reclaimBackoff.forEach((b, i) => {
+            if (now < b.notBefore) out.add(i)
+        })
+        return out
     }
 
     /**
      * The active source has served for `keptUpMs` with the stream keeping up (no starvation window
-     * open, and the delivery lag known and within `maxLagBlocks`). Once that is longer than the source was last kept away, its earlier failures no longer
-     * count. Time spent behind the tip does not: a source that is on its way to failing again must
-     * not be forgiven first, whatever the delay is.
+     * open, and the delivery lag known and within `maxLagBlocks`). Once that is longer than the
+     * source was last kept away, its earlier failures no longer count. Time spent behind the tip
+     * does not: a source that is on its way to failing again must not be forgiven first, whatever
+     * the delay is.
      */
     private forgiveNotDelivering(active: number, keptUpMs: number): void {
         let b = this.#reclaimBackoff[active]
