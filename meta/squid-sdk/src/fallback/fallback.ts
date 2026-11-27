@@ -372,13 +372,15 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         }
 
                         // The source may claim the tip and still not deliver it.
-                        if (await this.starvedBySource(st, active, waitedMs, consumerMs, batch.blocks.length)) {
+                        let delivered = batch.blocks.length
+                        if (await this.starvedBySource(st, active, waitedMs, consumerMs, delivered)) {
                             let keptAwayMs = this.backOffReclaim(active)
-                            let detail =
-                                `stayed more than ${this.policy.maxLagBlocks} blocks behind the chain head ` +
-                                `while waiting on the source for more than ${this.policy.maxStalenessMs}ms` +
-                                (keptAwayMs > 0 ? `; not preferred again for ${keptAwayMs}ms` : '')
-                            this.failSource(active, freshnessFailure('stream', 'stale', detail))
+                            let detail = [
+                                `stayed more than ${this.policy.maxLagBlocks} blocks behind the chain head`,
+                                `while waiting on the source for more than ${this.policy.maxStalenessMs}ms`,
+                            ]
+                            if (keptAwayMs > 0) detail.push(`(not preferred again for ${keptAwayMs}ms)`)
+                            this.failSource(active, freshnessFailure('stream', 'stale', detail.join(' ')))
                             this.exhaust(active, exhausted)
                             break
                         }
