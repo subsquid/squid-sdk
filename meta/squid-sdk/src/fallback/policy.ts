@@ -62,11 +62,13 @@ export interface FallbackPolicy {
      * The same limit applies to a source that keeps answering but does not keep up, whatever
      * height it claims: while the stream stays more than `maxLagBlocks` behind the other sources'
      * best claim, the time it waits on the active source is added up, and past this limit the
-     * source is failed over. Some cases are left alone: the consumer held the batches for longer
-     * than the stream waited on the source; the stream got closer to the tip in the meantime
-     * (which covers a historical backfill that makes headway); a source that has made headway is
-     * slower than the chain for a while (`slowdownGraceMs`); or there is no better source to go
-     * to (`reclaimBackoffMs`). This part also needs `maxLagBlocks` to be set.
+     * source is failed over unless it supplied blocks faster than the chain made them (blocks per
+     * millisecond waited on it, against the chain's blocks per millisecond of wall time). A
+     * consumer slower than the source therefore never fails it over, and neither does a historical
+     * backfill that makes headway; a source slower than the chain is failed over even when the
+     * consumer is slower still. Left alone as well: a source that has made headway and is slower
+     * than the chain for a while (`slowdownGraceMs`), and a source with no better one to go to
+     * (`reclaimBackoffMs`). This part also needs `maxLagBlocks` to be set.
      * The two lags it compares are taken against freshly polled claims, so the standbys are polled
      * on the batch path when such a spell starts and when it is judged; these polls are bounded by
      * `headPollTimeoutMs` like any other, and count as liveness probes.
@@ -97,14 +99,15 @@ export interface FallbackPolicy {
      * eager switch-up can check, so without this it would be taken back as soon as its cooldown
      * ends and the stream would spend most of its time on it. The delay doubles each time the source fails
      * the same way again, up to 16 times this value, and starts over once the source, taken back,
-     * has served with the stream keeping up for as long as it was kept away (added up across
-     * streams).
+     * has served for longer than it was kept away without a stream on it falling more than
+     * `maxLagBlocks` behind (in one spell, which may span several streams). Time with no other
+     * source to compare against counts as such service.
      *
      * In that time the source is also passed over when a new stream starts or the stream fails
      * over, as long as another source is eligible. If no other source is, it is used at once.
      *
      * When every other source is being kept away like this, the active one is not failed over for
-     * the same reason: the stream stays on whichever lost ground most slowly instead of alternating
+     * the same reason: the stream stays on whichever supplied blocks fastest instead of alternating
      * between sources that are all too slow.
      * `1_800_000` ms (30 minutes) by default; `0` takes the source back right after its cooldown.
      */

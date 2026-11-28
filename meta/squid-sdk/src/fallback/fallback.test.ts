@@ -1790,10 +1790,11 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
         expect(t.fb.health[0].cause?.reason).toBe('stale')
     })
 
-    it('does not count the consumer\'s wait for the fallback\'s own head as the consumer\'s work', async () => {
+    it('does not let a slow head endpoint excuse a source slower than the chain', async () => {
         // The batch processor asks the fallback for the chain head between batches, and that request
-        // goes to the active source. Here it takes 40 s every time. The handler itself is instant, so
-        // the source is what holds the stream back: 5 s per block, while the chain makes five.
+        // goes to the active source. Here it takes 40 s every time, while the chain makes a block a
+        // second. The source supplies a block per 5 s of waiting on it: slower than the chain, however
+        // much of the stream's time goes to the head requests.
         let t: ReturnType<typeof setup> = setup(
             async function* (req, env) {
                 yield batch([blk(req.from)])
@@ -1807,6 +1808,7 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
             {
                 primaryHead: async (env) => {
                     env.wait(40_000)
+                    env.advanceChain(40)
                     return {number: t.tip(), hash: '0x'}
                 },
             },
@@ -1820,49 +1822,22 @@ describe('FallbackDataSource — a source that claims the tip but does not deliv
         expect(t.fb.health[0].cause?.reason).toBe('stale')
     })
 
-    it('keeps the slow-consumer exemption when someone else\'s head request overlaps the handler', async () => {
-        // Two streams are open on the fallback, so a head request cannot be put down to either
-        // consumer. This stream's handler takes 9 s per batch against 1 s of waiting on the source,
-        // and all the while an unrelated head request is outstanding. The handler's time still counts.
-        let gate: Promise<void> | undefined
-        let t: ReturnType<typeof setup> = setup(
-            async function* (req, env) {
-                for (let n = req.from; n < req.from + 400; n++) {
-                    env.wait(1000)
-                    env.advanceChain(20)
-                    yield batch([blk(n)])
-                }
-            },
-            {},
-            {
-                primaryHead: async () => {
-                    if (gate) await gate
-                    return {number: t.tip(), hash: '0x'}
-                },
-            },
-        )
-        let other = t.fb.getStream({from: 100})[Symbol.asyncIterator]()
-        await other.next() // open, and parked at its first batch from here on
+    it('fails over a source slower than the chain even when the consumer is slower still', async () => {
+        // A block per second of waiting on the source while the chain makes two; the handler takes
+        // 9 s per block. The consumer holds the stream back most, but the source would as soon as
+        // the consumer sped up.
+        let t = setup(async function* (req, env) {
+            yield batch([blk(req.from)])
+            for (let n = req.from + 1; n < req.from + 400; n++) {
+                env.wait(1000)
+                env.advanceChain(20)
+                yield batch([blk(n)])
+            }
+        })
+        await drive(t, t.fb.getStream({from: 100}), 9000)
 
-        let last = 0
-        for await (let b of t.fb.getStream({from: 100, to: 499})) {
-            last = b.blocks[b.blocks.length - 1].header.number
-            if (t.fb.activeIndex !== 0) break
-            let release!: () => void
-            gate = new Promise((resolve) => {
-                release = resolve
-            })
-            let head = t.fb.getHead() // not this consumer's: it does not wait for it
-            t.consume(9000)
-            gate = undefined
-            release()
-            await head
-        }
-        await other.return?.()
-
-        expect(last).toBe(499)
-        expect(t.fb.activeIndex).toBe(0)
-        expect(t.s1.calls).toHaveLength(0)
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
     })
 
     it('reports the lag it acts on, not the one a cached claim suggests', async () => {
@@ -2140,12 +2115,14 @@ describe('FallbackDataSource — taking back a source that was failed over for n
     // Both sources follow a chain that makes one block per second and always claim its tip. The
     // second source delivers everything up to the tip once a second. The primary does the same
     // while `primaryKeepsUp(now)`, and otherwise delivers one block per 5 s. While `secondDown(now)`,
-    // the second source fails its stream and its head requests. The consumer is instant.
+    // the second source fails its stream and its head requests. The consumer is instant, and opens
+    // a new stream at the first batch boundary after each of the `restartAt` times.
     async function follow(
         policy: FallbackPolicy,
         durationMs: number,
         primaryKeepsUp: (now: number) => boolean = () => false,
         secondDown: (now: number) => boolean = () => false,
+        restartAt: number[] = [],
     ) {
         let now = 0
         let tip = () => 100 + Math.floor(now / 1000)
@@ -2197,15 +2174,22 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         let last = 99
         let prevNow = 0
         let prevActive: number | undefined
-        for await (let b of fb.getStream({from: 100})) {
-            let active = fb.activeIndex!
-            if (prevActive != null && active !== prevActive) switches.push({at: prevNow, to: active})
-            if (active === 0) onPrimaryMs += now - prevNow
-            if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
-            maxLag = Math.max(maxLag, tip() - last)
-            prevNow = now
-            prevActive = active
-            if (now >= durationMs) break
+        let restarts = [...restartAt]
+        while (now < durationMs) {
+            for await (let b of fb.getStream({from: last + 1})) {
+                let active = fb.activeIndex!
+                if (prevActive != null && active !== prevActive) switches.push({at: prevNow, to: active})
+                if (active === 0) onPrimaryMs += now - prevNow
+                if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
+                maxLag = Math.max(maxLag, tip() - last)
+                prevNow = now
+                prevActive = active
+                if (now >= durationMs) break
+                if (restarts.length && now >= restarts[0]) {
+                    restarts.shift() // the consumer opens a new stream, as after a reorganisation
+                    break
+                }
+            }
         }
         return {fb, switches, primaryShare: onPrimaryMs / now, maxLag}
     }
@@ -2251,6 +2235,31 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         }
     })
 
+    for (let [how, restartAt] of [
+        ['by catching up', []],
+        ['by the stream ending', [133_000]],
+    ] as const) {
+        it(`counts good service again after a spell behind the tip ends ${how}`, async () => {
+            // Taken back at about t=100 s, the primary is slow from t=115 s to t=140 s: more than 10
+            // blocks behind from about t=130 s, not yet failed. That spell ends when it catches up
+            // or, in the second case, when the consumer opens a new stream at t=133 s. It then keeps
+            // up until t=1000 s: when it fails again after that, it is a first failure.
+            let r = await follow(
+                {reclaimBackoffMs: 60_000, maxStalenessMs: 20_000, cooldownMs: 1000},
+                1_400_000,
+                (now) => now >= 100_000 && now < 1_000_000 && (now < 115_000 || now >= 140_000),
+                () => false,
+                [...restartAt],
+            )
+
+            let failedAt = r.switches.filter((s) => s.to === 1).map((s) => s.at)
+            let reclaimedAt = r.switches.filter((s) => s.to === 0).map((s) => s.at)
+            expect(failedAt[0]).toBeLessThan(100_000)
+            expect(failedAt[1]).toBeGreaterThan(1_000_000)
+            expect(reclaimedAt[1] - failedAt[1]).toBeLessThan(60_000 + 30_000) // not doubled
+        })
+    }
+
     it('starts from the base delay again after the source has kept up for as long as it was kept away', async () => {
         // Slow until t=100 s (fails once), fine until t=1000 s, slow again after. The second failure
         // comes after more than the 60 s delay of good service, so it is treated as a first one.
@@ -2267,11 +2276,30 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         expect(reclaimedAt[1] - failedAt[1]).toBeLessThan(60_000 + 30_000) // not doubled
     })
 
-    it('does not count time without a reference as good service', async () => {
+    it('does not count spells behind the tip as good service, even short ones', async () => {
+        // Taken back at about t=100 s, the primary falls more than 10 blocks behind every 28 s and
+        // catches up again before the 20 s limit fails it, until t=400 s, and stays slow after.
+        // That is minutes since it was taken back, but never 60 s in a row without falling behind:
+        // when it fails, it is a repeat failure.
+        let r = await follow(
+            {reclaimBackoffMs: 60_000, maxStalenessMs: 20_000, cooldownMs: 1000},
+            900_000,
+            (now) => now >= 100_000 && now < 400_000 && (now - 100_000) % 28_000 >= 18_000,
+        )
+
+        let failedAt = r.switches.filter((s) => s.to === 1).map((s) => s.at)
+        let reclaimedAt = r.switches.filter((s) => s.to === 0).map((s) => s.at)
+        expect(failedAt[0]).toBeLessThan(100_000)
+        expect(failedAt[1]).toBeGreaterThan(400_000) // the short spells did not fail it
+        let retried = reclaimedAt.find((at) => at > failedAt[1])!
+        expect(retried - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled
+    })
+
+    it('counts time without a reference as good service', async () => {
         // The primary fails, then the second source goes down for 6 minutes, so the primary is used
-        // again with nothing to compare it against. Those minutes are longer than the 60 s delay, but
-        // they say nothing about whether the primary keeps up: once the second source is back, the
-        // primary fails again, and that is a repeat failure with a doubled delay.
+        // again with nothing to compare it against. Nothing shows it behind in those minutes, which
+        // are longer than the 60 s delay: once the second source is back and the primary fails
+        // again, that is a first failure with the base delay.
         let r = await follow(
             {reclaimBackoffMs: 60_000, maxStalenessMs: 20_000, cooldownMs: 1000},
             900_000,
@@ -2283,7 +2311,8 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         expect(failedAt[0]).toBeLessThan(50_000) // failed over before the outage
         expect(failedAt[1]).toBeGreaterThan(410_000) // failed again after it
         let reclaimed = r.switches.find((s) => s.to === 0 && s.at > failedAt[1])!
-        expect(reclaimed.at - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled, not reset to 60 s
+        expect(reclaimed.at - failedAt[1]).toBeGreaterThanOrEqual(60_000)
+        expect(reclaimed.at - failedAt[1]).toBeLessThan(90_000) // the base delay, not a doubled one
     })
 
     // The primary is slow until t=100 s (fails once, kept away for 60 s), keeps up until t=400 s and
@@ -2436,15 +2465,16 @@ describe('FallbackDataSource — taking back a source that was failed over for n
     })
 
     it('counts good service once when two streams run on the source at the same time', async () => {
-        // The primary fails once (kept away for 60 s), is taken back and keeps up until t=150 s. For
-        // the last 40 s of that a second stream runs next to the first. Together that is less than
-        // a minute of good service, not the 90 s it would be if both streams counted. When the
-        // primary is slow again, that is a repeat failure. (Only the first stream moves the clock.)
+        // The primary fails once (kept away for 60 s), is taken back and keeps up until t=140 s. For
+        // the last 30 s of that a second stream runs next to the first. Together that is less than
+        // a minute of good service (with the 15 s the stream takes to be seen behind afterwards),
+        // not the 85 s it would be if both streams counted. When the primary is slow again, that is
+        // a repeat failure. (Only the first stream moves the clock.)
         let now = 0
         let ticking = true
         let tip = () => 100 + Math.floor(now / 1000)
         let claim = async () => ({number: tip(), hash: '0x'})
-        let keepsUp = () => now >= 100_000 && now < 150_000
+        let keepsUp = () => now >= 100_000 && now < 140_000
         let s0 = new MockSource(
             async function* (req) {
                 let next = req.from
@@ -2497,7 +2527,7 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         expect(reclaimedAt[0]).toBeGreaterThan(100_000)
 
         let second = fb.getStream({from: tip()})[Symbol.asyncIterator]()
-        while (now < 150_000) {
+        while (now < 140_000) {
             await step()
             ticking = false
             await second.next()
@@ -2506,16 +2536,16 @@ describe('FallbackDataSource — taking back a source that was failed over for n
         await second.return?.()
 
         while (now < 600_000) await step()
-        expect(failedAt[1]).toBeGreaterThan(150_000)
+        expect(failedAt[1]).toBeGreaterThan(140_000)
         expect(reclaimedAt[1] - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled
     })
 
-    it('credits a stream that keeps up although a backfill on the same source is far behind', async () => {
+    it('does not forgive a source while another stream on it is behind', async () => {
         // The primary fails once (kept away for 60 s), is taken back and keeps up until t=250 s:
         // well over a minute of good service on the live stream. Next to it a backfill runs on the
-        // same source, thousands of blocks behind the whole time. That says nothing about the live
-        // stream: when the primary is slow again, it is a first failure. (Only the live stream
-        // moves the clock.)
+        // same source, thousands of blocks behind the whole time. Good service is counted per
+        // source, so that holds it back: when the primary is slow again, it is a repeat failure.
+        // (Only the live stream moves the clock. The backfill stays open until the end.)
         let now = 0
         let tip = () => 5000 + Math.floor(now / 1000)
         let claim = async () => ({number: tip(), hash: '0x'})
@@ -2578,12 +2608,11 @@ describe('FallbackDataSource — taking back a source that was failed over for n
             await step()
             await backfill.next()
         }
-        await backfill.return?.()
 
-        while (now < 600_000) await step()
+        while (now < 600_000) await step() // the backfill stays open, and behind
+        await backfill.return?.()
         expect(failedAt[1]).toBeGreaterThan(250_000)
-        expect(reclaimedAt[1] - failedAt[1]).toBeGreaterThanOrEqual(60_000)
-        expect(reclaimedAt[1] - failedAt[1]).toBeLessThan(100_000) // the base delay, not a doubled one
+        expect(reclaimedAt[1] - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled
     })
 
     it('takes it back right after the cooldown with reclaimBackoffMs: 0', async () => {

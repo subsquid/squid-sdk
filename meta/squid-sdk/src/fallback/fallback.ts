@@ -26,26 +26,22 @@ interface ReclaimBackoff {
     /** Eager switch-up does not take the source back before this time. */
     notBefore: number
     /**
-     * Since the last such failure: time the source served with the stream keeping up. Kept here,
-     * not per stream, because the batch processor opens a new stream after every chain
-     * reorganisation and no single one may last as long as the delay.
+     * Since when no stream on this source has been behind the tip: the start of the current spell
+     * of good service. It is per source, not per stream, because the batch processor opens a new
+     * stream after every chain reorganisation and no single one may last as long as the delay.
+     * Set when the source is taken back and when the last stream on it stops being behind.
      */
-    keptUpMs: number
+    clearSince: number
+    /** The longest such spell since the last failure for not delivering. */
+    clearMs: number
+    /** Streams on this source with a starvation window open. */
+    behindStreams: number
     /**
-     * Time that looked like good service to a stream that has ended, not yet confirmed by freshly
-     * polled claims; the next stream on this source takes it over. A stream may end before the
-     * claims are polled again. While a stream runs, it keeps its own unconfirmed time, so one
-     * stream that is behind says nothing about another that keeps up.
+     * How fast the source delivered when it last failed that way: blocks the stream advanced per
+     * millisecond of waiting on it. When every source has failed like this, the fastest one is
+     * the one to stay on.
      */
-    carriedMs: number
-    /** Up to when confirmed good service has been credited, so overlapping streams count it once. */
-    countedUntil: number
-    /**
-     * How fast the stream fell behind on this source when it last failed that way: blocks of
-     * delivery lag gained per millisecond of waiting on it. When every source has failed like
-     * this, the one that lost ground most slowly is the one to stay on.
-     */
-    lossRate?: number
+    supplyRate?: number
 }
 
 /** A structured snapshot of the fallback's observable state, for a metrics surface. */
@@ -117,29 +113,26 @@ interface StreamState {
      * `undefined` when there is no reference (or the lag trigger is disabled).
      */
     deliveryLag?: number
-    /** When the boundary that produced `deliveryLag` started; claims polled since then are fresh. */
-    lagAskedAt?: number
     /** Open while the stream stays more than `maxLagBlocks` behind, see {@link StarvationWindow}. */
     starvation?: StarvationWindow
 }
 
 /**
  * Accounting for a spell in which the stream stays more than `maxLagBlocks` behind the other
- * sources' best claim. It separates the two reasons a stream can be behind: the time it spent
- * waiting on the active source for the next batch, against the time the consumer held a batch.
- * Time the supervisor itself takes (head polls) counts for neither.
+ * sources' best claim. It compares how fast the active source supplies blocks (frontier advance
+ * per millisecond spent waiting on it) with how fast the chain grows (the reference's advance per
+ * millisecond of wall time). Time the consumer holds a batch, or the supervisor spends on head
+ * requests, is wall time but not waiting time, so it never counts against the source.
  */
 interface StarvationWindow {
     /** When the window opened. */
     since: number
     /** Time spent waiting on the active source for a batch since then. */
     waitMs: number
-    /** Time the consumer held the delivered batches since then (parked at `yield`). */
-    consumerMs: number
-    /** Blocks the source delivered since then. */
-    blocks: number
-    /** Delivery lag when the window opened, against claims polled at that moment. */
-    startLag: number
+    /** The served frontier when the window opened. */
+    startFrontier: number
+    /** The other sources' best claim when the window opened, polled at that moment. */
+    startReference: number
     /** Delivery lag when the stream first fell behind in this spell (several windows may follow). */
     spellStartLag: number
     /**
@@ -190,9 +183,10 @@ export interface FallbackDataSourceOptions<B> {
  *   source never fails it over;
  * - staleness: a stream that served nothing for `maxStalenessMs` while others claim blocks beyond
  *   the frontier fails over;
- * - starvation: a claim is unverified, so a source that claims the tip while the stream waits on
- *   it for `maxStalenessMs` without getting closer to the tip fails over too. Only served heights
- *   and the time spent waiting on the source decide this, see {@link starvedBySource}. A source
+ * - starvation: a claim is unverified, so a source that claims the tip but, over
+ *   `maxStalenessMs` of waiting on it, supplies blocks slower than the chain makes them fails over
+ *   too. Only served heights and the time spent waiting on the source decide this, see
+ *   {@link starvedBySource}. A source
  *   that has made headway may be slower than the chain for `slowdownGraceMs`. A source failed
  *   this way still claims the tip, so eager switch-up stays away from it for `reclaimBackoffMs`;
  *   and when every source has failed this way, the stream stays on the least slow one;
@@ -227,14 +221,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
     #capabilityProbing: boolean[] = []
     /** Per source: how long eager switch-up stays away after a failure for not delivering. */
     #reclaimBackoff: ReclaimBackoff[]
-    /**
-     * Wall time during which at least one delegated head request (`getHead()` /
-     * `getFinalizedHead()`) was outstanding: `pending` requests now, the earliest of them started
-     * at `since`, and `totalMs` of such time before that. See {@link delegatedHeadMs}.
-     */
-    #headDelegation = {pending: 0, since: 0, totalMs: 0}
-    /** Streams currently open on this instance. */
-    #openStreams = 0
     /** Last source we drove, retained across an all-down gap so switch-counting stays correct. */
     #lastActive: number | undefined
 
@@ -252,9 +238,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
             failures: 0,
             delayMs: 0,
             notBefore: 0,
-            keptUpMs: 0,
-            carriedMs: 0,
-            countedUntil: 0,
+            clearSince: 0,
+            clearMs: 0,
+            behindStreams: 0,
         }))
     }
 
@@ -357,29 +343,11 @@ export class FallbackDataSource<B> implements DataSource<B> {
         // Served heights are per stream: a new stream has not been served anything yet.
         for (let h of this.#heights) h.served = undefined
 
-        this.#openStreams++
-        try {
-            yield* this.driveStream(req, finalized, st, frontierHash)
-        } finally {
-            this.#openStreams--
-        }
-    }
-
-    private async *driveStream(
-        req: StreamRequest,
-        finalized: boolean,
-        st: StreamState,
-        frontierHash: string | undefined,
-    ): BlockStream<B> {
         let exhausted = new Set<number>()
         for await (let active of this.selectActive(exhausted)) {
-            // Unconfirmed good service: what the last stream on this source left behind (nothing if
-            // another source was driven in between), plus what this one sees from now on.
-            let backoff = this.#reclaimBackoff[active]
-            let carriedMs = this.#lastActive === active ? backoff.carriedMs : 0
-            backoff.carriedMs = 0
-            let unconfirmedSince = this.policy.clock()
-            let unconfirmedMs = carriedMs
+            // Taken back: a spell of good service on this source starts now. A new stream on the
+            // source that was already being driven continues the spell (see `ReclaimBackoff`).
+            if (this.#lastActive !== active) this.#reclaimBackoff[active].clearSince = this.policy.clock()
             this.setActive(active)
             st.lagExceededSince = undefined // a switch ends the lag episode
             st.starvation = undefined
@@ -423,16 +391,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
                             : undefined
                         // Served as soon as it is delivered, whatever the consumer does with it.
                         if (lastRef) this.#heights[active].served = lastRef.number
-                        let handedOver = this.policy.clock()
-                        let headMsBefore = this.delegatedHeadMs()
                         yield batch
-                        // Time the consumer held the batch, as opposed to `waitedMs` above. Not the
-                        // part it spent waiting for this fallback's own head (the batch processor
-                        // asks for it between batches): that is a request to the source again.
-                        // With several streams open there is no telling whose consumer asked, so
-                        // nothing is taken off then.
-                        let headMs = this.#openStreams === 1 ? this.delegatedHeadMs() - headMsBefore : 0
-                        let consumerMs = Math.max(0, this.policy.clock() - handedOver - headMs)
 
                         // The resume frontier moves once the consumer asks for more (it took the batch).
                         if (lastRef) {
@@ -450,15 +409,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         }
 
                         // The source may claim the tip and still not deliver it.
-                        let lossRate = await this.starvedBySource(
-                            st,
-                            active,
-                            waitedMs,
-                            consumerMs,
-                            batch.blocks.length,
-                        )
-                        if (lossRate != null) {
-                            let keptAwayMs = this.backOffReclaim(active, lossRate)
+                        let supplyRate = await this.starvedBySource(st, active, waitedMs)
+                        if (supplyRate != null) {
+                            let keptAwayMs = this.backOffReclaim(active, supplyRate)
                             let detail = [
                                 `stayed more than ${this.policy.maxLagBlocks} blocks behind the chain head`,
                                 `while waiting on the source for more than ${this.policy.maxStalenessMs}ms`,
@@ -467,20 +420,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
                             this.failSource(active, freshnessFailure('stream', 'stale', detail.join(' ')))
                             this.exhaust(active, exhausted)
                             break
-                        }
-                        let now = this.policy.clock()
-                        unconfirmedMs = carriedMs + now - unconfirmedSince
-                        let keptUp = await this.keepingUp(st, active, unconfirmedMs)
-                        if (keptUp === true) {
-                            // Credit only the part no other stream on this source has credited.
-                            let own = Math.max(0, now - Math.max(unconfirmedSince, backoff.countedUntil))
-                            backoff.countedUntil = now
-                            this.forgiveNotDelivering(active, carriedMs + own)
-                        }
-                        if (keptUp != null) {
-                            carriedMs = 0
-                            unconfirmedMs = 0
-                            unconfirmedSince = now
                         }
 
                         // Eager switch-up: reclaim a recovered higher-preference source at the
@@ -499,9 +438,10 @@ export class FallbackDataSource<B> implements DataSource<B> {
                         }
                     }
                 } finally {
-                    // Leave what still looked like good service for the next stream on this source.
-                    if (this.health[active].state !== 'unhealthy') {
-                        backoff.carriedMs = Math.max(backoff.carriedMs, unconfirmedMs)
+                    // Leaving the source while behind the tip: no longer behind on it.
+                    if (st.starvation != null) {
+                        st.starvation = undefined
+                        this.behindEnded(active)
                     }
                     // Fire-and-forget: a *stalled* source's `return()` can itself hang on the
                     // same unresolved fetch, and failover must not wait on it.
@@ -530,27 +470,7 @@ export class FallbackDataSource<B> implements DataSource<B> {
         return this.delegateHead('finalized')
     }
 
-    /**
-     * Total wall time so far during which a delegated head request was outstanding. Overlapping
-     * requests count once. A stream subtracts what accrued while it was parked at `yield` from the
-     * consumer's time, so a slow head endpoint is not mistaken for a slow handler.
-     */
-    private delegatedHeadMs(): number {
-        let d = this.#headDelegation
-        return d.totalMs + (d.pending > 0 ? this.policy.clock() - d.since : 0)
-    }
-
     private async delegateHead(kind: HeightKind): Promise<BlockRef> {
-        let d = this.#headDelegation
-        if (d.pending++ === 0) d.since = this.policy.clock()
-        try {
-            return await this.requestDelegatedHead(kind)
-        } finally {
-            if (--d.pending === 0) d.totalMs += this.policy.clock() - d.since
-        }
-    }
-
-    private async requestDelegatedHead(kind: HeightKind): Promise<BlockRef> {
         let exhausted = new Set<number>()
         for await (let active of this.headCandidates(exhausted)) {
             try {
@@ -878,39 +798,66 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * for `reclaimBackoffMs`, doubled for each such failure in a row. Selection (a new stream, a
      * failover) passes it over as well while another source is eligible, see {@link selectActive}:
      * otherwise every new stream would start on it again. If no other source is, it is used.
+     *
+     * A failure counts as a repeat unless the source, since it was taken back after the last one,
+     * served for longer than it was kept away with no stream on it behind the tip (see
+     * `ReclaimBackoff.clearSince`). Time with no reference to compare against counts as such
+     * service. A stream that is behind on this source holds the count back for every stream on it.
+     * The spells are measured from the starvation windows, so "behind" means more than
+     * `maxLagBlocks` behind against freshly polled claims.
      */
-    private backOffReclaim(i: number, lossRate: number): number {
+    private backOffReclaim(i: number, supplyRate: number): number {
         let b = this.#reclaimBackoff[i]
+        if (b.clearMs > b.delayMs) b.failures = 0 // kept up for long enough: not a repeat
         let factor = Math.min(2 ** b.failures, MAX_RECLAIM_BACKOFF_FACTOR)
         b.failures += 1
         b.delayMs = this.policy.reclaimBackoffMs * factor
         b.notBefore = this.policy.clock() + b.delayMs
-        b.keptUpMs = 0
-        b.carriedMs = 0
-        b.lossRate = lossRate
+        b.clearMs = 0
+        b.supplyRate = supplyRate
         return b.delayMs
     }
 
     /**
-     * The active source is losing ground at `lossRate` and would be failed over for it. Whether
-     * there is anything better to go to.
+     * A stream on source `i` fell more than `maxLagBlocks` behind (confirmed against freshly polled
+     * claims): if it is the only one, that ends a spell of good service on the source.
+     */
+    private behindStarted(i: number): void {
+        let b = this.#reclaimBackoff[i]
+        if (b.behindStreams++ === 0) b.clearMs = Math.max(b.clearMs, this.policy.clock() - b.clearSince)
+    }
+
+    /**
+     * A stream on source `i` is no longer behind, or left it while behind. A spell of good service
+     * starts no earlier than this; with other streams still behind on it, it starts when the last
+     * of them ends (a spell is only credited when no stream is behind, see {@link behindStarted}).
+     */
+    private behindEnded(i: number): void {
+        let b = this.#reclaimBackoff[i]
+        b.behindStreams -= 1
+        b.clearSince = this.policy.clock()
+    }
+
+    /**
+     * The active source supplies blocks at `supplyRate` and would be failed over for not keeping
+     * up. Whether there is anything better to go to.
      *
      * If some other eligible source is not kept away, it is worth trying. If they all are, every
      * source has recently been found too slow (a stretch of heavy blocks, say), and failing over
-     * would only alternate between them. Then the stream stays on the source that lost ground most
-     * slowly: it goes back to one that did better than the active one, and holds otherwise, the way
-     * the staleness trigger holds in a chain stall. A source whose keep-away ends is tried again on
-     * the next judgement, so the hold is re-examined once per backoff period.
+     * would only alternate between them. Then the stream stays on the fastest of them: it goes back
+     * to one that supplied blocks faster than the active one, and holds otherwise, the way the
+     * staleness trigger holds in a chain stall. A source whose keep-away ends is tried again on the
+     * next judgement, so the hold is re-examined once per backoff period.
      */
-    private worthFailingOver(active: number, lossRate: number): boolean {
+    private worthFailingOver(active: number, supplyRate: number): boolean {
         let now = this.policy.clock()
         let better: number | undefined
         for (let i = 0; i < this.sources.length; i++) {
             if (i === active || this.health[i].state === 'unhealthy') continue
             let b = this.#reclaimBackoff[i]
             if (now >= b.notBefore) return true
-            if (b.lossRate == null || b.lossRate >= lossRate) continue
-            if (better == null || b.lossRate < this.#reclaimBackoff[better].lossRate!) better = i
+            if (b.supplyRate == null || b.supplyRate <= supplyRate) continue
+            if (better == null || b.supplyRate > this.#reclaimBackoff[better].supplyRate!) better = i
         }
         if (better == null) return false
         this.#reclaimBackoff[better].notBefore = now // back to the one that did better
@@ -925,49 +872,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
             if (now < b.notBefore) out.add(i)
         })
         return out
-    }
-
-    /**
-     * Whether the active source, which has failed for not delivering before, is now keeping up:
-     * `true` or `false` once that is established, `undefined` while it only looks so.
-     *
-     * Good service needs a known delivery lag within `maxLagBlocks` and no starvation window open.
-     * With no reference (every standby's head request failed) there is no window, but nothing shows
-     * the source keeping up either. And the lag has to be against claims polled at this boundary:
-     * against a cached claim it is understated, and reads as negative once the claim is older than
-     * the stream's own frontier. Time that only looks good is held back (`unconfirmedMs`) until a
-     * boundary where the claims are fresh; if none comes within `headTtlMs`, they are polled.
-     */
-    private async keepingUp(
-        st: StreamState,
-        active: number,
-        unconfirmedMs: number,
-    ): Promise<boolean | undefined> {
-        let maxLag = this.policy.maxLagBlocks
-        if (this.#reclaimBackoff[active].failures === 0) return false // nothing to forgive
-        if (maxLag == null || st.starvation != null) return false
-        if (st.deliveryLag == null || st.deliveryLag > maxLag) return false
-        if (st.lagAskedAt != null && this.othersPolledSince(active, st.kind, st.lagAskedAt)) return true
-        if (unconfirmedMs < this.policy.headTtlMs) return undefined
-        let lag = await this.exactDeliveryLag(st, active)
-        return lag != null && lag <= maxLag
-    }
-
-    /**
-     * The active source has served for another `ms` with the stream keeping up (no starvation
-     * window open, and the delivery lag known and within `maxLagBlocks`). Once such time since its
-     * last failure for not delivering adds up to more than it was kept away, its earlier failures
-     * no longer count. Time spent behind the tip does not add: a source that is on its way to
-     * failing again must not be forgiven first, whatever the delay is.
-     */
-    private forgiveNotDelivering(active: number, ms: number): void {
-        let b = this.#reclaimBackoff[active]
-        if (b.failures === 0) return
-        b.keptUpMs += ms
-        if (b.keptUpMs > b.delayMs) {
-            b.failures = 0
-            b.keptUpMs = 0
-        }
     }
 
     /**
@@ -992,13 +896,11 @@ export class FallbackDataSource<B> implements DataSource<B> {
      */
     private async laggingTooFar(st: StreamState, active: number, emptyBatch: boolean): Promise<boolean> {
         st.deliveryLag = undefined
-        st.lagAskedAt = undefined
         if (this.policy.maxLagBlocks == null) return false
         let maxLag = this.policy.maxLagBlocks
         let frontier = st.frontier
 
         let askedAt = this.policy.clock()
-        st.lagAskedAt = askedAt
         let others = await this.othersBestClaim(active, st)
         if (others != null && !st.lagArmed && others >= frontier && others - frontier <= maxLag) {
             // About to arm. A cached claim is an older, lower one, and would make a stream that never
@@ -1084,18 +986,21 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * other sources' best claim (the delivery lag of the last boundary), the time it waits on the
      * source is added up. Each time that exceeds `maxStalenessMs`, the window is judged, and the
      * source is failed over unless one of these holds:
-     * - the consumer held the batches for longer than the stream waited on the source. A consumer
-     *   slower than the source spends its time in the handler, not waiting, and never fails the
-     *   source over. The supervisor's own head requests count for neither side;
-     * - the stream got closer to the tip: its delivery lag is smaller than when the window opened.
-     *   Both lags are taken against claims polled at that moment, not cached ones (see
-     *   {@link exactDeliveryLag}); that costs one round of standby polls when a window opens and
-     *   one when it is judged;
+     * - the source supplies blocks faster than the chain makes them: the frontier advanced more per
+     *   millisecond of waiting on the source than the reference did per millisecond of wall time.
+     *   A consumer slower than the source spends the time in the handler, not waiting, so it never
+     *   fails the source over; nor does time the batch processor spends asking for the head. A
+     *   stream that gets closer to the tip passes this test too. Both references are claims polled
+     *   at that moment, not cached ones (see {@link exactDeliveryLag}); that costs one round of
+     *   standby polls when a window opens and one when it is judged;
      * - it is a dip: the source delivered blocks, the stream is still closer to the tip than when
      *   it first fell behind in this spell, and such windows in a row add up to no more than
      *   `slowdownGraceMs`. A backfill crossing a stretch of heavy blocks is slower than the chain
      *   for a while without anything being wrong with the source;
      * - there is nothing better to go to, see {@link worthFailingOver}.
+     *
+     * A source slower than the chain is failed over even when the consumer is slower still: it
+     * would hold the stream back as soon as the consumer sped up.
      *
      * A historical backfill is not treated differently otherwise: one that makes headway gets
      * closer to the tip, and a source slower than the chain would never finish it. In particular a
@@ -1109,15 +1014,9 @@ export class FallbackDataSource<B> implements DataSource<B> {
      * steady distance looks as if it caught up shortly before every new poll. Needs both
      * `maxLagBlocks` and `maxStalenessMs`.
      *
-     * Returns the rate at which the stream lost ground when the source is to be failed over.
+     * Returns the source's supply rate (blocks per millisecond waited) when it is to be failed over.
      */
-    private async starvedBySource(
-        st: StreamState,
-        active: number,
-        waitedMs: number,
-        consumerMs: number,
-        deliveredBlocks: number,
-    ): Promise<number | undefined> {
+    private async starvedBySource(st: StreamState, active: number, waitedMs: number): Promise<number | undefined> {
         let maxLag = this.policy.maxLagBlocks
         let maxWaitMs = this.policy.maxStalenessMs
         if (maxLag == null || maxWaitMs == null) {
@@ -1133,8 +1032,6 @@ export class FallbackDataSource<B> implements DataSource<B> {
         let judge = false
         if (w != null) {
             w.waitMs += waitedMs
-            w.consumerMs += consumerMs
-            w.blocks += deliveredBlocks
             judge = w.waitMs > maxWaitMs
             if (behind && !judge) return undefined
         }
@@ -1142,47 +1039,49 @@ export class FallbackDataSource<B> implements DataSource<B> {
         let lag = await this.exactDeliveryLag(st, active)
         if (lag == null || lag <= maxLag) {
             st.starvation = undefined
+            if (w != null) this.behindEnded(active) // caught up
             return undefined
         }
         if (w != null && !judge) return undefined // only the cached claim said it had caught up
-
         // The next window of the same spell; the wait for this batch is not counted in it.
+        let reference = st.frontier + lag
         let next = (slowMs: number): StarvationWindow => ({
             since: this.policy.clock(),
             waitMs: 0,
-            consumerMs: 0,
-            blocks: 0,
-            startLag: lag,
+            startFrontier: st.frontier,
+            startReference: reference,
             spellStartLag: w?.spellStartLag ?? lag,
             slowMs,
         })
         if (w == null) {
             st.starvation = next(0)
+            this.behindStarted(active)
             return undefined
         }
-        if (w.waitMs < w.consumerMs) {
-            st.starvation = next(w.slowMs) // the consumer is what holds the stream back
-            return undefined
-        }
-        if (lag < w.startLag) {
-            st.starvation = next(0) // getting closer
+        // Cross-multiplied rates: frontier advance per ms waited against chain growth per wall ms.
+        let advance = st.frontier - w.startFrontier
+        let growth = reference - w.startReference
+        let wallMs = this.policy.clock() - w.since
+        if (advance * wallMs > growth * w.waitMs) {
+            st.starvation = next(0) // the source keeps up; whatever holds the stream back, it is not it
             return undefined
         }
         // The source held the stream back for a whole window. Allow a dip: it delivers, the stream
         // is still closer to the tip than when the spell began, and it has not lasted too long.
         let slowMs = w.slowMs + w.waitMs
-        if (w.blocks > 0 && lag < w.spellStartLag && slowMs <= this.policy.slowdownGraceMs) {
+        if (advance > 0 && lag < w.spellStartLag && slowMs <= this.policy.slowdownGraceMs) {
             st.starvation = next(slowMs)
             return undefined
         }
-        let lossRate = (lag - w.startLag) / w.waitMs
-        if (!this.worthFailingOver(active, lossRate)) {
+        let supplyRate = advance / w.waitMs
+        if (!this.worthFailingOver(active, supplyRate)) {
             st.starvation = next(slowMs) // nothing better to go to: hold
             return undefined
         }
         st.starvation = undefined
+        this.behindEnded(active)
         this.chainStalled = false
-        return lossRate
+        return supplyRate
     }
 
     /**
