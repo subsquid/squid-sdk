@@ -1507,6 +1507,1393 @@ describe('FallbackDataSource — served vs claimed heights', () => {
     })
 })
 
+describe('FallbackDataSource — a source that claims the tip but does not deliver it', () => {
+    // The clock is the test's: time that passes inside a source's generator is time the stream
+    // waited on that source; time that passes in the consumer loop is the consumer's.
+    type Env = {wait: (ms: number) => void; advanceChain: (blocks: number) => void}
+
+    function setup(
+        primary: (req: StreamRequest, env: Env) => AsyncGenerator<BlockBatch<TestBlock>>,
+        policy: FallbackPolicy = {},
+        opts: {tip?: number; primaryHead?: (env: Env) => Promise<BlockRef>} = {},
+    ) {
+        let now = 0
+        let tip = opts.tip ?? 100
+        let env = {
+            wait: (ms: number) => {
+                now += ms
+            },
+            advanceChain: (blocks: number) => {
+                tip += blocks
+            },
+        }
+        let claim = async () => ({number: tip, hash: '0x'})
+        let primaryHead = opts.primaryHead
+        let primaryClaim = primaryHead ? () => primaryHead(env) : claim
+        let s0 = new MockSource((req) => primary(req, env), {head: primaryClaim, finalizedHead: primaryClaim})
+        let s1 = new MockSource(
+            async function* (req) {
+                let blocks: TestBlock[] = []
+                for (let n = req.from; n <= tip; n++) blocks.push(blk(n))
+                yield batch(blocks)
+            },
+            {head: claim, finalizedHead: claim},
+        )
+        let fb = fallback([s0, s1], {
+            maxLagBlocks: 10,
+            maxStalenessMs: 180_000,
+            headTtlMs: 0,
+            cooldownMs: 600_000,
+            preferPrimary: 'onFailureOnly',
+            clock: () => now,
+            ...policy,
+        })
+        let consume = (ms: number) => {
+            now += ms
+        }
+        return {fb, s0, s1, consume, tip: () => tip, now: () => now}
+    }
+
+    // Reads until the stream leaves the primary or ends; the consumer takes `consumerMs` per batch.
+    async function drive(t: ReturnType<typeof setup>, stream: BlockStream<TestBlock>, consumerMs = 0) {
+        let last: number | undefined
+        for await (let b of stream) {
+            if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
+            if (t.fb.activeIndex !== 0) break
+            t.consume(consumerMs)
+        }
+        return last
+    }
+
+    it('fails over a primary that claims the tip but only yields empty batches', async () => {
+        // Its head keeps up with the chain, so claim against claim it is never behind; every empty
+        // batch also resets the staleness clock. Only the time spent waiting on it shows the problem.
+        let t = setup(async function* (req, env) {
+            yield batch([blk(req.from)]) // at the tip: arms the lag trigger
+            for (let i = 0; i < 100; i++) {
+                env.wait(5000) // a long poll that returns nothing
+                env.advanceChain(5)
+                yield batch([])
+            }
+        })
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
+        // not before `maxStalenessMs` of waiting on the source has passed
+        expect(t.now()).toBeGreaterThan(180_000)
+        expect(t.now()).toBeLessThan(240_000)
+    })
+
+    it('fails over a primary that claims the tip but delivers slower than the chain grows', async () => {
+        let t = setup(async function* (req, env) {
+            yield batch([blk(req.from)])
+            for (let n = req.from + 1; n < req.from + 200; n++) {
+                env.wait(5000)
+                env.advanceChain(5) // 5 blocks produced for each one delivered
+                yield batch([blk(n)])
+            }
+        })
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
+    })
+
+    for (let finalized of [false, true]) {
+        let kind = finalized ? 'finalized' : 'unfinalized'
+        it(`keeps a healthy primary when only the consumer is slow (${kind} stream, clocked)`, async () => {
+            // The source has every batch ready at once; the handler takes 10 s per batch while the
+            // chain moves on. All the time is the consumer's, however long it lasts.
+            let t = setup(async function* (req, env) {
+                for (let n = req.from; n < req.from + 200; n++) {
+                    env.advanceChain(5)
+                    yield batch([blk(n)])
+                }
+            })
+            let req = {from: 100, to: 299}
+            let stream = finalized ? t.fb.getFinalizedStream(req) : t.fb.getStream(req)
+            expect(await drive(t, stream, 10_000)).toBe(299)
+
+            expect(t.fb.activeIndex).toBe(0)
+            expect(t.s1.calls).toHaveLength(0)
+            expect(t.now()).toBeGreaterThan(1_800_000) // half an hour behind, never failed over
+        })
+    }
+
+    it('keeps a primary that the consumer waits on a little, when the consumer takes most of the time', async () => {
+        // 1 s of source time and 9 s of handler time per batch: the wait on the source adds up to
+        // more than `maxStalenessMs`, but the source is not what holds the stream back.
+        let t = setup(async function* (req, env) {
+            for (let n = req.from; n < req.from + 400; n++) {
+                env.wait(1000)
+                env.advanceChain(5)
+                yield batch([blk(n)])
+            }
+        })
+        expect(await drive(t, t.fb.getStream({from: 100, to: 499}), 9000)).toBe(499)
+        expect(t.fb.activeIndex).toBe(0)
+    })
+
+    it('keeps a primary that is working through a backlog and getting closer to the tip', async () => {
+        // The stream arms at the tip, then the chain jumps 6000 blocks ahead. The source is the
+        // bottleneck (the consumer is instant), but each batch brings the stream closer.
+        let t = setup(async function* (req, env) {
+            yield batch([blk(req.from)])
+            env.advanceChain(6000)
+            for (let n = req.from + 1; n <= 6100; n += 20) {
+                env.wait(5000)
+                env.advanceChain(2)
+                yield batch(Array.from({length: 20}, (_, i) => blk(n + i)))
+            }
+        })
+        let last = await drive(t, t.fb.getStream({from: 100, to: 6100}))
+
+        expect(last).toBe(6100)
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
+    for (let behind of [50, 100_000]) {
+        it(`fails over a primary slower than the chain when the stream starts ${behind} blocks behind`, async () => {
+            // The lag trigger never arms: the stream never gets within maxLagBlocks of the tip. That
+            // is what a restart after a minute of downtime looks like, and a source that is slower
+            // than the chain will never finish this backfill.
+            let t = setup(
+                async function* (req, env) {
+                    for (let n = req.from; n < req.from + 100; n++) {
+                        env.wait(5000)
+                        env.advanceChain(5)
+                        yield batch([blk(n)])
+                    }
+                },
+                {},
+                {tip: 100 + behind},
+            )
+            await drive(t, t.fb.getStream({from: 100}))
+
+            expect(t.fb.activeIndex).toBe(1)
+            expect(t.fb.health[0].cause?.reason).toBe('stale')
+            expect(t.now()).toBeGreaterThan(180_000)
+            expect(t.now()).toBeLessThan(200_000)
+        })
+    }
+
+    it('keeps a primary in a historical backfill that gets closer to the tip', async () => {
+        // 100_000 blocks behind and never armed. The consumer waits on the source all the time, but
+        // each batch brings 20 blocks while the chain makes 5.
+        let t = setup(
+            async function* (req, env) {
+                for (let n = req.from; n < req.from + 2000; n += 20) {
+                    env.wait(5000)
+                    env.advanceChain(5)
+                    yield batch(Array.from({length: 20}, (_, i) => blk(n + i)))
+                }
+            },
+            {},
+            {tip: 100_000},
+        )
+        expect(await drive(t, t.fb.getStream({from: 100, to: 2099}))).toBe(2099)
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
+    it('fails over a primary that stops delivering in the middle of a backfill while claiming more', async () => {
+        // Never armed, and not idle at its own claim (it claims the tip), so neither the lag trigger
+        // nor the idle check applies; the empty batches keep the staleness clock quiet.
+        let t = setup(
+            async function* (req, env) {
+                yield batch([blk(req.from)])
+                for (let i = 0; i < 100; i++) {
+                    env.wait(5000)
+                    yield batch([])
+                }
+            },
+            {},
+            {tip: 100_000},
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
+    })
+
+    it('starts over when the stream gets back within maxLagBlocks of the tip', async () => {
+        // Two spells behind the tip, 150 s of waiting each, with a batch that catches up in between:
+        // neither spell reaches `maxStalenessMs`, and they do not add up.
+        let t = setup(async function* (req, env) {
+            let n = req.from
+            yield batch([blk(n)])
+            for (let spell = 0; spell < 2; spell++) {
+                env.advanceChain(50)
+                for (let i = 0; i < 30; i++) {
+                    env.wait(5000)
+                    yield batch([])
+                }
+                let blocks: TestBlock[] = []
+                while (n < t.tip()) blocks.push(blk(++n))
+                yield batch(blocks) // caught up
+            }
+        })
+        expect(await drive(t, t.fb.getStream({from: 100, to: 200}))).toBe(200)
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
+    it('also covers a primary whose claim is unknown', async () => {
+        // Its head request fails, so the lag trigger decides nothing; the stream still falls behind
+        // while it waits on this source.
+        let t = setup(
+            async function* (req, env) {
+                yield batch([blk(req.from)])
+                for (let i = 0; i < 100; i++) {
+                    env.wait(5000)
+                    env.advanceChain(5)
+                    yield batch([])
+                }
+            },
+            {},
+            {
+                primaryHead: async () => {
+                    throw new Error('head unavailable')
+                },
+            },
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+        expect(t.fb.activeIndex).toBe(1)
+    })
+
+    it('does not count the time of its own head requests as the consumer\'s', async () => {
+        // The primary's head request hangs for a minute and then fails, after every empty batch.
+        // That minute is neither the consumer's time nor a wait for a batch: the consumer is instant,
+        // so the 5 s waits on the source are what holds the stream back.
+        let t = setup(
+            async function* (req, env) {
+                yield batch([blk(req.from)])
+                for (let i = 0; i < 100; i++) {
+                    env.wait(5000)
+                    env.advanceChain(5)
+                    yield batch([])
+                }
+            },
+            {},
+            {
+                primaryHead: async (env) => {
+                    env.wait(60_000)
+                    throw new Error('head request timed out')
+                },
+            },
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
+    })
+
+    it('does not let a slow head endpoint excuse a source slower than the chain', async () => {
+        // The batch processor asks the fallback for the chain head between batches, and that request
+        // goes to the active source. Here it takes 40 s every time, while the chain makes a block a
+        // second. The source supplies a block per 5 s of waiting on it: slower than the chain, however
+        // much of the stream's time goes to the head requests.
+        let t: ReturnType<typeof setup> = setup(
+            async function* (req, env) {
+                yield batch([blk(req.from)])
+                for (let n = req.from + 1; n < req.from + 200; n++) {
+                    env.wait(5000)
+                    env.advanceChain(5)
+                    yield batch([blk(n)])
+                }
+            },
+            {},
+            {
+                primaryHead: async (env) => {
+                    env.wait(40_000)
+                    env.advanceChain(40)
+                    return {number: t.tip(), hash: '0x'}
+                },
+            },
+        )
+        for await (let _ of t.fb.getStream({from: 100})) {
+            if (t.fb.activeIndex !== 0) break
+            await t.fb.getHead()
+        }
+
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
+    })
+
+    it('fails over a source slower than the chain even when the consumer is slower still', async () => {
+        // A block per second of waiting on the source while the chain makes two; the handler takes
+        // 9 s per block. The consumer holds the stream back most, but the source would as soon as
+        // the consumer sped up.
+        let t = setup(async function* (req, env) {
+            yield batch([blk(req.from)])
+            for (let n = req.from + 1; n < req.from + 400; n++) {
+                env.wait(1000)
+                env.advanceChain(20)
+                yield batch([blk(n)])
+            }
+        })
+        await drive(t, t.fb.getStream({from: 100}), 9000)
+
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
+    })
+
+    it('reports the lag it acts on, not the one a cached claim suggests', async () => {
+        // The steady 20 blocks behind again, with claims cached for 5 s. When the cached lag reads
+        // "caught up", the fallback polls and finds 20; the lag gauge has to say so too.
+        let n = 100
+        let t = setup(
+            async function* (_req, env) {
+                yield batch([blk(100)])
+                env.advanceChain(15)
+                for (let i = 0; i < 60; i++) {
+                    env.wait(1000)
+                    env.advanceChain(5)
+                    yield batch(Array.from({length: 5}, () => blk(++n)))
+                }
+            },
+            {headTtlMs: 5000},
+            {tip: 105},
+        )
+        let lowest = Number.POSITIVE_INFINITY
+        for await (let _ of t.fb.getStream({from: 100, to: 400})) {
+            if (t.now() > 10_000) lowest = Math.min(lowest, t.fb.metrics().lag)
+        }
+
+        expect(lowest).toBeGreaterThan(10)
+    })
+
+    it('compares progress with the chain over the same time span when the claims are cached', async () => {
+        // The chain grows 1 block/s and claims are cached for 5 s, so a cached claim can be up to
+        // 4 blocks old. The second window opens on a claim that is 4 s old and is judged on a fresh
+        // one: the measured lag goes up by 1 while the stream actually got 3 blocks closer.
+        let n = 100
+        let deliver = (count: number) => batch(Array.from({length: count}, () => blk(++n)))
+        let t = setup(
+            async function* (_req, env) {
+                let tick = (seconds: number) => {
+                    env.wait(seconds * 1000)
+                    env.advanceChain(seconds)
+                }
+                yield batch([blk(100)]) // t=0: 5 behind, arms the trigger
+                env.advanceChain(500)
+                for (let i = 0; i < 5; i++) {
+                    tick(1)
+                    yield deliver(1) // t=5: the claim is polled again, the first window opens
+                }
+                for (let i = 0; i < 180; i++) {
+                    tick(1)
+                    yield deliver(2) // twice the chain's pace: clearly catching up
+                }
+                tick(4)
+                yield deliver(8) // t=189: first window judged on a claim polled at t=185; the next opens
+                for (let i = 0; i < 181; i++) {
+                    tick(1)
+                    yield deliver(i < 3 ? 2 : 1) // 184 blocks in 181 s: 3 blocks closer
+                }
+                // t=370: the second window is judged on a claim polled just now
+            },
+            {headTtlMs: 5000},
+            {tip: 105},
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.now()).toBe(370_000)
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
+    it('does not count a finality step from before the window as growth inside it', async () => {
+        // Finalized stream, claims cached for 5 s. Finality steps 100 blocks ahead 2 s after a poll,
+        // and the next window opens 2 s later, still on the cached claim. In that window there is no
+        // step and the source serves 91 blocks: the stream gets 91 blocks closer.
+        let n = 100
+        let deliver = (count: number) => batch(Array.from({length: count}, () => blk(++n)))
+        let t = setup(
+            async function* (_req, env) {
+                yield batch([blk(100)]) // t=0: 5 behind, arms the trigger
+                env.advanceChain(1000)
+                for (let i = 0; i < 5; i++) {
+                    env.wait(1000)
+                    yield deliver(1) // t=5: the claim is polled again, the first window opens
+                }
+                for (let i = 0; i < 180; i++) {
+                    env.wait(1000)
+                    yield deliver(4) // t=185: last poll before the step
+                }
+                env.wait(2000)
+                env.advanceChain(100) // t=187: the finality step
+                env.wait(2000)
+                yield deliver(8) // t=189: the first window is judged and the next one opens
+                for (let i = 0; i < 181; i++) {
+                    env.wait(1000)
+                    yield i % 2 === 0 ? deliver(1) : batch([])
+                }
+                // t=370: the second window is judged
+            },
+            {headTtlMs: 5000},
+            {tip: 105},
+        )
+        await drive(t, t.fb.getFinalizedStream({from: 100}))
+
+        expect(t.now()).toBe(370_000)
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
+    it('opens the window on the lag as it is after its own head request, not before', async () => {
+        // The primary's first head request takes a minute, and the chain grows by 60 blocks in that
+        // time. The window that opens right after it must start from the lag as it is then. The
+        // source then serves 211 blocks while the chain grows by 181: the stream gets 30 closer.
+        let n = 100
+        let deliver = (count: number) => batch(Array.from({length: count}, () => blk(++n)))
+        let headRequests = 0
+        let t: ReturnType<typeof setup> = setup(
+            async function* (_req, env) {
+                yield batch([blk(100)]) // t=0: 5 behind, arms the trigger
+                env.advanceChain(1000)
+                for (let i = 0; i < 182; i++) {
+                    env.wait(1000)
+                    env.advanceChain(1)
+                    yield deliver(i > 0 && i <= 30 ? 2 : 1)
+                }
+            },
+            {},
+            {
+                tip: 105,
+                primaryHead: async (env) => {
+                    if (headRequests++ === 0) {
+                        env.wait(60_000)
+                        env.advanceChain(60)
+                    }
+                    return {number: t.tip(), hash: '0x'}
+                },
+            },
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.now()).toBe(242_000)
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
+    it('does not let a cached claim close the window while the stream is still behind', async () => {
+        // Chain and source both move 5 blocks/s and the stream stays 20 behind. With claims cached
+        // for 5 s, the lag measured against a cached claim drops to 10 and below before every new
+        // poll, which looks like catching up although the stream never does.
+        let n = 100
+        let t = setup(
+            async function* (_req, env) {
+                yield batch([blk(100)]) // t=0: 5 behind, arms the trigger
+                env.advanceChain(15)
+                for (let i = 0; i < 400; i++) {
+                    env.wait(1000)
+                    env.advanceChain(5)
+                    yield batch(Array.from({length: 5}, () => blk(++n)))
+                }
+            },
+            {headTtlMs: 5000},
+            {tip: 105},
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+
+        expect(t.fb.activeIndex).toBe(1)
+        expect(t.fb.health[0].cause?.reason).toBe('stale')
+        // the window is neither closed nor judged early when the cached claim is corrected
+        expect(t.now()).toBeGreaterThan(180_000)
+        expect(t.now()).toBeLessThan(200_000)
+    })
+
+    it('does not arm the lag trigger when only a cached claim makes the stream look near the tip', async () => {
+        // Never within maxLagBlocks of the tip: chain and source both move 5 blocks/s, 20 apart from
+        // the start, and the source reports its own head truthfully. Against a claim cached for 5 s
+        // the lag reads 10 and less before every new poll; that must not arm the lag trigger, which
+        // would then fail this source over for claiming less than the other one. (The staleness
+        // limit is off here: on its own it would fail a source that keeps a steady distance.)
+        let n = 99
+        let t = setup(
+            async function* (_req, env) {
+                for (let i = 0; i < 400; i++) {
+                    env.wait(1000)
+                    env.advanceChain(5)
+                    yield batch(Array.from({length: 5}, () => blk(++n)))
+                }
+            },
+            {headTtlMs: 5000, maxStalenessMs: null},
+            {tip: 119, primaryHead: async () => ({number: n, hash: '0x'})},
+        )
+        expect(await drive(t, t.fb.getStream({from: 100, to: 2099}))).toBe(2099)
+
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+
+    it('arms at the tip with three sources whose claims are never polled at the same time', async () => {
+        // The third source starts in its cooldown, so its claim is first polled a second after the
+        // second one's, and their 5 s caches expire at different batch boundaries from then on.
+        // (With the staleness trigger on, its own polls would bring them back in step.) The stream
+        // catches up and follows the tip for a minute. Then the chain speeds up to 5 blocks/s while
+        // the primary still delivers one, and reports its own head truthfully.
+        let now = 0
+        let extra = 0
+        let tip = () => 1100 + Math.floor(now / 1000) + extra
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let served = 99
+        let slow = false
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                for (let i = 0; i < 3; i++) {
+                    now += 1000
+                    yield batch(Array.from({length: 300}, () => blk(next++))) // still in the backlog
+                }
+                for (let i = 0; i < 60; i++) {
+                    now += 1000
+                    let blocks: TestBlock[] = []
+                    while (next <= tip()) blocks.push(blk(next++))
+                    served = next - 1
+                    yield batch(blocks)
+                }
+                slow = true
+                for (let i = 0; i < 60; i++) {
+                    now += 1000
+                    extra += 4
+                    served = next
+                    yield batch([blk(next++)])
+                }
+            },
+            {head: async () => ({number: slow ? served : tip(), hash: '0x'})},
+        )
+        let standby = () =>
+            new MockSource(
+                async function* (req) {
+                    let blocks: TestBlock[] = []
+                    for (let n = req.from; n <= tip(); n++) blocks.push(blk(n))
+                    yield batch(blocks)
+                },
+                {head: claim},
+            )
+        let s1 = standby()
+        let s2 = standby()
+        let fb = fallback([s0, s1, s2], {
+            maxStalenessMs: null,
+            headTtlMs: 5000,
+            cooldownMs: 2000,
+            preferPrimary: 'onFailureOnly',
+            clock: () => now,
+        })
+        fb.health[2].onStreamError()
+
+        for await (let _ of fb.getStream({from: 100})) {
+            if (fb.activeIndex !== 0) break
+        }
+        expect(fb.activeIndex).toBe(1)
+        expect(fb.health[0].cause?.reason).toBe('lag')
+    })
+
+    it('is off when the staleness trigger is disabled', async () => {
+        let t = setup(
+            async function* (req, env) {
+                yield batch([blk(req.from)])
+                for (let i = 0; i < 100; i++) {
+                    env.wait(5000)
+                    env.advanceChain(5)
+                    yield batch([])
+                }
+            },
+            {maxStalenessMs: null},
+        )
+        await drive(t, t.fb.getStream({from: 100}))
+        expect(t.fb.activeIndex).toBe(0)
+        expect(t.s1.calls).toHaveLength(0)
+    })
+})
+
+describe('FallbackDataSource — taking back a source that was failed over for not delivering', () => {
+    // Both sources follow a chain that makes one block per second and always claim its tip. The
+    // second source delivers everything up to the tip once a second. The primary does the same
+    // while `primaryKeepsUp(now)`, and otherwise delivers one block per 5 s. While `secondDown(now)`,
+    // the second source fails its stream and its head requests. The consumer is instant, and opens
+    // a new stream at the first batch boundary after each of the `restartAt` times.
+    async function follow(
+        policy: FallbackPolicy,
+        durationMs: number,
+        primaryKeepsUp: (now: number) => boolean = () => false,
+        secondDown: (now: number) => boolean = () => false,
+        restartAt: number[] = [],
+    ) {
+        let now = 0
+        let tip = () => 100 + Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let upToTip = (from: number) => {
+            let blocks: TestBlock[] = []
+            for (let n = from; n <= tip(); n++) blocks.push(blk(n))
+            return blocks
+        }
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    if (primaryKeepsUp(now)) {
+                        now += 1000
+                        let blocks = upToTip(next)
+                        next += blocks.length
+                        yield batch(blocks)
+                    } else {
+                        now += 5000
+                        yield batch(next <= tip() ? [blk(next++)] : [])
+                    }
+                }
+            },
+            {head: claim, finalizedHead: claim},
+        )
+        let secondClaim = async () => {
+            if (secondDown(now)) throw new Error('second source is down')
+            return claim()
+        }
+        let s1 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    if (secondDown(now)) throw new Error('second source is down')
+                    now += 1000
+                    let blocks = upToTip(next)
+                    next += blocks.length
+                    yield batch(blocks)
+                }
+            },
+            {head: secondClaim, finalizedHead: secondClaim},
+        )
+        let fb = fallback([s0, s1], {clock: () => now, ...policy})
+
+        let switches: {at: number; to: number}[] = []
+        let onPrimaryMs = 0
+        let maxLag = 0
+        let last = 99
+        let prevNow = 0
+        let prevActive: number | undefined
+        let restarts = [...restartAt]
+        while (now < durationMs) {
+            for await (let b of fb.getStream({from: last + 1})) {
+                let active = fb.activeIndex!
+                if (prevActive != null && active !== prevActive) switches.push({at: prevNow, to: active})
+                if (active === 0) onPrimaryMs += now - prevNow
+                if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
+                maxLag = Math.max(maxLag, tip() - last)
+                prevNow = now
+                prevActive = active
+                if (now >= durationMs) break
+                if (restarts.length && now >= restarts[0]) {
+                    restarts.shift() // the consumer opens a new stream, as after a reorganisation
+                    break
+                }
+            }
+        }
+        return {fb, switches, primaryShare: onPrimaryMs / now, maxLag}
+    }
+
+    const HOUR = 3_600_000
+
+    it('does not go back to it as soon as its cooldown ends (default policy)', async () => {
+        // The primary claims the tip the whole time, so a claim-based check would take it back after
+        // every 30 s cooldown and the stream would spend most of the hour on it.
+        let r = await follow({}, HOUR)
+
+        expect(r.switches.map((s) => s.to)).toEqual([1, 0, 1]) // failed, tried once more, failed again
+        expect(r.switches[1].at - r.switches[0].at).toBeGreaterThanOrEqual(1_800_000) // default delay
+        expect(r.primaryShare).toBeLessThan(0.15)
+        expect(r.fb.activeIndex).toBe(1)
+    })
+
+    it('doubles the delay each time the source fails the same way again', async () => {
+        let r = await follow({reclaimBackoffMs: 60_000, maxStalenessMs: 20_000, cooldownMs: 1000}, HOUR)
+
+        let failedAt = r.switches.filter((s) => s.to === 1).map((s) => s.at)
+        let reclaimedAt = r.switches.filter((s) => s.to === 0).map((s) => s.at)
+        let delays = reclaimedAt.map((at, i) => at - failedAt[i])
+        expect(delays.length).toBeGreaterThanOrEqual(4)
+        for (let i = 0; i < 4; i++) {
+            expect(delays[i]).toBeGreaterThanOrEqual(60_000 * 2 ** i)
+            expect(delays[i]).toBeLessThan(60_000 * 2 ** i + 30_000)
+        }
+    })
+
+    it('doubles the delay also when it is shorter than the time it takes to fail the source', async () => {
+        // With the default 180 s limit the primary serves for more than 3 minutes before it fails,
+        // longer than the 60 s it was kept away. Time spent behind the tip is not good service.
+        let r = await follow({reclaimBackoffMs: 60_000, cooldownMs: 1000}, HOUR)
+
+        let failedAt = r.switches.filter((s) => s.to === 1).map((s) => s.at)
+        let reclaimedAt = r.switches.filter((s) => s.to === 0).map((s) => s.at)
+        let delays = reclaimedAt.map((at, i) => at - failedAt[i])
+        expect(delays.length).toBeGreaterThanOrEqual(3)
+        for (let i = 0; i < 3; i++) {
+            expect(delays[i]).toBeGreaterThanOrEqual(60_000 * 2 ** i)
+            expect(delays[i]).toBeLessThan(60_000 * 2 ** i + 30_000)
+        }
+    })
+
+    for (let [how, restartAt] of [
+        ['by catching up', []],
+        ['by the stream ending', [133_000]],
+    ] as const) {
+        it(`counts good service again after a spell behind the tip ends ${how}`, async () => {
+            // Taken back at about t=100 s, the primary is slow from t=115 s to t=140 s: more than 10
+            // blocks behind from about t=130 s, not yet failed. That spell ends when it catches up
+            // or, in the second case, when the consumer opens a new stream at t=133 s. It then keeps
+            // up until t=1000 s: when it fails again after that, it is a first failure.
+            let r = await follow(
+                {reclaimBackoffMs: 60_000, maxStalenessMs: 20_000, cooldownMs: 1000},
+                1_400_000,
+                (now) => now >= 100_000 && now < 1_000_000 && (now < 115_000 || now >= 140_000),
+                () => false,
+                [...restartAt],
+            )
+
+            let failedAt = r.switches.filter((s) => s.to === 1).map((s) => s.at)
+            let reclaimedAt = r.switches.filter((s) => s.to === 0).map((s) => s.at)
+            expect(failedAt[0]).toBeLessThan(100_000)
+            expect(failedAt[1]).toBeGreaterThan(1_000_000)
+            expect(reclaimedAt[1] - failedAt[1]).toBeLessThan(60_000 + 30_000) // not doubled
+        })
+    }
+
+    it('starts from the base delay again after the source has kept up for as long as it was kept away', async () => {
+        // Slow until t=100 s (fails once), fine until t=1000 s, slow again after. The second failure
+        // comes after more than the 60 s delay of good service, so it is treated as a first one.
+        let r = await follow(
+            {reclaimBackoffMs: 60_000, maxStalenessMs: 20_000, cooldownMs: 1000},
+            1_400_000,
+            (now) => now >= 100_000 && now < 1_000_000,
+        )
+
+        let failedAt = r.switches.filter((s) => s.to === 1).map((s) => s.at)
+        let reclaimedAt = r.switches.filter((s) => s.to === 0).map((s) => s.at)
+        expect(failedAt.length).toBeGreaterThanOrEqual(2)
+        expect(failedAt[1]).toBeGreaterThan(1_000_000)
+        expect(reclaimedAt[1] - failedAt[1]).toBeLessThan(60_000 + 30_000) // not doubled
+    })
+
+    it('does not count spells behind the tip as good service, even short ones', async () => {
+        // Taken back at about t=100 s, the primary falls more than 10 blocks behind every 28 s and
+        // catches up again before the 20 s limit fails it, until t=400 s, and stays slow after.
+        // That is minutes since it was taken back, but never 60 s in a row without falling behind:
+        // when it fails, it is a repeat failure.
+        let r = await follow(
+            {reclaimBackoffMs: 60_000, maxStalenessMs: 20_000, cooldownMs: 1000},
+            900_000,
+            (now) => now >= 100_000 && now < 400_000 && (now - 100_000) % 28_000 >= 18_000,
+        )
+
+        let failedAt = r.switches.filter((s) => s.to === 1).map((s) => s.at)
+        let reclaimedAt = r.switches.filter((s) => s.to === 0).map((s) => s.at)
+        expect(failedAt[0]).toBeLessThan(100_000)
+        expect(failedAt[1]).toBeGreaterThan(400_000) // the short spells did not fail it
+        let retried = reclaimedAt.find((at) => at > failedAt[1])!
+        expect(retried - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled
+    })
+
+    it('counts time without a reference as good service', async () => {
+        // The primary fails, then the second source goes down for 6 minutes, so the primary is used
+        // again with nothing to compare it against. Nothing shows it behind in those minutes, which
+        // are longer than the 60 s delay: once the second source is back and the primary fails
+        // again, that is a first failure with the base delay.
+        let r = await follow(
+            {reclaimBackoffMs: 60_000, maxStalenessMs: 20_000, cooldownMs: 1000},
+            900_000,
+            () => false,
+            (now) => now >= 50_000 && now < 410_000,
+        )
+
+        let failedAt = r.switches.filter((s) => s.to === 1).map((s) => s.at)
+        expect(failedAt[0]).toBeLessThan(50_000) // failed over before the outage
+        expect(failedAt[1]).toBeGreaterThan(410_000) // failed again after it
+        let reclaimed = r.switches.find((s) => s.to === 0 && s.at > failedAt[1])!
+        expect(reclaimed.at - failedAt[1]).toBeGreaterThanOrEqual(60_000)
+        expect(reclaimed.at - failedAt[1]).toBeLessThan(90_000) // the base delay, not a doubled one
+    })
+
+    // The primary is slow until t=100 s (fails once, kept away for 60 s), keeps up until t=400 s and
+    // is slow again after. While it keeps up, the consumer opens a new stream every `streamMs`, as
+    // the batch processor does after a chain reorganisation. None of those streams lasts as long as
+    // the delay, but together they are several minutes of good service: the second failure is a
+    // first one again. In the second case no stream even lasts until the claims are polled again.
+    for (let [streamMs, headTtlMs] of [
+        [30_000, 5000],
+        [3000, 40_000],
+    ]) it(`adds up good service across streams of ${streamMs} ms (claims cached for ${headTtlMs} ms)`, async () => {
+        let now = 0
+        let tip = () => 100 + Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let upToTip = (from: number) => {
+            let blocks: TestBlock[] = []
+            for (let n = from; n <= tip(); n++) blocks.push(blk(n))
+            return blocks
+        }
+        let keepsUp = () => now >= 100_000 && now < 400_000
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    if (keepsUp()) {
+                        now += 1000
+                        let blocks = upToTip(next)
+                        next += blocks.length
+                        yield batch(blocks)
+                    } else {
+                        now += 5000
+                        yield batch(next <= tip() ? [blk(next++)] : [])
+                    }
+                }
+            },
+            {head: claim},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 1000
+                    let blocks = upToTip(next)
+                    next += blocks.length
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let fb = fallback([s0, s1], {
+            clock: () => now,
+            reclaimBackoffMs: 60_000,
+            maxStalenessMs: 20_000,
+            cooldownMs: 1000,
+            headTtlMs,
+        })
+
+        let last = 99
+        let prev: number | undefined
+        let failedAt: number[] = []
+        let reclaimedAt: number[] = []
+        while (now < 700_000) {
+            let startedAt = now
+            for await (let b of fb.getStream({from: last + 1})) {
+                let active = fb.activeIndex!
+                if (prev === 0 && active === 1) failedAt.push(now)
+                if (prev === 1 && active === 0) reclaimedAt.push(now)
+                prev = active
+                if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
+                if (now >= 700_000) break
+                if (now - startedAt >= streamMs && keepsUp()) break
+            }
+        }
+
+        expect(failedAt[0]).toBeLessThan(100_000)
+        expect(failedAt[1]).toBeGreaterThan(400_000)
+        expect(reclaimedAt[1] - failedAt[1]).toBeGreaterThanOrEqual(60_000)
+        expect(reclaimedAt[1] - failedAt[1]).toBeLessThan(100_000) // the base delay, not a doubled one
+    })
+
+    it('does not count time as good service on the word of a cached claim', async () => {
+        // The chain makes 5 blocks/s. The primary falls behind and fails once (kept away for 60 s).
+        // From t=60 s to t=500 s it holds a steady 15 blocks behind the tip, with a batch every 4 s,
+        // and the consumer opens a new stream after every second batch, so no stream lasts long
+        // enough to fail it. Claims are cached for 20 s here: one polled 8 s earlier is 40 blocks old,
+        // which puts it below the stream's own frontier, and the lag reads as negative. That is not
+        // keeping up: when the primary falls behind again after t=500 s, it is a repeat failure.
+        let now = 0
+        let tip = () => 100 + 5 * Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let steady = () => now >= 60_000 && now < 500_000
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    let blocks: TestBlock[] = []
+                    if (steady()) {
+                        now += 4000
+                        while (next <= tip() - 15) blocks.push(blk(next++))
+                    } else {
+                        now += 1000
+                        if (next <= tip()) blocks.push(blk(next++)) // a fifth of the chain's pace
+                    }
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 1000
+                    let blocks: TestBlock[] = []
+                    while (next <= tip()) blocks.push(blk(next++))
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let fb = fallback([s0, s1], {
+            clock: () => now,
+            reclaimBackoffMs: 60_000,
+            maxStalenessMs: 20_000,
+            cooldownMs: 1000,
+            headTtlMs: 20_000,
+        })
+
+        let last = 99
+        let prev: number | undefined
+        let failedAt: number[] = []
+        let reclaimedAt: number[] = []
+        while (now < 800_000) {
+            let batches = 0
+            for await (let b of fb.getStream({from: last + 1})) {
+                let active = fb.activeIndex!
+                if (prev === 0 && active === 1) failedAt.push(now)
+                if (prev === 1 && active === 0) reclaimedAt.push(now)
+                prev = active
+                if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
+                if (now >= 800_000) break
+                if (++batches >= 2 && steady()) break
+            }
+        }
+
+        expect(failedAt[0]).toBeLessThan(60_000)
+        expect(failedAt[1]).toBeGreaterThan(500_000) // nothing failed it in between
+        let retried = reclaimedAt.find((at) => at > failedAt[1])!
+        expect(retried - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled
+    })
+
+    it('counts good service once when two streams run on the source at the same time', async () => {
+        // The primary fails once (kept away for 60 s), is taken back and keeps up until t=140 s. For
+        // the last 30 s of that a second stream runs next to the first. Together that is less than
+        // a minute of good service (with the 15 s the stream takes to be seen behind afterwards),
+        // not the 85 s it would be if both streams counted. When the primary is slow again, that is
+        // a repeat failure. (Only the first stream moves the clock.)
+        let now = 0
+        let ticking = true
+        let tip = () => 100 + Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let keepsUp = () => now >= 100_000 && now < 140_000
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    let blocks: TestBlock[] = []
+                    if (keepsUp()) {
+                        if (ticking) now += 1000
+                        while (next <= tip()) blocks.push(blk(next++))
+                    } else {
+                        now += 5000
+                        if (next <= tip()) blocks.push(blk(next++))
+                    }
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 1000
+                    let blocks: TestBlock[] = []
+                    while (next <= tip()) blocks.push(blk(next++))
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let fb = fallback([s0, s1], {
+            clock: () => now,
+            reclaimBackoffMs: 60_000,
+            maxStalenessMs: 20_000,
+            cooldownMs: 1000,
+        })
+
+        let first = fb.getStream({from: 100})[Symbol.asyncIterator]()
+        let prev: number | undefined
+        let failedAt: number[] = []
+        let reclaimedAt: number[] = []
+        let step = async () => {
+            await first.next()
+            let active = fb.activeIndex!
+            if (prev === 0 && active === 1) failedAt.push(now)
+            if (prev === 1 && active === 0) reclaimedAt.push(now)
+            prev = active
+        }
+        while (now < 110_000) await step()
+        expect(fb.activeIndex).toBe(0) // taken back, keeping up
+        expect(reclaimedAt[0]).toBeGreaterThan(100_000)
+
+        let second = fb.getStream({from: tip()})[Symbol.asyncIterator]()
+        while (now < 140_000) {
+            await step()
+            ticking = false
+            await second.next()
+            ticking = true
+        }
+        await second.return?.()
+
+        while (now < 600_000) await step()
+        expect(failedAt[1]).toBeGreaterThan(140_000)
+        expect(reclaimedAt[1] - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled
+    })
+
+    it('does not forgive a source while another stream on it is behind', async () => {
+        // The primary fails once (kept away for 60 s), is taken back and keeps up until t=250 s:
+        // well over a minute of good service on the live stream. Next to it a backfill runs on the
+        // same source, thousands of blocks behind the whole time. Good service is counted per
+        // source, so that holds it back: when the primary is slow again, it is a repeat failure.
+        // (Only the live stream moves the clock. The backfill stays open until the end.)
+        let now = 0
+        let tip = () => 5000 + Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let keepsUp = () => now >= 100_000 && now < 250_000
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                let backfill = req.from < 1000
+                while (true) {
+                    let blocks: TestBlock[] = []
+                    if (backfill) {
+                        blocks.push(blk(next++)) // one block per round, never near the tip
+                    } else if (keepsUp()) {
+                        now += 1000
+                        while (next <= tip()) blocks.push(blk(next++))
+                    } else {
+                        now += 5000
+                        if (next <= tip()) blocks.push(blk(next++))
+                    }
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 1000
+                    let blocks: TestBlock[] = []
+                    while (next <= tip()) blocks.push(blk(next++))
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let fb = fallback([s0, s1], {
+            clock: () => now,
+            reclaimBackoffMs: 60_000,
+            maxStalenessMs: 20_000,
+            cooldownMs: 1000,
+        })
+
+        let live = fb.getStream({from: 5000})[Symbol.asyncIterator]()
+        let prev: number | undefined
+        let failedAt: number[] = []
+        let reclaimedAt: number[] = []
+        let step = async () => {
+            await live.next()
+            let active = fb.activeIndex!
+            if (prev === 0 && active === 1) failedAt.push(now)
+            if (prev === 1 && active === 0) reclaimedAt.push(now)
+            prev = active
+        }
+        while (now < 110_000) await step()
+        expect(fb.activeIndex).toBe(0) // taken back, keeping up
+
+        let backfill = fb.getFinalizedStream({from: 0})[Symbol.asyncIterator]()
+        while (now < 250_000) {
+            await step()
+            await backfill.next()
+        }
+
+        while (now < 600_000) await step() // the backfill stays open, and behind
+        await backfill.return?.()
+        expect(failedAt[1]).toBeGreaterThan(250_000)
+        expect(reclaimedAt[1] - failedAt[1]).toBeGreaterThanOrEqual(120_000) // doubled
+    })
+
+    it('takes it back right after the cooldown with reclaimBackoffMs: 0', async () => {
+        let r = await follow({reclaimBackoffMs: 0, maxStalenessMs: 20_000, cooldownMs: 1000}, 600_000)
+
+        let failedAt = r.switches.filter((s) => s.to === 1).map((s) => s.at)
+        let reclaimedAt = r.switches.filter((s) => s.to === 0).map((s) => s.at)
+        expect(reclaimedAt.length).toBeGreaterThanOrEqual(3)
+        expect(reclaimedAt[0] - failedAt[0]).toBeLessThan(30_000)
+    })
+
+    it('does not start a new stream on it while another source is available', async () => {
+        // The batch processor opens a new stream after every chain reorganisation. Selection for a
+        // new stream prefers the first eligible source, which would be the primary again as soon as
+        // its cooldown ends, for another three minutes of falling behind each time.
+        let now = 0
+        let tip = () => 100 + Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let s0 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 5000
+                    yield batch(next <= tip() ? [blk(next++)] : [])
+                }
+            },
+            {head: claim},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 1000
+                    let blocks: TestBlock[] = []
+                    while (next <= tip()) blocks.push(blk(next++))
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let fb = fallback([s0, s1], {clock: () => now, maxStalenessMs: 20_000, cooldownMs: 1000})
+
+        let last = 99
+        for await (let b of fb.getStream({from: 100})) {
+            if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
+            if (fb.activeIndex === 1 && b.blocks.length) break
+        }
+        expect(fb.activeIndex).toBe(1)
+        let primaryStreams = s0.calls.length
+
+        now += 10_000 // the primary's cooldown is long over
+        for await (let b of fb.getStream({from: last + 1})) {
+            if (b.blocks.length) break
+        }
+        expect(fb.activeIndex).toBe(1)
+        expect(s0.calls).toHaveLength(primaryStreams)
+    })
+
+    it('still passes it over when a failover sweep starts again', async () => {
+        // A is failed for not delivering. B fails at once, and C fails after a two-second timeout
+        // without delivering anything. By then A's and B's cooldowns are over and every source has
+        // been tried, so the sweep starts again: it has to go to B, not back to A.
+        let now = 0
+        let tip = () => 100 + Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let upToTip = (from: number) => {
+            let blocks: TestBlock[] = []
+            for (let n = from; n <= tip(); n++) blocks.push(blk(n))
+            return blocks
+        }
+        let a = new MockSource(
+            async function* (req) {
+                let next = req.from
+                while (true) {
+                    now += 5000
+                    yield batch(next <= tip() ? [blk(next++)] : [])
+                }
+            },
+            {head: claim},
+        )
+        let b = new MockSource(
+            async function* (req, call) {
+                if (call === 0) throw new Error('b is down')
+                let next = req.from
+                while (true) {
+                    now += 1000
+                    let blocks = upToTip(next)
+                    next += blocks.length
+                    yield batch(blocks)
+                }
+            },
+            {head: claim},
+        )
+        let c = new MockSource(
+            async function* (req) {
+                now += 2000
+                if (req.from >= 0) throw new Error('c timed out')
+                yield batch([])
+            },
+            {head: claim},
+        )
+        let fb = fallback([a, b, c], {
+            clock: () => now,
+            maxStalenessMs: 20_000,
+            cooldownMs: 1000,
+            preferPrimary: 'onFailureOnly',
+        })
+
+        for await (let batch of fb.getStream({from: 100})) {
+            if (c.calls.length > 0 && batch.blocks.length) break
+        }
+        expect(c.calls).toHaveLength(1)
+        expect(fb.activeIndex).toBe(1)
+        expect(a.calls).toHaveLength(1)
+        expect(b.calls).toHaveLength(2)
+    })
+
+    it('still uses it when the other source fails', async () => {
+        // The delay only applies to eager switch-up. A stream error on the second source right after
+        // the failover leaves nothing else, so the primary is selected again.
+        let now = 0
+        let tip = () => 100 + Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let s0 = new MockSource(
+            async function* (req) {
+                for (let next = req.from; next <= req.to!; next++) {
+                    now += 5000
+                    yield batch([blk(next)])
+                }
+            },
+            {head: claim},
+        )
+        let s1 = new MockSource(
+            async function* (req) {
+                now += 2000 // by now the primary's cooldown is over
+                if (req.from >= 0) throw new Error('down')
+                yield batch([])
+            },
+            {head: claim},
+        )
+        let fb = fallback([s0, s1], {clock: () => now, maxStalenessMs: 20_000, cooldownMs: 1000})
+
+        let got = numbers(await collect(fb.getStream({from: 100, to: 115})))
+        expect(got[got.length - 1]).toBe(115)
+        expect(s0.calls.length).toBeGreaterThanOrEqual(2) // served, failed over, selected again
+        expect(s1.calls.length).toBeGreaterThanOrEqual(1)
+    })
+})
+
+describe('FallbackDataSource — sources that are slower than the chain for a while', () => {
+    // The chain makes 4 blocks/s and the stream starts 200_000 blocks behind. Each source delivers
+    // `rate(block)` blocks per second, never past the tip, and always claims the tip. The consumer
+    // is instant. Runs until the stream is within 10 blocks of the tip, or for `limitMs`.
+    async function backfill(
+        rates: ((block: number) => number)[],
+        policy: FallbackPolicy = {},
+        limitMs = 40_000_000,
+    ) {
+        let now = 0
+        let tip = () => 200_000 + 4 * Math.floor(now / 1000)
+        let claim = async () => ({number: tip(), hash: '0x'})
+        let sources = rates.map(
+            (rate) =>
+                new MockSource(
+                    async function* (req) {
+                        let next = req.from
+                        while (true) {
+                            now += 1000
+                            let blocks: TestBlock[] = []
+                            let n = rate(next)
+                            for (let i = 0; i < n && next <= tip(); i++) blocks.push(blk(next++))
+                            yield batch(blocks)
+                        }
+                    },
+                    {head: claim},
+                ),
+        )
+        let fb = fallback(sources, {clock: () => now, ...policy})
+
+        let switches: {at: number; to: number}[] = []
+        let activeMs = sources.map(() => 0)
+        let prev: number | undefined
+        let prevNow = 0
+        let last = -1
+        for await (let b of fb.getStream({from: 0})) {
+            let active = fb.activeIndex!
+            if (prev != null && active !== prev) switches.push({at: prevNow, to: active})
+            activeMs[active] += now - prevNow
+            prev = active
+            prevNow = now
+            if (b.blocks.length) last = b.blocks[b.blocks.length - 1].header.number
+            if (tip() - last <= 10 || now >= limitMs) break
+        }
+        return {fb, sources, switches, activeMs, endedAt: now}
+    }
+
+    // Like a Portal: fast, except in a stretch of heavy blocks where it makes 3 blocks/s.
+    const heavyFor = (blocks: number) => (block: number) => (block >= 100_000 && block < 100_000 + blocks ? 3 : 400)
+    // Like an RPC endpoint in a backfill: 1 block/s throughout.
+    const slow = () => 1
+
+    it('stays on a source that crosses a short stretch where it is slower than the chain', async () => {
+        // 1800 heavy blocks take the primary 10 minutes, during which the stream loses 600 blocks
+        // of the 100_000 it had gained. Nothing is wrong with the source, and the other one is slower.
+        let r = await backfill([heavyFor(1800), slow])
+
+        expect(r.switches).toEqual([])
+        expect(r.sources[1].calls).toHaveLength(0)
+        expect(r.endedAt).toBeLessThan(1_200_000)
+    })
+
+    it('fails over after one staleness limit when slowdownGraceMs is 0, and comes back', async () => {
+        // No allowance: the primary is failed over in the heavy stretch. The second source loses
+        // ground faster, so the stream goes back to the primary and stays.
+        let r = await backfill([heavyFor(1800), slow], {slowdownGraceMs: 0})
+
+        expect(r.switches.map((s) => s.to)).toEqual([1, 0])
+        expect(r.activeMs[1]).toBeLessThan(250_000)
+    })
+
+    it('does not alternate through a long stretch where every source is slower than the chain', async () => {
+        // 9000 heavy blocks take the primary 50 minutes: longer than the 15-minute allowance. It is
+        // failed over, the second source turns out to lose ground faster, and the stream goes back.
+        // The second source is tried once more when its 30 minutes away are over.
+        let r = await backfill([heavyFor(9000), slow])
+
+        expect(r.switches.map((s) => s.to)).toEqual([1, 0, 1, 0])
+        expect(r.switches[2].at - r.switches[0].at).toBeGreaterThanOrEqual(1_800_000)
+        expect(r.activeMs[1]).toBeLessThan(500_000)
+        expect(r.endedAt).toBeLessThan(4_000_000)
+    })
+
+    for (let [name, rates] of [
+        ['the primary', [() => 3, () => 1]],
+        ['the second source', [() => 1, () => 3]],
+    ] as const) {
+        it(`stays on the source that loses ground more slowly when none keeps up: ${name}`, async () => {
+            // Neither source ever matches the chain's 4 blocks/s. Each is tried, and from then on the
+            // stream spends its time on the better one; the other is only tried again, briefly, each
+            // time its growing delay is over.
+            let better = rates[0](0) > rates[1](0) ? 0 : 1
+            let r = await backfill([...rates], {slowdownGraceMs: 0}, 3 * 3_600_000)
+
+            expect(r.activeMs[1 - better] / r.endedAt).toBeLessThan(0.1)
+            expect(r.switches.length).toBeLessThanOrEqual(6)
+        })
+    }
+
+    it('goes back to the best of three sources when none keeps up, wherever it is ranked', async () => {
+        // 1, 3 and 2 blocks/s against the chain's 4. Each is tried in turn; the middle one lost
+        // ground most slowly, so that is where the stream goes back to and stays.
+        let r = await backfill([() => 1, () => 3, () => 2], {slowdownGraceMs: 0}, 3 * 3_600_000)
+
+        expect(r.switches.slice(0, 3).map((s) => s.to)).toEqual([1, 2, 1])
+        expect(r.activeMs[1] / r.endedAt).toBeGreaterThan(0.85)
+    })
+
+    it('fails over a source that made headway and then stays slow, once the allowance is used up', async () => {
+        // The primary gains 100_000 blocks quickly and is slower than the chain from there on. The
+        // second source is fine. 15 minutes of that are allowed, not more.
+        let r = await backfill([heavyFor(1_000_000), () => 400])
+        let failed = r.switches[0]
+        let enteredAt = 250_000 // the primary reaches block 100_000 after 100_000 / 400 = 250 s
+
+        expect(failed.to).toBe(1)
+        expect(failed.at - enteredAt).toBeGreaterThan(900_000)
+        expect(failed.at - enteredAt).toBeLessThan(1_300_000)
+        expect(r.fb.activeIndex).toBe(1)
+        expect(r.switches).toHaveLength(1)
+    })
+
+    it('gives no allowance to a source that delivers nothing', async () => {
+        // Empty batches from block 100_000 on: gained ground does not excuse that.
+        let r = await backfill([(block) => (block >= 100_000 ? 0 : 400), () => 400])
+        let failed = r.switches[0]
+
+        expect(failed.to).toBe(1)
+        expect(failed.at - 250_000).toBeLessThan(400_000)
+    })
+})
+
 describe('FallbackDataSource — getHead delegation', () => {
     it('delegates to the active source and fails over on error', async () => {
         let noop: StreamFn = async function* () {}
