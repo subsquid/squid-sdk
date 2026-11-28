@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "`AsyncQueue`: keep the wrapped items when the buffer grows on a put to a full queue, instead of replacing one of them with `undefined`",
+      "type": "patch",
+      "packageName": "@subsquid/util-internal"
+    }
+  ],
+  "packageName": "@subsquid/util-internal"
+}
