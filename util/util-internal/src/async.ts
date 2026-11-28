@@ -77,7 +77,7 @@ export class AsyncQueue<T> {
             let o = this.pos + i
             this.buf[o % len] = this.buf[o % this.size]
         }
-        this.buf[this.size % len] = undefined
+        this.buf[(this.pos + this.size) % len] = undefined
         assert(this.buf.length === len)
     }
 
